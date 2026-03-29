@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ONCC - Sistema de Gestión{% endblock %}</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { 
+            darkMode: 'class', 
+            theme: { 
+                extend: { 
+                    colors: { 
+                        green: { 500: '#22c55e', 600: '#16a34a', 700: '#15803d' } 
+                    } 
+                } 
+            } 
+        }
+    </script>
+    
+    <!-- Script de Persistencia de Tema (Evita el parpadeo blanco) -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
+    </script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="flex h-screen font-sans transition-colors duration-300 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+
+    <!-- SIDEBAR (Con ID y transición de ancho) -->
+    <aside id="sidebar" class="w-64 border-r transition-all duration-300 flex flex-col shadow-sm z-10 bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700 overflow-hidden">
+        <div class="h-16 flex items-center px-6 border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 flex-shrink-0">
+            <span class="text-xl font-bold text-green-600 tracking-wide flex items-center whitespace-nowrap">
+                <i data-lucide="cloud-rain" class="mr-3 flex-shrink-0"></i> 
+                <span class="sidebar-text">ONCC Región</span>
+            </span>
+        </div>
+        
+        <nav class="flex-1 py-4 space-y-1 px-3 overflow-y-auto">
+            <p class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-4 px-2 text-gray-400 dark:text-gray-500">Principal</p>
+            
+            <a href="{{ url_for('dashboard') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
+                <i data-lucide="activity" class="mr-3 w-5 h-5 flex-shrink-0"></i> 
+                <span class="sidebar-text whitespace-nowrap">Dashboard</span>
+            </a>
+            
+            <a href="{{ url_for('actividad.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
+                <i data-lucide="file-text" class="mr-3 w-5 h-5 flex-shrink-0"></i> 
+                <span class="sidebar-text whitespace-nowrap">Actividades</span>
+            </a>
+            
+            <p class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">Operativos</p>
+            
+            <a href="{{ url_for('comunidad.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
+                <i data-lucide="map-pin" class="mr-3 w-5 h-5 flex-shrink-0"></i> 
+                <span class="sidebar-text whitespace-nowrap">Comunidades</span>
+            </a>
+            <a href="{{ url_for('geomatica.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
+                <i data-lucide="upload-cloud" class="mr-3 w-5 h-5 flex-shrink-0"></i> 
+                <span class="sidebar-text whitespace-nowrap">Geomática</span>
+            </a>
+            <a href="{{ url_for('ente.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
+                <i data-lucide="building" class="mr-3 w-5 h-5 flex-shrink-0"></i> 
+                <span class="sidebar-text whitespace-nowrap">Entes / Solicitudes</span>
+            </a>
+            <a href="{{ url_for('inventario.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
+                <i data-lucide="wrench" class="mr-3 w-5 h-5 flex-shrink-0"></i> 
+                <span class="sidebar-text whitespace-nowrap">Inventario</span>
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-gray-200 dark:border-gray-700">
+            <a href="{{ url_for('auth.logout') }}" class="w-full flex items-center px-4 py-2 text-sm font-medium text-red-500 hover:text-red-400 transition-colors">
+                <i data-lucide="log-out" class="mr-3 w-5 h-5 flex-shrink-0"></i> 
+                <span class="sidebar-text whitespace-nowrap">Cerrar Sesión</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="flex-1 flex flex-col overflow-hidden">
+        <header class="h-16 border-b flex items-center justify-between px-6 shadow-sm z-0 bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+            <!-- Botón de Menú Interactivo -->
+            <button id="menu-toggle" class="focus:outline-none text-gray-500 hover:text-green-600 dark:text-gray-400 dark:hover:text-white transition-colors">
+                <i data-lucide="menu"></i>
+            </button>
+            <div class="flex items-center space-x-4">
+                <!-- Toggle de Tema -->
+                <button id="theme-toggle" class="focus:outline-none transition-colors text-gray-400 hover:text-gray-800 dark:hover:text-yellow-400">
+                    <i id="theme-icon" data-lucide="moon"></i>
+                </button>
+                <div class="flex items-center space-x-3 border-l pl-4 border-gray-200 dark:border-gray-700">
+                    <div class="text-right hidden md:block">
+                        <p class="text-sm font-bold text-gray-700 dark:text-white">{{ current_user.nombre if current_user.is_authenticated else 'Invitado' }}</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ current_user.rol if current_user.is_authenticated else 'Sede Nororiental' }}</p>
+                    </div>
+                    <div class="w-9 h-9 rounded-full bg-green-600 flex items-center justify-center text-white font-bold text-sm shadow-sm border-2 border-white ring-2 ring-green-100 dark:border-gray-800 dark:ring-green-900">
+                        {{ current_user.nombre[:2].upper() if current_user.is_authenticated else 'IN' }}
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-auto p-8">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- SCRIPT DE INTERACTIVIDAD -->
+    <script>
+        // Elementos del DOM
+        const menuToggleBtn = document.getElementById('menu-toggle');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarTexts = document.querySelectorAll('.sidebar-text');
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        const htmlElement = document.documentElement;
+
+        // --- LÓGICA DEL MENÚ LATERAL ---
+        menuToggleBtn.addEventListener('click', () => {
+            // Alternar clases de ancho
+            sidebar.classList.toggle('w-64');
+            sidebar.classList.toggle('w-20');
+            
+            // Ocultar o mostrar los textos del menú
+            sidebarTexts.forEach(text => {
+                text.classList.toggle('hidden');
+            });
+        });
+
+        // --- LÓGICA DE MODO OSCURO ---
+        function syncThemeUI() {
+            if (htmlElement.classList.contains('dark')) {
+                themeIcon.setAttribute('data-lucide', 'sun');
+            } else {
+                themeIcon.setAttribute('data-lucide', 'moon');
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+
+        // Sincronizar UI al cargar
+        syncThemeUI();
+
+        themeToggleBtn.addEventListener('click', () => {
+            htmlElement.classList.toggle('dark');
+            
+            if (htmlElement.classList.contains('dark')) {
+                localStorage.setItem('theme', 'dark');
+            } else {
+                localStorage.setItem('theme', 'light');
+            }
+            
+            syncThemeUI();
+        });
+
+        // Inicializar iconos de Lucide
+        lucide.createIcons();
+    </script>
+</body>
+</html>

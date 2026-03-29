@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso al Sistema - ONCC</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        green: { 500: '#22c55e', 600: '#16a34a', 700: '#15803d' }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- SCRIPT DE MEMORIA (HEAD): Evita el flash blanco antes de cargar -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 min-h-screen flex items-center justify-center font-sans transition-colors duration-300">
+    
+    <!-- Botón de Modo Oscuro (Esquina Superior Derecha) -->
+    <div class="fixed top-6 right-6">
+        <button id="theme-toggle" class="p-3 rounded-full bg-white dark:bg-gray-800 shadow-md border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-yellow-400 hover:scale-110 transition-all">
+            <i id="theme-icon" data-lucide="moon"></i>
+        </button>
+    </div>
+
+    <div class="max-w-md w-full mx-4 bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-100 dark:border-gray-700 transition-colors duration-300">
+        <div class="flex flex-col items-center mb-8">
+            <!-- Logo ONCC Moderno -->
+            <div class="w-20 h-20 rounded-2xl bg-green-600 flex items-center justify-center mb-4 shadow-lg shadow-green-500/20">
+                <i data-lucide="cloud-rain" class="text-white w-10 h-10"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800 dark:text-white text-center">ONCC</h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400 text-center mt-1">Región Nororiental<br/>Sistema de Gestión y Monitoreo</p>
+        </div>
+        
+        <!-- Mensajes Flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="mb-6 p-4 rounded-xl text-sm text-center font-medium {% if category == 'error' %}bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400{% else %}bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('auth.login') }}" class="space-y-5">
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2 ml-1">Correo Institucional</label>
+                <div class="relative">
+                    <i data-lucide="mail" class="absolute left-3 top-3 w-5 h-5 text-gray-400"></i>
+                    <input type="email" name="email" required 
+                        class="block w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent dark:text-white transition-all outline-none" 
+                        placeholder="ejemplo@oncc.gob.ve" />
+                </div>
+            </div>
+            
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2 ml-1">Contraseña</label>
+                <div class="relative">
+                    <i data-lucide="lock" class="absolute left-3 top-3 w-5 h-5 text-gray-400"></i>
+                    <input type="password" name="password" required 
+                        class="block w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent dark:text-white transition-all outline-none" 
+                        placeholder="••••••••" />
+                </div>
+            </div>
+
+            <button type="submit" class="w-full flex items-center justify-center py-3 px-4 rounded-xl shadow-lg shadow-green-600/20 text-white bg-green-600 hover:bg-green-700 active:scale-[0.98] transition-all font-bold tracking-wide">
+                <span>Ingresar al Sistema</span>
+                <i data-lucide="chevron-right" class="ml-2 w-5 h-5"></i>
+            </button>
+        </form>
+
+        <p class="mt-8 text-center text-[11px] text-gray-400 dark:text-gray-500 uppercase tracking-widest font-medium">
+            Observatorio Nacional de la Crisis Climática
+        </p>
+    </div>
+
+    <script>
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        const htmlElement = document.documentElement;
+
+        function syncThemeUI() {
+            if (htmlElement.classList.contains('dark')) {
+                themeIcon.setAttribute('data-lucide', 'sun');
+            } else {
+                themeIcon.setAttribute('data-lucide', 'moon');
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+
+        syncThemeUI();
+
+        themeToggleBtn.addEventListener('click', () => {
+            htmlElement.classList.toggle('dark');
+            
+            if (htmlElement.classList.contains('dark')) {
+                localStorage.setItem('theme', 'dark');
+            } else {
+                localStorage.setItem('theme', 'light');
+            }
+            
+            syncThemeUI();
+        });
+
+        lucide.createIcons();
+    </script>
+</body>
+</html>

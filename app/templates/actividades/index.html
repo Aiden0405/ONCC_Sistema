@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestión de Actividades - ONCC{% endblock %}
+
+{% block content %}
+<div class="space-y-6 animate-in fade-in duration-500">
+    
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-2xl font-bold dark:text-white text-gray-800">Gestión de Actividades</h1>
+            <p class="text-sm dark:text-gray-400 text-gray-500">Sustituye la recolección por WhatsApp</p>
+        </div>
+        <a href="{{ url_for('actividad.nueva') }}" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center shadow-sm transition-colors">
+            <i data-lucide="plus" class="mr-1 w-4 h-4"></i> Registrar Actividad
+        </a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="p-4 rounded-md bg-green-50 text-green-700 border border-green-200 flex items-center">
+                    <i data-lucide="check-circle" class="mr-2 w-5 h-5"></i> {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="rounded-xl shadow-sm border overflow-hidden bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="text-xs uppercase tracking-wider bg-gray-50 text-gray-600 dark:bg-gray-900/50 dark:text-gray-400">
+                        <th class="p-4 font-semibold border-b border-gray-200 dark:border-gray-700">Fecha</th>
+                        <th class="p-4 font-semibold border-b border-gray-200 dark:border-gray-700">Área</th>
+                        <th class="p-4 font-semibold border-b border-gray-200 dark:border-gray-700">Actividad</th>
+                        <th class="p-4 font-semibold border-b border-gray-200 dark:border-gray-700">Técnico</th>
+                        <th class="p-4 font-semibold border-b border-gray-200 dark:border-gray-700">Estado</th>
+                    </tr>
+                </thead>
+                <tbody class="text-sm text-gray-700 dark:text-gray-300">
+                    {% for act in actividades %}
+                    <tr class="border-b hover:bg-gray-50 border-gray-100 dark:hover:bg-gray-700/50 dark:border-gray-700">
+                        <td class="p-4">{{ act.fecha }}</td>
+                        <td class="p-4"><span class="px-2 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">{{ act.area }}</span></td>
+                        <td class="p-4">{{ act.actividad }}</td>
+                        <td class="p-4">{{ act.responsable }}</td>
+                        <td class="p-4">
+                            <span class="px-2 py-1 rounded-full text-xs font-medium {% if act.estado == 'Completado' %}bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400{% elif act.estado == 'En proceso' %}bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-400{% else %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-400{% endif %}">
+                                {{ act.estado }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

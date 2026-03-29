@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+
+{% block title %}Geomática y SSBC - ONCC{% endblock %}
+
+{% block content %}
+<div class="space-y-6 animate-in fade-in duration-500">
+    
+    <!-- ENCABEZADO -->
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-2xl font-bold dark:text-white text-gray-800">Geomática - Carga Data Cruda (SSBC)</h1>
+            <p class="text-sm dark:text-gray-400 text-gray-500">Almacenamiento de variables climáticas y precipitación</p>
+        </div>
+    </div>
+
+    <!-- Mensajes Flash (Ej: Archivo procesado correctamente) -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="p-4 rounded-md text-white {% if category == 'error' %}bg-red-500{% else %}bg-green-500{% endif %} flex items-center">
+                    <i data-lucide="{% if category == 'error' %}alert-triangle{% else %}check-circle{% endif %}" class="mr-2 w-5 h-5"></i> 
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- CAJA DE SUBIDA DE ARCHIVO -->
+    <div class="p-8 rounded-xl shadow-sm border flex flex-col items-center justify-center text-center bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+        <div class="w-16 h-16 rounded-full flex items-center justify-center mb-4 bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400">
+            <i data-lucide="upload-cloud" class="w-8 h-8"></i>
+        </div>
+        <h3 class="text-lg font-medium mb-2 text-gray-800 dark:text-white">Procesar Archivo del Equipo Transmisor</h3>
+        <p class="text-sm mb-6 max-w-md text-gray-500 dark:text-gray-400">
+            Sube el archivo Excel o SSBC. El sistema usará la librería Pandas para limpiar la data, extraer lecturas cada 10 min y guardarlas en la base de datos central.
+        </p>
+        
+        <!-- Formulario Multipart para subir archivos a Flask -->
+        <form method="POST" action="{{ url_for('geomatica.procesar_archivo') }}" enctype="multipart/form-data" class="flex flex-col items-center w-full max-w-md">
+            
+            <div class="w-full mb-4">
+                <input type="file" name="archivo_ssbc" accept=".xlsx, .xls, .ssbc, .csv" required
+                    class="block w-full text-sm text-gray-500 dark:text-gray-400
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-full file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-green-50 file:text-green-700
+                    hover:file:bg-green-100
+                    dark:file:bg-green-900/30 dark:file:text-green-400 dark:hover:file:bg-green-900/50
+                    border border-gray-300 dark:border-gray-600 rounded-lg p-2 cursor-pointer bg-white dark:bg-gray-700"/>
+            </div>
+
+            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg text-sm font-medium shadow-sm transition-colors flex items-center">
+                <i data-lucide="database" class="mr-2 w-4 h-4"></i> Iniciar Procesamiento
+            </button>
+        </form>
+    </div>
+
+    <!-- BITÁCORA DE CARGAS -->
+    <div class="rounded-xl shadow-sm border overflow-hidden mt-6 bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+        <div class="p-4 border-b bg-gray-50 border-gray-100 dark:bg-gray-900/50 dark:border-gray-700">
+            <h3 class="font-semibold flex items-center text-gray-700 dark:text-gray-300">
+                <i data-lucide="database" class="mr-2 w-4 h-4"></i> Bitácora de Cargas Históricas
+            </h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="text-xs uppercase tracking-wider bg-white text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+                        <th class="p-4 font-semibold border-b border-gray-200 dark:border-gray-700">Archivo Procesado</th>
+                        <th class="p-4 font-semibold border-b border-gray-200 dark:border-gray-700">Registros Leídos</th>
+                        <th class="p-4 font-semibold border-b border-gray-200 dark:border-gray-700">Fecha de Carga</th>
+                        <th class="p-4 font-semibold border-b border-gray-200 dark:border-gray-700">Usuario</th>
+                        <th class="p-4 font-semibold border-b border-gray-200 dark:border-gray-700">Estatus BD</th>
+                    </tr>
+                </thead>
+                <tbody class="text-sm text-gray-700 dark:text-gray-300">
+                    {% for carga in cargas %}
+                    <tr class="border-b hover:bg-gray-50 border-gray-100 dark:hover:bg-gray-700/50 dark:border-gray-700">
+                        <td class="p-4 font-mono text-xs flex items-center">
+                            <i data-lucide="file-text" class="mr-2 w-4 h-4 text-blue-500"></i> {{ carga.archivo }}
+                        </td>
+                        <td class="p-4">{{ carga.registros }} filas</td>
+                        <td class="p-4 font-mono text-xs">{{ carga.fecha }}</td>
+                        <td class="p-4">{{ carga.usuario }}</td>
+                        <td class="p-4">
+                            <span class="px-2 py-1 rounded-full text-xs font-medium flex items-center w-max 
+                            {% if carga.estatus == 'Exitoso' %} bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400
+                            {% else %} bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-400 {% endif %}">
+                                {% if carga.estatus == 'Exitoso' %}
+                                    <i data-lucide="check-square" class="mr-1 w-3 h-3"></i>
+                                {% else %}
+                                    <i data-lucide="alert-triangle" class="mr-1 w-3 h-3"></i>
+                                {% endif %}
+                                {{ carga.estatus }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="p-8 text-center text-gray-500 dark:text-gray-400">No hay archivos procesados aún.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

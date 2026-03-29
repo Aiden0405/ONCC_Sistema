@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block title %}Inventario Físico - ONCC{% endblock %}
+
+{% block content %}
+<div class="space-y-6 animate-in fade-in duration-500">
+    
+    <!-- ENCABEZADO -->
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-2xl font-bold dark:text-white text-gray-800">Control de Inventario Físico</h1>
+            <p class="text-sm dark:text-gray-400 text-gray-500">Expediente y estatus de equipos (EMAs, Pluviómetros, GPS)</p>
+        </div>
+        <!-- Botón que abre el Modal -->
+        <button onclick="document.getElementById('modal-inventario').classList.remove('hidden')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center shadow-sm transition-colors">
+            <i data-lucide="plus" class="mr-1 w-4 h-4"></i> Nuevo Equipo
+        </button>
+    </div>
+
+    <!-- Mensajes Flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="p-4 rounded-md bg-green-50 text-green-700 border border-green-200 flex items-center">
+                    <i data-lucide="check-circle" class="mr-2 w-5 h-5"></i> {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- MODAL DE REGISTRO DE EQUIPO (Oculto por defecto) -->
+    <div id="modal-inventario" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden flex items-center justify-center p-4">
+        <div class="rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-800">
+            <div class="flex justify-between items-center p-6 border-b sticky top-0 z-10 border-gray-100 bg-white dark:border-gray-700 dark:bg-gray-800">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-white">Aperturar Expediente de Equipo</h2>
+                </div>
+                <button onclick="document.getElementById('modal-inventario').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 dark:hover:text-white">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            
+            <form method="POST" action="{{ url_for('inventario.nuevo') }}" class="p-6 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase mb-1 text-gray-600 dark:text-gray-400">Tipo de Equipo</label>
+                        <select name="tipo_equipo" class="w-full border rounded-md p-2 text-sm focus:border-green-500 bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            <option>Estación Meteorológica (EMA)</option>
+                            <option>Pluviómetro de Campo</option>
+                            <option>Aparato Transmisor Data (SSBC)</option>
+                            <option>Equipo Tecnológico (GPS/Drone)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase mb-1 text-gray-600 dark:text-gray-400">Código Patrimonial / Serial</label>
+                        <input type="text" name="codigo" class="w-full border rounded-md p-2 text-sm focus:border-green-500 bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Ej: EMA-005" required />
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase mb-1 text-gray-600 dark:text-gray-400">Ubicación / Asignación</label>
+                        <input type="text" name="ubicacion" class="w-full border rounded-md p-2 text-sm focus:border-green-500 bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Lugar donde está instalado" required />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase mb-1 text-gray-600 dark:text-gray-400">Estado Operativo</label>
+                        <select name="estado" class="w-full border rounded-md p-2 text-sm focus:border-green-500 bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            <option>Operativo</option>
+                            <option>Requiere Mantenimiento</option>
+                            <option>Dañado / Inoperativo</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase mb-1 text-gray-600 dark:text-gray-400">Fecha Última Calibración / Mantenimiento</label>
+                    <div class="relative">
+                        <i data-lucide="calendar" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
+                        <input type="date" name="ultimo_mantenimiento" class="w-full border rounded-md pl-9 p-2 text-sm focus:border-green-500 bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white" required />
+                    </div>
+                    <p class="text-[10px] mt-1 text-gray-500 dark:text-gray-400">El sistema alertará automáticamente cuando pase 1 año sin mantenimiento.</p>
+                </div>
+
+                <div class="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-700">
+                    <button type="button" onclick="document.getElementById('modal-inventario').classList.add('hidden')" class="mr-3 px-4 py-2 border rounded-md text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-green-600 rounded-md text-sm font-medium text-white hover:bg-green-700 transition-colors">Guardar Equipo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- TABLA PRINCIPAL DEL INVENTARIO -->
+    <div class="rounded-xl shadow-sm border overflow-hidden bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="text-xs uppercase tracking-wider bg-gray-50 text-gray-600 dark:bg-gray-900/50 dark:text-gray-400">
+                        <th class="p-4 font-semibold border-b border-gray-200 dark:border-gray-700">Código</th>
+                        <th class="p-4 font-semibold border-b border-gray-200 dark:border-gray-700">Descripción del Equipo</th>
+                        <th class="p-4 font-semibold border-b border-gray-200 dark:border-gray-700">Ubicación Actual</th>
+                        <th class="p-4 font-semibold border-b border-gray-200 dark:border-gray-700">Últ. Mantenimiento</th>
+                        <th class="p-4 font-semibold border-b border-gray-200 dark:border-gray-700">Condición</th>
+                    </tr>
+                </thead>
+                <tbody class="text-sm text-gray-700 dark:text-gray-300">
+                    {% for inv in inventario %}
+                    <tr class="border-b hover:bg-gray-50 border-gray-100 dark:hover:bg-gray-700/50 dark:border-gray-700">
+                        <td class="p-4 font-mono font-semibold text-green-700 dark:text-green-400">{{ inv.codigo }}</td>
+                        <td class="p-4 font-medium flex items-center">
+                            <i data-lucide="wrench" class="mr-2 w-4 h-4 text-gray-400 dark:text-gray-500"></i> {{ inv.equipo }}
+                        </td>
+                        <td class="p-4">{{ inv.ubicacion }}</td>
+                        <td class="p-4 font-mono text-xs">{{ inv.ultimo_mantenimiento }}</td>
+                        <td class="p-4">
+                            <span class="px-2 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider 
+                            {% if inv.estado == 'Operativo' %} bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400
+                            {% elif inv.estado == 'Requiere Mantenimiento' %} bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-400
+                            {% else %} bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-400 {% endif %}">
+                                {{ inv.estado }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="p-8 text-center text-gray-500 dark:text-gray-400">No hay equipos registrados en el inventario.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
