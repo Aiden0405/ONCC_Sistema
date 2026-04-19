@@ -99,7 +99,8 @@
                         <th class="p-4 font-semibold border-b border-gray-200 dark:border-gray-700">Descripción del Equipo</th>
                         <th class="p-4 font-semibold border-b border-gray-200 dark:border-gray-700">Ubicación Actual</th>
                         <th class="p-4 font-semibold border-b border-gray-200 dark:border-gray-700">Últ. Mantenimiento</th>
-                        <th class="p-4 font-semibold border-b border-gray-200 dark:border-gray-700">Condición</th>
+                        <th class="p-4 font-semibold border-b border-gray-200 dark:border-gray-700">Condicion</th>
+                        <th class="p-4 font-semibold border-b border-gray-200 dark:border-gray-700">Flujo</th>
                     </tr>
                 </thead>
                 <tbody class="text-sm text-gray-700 dark:text-gray-300">
@@ -107,22 +108,32 @@
                     <tr class="border-b hover:bg-gray-50 border-gray-100 dark:hover:bg-gray-700/50 dark:border-gray-700">
                         <td class="p-4 font-mono font-semibold text-green-700 dark:text-green-400">{{ inv.codigo }}</td>
                         <td class="p-4 font-medium flex items-center">
-                            <i data-lucide="wrench" class="mr-2 w-4 h-4 text-gray-400 dark:text-gray-500"></i> {{ inv.equipo }}
+                            <i data-lucide="wrench" class="mr-2 w-4 h-4 text-gray-400 dark:text-gray-500"></i> {{ inv.tipo_equipo }}
                         </td>
                         <td class="p-4">{{ inv.ubicacion }}</td>
-                        <td class="p-4 font-mono text-xs">{{ inv.ultimo_mantenimiento }}</td>
+                        <td class="p-4 font-mono text-xs">{{ inv.ultimo_mantenimiento.strftime('%Y-%m-%d') if inv.ultimo_mantenimiento else 'N/D' }}</td>
                         <td class="p-4">
                             <span class="px-2 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider 
-                            {% if inv.estado == 'Operativo' %} bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400
-                            {% elif inv.estado == 'Requiere Mantenimiento' %} bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-400
+                            {% if inv.estado_operativo == 'Operativo' %} bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400
+                            {% elif inv.estado_operativo == 'Requiere Mantenimiento' %} bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-400
                             {% else %} bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-400 {% endif %}">
-                                {{ inv.estado }}
+                                {{ inv.estado_operativo }}
                             </span>
+                        </td>
+                        <td class="p-4">
+                            <form method="POST" action="{{ url_for('inventario.cambiar_estado', equipo_id=inv.id) }}" class="flex items-center gap-2">
+                                <select name="estado_flujo" class="border rounded-md p-1 text-xs bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                    {% for estado in estados_flujo %}
+                                        <option value="{{ estado }}" {% if estado == inv.estado_flujo %}selected{% endif %}>{{ estado }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button class="text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-700">Guardar</button>
+                            </form>
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="5" class="p-8 text-center text-gray-500 dark:text-gray-400">No hay equipos registrados en el inventario.</td>
+                        <td colspan="6" class="p-8 text-center text-gray-500 dark:text-gray-400">No hay equipos registrados en el inventario.</td>
                     </tr>
                     {% endfor %}
                 </tbody>

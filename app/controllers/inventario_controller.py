@@ -1,5 +1,12 @@
+from datetime import datetime
+
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from flask_login import login_required
+from flask_login import login_required, current_user
+
+from app import db
+from app.constants import ESTADOS_TRANSACCION
+from app.models.bitacora import BitacoraTransaccion
+from app.models.inventario import InventarioEquipo
 
 # Creamos el Blueprint para agrupar las rutas de Inventario Físico
 inventario_bp = Blueprint('inventario', __name__, url_prefix='/inventario')
@@ -7,25 +14,71 @@ inventario_bp = Blueprint('inventario', __name__, url_prefix='/inventario')
 @inventario_bp.route('/')
 @login_required
 def index():
-    # Datos simulados (Mocks). Luego esto vendrá de: Equipo.query.all()
-    inventario_mock = [
-        {'id': 1, 'equipo': 'Pluviómetro de campo', 'codigo': 'PLV-001', 'ubicacion': 'Parque Nacional Yurubí', 'estado': 'Operativo', 'ultimo_mantenimiento': '2023-08-15'},
-        {'id': 2, 'equipo': 'Aparato Transmisor Data (SSBC)', 'codigo': 'TRN-005', 'ubicacion': 'Sede ONCC Lara', 'estado': 'Operativo', 'ultimo_mantenimiento': '2023-09-01'},
-        {'id': 3, 'equipo': 'Estación Meteorológica (EMA)', 'codigo': 'EMA-002', 'ubicacion': 'Morrocoy (Falcón)', 'estado': 'Requiere Mantenimiento', 'ultimo_mantenimiento': '2023-10-10'},
-        {'id': 4, 'equipo': 'GPS Garmin', 'codigo': 'GPS-012', 'ubicacion': 'Sede ONCC Falcón', 'estado': 'Dañado / Inoperativo', 'ultimo_mantenimiento': '2022-11-20'},
-    ]
-    # Renderizamos la tabla de inventario
-    return render_template('inventario/index.html', inventario=inventario_mock)
+    equipos = InventarioEquipo.query.order_by(InventarioEquipo.creado_en.desc()).all()
+    return render_template('inventario/index.html', inventario=equipos, estados_flujo=ESTADOS_TRANSACCION)
 
 @inventario_bp.route('/nuevo', methods=['POST'])
 @login_required
 def nuevo():
-    # El formulario del inventario lo hicimos como un Modal (ventana emergente)
-    # Por lo tanto, esta ruta solo recibe POST para procesar el guardado
-    
-    # tipo = request.form.get('tipo_equipo')
-    # codigo = request.form.get('codigo')
-    # ... guardar en BD ...
-    
+    codigo = request.form.get('codigo', '').strip()
+    if not codigo:
+        flash('Debe indicar el codigo del equipo.', 'error')
+        return redirect(url_for('inventario.index'))
+
+    existe = InventarioEquipo.query.filter_by(codigo=codigo).first()
+    if existe:
+        flash('Ya existe un equipo con ese codigo.', 'error')
+        return redirect(url_for('inventario.index'))
+
+    fecha_mantenimiento = request.form.get('ultimo_mantenimiento')
+    fecha = None
+    if fecha_mantenimiento:
+        fecha = datetime.strptime(fecha_mantenimiento, '%Y-%m-%d').date()
+
+    equipo = InventarioEquipo(
+        tipo_equipo=request.form.get('tipo_equipo', 'Equipo Tecnico').strip(),
+        codigo=codigo,
+        ubicacion=request.form.get('ubicacion', 'Sin ubicacion').strip(),
+        estado_operativo=request.form.get('estado', 'Operativo').strip(),
+        ultimo_mantenimiento=fecha,
+        responsable=current_user.nombre,
+    )
+    db.session.add(equipo)
+    db.session.flush()
+
+    db.session.add(BitacoraTransaccion(
+        modulo='inventario',
+        registro_id=equipo.id,
+        accion='creacion',
+        estado_nuevo=equipo.estado_flujo,
+        usuario=current_user.nombre,
+        detalle=f'Registro del equipo {equipo.codigo}',
+    ))
+    db.session.commit()
+
     flash('Equipo registrado exitosamente en el inventario.', 'success')
+    return redirect(url_for('inventario.index'))
+
+
+@inventario_bp.route('/<int:equipo_id>/estado', methods=['POST'])
+@login_required
+def cambiar_estado(equipo_id):
+    equipo = InventarioEquipo.query.get_or_404(equipo_id)
+    nuevo_estado = request.form.get('estado_flujo', '').strip()
+
+    if nuevo_estado not in ESTADOS_TRANSACCION:
+        flash('Estado de flujo invalido.', 'error')
+        return redirect(url_for('inventario.index'))
+
+    equipo.estado_flujo = nuevo_estado
+    db.session.add(BitacoraTransaccion(
+        modulo='inventario',
+        registro_id=equipo.id,
+        accion='cambio_estado',
+        estado_nuevo=nuevo_estado,
+        usuario=current_user.nombre,
+        detalle=f'Estado del expediente {equipo.codigo} actualizado',
+    ))
+    db.session.commit()
+    flash('Estado transaccional actualizado.', 'success')
     return redirect(url_for('inventario.index'))

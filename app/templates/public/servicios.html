@@ -1,0 +1,27 @@
+{% extends 'public/base_public.html' %}
+
+{% block title %}Servicios ONCC{% endblock %}
+
+{% block content %}
+<section class="space-y-6">
+    <h1 class="text-3xl font-black">Servicios y líneas de atención</h1>
+    <div class="grid md:grid-cols-2 gap-4 text-sm">
+        <article class="p-5 rounded-xl border border-slate-700 bg-slate-900/70">
+            <h2 class="font-bold text-base mb-2">Soporte de mapas de riesgo</h2>
+            <p class="text-slate-300">Levantamiento, validación y seguimiento de expedientes cartográficos comunitarios.</p>
+        </article>
+        <article class="p-5 rounded-xl border border-slate-700 bg-slate-900/70">
+            <h2 class="font-bold text-base mb-2">Inventario y monitoreo técnico</h2>
+            <p class="text-slate-300">Control operativo de estaciones, pluviómetros y equipamiento de campo.</p>
+        </article>
+        <article class="p-5 rounded-xl border border-slate-700 bg-slate-900/70">
+            <h2 class="font-bold text-base mb-2">Formaciones</h2>
+            <p class="text-slate-300">Jornadas programadas para capacitación comunitaria e institucional.</p>
+        </article>
+        <article class="p-5 rounded-xl border border-slate-700 bg-slate-900/70">
+            <h2 class="font-bold text-base mb-2">Sensibilizaciones</h2>
+            <p class="text-slate-300">Campañas de divulgación para reducción de riesgo y cultura climática.</p>
+        </article>
+    </div>
+</section>
+{% endblock %}

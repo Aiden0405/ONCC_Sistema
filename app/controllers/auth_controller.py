@@ -14,19 +14,30 @@ def login():
         
     if request.method == 'POST':
         # Obtenemos los datos que el usuario escribió en el HTML
-        email = request.form.get('email')
-        password = request.form.get('password')
+        email = (request.form.get('email') or '').strip().lower()
+        password = (request.form.get('password') or '').strip()
+
+        if not email or not password:
+            flash('Debe ingresar correo y contraseña.', 'error')
+            return render_template('auth/login.html')
         
         # Buscamos al usuario en la base de datos por su correo
         usuario = Usuario.query.filter_by(email=email).first()
         
-        # Validamos si existe y si la contraseña es correcta
-        if usuario and usuario.check_password(password):
+        if not usuario:
+            flash('El correo no está registrado en el sistema.', 'error')
+            return render_template('auth/login.html')
+
+        if not usuario.estatus:
+            flash('El usuario está inactivo. Contacte al administrador.', 'error')
+            return render_template('auth/login.html')
+
+        # Validamos la contraseña
+        if usuario.check_password(password):
             login_user(usuario)
             return redirect(url_for('dashboard'))
-        else:
-            # Si falla, le mandamos un mensaje de error a la vista
-            flash('Correo o contraseña incorrectos. Verifique e intente nuevamente.', 'error')
+
+        flash('La contraseña es incorrecta. Intente nuevamente.', 'error')
             
     # Si la petición es GET (solo entró a la página), le mostramos el HTML
     return render_template('auth/login.html')

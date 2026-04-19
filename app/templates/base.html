@@ -51,35 +51,53 @@
             
             <a href="{{ url_for('dashboard') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
                 <i data-lucide="activity" class="mr-3 w-5 h-5 flex-shrink-0"></i> 
-                <span class="sidebar-text whitespace-nowrap">Dashboard</span>
+                <span class="sidebar-text whitespace-nowrap">Monitoreo General</span>
             </a>
             
-            <a href="{{ url_for('actividad.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
-                <i data-lucide="file-text" class="mr-3 w-5 h-5 flex-shrink-0"></i> 
-                <span class="sidebar-text whitespace-nowrap">Actividades</span>
-            </a>
+            <p class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">Transaccionales (Core 5)</p>
             
-            <p class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">Operativos</p>
-            
-            <a href="{{ url_for('comunidad.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
-                <i data-lucide="map-pin" class="mr-3 w-5 h-5 flex-shrink-0"></i> 
-                <span class="sidebar-text whitespace-nowrap">Comunidades</span>
+            <a href="{{ url_for('inventario.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
+                <i data-lucide="wrench" class="mr-3 w-5 h-5 flex-shrink-0"></i> 
+                <span class="sidebar-text whitespace-nowrap">Inventario</span>
             </a>
             <a href="{{ url_for('geomatica.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
-                <i data-lucide="upload-cloud" class="mr-3 w-5 h-5 flex-shrink-0"></i> 
-                <span class="sidebar-text whitespace-nowrap">Geomática</span>
+                <i data-lucide="map" class="mr-3 w-5 h-5 flex-shrink-0"></i>
+                <span class="sidebar-text whitespace-nowrap">Mapas</span>
+            </a>
+            <a href="{{ url_for('reporte.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
+                <i data-lucide="bar-chart-3" class="mr-3 w-5 h-5 flex-shrink-0"></i>
+                <span class="sidebar-text whitespace-nowrap">Reportes</span>
+            </a>
+            <a href="{{ url_for('formacion.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
+                <i data-lucide="graduation-cap" class="mr-3 w-5 h-5 flex-shrink-0"></i>
+                <span class="sidebar-text whitespace-nowrap">Formaciones</span>
+            </a>
+            <a href="{{ url_for('sensibilizacion.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
+                <i data-lucide="megaphone" class="mr-3 w-5 h-5 flex-shrink-0"></i>
+                <span class="sidebar-text whitespace-nowrap">Divulgación</span>
+            </a>
+
+            <p class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">Soporte Operativo</p>
+
+            <a href="{{ url_for('comunidad.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
+                <i data-lucide="map-pin" class="mr-3 w-5 h-5 flex-shrink-0"></i>
+                <span class="sidebar-text whitespace-nowrap">Comunidades</span>
+            </a>
+            <a href="{{ url_for('actividad.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
+                <i data-lucide="clipboard-list" class="mr-3 w-5 h-5 flex-shrink-0"></i>
+                <span class="sidebar-text whitespace-nowrap">Actividades</span>
             </a>
             <a href="{{ url_for('ente.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
                 <i data-lucide="building" class="mr-3 w-5 h-5 flex-shrink-0"></i> 
                 <span class="sidebar-text whitespace-nowrap">Entes / Solicitudes</span>
             </a>
-            <a href="{{ url_for('inventario.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
-                <i data-lucide="wrench" class="mr-3 w-5 h-5 flex-shrink-0"></i> 
-                <span class="sidebar-text whitespace-nowrap">Inventario</span>
-            </a>
         </nav>
 
         <div class="p-4 border-t border-gray-200 dark:border-gray-700">
+            <a href="{{ url_for('public.home') }}" class="w-full flex items-center px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white transition-colors">
+                <i data-lucide="globe" class="mr-3 w-5 h-5 flex-shrink-0"></i>
+                <span class="sidebar-text whitespace-nowrap">Sitio Público</span>
+            </a>
             <a href="{{ url_for('auth.logout') }}" class="w-full flex items-center px-4 py-2 text-sm font-medium text-red-500 hover:text-red-400 transition-colors">
                 <i data-lucide="log-out" class="mr-3 w-5 h-5 flex-shrink-0"></i> 
                 <span class="sidebar-text whitespace-nowrap">Cerrar Sesión</span>

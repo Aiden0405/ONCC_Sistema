@@ -17,17 +17,17 @@
         </div>
     </div>
 
-    <!-- TARJETAS DE ESTADÍSTICAS (KPIs) -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <!-- TARJETAS DE ESTADISTICAS (KPIs) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <div class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
             <div class="flex items-center justify-between mb-4">
-                <div class="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
-                    <i data-lucide="home" class="w-6 h-6"></i>
+                <div class="p-2 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg text-emerald-600 dark:text-emerald-400">
+                    <i data-lucide="wrench" class="w-6 h-6"></i>
                 </div>
-                <span class="text-xs font-bold text-green-600 bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded">+12%</span>
+                <span class="text-xs font-bold text-green-600 bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded">Activo</span>
             </div>
-            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Comunidades Atendidas</p>
-            <h3 class="text-3xl font-bold text-gray-800 dark:text-white">145</h3>
+            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Modulo Inventario</p>
+            <h3 class="text-3xl font-bold text-gray-800 dark:text-white">{{ resumen.inventario }}</h3>
         </div>
 
         <div class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
@@ -35,45 +35,81 @@
                 <div class="p-2 bg-green-50 dark:bg-green-900/30 rounded-lg text-green-600 dark:text-green-400">
                     <i data-lucide="map" class="w-6 h-6"></i>
                 </div>
-                <span class="text-xs font-bold text-green-600 bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded">+5</span>
+                <span class="text-xs font-bold text-green-600 bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded">Riesgo/Tematico</span>
             </div>
-            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Mapas de Riesgo</p>
-            <h3 class="text-3xl font-bold text-gray-800 dark:text-white">32</h3>
+            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Modulo Mapas</p>
+            <h3 class="text-3xl font-bold text-gray-800 dark:text-white">{{ resumen.mapas }}</h3>
         </div>
 
         <div class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
             <div class="flex items-center justify-between mb-4">
-                <div class="p-2 bg-yellow-50 dark:bg-yellow-900/30 rounded-lg text-yellow-600 dark:text-yellow-400">
-                    <i data-lucide="users" class="w-6 h-6"></i>
+                <div class="p-2 bg-sky-50 dark:bg-sky-900/30 rounded-lg text-sky-600 dark:text-sky-400">
+                    <i data-lucide="bar-chart-3" class="w-6 h-6"></i>
                 </div>
-                <span class="text-xs font-bold text-gray-400 bg-gray-50 dark:bg-gray-700 px-2 py-1 rounded">Estable</span>
+                <span class="text-xs font-bold text-sky-600 bg-sky-50 dark:bg-sky-900/30 px-2 py-1 rounded">Seguimiento</span>
             </div>
-            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Beneficiados</p>
-            <h3 class="text-3xl font-bold text-gray-800 dark:text-white">1,250</h3>
+            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Modulo Reportes</p>
+            <h3 class="text-3xl font-bold text-gray-800 dark:text-white">{{ resumen.reportes }}</h3>
         </div>
 
         <div class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
             <div class="flex items-center justify-between mb-4">
-                <div class="p-2 bg-red-50 dark:bg-red-900/30 rounded-lg text-red-600 dark:text-red-400">
-                    <i data-lucide="calendar" class="w-6 h-6"></i>
+                <div class="p-2 bg-amber-50 dark:bg-amber-900/30 rounded-lg text-amber-600 dark:text-amber-400">
+                    <i data-lucide="graduation-cap" class="w-6 h-6"></i>
                 </div>
-                <span class="text-xs font-bold text-red-600 bg-red-50 dark:bg-red-900/30 px-2 py-1 rounded">Hoy</span>
+                <span class="text-xs font-bold text-amber-600 bg-amber-50 dark:bg-amber-900/30 px-2 py-1 rounded">Planificacion</span>
             </div>
-            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Actividades (Mes)</p>
-            <h3 class="text-3xl font-bold text-gray-800 dark:text-white">28</h3>
+            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Modulo Formaciones</p>
+            <h3 class="text-3xl font-bold text-gray-800 dark:text-white">{{ resumen.formaciones }}</h3>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between mb-4">
+                <div class="p-2 bg-rose-50 dark:bg-rose-900/30 rounded-lg text-rose-600 dark:text-rose-400">
+                    <i data-lucide="megaphone" class="w-6 h-6"></i>
+                </div>
+                <span class="text-xs font-bold text-rose-600 bg-rose-50 dark:bg-rose-900/30 px-2 py-1 rounded">Impacto</span>
+            </div>
+            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Modulo Sensibilizaciones</p>
+            <h3 class="text-3xl font-bold text-gray-800 dark:text-white">{{ resumen.sensibilizaciones }}</h3>
+        </div>
+    </div>
+
+    <!-- RESUMEN OPERATIVO -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
+            <p class="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 font-semibold">Comunidades activas</p>
+            <p class="text-2xl font-bold text-gray-800 dark:text-white">{{ modulos_operativos.comunidades }}</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
+            <p class="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 font-semibold">Actividades recientes</p>
+            <p class="text-2xl font-bold text-gray-800 dark:text-white">{{ modulos_operativos.actividades }}</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
+            <p class="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 font-semibold">Mapa priorizado</p>
+            <p class="text-2xl font-bold text-gray-800 dark:text-white">Estados con expedientes abiertos</p>
         </div>
     </div>
 
     <!-- SECCIÓN DE GRÁFICAS -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         
-        <!-- Gráfica de Barras: Mapas por Estado -->
+        <!-- Mapa interactivo: Mapas por Estado -->
         <div class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
-            <h3 class="text-lg font-bold mb-6 text-gray-800 dark:text-white flex items-center">
-                <i data-lucide="bar-chart-3" class="mr-2 w-5 h-5 text-green-600"></i> Mapas de Riesgo por Estado
-            </h3>
-            <div class="h-64">
-                <canvas id="chartMapas"></canvas>
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-gray-800 dark:text-white flex items-center">
+                    <i data-lucide="map-pinned" class="mr-2 w-5 h-5 text-green-600"></i> Mapas de Riesgo por Estado
+                </h3>
+                <span class="text-xs font-semibold uppercase tracking-wider text-green-600 bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded">Vista rápida</span>
+            </div>
+            <div id="mapaRiesgoDashboard" class="h-72 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700"></div>
+            <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+                {% for estado in mapa_estados %}
+                <div class="flex items-center justify-between rounded-lg bg-gray-50 dark:bg-gray-700/50 px-3 py-2">
+                    <span class="font-medium text-gray-700 dark:text-gray-200">{{ estado.nombre }}</span>
+                    <span class="text-xs font-bold px-2 py-1 rounded text-white {% if estado.nombre == 'Lara' %}bg-green-600{% elif estado.nombre == 'Yaracuy' %}bg-blue-600{% else %}bg-amber-500{% endif %}">{{ estado.conteo }} exp.</span>
+                </div>
+                {% endfor %}
             </div>
         </div>
 
@@ -83,58 +119,53 @@
                 <i data-lucide="list" class="mr-2 w-5 h-5 text-green-600"></i> Actividades Recientes
             </h3>
             <div class="space-y-4">
+                {% for actividad in actividades_recientes %}
                 <div class="flex items-center p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
                     <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-blue-600 dark:text-blue-400 mr-4">
                         <i data-lucide="file-text" class="w-5 h-5"></i>
                     </div>
                     <div class="flex-1">
-                        <p class="text-sm font-bold dark:text-white">Taller de Sensibilización</p>
-                        <p class="text-xs text-gray-500">Municipio Iribarren, Lara</p>
+                        <p class="text-sm font-bold dark:text-white">{{ actividad.actividad }}</p>
+                        <p class="text-xs text-gray-500">{{ actividad.municipio }}, {{ actividad.estado_geo }}</p>
                     </div>
-                    <span class="text-[10px] font-medium text-gray-400">Hace 2h</span>
+                    <span class="text-[10px] font-medium text-gray-400">{{ actividad.estado }}</span>
                 </div>
-                <div class="flex items-center p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
-                    <div class="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center text-green-600 dark:text-green-400 mr-4">
-                        <i data-lucide="check-circle" class="w-5 h-5"></i>
-                    </div>
-                    <div class="flex-1">
-                        <p class="text-sm font-bold dark:text-white">Entrega de Mapa de Riesgo</p>
-                        <p class="text-xs text-gray-500">C.C. El Jebe</p>
-                    </div>
-                    <span class="text-[10px] font-medium text-gray-400">Ayer</span>
-                </div>
+                {% else %}
+                <div class="p-4 text-sm text-gray-500 dark:text-gray-400 rounded-lg bg-gray-50 dark:bg-gray-700/50">Todavia no hay actividades registradas.</div>
+                {% endfor %}
             </div>
             <button class="w-full mt-6 py-2 text-sm font-medium text-green-600 hover:text-green-700 transition-colors">Ver todo el reporte →</button>
         </div>
     </div>
 </div>
 
-<!-- Scripts de Gráficas e Iconos -->
+<div id="mapa-estados-data" class="hidden" data-estados='{{ mapa_estados | tojson | e }}'></div>
+
+<!-- Scripts de Mapa e Iconos -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script src="https://unpkg.com/lucide@latest"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Configuración de la Gráfica de Mapas
-    const ctx = document.getElementById('chartMapas').getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: ['Lara', 'Yaracuy', 'Falcón'],
-            datasets: [{
-                label: 'Mapas Entregados',
-                data: [15, 10, 7],
-                backgroundColor: ['#22c55e', '#3b82f6', '#f59e0b'],
-                borderRadius: 8
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                y: { beginAtZero: true, grid: { display: false } },
-                x: { grid: { display: false } }
-            }
-        }
+    const mapaEstEstados = JSON.parse(document.getElementById('mapa-estados-data').dataset.estados);
+
+    const mapa = L.map('mapaRiesgoDashboard', { scrollWheelZoom: false }).setView([10.35, -68.95], 7);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(mapa);
+
+    mapaEstEstados.forEach((estado) => {
+        const tamaño = Math.max(14, estado.conteo * 4 + 12);
+        L.circleMarker([estado.lat, estado.lng], {
+            radius: tamaño,
+            color: estado.color,
+            weight: 2,
+            fillColor: estado.color,
+            fillOpacity: 0.35
+        }).addTo(mapa).bindPopup(`<strong>${estado.nombre}</strong><br>Expedientes abiertos: ${estado.conteo}`);
+
+        L.marker([estado.lat, estado.lng]).addTo(mapa).bindTooltip(`${estado.nombre}: ${estado.conteo}`, { permanent: true, direction: 'top', className: 'text-xs' });
     });
 
     // Reiniciar Iconos Lucide

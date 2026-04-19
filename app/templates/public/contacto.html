@@ -1,0 +1,24 @@
+{% extends 'public/base_public.html' %}
+
+{% block title %}Contacto ONCC{% endblock %}
+
+{% block content %}
+<section class="space-y-6 max-w-3xl">
+    <h1 class="text-3xl font-black">Contacto institucional</h1>
+    <p class="text-slate-300">Para coordinación interinstitucional y seguimiento técnico, usa los canales oficiales de la región.</p>
+    <div class="grid sm:grid-cols-2 gap-4 text-sm">
+        <div class="p-4 rounded-xl border border-slate-700 bg-slate-900/70">
+            <p class="font-semibold">Correo</p>
+            <p class="text-slate-300">coordinacion@oncc.gob.ve</p>
+        </div>
+        <div class="p-4 rounded-xl border border-slate-700 bg-slate-900/70">
+            <p class="font-semibold">Teléfono</p>
+            <p class="text-slate-300">+58 251 000 0000</p>
+        </div>
+    </div>
+    <a href="{{ url_for('auth.login') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition-colors">
+        <i data-lucide="shield-check" class="w-4 h-4"></i>
+        Acceso para personal técnico
+    </a>
+</section>
+{% endblock %}

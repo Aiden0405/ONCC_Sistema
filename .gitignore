@@ -12,6 +12,8 @@ app/static/uploads/*
 
 # Base de datos local y configuración sensible
 *.sqlite3
+*.db
+instance/*.db
 .env
 
 # VS Code

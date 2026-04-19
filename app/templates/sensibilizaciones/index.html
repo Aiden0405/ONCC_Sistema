@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}Divulgación - ONCC{% endblock %}
+
+{% block content %}
+<div class="space-y-6 animate-in fade-in duration-500">
+    <div>
+        <h1 class="text-2xl font-bold dark:text-white text-gray-800">Modulo de Divulgación</h1>
+        <p class="text-sm dark:text-gray-400 text-gray-500">Campañas comunitarias, comunicación preventiva y alcance de impacto</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="p-4 rounded-md {% if category == 'error' %}bg-red-50 text-red-700 border-red-200{% else %}bg-green-50 text-green-700 border-green-200{% endif %} border flex items-center">
+                    <i data-lucide="{% if category == 'error' %}alert-triangle{% else %}check-circle{% endif %}" class="mr-2 w-5 h-5"></i> {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="rounded-xl shadow-sm border p-4 bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+        <form method="POST" action="{{ url_for('sensibilizacion.nuevo') }}" class="grid grid-cols-1 md:grid-cols-6 gap-3">
+            <input name="campana" placeholder="Campana" required class="md:col-span-2 border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+            <input name="territorio" placeholder="Territorio" required class="border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+            <input name="vocero" placeholder="Vocero" class="border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+            <input type="date" name="fecha" required class="border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+            <input type="number" min="0" name="alcance" placeholder="Alcance" class="border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-medium px-4">Registrar</button>
+        </form>
+    </div>
+
+    <div class="rounded-xl shadow-sm border overflow-hidden bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="text-xs uppercase tracking-wider bg-gray-50 text-gray-600 dark:bg-gray-900/50 dark:text-gray-400">
+                        <th class="p-4 font-semibold border-b border-gray-200 dark:border-gray-700">Campana</th>
+                        <th class="p-4 font-semibold border-b border-gray-200 dark:border-gray-700">Territorio</th>
+                        <th class="p-4 font-semibold border-b border-gray-200 dark:border-gray-700">Fecha</th>
+                        <th class="p-4 font-semibold border-b border-gray-200 dark:border-gray-700">Alcance</th>
+                        <th class="p-4 font-semibold border-b border-gray-200 dark:border-gray-700">Estado</th>
+                    </tr>
+                </thead>
+                <tbody class="text-sm text-gray-700 dark:text-gray-300">
+                    {% for item in sensibilizaciones %}
+                    <tr class="border-b hover:bg-gray-50 border-gray-100 dark:hover:bg-gray-700/50 dark:border-gray-700">
+                        <td class="p-4">{{ item.campana }}</td>
+                        <td class="p-4">{{ item.territorio }}</td>
+                        <td class="p-4">{{ item.fecha.strftime('%Y-%m-%d') }}</td>
+                        <td class="p-4">{{ item.alcance }}</td>
+                        <td class="p-4">
+                            <form method="POST" action="{{ url_for('sensibilizacion.cambiar_estado', sensibilizacion_id=item.id) }}" class="flex items-center gap-2">
+                                <select name="estado" class="border rounded-md p-1 text-xs bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                    {% for estado in estados_flujo %}
+                                        <option value="{{ estado }}" {% if estado == item.estado %}selected{% endif %}>{{ estado }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button class="text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-700">Guardar</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="p-8 text-center text-gray-500 dark:text-gray-400">Aun no hay sensibilizaciones registradas.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

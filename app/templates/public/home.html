@@ -1,0 +1,221 @@
+{% extends 'public/base_public.html' %}
+
+{% block title %}ONCC - Plataforma Institucional{% endblock %}
+
+{% block content %}
+<section id="inicio" class="grid lg:grid-cols-2 gap-8 items-center">
+    <div>
+        <p class="inline-flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-emerald-700 mb-4 font-semibold">
+            <i data-lucide="radar" class="w-4 h-4"></i> Portal institucional ONCC
+        </p>
+        <h1 class="text-4xl md:text-5xl font-black leading-tight text-slate-900">
+            Monitoreo climático, atención territorial y acceso seguro al sistema operativo.
+        </h1>
+        <p class="mt-5 text-slate-700 max-w-xl">
+            Este sitio reúne información pública, orientación para comunidades y acceso al sistema interno para técnicos y responsables institucionales.
+        </p>
+        <div class="mt-8 flex flex-wrap gap-3">
+            <a href="{{ url_for('auth.login') }}" class="px-5 py-3 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition-colors">Iniciar sesión</a>
+            <a href="#clima" class="px-5 py-3 rounded-lg border border-emerald-700 text-emerald-800 hover:bg-emerald-50 transition-colors">Ver mapa de monitoreo</a>
+        </div>
+        <div class="mt-8 inline-flex items-center gap-3 rounded-xl border border-gray-200 bg-white/80 px-4 py-3 text-sm shadow-sm">
+            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 text-white font-black">{{ visitas_mensuales }}</span>
+            <span>Usted es nuestra visita nro: {{ visitas_mensuales }} en el mes</span>
+        </div>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white/85 p-6 shadow-xl">
+        <div class="flex items-center justify-between mb-5">
+            <h2 class="text-lg font-bold text-slate-900">Resumen institucional</h2>
+            <span class="text-xs uppercase tracking-[0.3em] text-emerald-700 font-semibold">ONCC</span>
+        </div>
+        <div class="grid sm:grid-cols-2 gap-3 text-sm">
+            <div class="p-3 rounded-lg bg-green-50 border border-green-100">
+                <p class="text-emerald-700 text-xs uppercase tracking-wider">Inventarios</p>
+                <p class="font-bold text-xl text-slate-900">Gestión técnica</p>
+            </div>
+            <div class="p-3 rounded-lg bg-green-50 border border-green-100">
+                <p class="text-emerald-700 text-xs uppercase tracking-wider">Mapas</p>
+                <p class="font-bold text-xl text-slate-900">Riesgo y territorio</p>
+            </div>
+            <div class="p-3 rounded-lg bg-green-50 border border-green-100">
+                <p class="text-emerald-700 text-xs uppercase tracking-wider">Publicaciones</p>
+                <p class="font-bold text-xl text-slate-900">Informes y boletines</p>
+            </div>
+            <div class="p-3 rounded-lg bg-green-50 border border-green-100">
+                <p class="text-emerald-700 text-xs uppercase tracking-wider">Sistema interno</p>
+                <p class="font-bold text-xl text-slate-900">Acceso técnico seguro</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="nosotros" class="mt-16 space-y-4">
+    <p class="text-xs uppercase tracking-[0.3em] text-emerald-700 font-semibold">Nosotros</p>
+    <div class="grid lg:grid-cols-3 gap-4 text-sm">
+        <div class="p-5 rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <h3 class="font-bold text-base mb-2 text-slate-900">Qué hacemos</h3>
+            <p class="text-slate-700">Integramos monitoreo climático, datos territoriales y seguimiento técnico para apoyar decisiones oportunas en prevención, respuesta y planificación local.</p>
+        </div>
+        <div class="p-5 rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <h3 class="font-bold text-base mb-2 text-slate-900">A quién va dirigido</h3>
+            <p class="text-slate-700">Comunidades organizadas, técnicos de campo, equipos de coordinación y entes aliados que requieren información para gestión del riesgo climático.</p>
+        </div>
+        <div class="p-5 rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <h3 class="font-bold text-base mb-2 text-slate-900">Qué ofrece el sistema</h3>
+            <p class="text-slate-700">Módulos de inventario, mapas, reportes, formaciones y sensibilizaciones, con trazabilidad por estado y bitácora para control institucional.</p>
+        </div>
+    </div>
+</section>
+
+<section id="clima" class="mt-16 space-y-5">
+    <div class="flex items-end justify-between gap-4 flex-wrap">
+        <div>
+            <p class="text-xs uppercase tracking-[0.3em] text-emerald-700 font-semibold">Clima</p>
+            <h2 class="text-2xl font-black text-slate-900">Mapa de monitoreo</h2>
+        </div>
+        <div class="text-xs text-slate-500">Capas simples para vista pública</div>
+    </div>
+    <div class="grid lg:grid-cols-[2fr_1fr] gap-5">
+        <div class="rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm">
+            <div id="mapaMonitoreo" class="h-[520px]"></div>
+        </div>
+        <div class="space-y-4">
+            {% for item in monitoreo %}
+            <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-bold text-base text-slate-900">{{ item.estado }}</h3>
+                    <span class="text-xs px-2 py-1 rounded-full bg-emerald-50 text-emerald-700">Riesgo {{ item.riesgo }}</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-xs text-slate-600">
+                    <div>Temp: <span class="text-slate-900 font-semibold">{{ item.temperatura }}°C</span></div>
+                    <div>Lluvia: <span class="text-slate-900 font-semibold">{{ item.lluvia }} mm</span></div>
+                    <div>Humedad: <span class="text-slate-900 font-semibold">{{ item.humedad }}%</span></div>
+                    <div>Comunidades: <span class="text-slate-900 font-semibold">{{ item.comunidades }}</span></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section id="meteorologia" class="mt-16 space-y-4">
+    <p class="text-xs uppercase tracking-[0.3em] text-emerald-700 font-semibold">Meteorología para comunidades</p>
+    <div class="grid md:grid-cols-3 gap-4 text-sm">
+        <div class="p-5 rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <p class="font-semibold text-slate-900 mb-2">Boletines comunitarios</p>
+            <p class="text-slate-700">Resumenes de temperatura, lluvia y condiciones locales presentados con lenguaje claro para vocerías y comités comunitarios.</p>
+        </div>
+        <div class="p-5 rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <p class="font-semibold text-slate-900 mb-2">Alertas preventivas</p>
+            <p class="text-slate-700">Avisos por lluvia intensa, calor extremo y variaciones abruptas, orientados a activar acciones tempranas de protección.</p>
+        </div>
+        <div class="p-5 rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <p class="font-semibold text-slate-900 mb-2">Orientación operativa</p>
+            <p class="text-slate-700">Recomendaciones prácticas antes, durante y después de eventos críticos para reducir exposición y mejorar capacidad de respuesta.</p>
+        </div>
+    </div>
+</section>
+
+<section id="riesgos" class="mt-16 space-y-4">
+    <p class="text-xs uppercase tracking-[0.3em] text-emerald-700 font-semibold">Riesgos y Vulnerabilidad</p>
+    <div class="grid md:grid-cols-2 gap-4 text-sm">
+        <div class="p-5 rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <p class="font-semibold text-slate-900 mb-2">Mapas de riesgo territoriales</p>
+            <p class="text-slate-700">Registro y actualización de expedientes cartográficos por comunidad para identificar zonas sensibles y priorizar atención.</p>
+        </div>
+        <div class="p-5 rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <p class="font-semibold text-slate-900 mb-2">Análisis de vulnerabilidad</p>
+            <p class="text-slate-700">Seguimiento de exposición, sensibilidad y capacidad de respuesta para orientar medidas de adaptación y mitigación.</p>
+        </div>
+    </div>
+</section>
+
+<section id="inventarios" class="mt-16 space-y-4">
+    <p class="text-xs uppercase tracking-[0.3em] text-emerald-700 font-semibold">Inventarios</p>
+    <div class="grid md:grid-cols-3 gap-4 text-sm">
+        <div class="p-5 rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <p class="font-semibold text-slate-900 mb-2">Equipos de monitoreo</p>
+            <p class="text-slate-700">Control de estaciones meteorológicas, pluviómetros y dispositivos de campo para continuidad operativa.</p>
+        </div>
+        <div class="p-5 rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <p class="font-semibold text-slate-900 mb-2">Activos de apoyo</p>
+            <p class="text-slate-700">Inventario de recursos logísticos y tecnológicos usados en jornadas comunitarias y levantamientos territoriales.</p>
+        </div>
+        <div class="p-5 rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <p class="font-semibold text-slate-900 mb-2">Mantenimiento y estado</p>
+            <p class="text-slate-700">Seguimiento de condición operativa, fechas de mantenimiento y cambios de estado para trazabilidad técnica.</p>
+        </div>
+    </div>
+</section>
+
+<section id="publicaciones" class="mt-16 space-y-4">
+    <p class="text-xs uppercase tracking-[0.3em] text-emerald-700 font-semibold">Publicaciones</p>
+    <div class="grid md:grid-cols-2 gap-4 text-sm">
+        <div class="p-5 rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <p class="font-semibold text-slate-900 mb-2">Informes institucionales</p>
+            <p class="text-slate-700">Documentos técnicos sobre condiciones climáticas, reportes de avance y resultados de gestión por período.</p>
+        </div>
+        <div class="p-5 rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <p class="font-semibold text-slate-900 mb-2">Boletines y resúmenes</p>
+            <p class="text-slate-700">Síntesis de jornadas, mapas generados, actividades de formación y reportes públicos de interés general.</p>
+        </div>
+    </div>
+</section>
+
+<section id="adaptacion" class="mt-16 space-y-4">
+    <p class="text-xs uppercase tracking-[0.3em] text-emerald-700 font-semibold">Adaptación y mitigación</p>
+    <div class="grid md:grid-cols-3 gap-4 text-sm">
+        <div class="p-5 rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <p class="font-semibold text-slate-900 mb-2">Capacitación territorial</p>
+            <p class="text-slate-700">Fortalecimiento de capacidades locales mediante formaciones orientadas a prevención, monitoreo y respuesta.</p>
+        </div>
+        <div class="p-5 rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <p class="font-semibold text-slate-900 mb-2">Prevención comunitaria</p>
+            <p class="text-slate-700">Promoción de acciones preventivas y planes de contingencia comunitarios ante escenarios de riesgo climático.</p>
+        </div>
+        <div class="p-5 rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <p class="font-semibold text-slate-900 mb-2">Seguimiento de medidas</p>
+            <p class="text-slate-700">Monitoreo continuo de medidas de adaptación y mitigación para evaluar su efectividad y ajustar estrategias.</p>
+        </div>
+    </div>
+</section>
+
+<section class="mt-16 rounded-2xl border border-emerald-200 bg-emerald-50 p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 shadow-sm">
+    <div>
+        <p class="text-xs uppercase tracking-[0.3em] text-emerald-700 font-semibold">Acceso al sistema</p>
+        <h2 class="text-2xl font-black mt-1 text-slate-900">Personal técnico e institucional</h2>
+        <p class="text-slate-700 mt-2">Ingrese al sistema para inventario, mapas, reportes, formaciones y sensibilizaciones.</p>
+    </div>
+    <a href="{{ url_for('auth.login') }}" class="px-5 py-3 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition-colors">Iniciar sesión</a>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+    const monitoreo = {{ monitoreo | tojson }};
+    const mapa = L.map('mapaMonitoreo', { scrollWheelZoom: false }).setView([10.35, -68.95], 7);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(mapa);
+
+    monitoreo.forEach((item) => {
+        const color = item.riesgo === 'Bajo' ? '#16a34a' : item.riesgo === 'Medio' ? '#f59e0b' : '#ef4444';
+        L.circleMarker([item.lat, item.lng], {
+            radius: 16,
+            color,
+            weight: 2,
+            fillColor: color,
+            fillOpacity: 0.35
+        }).addTo(mapa).bindPopup(`
+            <strong>${item.estado}</strong><br>
+            Temperatura: ${item.temperatura}°C<br>
+            Lluvia: ${item.lluvia} mm<br>
+            Humedad: ${item.humedad}%<br>
+            Riesgo: ${item.riesgo}
+        `);
+    });
+</script>
+{% endblock %}

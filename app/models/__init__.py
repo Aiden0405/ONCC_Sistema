@@ -1,0 +1,10 @@
+from app.models.actividad import Actividad
+from app.models.bitacora import BitacoraTransaccion
+from app.models.comunidad import Comunidad
+from app.models.formacion import Formacion
+from app.models.geomatica import MapaRegistro
+from app.models.inventario import InventarioEquipo
+from app.models.reporte import ReporteTransaccional
+from app.models.sensibilizacion import Sensibilizacion
+from app.models.usuario import Usuario
+
