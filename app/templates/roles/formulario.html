@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block title %}Formulario Rol - ONCC{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <h2 class="text-xl font-bold mb-4">{% if rol %}Editar Rol{% else %}Nuevo Rol{% endif %}</h2>
+
+    <form method="post" class="bg-white p-4 rounded shadow">
+        <label class="block mb-2">Nombre
+            <input name="nombre" value="{{ rol.nombre if rol else '' }}" class="w-full border rounded px-3 py-2" />
+        </label>
+
+        <label class="block mb-2">Descripción
+            <textarea name="descripcion" class="w-full border rounded px-3 py-2">{{ rol.descripcion if rol else '' }}</textarea>
+        </label>
+
+        <div class="text-right">
+            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Guardar</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

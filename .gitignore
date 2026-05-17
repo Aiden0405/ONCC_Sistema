@@ -13,6 +13,7 @@ app/static/uploads/*
 # Base de datos local y configuración sensible
 *.sqlite3
 *.db
+*.bak
 instance/*.db
 .env
 

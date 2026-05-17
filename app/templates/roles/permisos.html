@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block title %}Permisos de Rol - ONCC{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <h2 class="text-xl font-bold mb-4">Permisos para: {{ rol.nombre }}</h2>
+
+    <form method="post" class="bg-white p-4 rounded shadow">
+        <div class="grid grid-cols-1 gap-2">
+            {% for p in permisos %}
+            <label class="flex items-center space-x-2">
+                <input type="checkbox" name="permisos" value="{{ p.id }}" {% if p in rol.permissions %}checked{% endif %} />
+                <span>{{ p.nombre }} - <small class="text-gray-500">{{ p.descripcion }}</small></span>
+            </label>
+            {% endfor %}
+        </div>
+        <div class="text-right mt-4">
+            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Guardar permisos</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -49,3 +49,17 @@ class Config:
         'pool_pre_ping': True,
         'pool_recycle': 280,
     }
+    # Seguridad de sesiones y cookies
+    SESSION_COOKIE_SECURE = False  # True si el sitio está detrás de HTTPS (producción)
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
+
+    # Flask-Login remember cookie
+    REMEMBER_COOKIE_HTTPONLY = True
+    REMEMBER_COOKIE_SECURE = False  # True en producción HTTPS
+    REMEMBER_COOKIE_SAMESITE = 'Lax'
+
+    # CSRF: no lo activamos globalmente aún (convertir formularios a Flask-WTF primero)
+    WTF_CSRF_ENABLED = False
+    # Nombre del rol que tiene permisos totales en el sistema
+    SUPER_ROLE_NAME = os.environ.get('SUPER_ROLE_NAME', 'Director Regional')

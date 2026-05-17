@@ -54,42 +54,38 @@
                 <span class="sidebar-text whitespace-nowrap">Monitoreo General</span>
             </a>
             
-            <p class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">Transaccionales (Core 5)</p>
-            
-            <a href="{{ url_for('inventario.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
-                <i data-lucide="wrench" class="mr-3 w-5 h-5 flex-shrink-0"></i> 
-                <span class="sidebar-text whitespace-nowrap">Inventario</span>
+            <p class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">Módulos SRS</p>
+
+            <a href="{{ url_for('usuario.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
+                <i data-lucide="users" class="mr-3 w-5 h-5 flex-shrink-0"></i>
+                <span class="sidebar-text whitespace-nowrap">Autenticación y Usuarios</span>
             </a>
+
+            <a href="{{ url_for('actividad.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
+                <i data-lucide="clipboard-list" class="mr-3 w-5 h-5 flex-shrink-0"></i>
+                <span class="sidebar-text whitespace-nowrap">Actividades Comunitarias</span>
+            </a>
+
             <a href="{{ url_for('geomatica.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
                 <i data-lucide="map" class="mr-3 w-5 h-5 flex-shrink-0"></i>
-                <span class="sidebar-text whitespace-nowrap">Mapas</span>
+                <span class="sidebar-text whitespace-nowrap">Registro y Mapas</span>
             </a>
+
             <a href="{{ url_for('reporte.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
-                <i data-lucide="bar-chart-3" class="mr-3 w-5 h-5 flex-shrink-0"></i>
-                <span class="sidebar-text whitespace-nowrap">Reportes</span>
+                <i data-lucide="cloud-drizzle" class="mr-3 w-5 h-5 flex-shrink-0"></i>
+                <span class="sidebar-text whitespace-nowrap">Monitoreo Climático</span>
             </a>
-            <a href="{{ url_for('formacion.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
-                <i data-lucide="graduation-cap" class="mr-3 w-5 h-5 flex-shrink-0"></i>
-                <span class="sidebar-text whitespace-nowrap">Formaciones</span>
-            </a>
-            <a href="{{ url_for('sensibilizacion.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
-                <i data-lucide="megaphone" class="mr-3 w-5 h-5 flex-shrink-0"></i>
-                <span class="sidebar-text whitespace-nowrap">Divulgación</span>
+
+            <a href="{{ url_for('inventario.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
+                <i data-lucide="box" class="mr-3 w-5 h-5 flex-shrink-0"></i>
+                <span class="sidebar-text whitespace-nowrap">Gestión e Inventario</span>
             </a>
 
             <p class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">Soporte Operativo</p>
 
-            <a href="{{ url_for('comunidad.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
-                <i data-lucide="map-pin" class="mr-3 w-5 h-5 flex-shrink-0"></i>
-                <span class="sidebar-text whitespace-nowrap">Comunidades</span>
-            </a>
             <a href="{{ url_for('actividad.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
                 <i data-lucide="clipboard-list" class="mr-3 w-5 h-5 flex-shrink-0"></i>
                 <span class="sidebar-text whitespace-nowrap">Actividades</span>
-            </a>
-            <a href="{{ url_for('ente.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
-                <i data-lucide="building" class="mr-3 w-5 h-5 flex-shrink-0"></i> 
-                <span class="sidebar-text whitespace-nowrap">Entes / Solicitudes</span>
             </a>
         </nav>
 

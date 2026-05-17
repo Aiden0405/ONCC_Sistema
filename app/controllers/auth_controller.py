@@ -2,6 +2,13 @@ from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_user, logout_user, login_required, current_user
 from app.models.usuario import Usuario
 from app import db
+from urllib.parse import urlparse, urljoin
+
+
+def is_safe_url(target):
+    ref_url = urlparse(request.host_url)
+    test_url = urlparse(urljoin(request.host_url, target))
+    return test_url.scheme in ('http', 'https') and ref_url.netloc == test_url.netloc
 
 # Creamos un "Blueprint" llamado 'auth'. Esto agrupa todas las rutas que tengan que ver con login.
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
@@ -35,6 +42,10 @@ def login():
         # Validamos la contraseña
         if usuario.check_password(password):
             login_user(usuario)
+            # Intentamos redirigir al destino original si existe y es seguro
+            next_page = request.args.get('next') or request.form.get('next')
+            if next_page and is_safe_url(next_page):
+                return redirect(next_page)
             return redirect(url_for('dashboard'))
 
         flash('La contraseña es incorrecta. Intente nuevamente.', 'error')
@@ -47,3 +58,15 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for('auth.login'))
+
+
+@auth_bp.route('/recuperar', methods=['GET', 'POST'])
+def recuperar_contrasena():
+    # Placeholder para recuperar contraseña; aún no envía correos.
+    if request.method == 'POST':
+        email = (request.form.get('email') or '').strip().lower()
+        # Aquí se implementaría la lógica de token y envío de correo.
+        flash('Funcionalidad de recuperación no implementada aún. Contacte al administrador.', 'info')
+        return redirect(url_for('auth.login'))
+
+    return render_template('auth/recuperar.html')

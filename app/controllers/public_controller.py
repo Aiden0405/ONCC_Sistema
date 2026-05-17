@@ -4,7 +4,6 @@ from datetime import datetime
 from flask import Blueprint, render_template, session
 
 from app import db
-from app.models.comunidad import Comunidad
 from app.models.geomatica import MapaRegistro
 from app.models.visita_portal import VisitaPortal
 
@@ -22,11 +21,11 @@ def _registrar_visita_mensual():
 
 @public_bp.route('/')
 def home():
-    comunidades = Comunidad.query.all()
+    comunidades = []
     mapas_registrados = MapaRegistro.query.count()
     visitas_mensuales = _registrar_visita_mensual()
 
-    comunidades_por_estado = Counter(comunidad.estado for comunidad in comunidades if comunidad.estado)
+    comunidades_por_estado = Counter()
 
     monitoreo = [
         {
