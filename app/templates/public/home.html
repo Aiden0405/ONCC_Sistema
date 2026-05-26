@@ -62,7 +62,7 @@
         </div>
         <div class="p-5 rounded-2xl border border-gray-200 bg-white shadow-sm">
             <h3 class="font-bold text-base mb-2 text-slate-900">Qué ofrece el sistema</h3>
-            <p class="text-slate-700">Módulos de inventario, mapas, reportes, formaciones y sensibilizaciones, con trazabilidad por estado y bitácora para control institucional.</p>
+            <p class="text-slate-700">El sistema se organiza en 5 dominios y 10 módulos: usuarios y divulgación, formaciones y sensibilizaciones, mapas de riesgo y mapas climáticos, tabla de actividades y comparación climática, técnicos de campo e inventario de equipos.</p>
         </div>
     </div>
 </section>
@@ -150,6 +150,23 @@
 
 <section id="publicaciones" class="mt-16 space-y-4">
     <p class="text-xs uppercase tracking-[0.3em] text-emerald-700 font-semibold">Publicaciones</p>
+    {% if publicaciones %}
+    <div class="grid md:grid-cols-2 gap-4 text-sm">
+        {% for publicacion in publicaciones %}
+        <article class="p-5 rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <div class="flex items-center justify-between gap-3 mb-2">
+                <p class="font-semibold text-slate-900">{{ publicacion.titulo }}</p>
+                <span class="text-[11px] uppercase tracking-[0.25em] text-emerald-700 font-semibold">{{ publicacion.tipo }}</span>
+            </div>
+            {% if publicacion.resumen %}
+            <p class="text-slate-700">{{ publicacion.resumen }}</p>
+            {% else %}
+            <p class="text-slate-700">{{ publicacion.contenido if publicacion.contenido else 'Publicación en preparación.' }}</p>
+            {% endif %}
+        </article>
+        {% endfor %}
+    </div>
+    {% else %}
     <div class="grid md:grid-cols-2 gap-4 text-sm">
         <div class="p-5 rounded-2xl border border-gray-200 bg-white shadow-sm">
             <p class="font-semibold text-slate-900 mb-2">Informes institucionales</p>
@@ -160,6 +177,7 @@
             <p class="text-slate-700">Síntesis de jornadas, mapas generados, actividades de formación y reportes públicos de interés general.</p>
         </div>
     </div>
+    {% endif %}
 </section>
 
 <section id="adaptacion" class="mt-16 space-y-4">
@@ -184,7 +202,7 @@
     <div>
         <p class="text-xs uppercase tracking-[0.3em] text-emerald-700 font-semibold">Acceso al sistema</p>
         <h2 class="text-2xl font-black mt-1 text-slate-900">Personal técnico e institucional</h2>
-        <p class="text-slate-700 mt-2">Ingrese al sistema para inventario, mapas, reportes, formaciones y sensibilizaciones.</p>
+        <p class="text-slate-700 mt-2">Ingrese al sistema para usuarios, divulgación, formaciones, sensibilizaciones, mapas, monitoreo e inventario.</p>
     </div>
     <a href="{{ url_for('auth.login') }}" class="px-5 py-3 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition-colors">Iniciar sesión</a>
 </section>

@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}Mapas Climáticos - ONCC{% endblock %}
+
+{% block content %}
+<div class="space-y-8 animate-in fade-in duration-700">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <p class="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 font-semibold">Mapas</p>
+            <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Mapas Climáticos</h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Vista inicial del módulo para registro y revisión de mapas climáticos.</p>
+        </div>
+        <a href="{{ url_for('geomatica.index') }}" class="inline-flex items-center px-4 py-2 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 transition-colors">
+            Ir a Mapas de Riesgo
+        </a>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-4">
+        <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
+            <p class="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 font-semibold">Estado</p>
+            <p class="text-lg font-bold text-gray-800 dark:text-white">Módulo activo</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">La ruta ya responde correctamente al clic.</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
+            <p class="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 font-semibold">Función</p>
+            <p class="text-lg font-bold text-gray-800 dark:text-white">Revisión climática</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Pendiente de carga de datos y filtros operativos.</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
+            <p class="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 font-semibold">Enlace</p>
+            <p class="text-lg font-bold text-gray-800 dark:text-white">Acceso directo</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Navegación independiente del panel general.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

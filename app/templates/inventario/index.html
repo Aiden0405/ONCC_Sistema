@@ -41,6 +41,7 @@
             </div>
             
             <form method="POST" action="{{ url_for('inventario.nuevo') }}" class="p-6 space-y-6">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-semibold uppercase mb-1 text-gray-600 dark:text-gray-400">Tipo de Equipo</label>
@@ -122,6 +123,7 @@
                         </td>
                         <td class="p-4">
                             <form method="POST" action="{{ url_for('inventario.cambiar_estado', equipo_id=inv.id) }}" class="flex items-center gap-2">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <select name="estado_flujo" class="border rounded-md p-1 text-xs bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                                     {% for estado in estados_flujo %}
                                         <option value="{{ estado }}" {% if estado == inv.estado_flujo %}selected{% endif %}>{{ estado }}</option>

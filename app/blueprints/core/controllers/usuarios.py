@@ -1,55 +1,49 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
-from flask_login import login_required, current_user
-from app.utils.authorization import role_required
+from flask import flash, redirect, render_template, request, url_for
+from flask_login import current_user, login_required
+
 from app import db
-from app.models.usuario import Usuario
+from app.blueprints.core import core_bp
 from app.models.role import Role
+from app.models.usuario import Usuario
 from app.services.auditoria import registrar_accion
-
-usuario_bp = Blueprint('usuario', __name__, url_prefix='/admin/usuarios')
-
-
-# Use registrar_accion from services/auditoria.py
+from app.utils.authorization import role_required
 
 
-@usuario_bp.route('/')
+@core_bp.route('/admin/usuarios/')
 @login_required
 @role_required('Superusuario', 'Administrador', 'Director Regional')
-def index():
+def usuario_index():
     usuarios = Usuario.query.order_by(Usuario.nombre).all()
     return render_template('usuarios/index.html', usuarios=usuarios)
 
 
-@usuario_bp.route('/nuevo', methods=['GET', 'POST'])
+@core_bp.route('/admin/usuarios/nuevo', methods=['GET', 'POST'])
 @login_required
 @role_required('Superusuario', 'Administrador', 'Director Regional')
-def nuevo():
+def usuario_nuevo():
     if request.method == 'POST':
         nombre = (request.form.get('nombre') or '').strip()
-        email = (request.form.get('email') or '').strip().lower()
+        correo = (request.form.get('correo') or '').strip().lower()
         rol = (request.form.get('rol') or 'Técnico').strip()
         password = (request.form.get('password') or '').strip()
 
-        if not nombre or not email or not password:
+        if not nombre or not correo or not password:
             flash('Nombre, correo y contraseña son obligatorios.', 'error')
             return render_template('usuarios/formulario.html')
-
-        if Usuario.query.filter_by(email=email).first():
+        if Usuario.query.filter_by(correo=correo).first():
             flash('Ya existe un usuario con ese correo.', 'error')
             return render_template('usuarios/formulario.html')
+        nuevo_usuario = Usuario(nombre=nombre, correo=correo, rol=rol, estatus=True)
+        nuevo_usuario.set_password(password)
 
-        nuevo = Usuario(nombre=nombre, email=email, rol=rol, estatus=True)
-        nuevo.set_password(password)
-
-        # Asociar rol relacional si existe
         role_obj = Role.query.filter_by(nombre=rol).first()
         if role_obj:
-            nuevo.roles = [role_obj]
+            nuevo_usuario.roles = [role_obj]
 
-        db.session.add(nuevo)
+        db.session.add(nuevo_usuario)
         db.session.commit()
 
-        registrar_accion('Usuarios', nuevo.id, 'Crear', current_user.nombre, detalle=f'Creado usuario {email}', estado_nuevo=nuevo.rol)
+        registrar_accion('Usuarios', nuevo_usuario.id, 'Crear', current_user.nombre, detalle=f'Creado usuario {correo}', estado_nuevo=nuevo_usuario.rol)
 
         flash('Usuario creado correctamente.', 'success')
         return redirect(url_for('usuario.index'))
@@ -58,10 +52,10 @@ def nuevo():
     return render_template('usuarios/formulario.html', roles=roles)
 
 
-@usuario_bp.route('/<int:usuario_id>/editar', methods=['GET', 'POST'])
+@core_bp.route('/admin/usuarios/<int:usuario_id>/editar', methods=['GET', 'POST'])
 @login_required
 @role_required('Superusuario', 'Administrador', 'Director Regional')
-def editar(usuario_id):
+def usuario_editar(usuario_id):
     usuario = Usuario.query.get_or_404(usuario_id)
 
     if request.method == 'POST':
@@ -73,18 +67,16 @@ def editar(usuario_id):
         usuario.rol = rol
         usuario.estatus = estatus
 
-        # Cambiar contraseña opcionalmente
         nueva_pass = (request.form.get('password') or '').strip()
         if nueva_pass:
             usuario.set_password(nueva_pass)
 
-        # Actualizar relación de roles
         role_obj = Role.query.filter_by(nombre=rol).first()
         if role_obj:
             usuario.roles = [role_obj]
 
         db.session.commit()
-        registrar_accion('Usuarios', usuario.id, 'Modificar', current_user.nombre, detalle=f'Editado usuario {usuario.email}', estado_nuevo=usuario.rol)
+        registrar_accion('Usuarios', usuario.id, 'Modificar', current_user.nombre, detalle=f'Editado usuario {usuario.correo}', estado_nuevo=usuario.rol)
 
         flash('Usuario actualizado.', 'success')
         return redirect(url_for('usuario.index'))
@@ -93,10 +85,10 @@ def editar(usuario_id):
     return render_template('usuarios/formulario.html', usuario=usuario, roles=roles)
 
 
-@usuario_bp.route('/<int:usuario_id>/eliminar', methods=['POST'])
+@core_bp.route('/admin/usuarios/<int:usuario_id>/eliminar', methods=['POST'])
 @login_required
 @role_required('Superusuario', 'Administrador', 'Director Regional')
-def eliminar(usuario_id):
+def usuario_eliminar(usuario_id):
     usuario = Usuario.query.get_or_404(usuario_id)
     if usuario.id == current_user.id:
         flash('No puede eliminar su propio usuario mientras esté autenticado.', 'error')
@@ -104,15 +96,15 @@ def eliminar(usuario_id):
 
     db.session.delete(usuario)
     db.session.commit()
-    registrar_accion('Usuarios', usuario_id, 'Eliminar', current_user.nombre, detalle=f'Eliminado usuario {usuario.email}')
+    registrar_accion('Usuarios', usuario_id, 'Eliminar', current_user.nombre, detalle=f'Eliminado usuario {usuario.correo}')
 
     flash('Usuario eliminado.', 'success')
     return redirect(url_for('usuario.index'))
 
 
-@usuario_bp.route('/perfil', methods=['GET', 'POST'])
+@core_bp.route('/admin/usuarios/perfil', methods=['GET', 'POST'])
 @login_required
-def perfil():
+def usuario_perfil():
     usuario = Usuario.query.get_or_404(current_user.id)
     if request.method == 'POST':
         nombre = (request.form.get('nombre') or usuario.nombre).strip()
@@ -123,7 +115,7 @@ def perfil():
             usuario.set_password(nueva_pass)
 
         db.session.commit()
-        registrar_bitacora('Usuarios', usuario.id, 'ModificarPerfil', usuario.nombre, detalle='Actualizó perfil propio')
+        registrar_accion('Usuarios', usuario.id, 'ModificarPerfil', usuario.nombre, detalle='Actualizó perfil propio')
         flash('Perfil actualizado.', 'success')
         return redirect(url_for('dashboard'))
 

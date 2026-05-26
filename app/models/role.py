@@ -1,3 +1,4 @@
+
 from app import db
 
 
@@ -19,7 +20,7 @@ class Role(db.Model):
     # usuarios que poseen este rol
     users = db.relationship('Usuario', secondary='user_roles', back_populates='roles')
 
-    # permisos asociados al rol
+    # permisos asociados al rol (opcional)
     permissions = db.relationship('Permission', secondary=role_permissions, back_populates='roles')
 
     def __repr__(self):

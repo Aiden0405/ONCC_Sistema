@@ -1,24 +1,23 @@
 from datetime import datetime
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from app import db
+from app.blueprints.monitoreo import monitoreo_bp
 from app.constants import ESTADOS_TRANSACCION
 from app.models.bitacora import BitacoraTransaccion
 from app.models.reporte import ReporteTransaccional
 
-reporte_bp = Blueprint('reporte', __name__, url_prefix='/reportes')
 
-
-@reporte_bp.route('/')
+@monitoreo_bp.route('/reportes/')
 @login_required
-def index():
+def comparacion_index():
     reportes = ReporteTransaccional.query.order_by(ReporteTransaccional.creado_en.desc()).all()
     return render_template('reportes/index.html', reportes=reportes, estados_flujo=ESTADOS_TRANSACCION)
 
 
-@reporte_bp.route('/nuevo', methods=['POST'])
+@monitoreo_bp.route('/reportes/nuevo', methods=['POST'])
 @login_required
 def nuevo():
     titulo = request.form.get('titulo', '').strip()
@@ -31,7 +30,7 @@ def nuevo():
 
     reporte = ReporteTransaccional(
         titulo=titulo,
-        modulo_origen=request.form.get('modulo_origen', 'inventario').strip(),
+        modulo_origen=request.form.get('modulo_origen', 'mapas').strip(),
         formato=request.form.get('formato', 'PDF').strip(),
         responsable=current_user.nombre,
         rango_desde=datetime.strptime(rango_desde, '%Y-%m-%d').date() if rango_desde else None,
@@ -53,9 +52,9 @@ def nuevo():
     return redirect(url_for('reporte.index'))
 
 
-@reporte_bp.route('/<int:reporte_id>/estado', methods=['POST'])
+@monitoreo_bp.route('/reportes/<int:reporte_id>/estado', methods=['POST'])
 @login_required
-def cambiar_estado(reporte_id):
+def reporte_cambiar_estado(reporte_id):
     reporte = ReporteTransaccional.query.get_or_404(reporte_id)
     nuevo_estado = request.form.get('estado', '').strip()
     if nuevo_estado not in ESTADOS_TRANSACCION:

@@ -1,35 +1,35 @@
 from datetime import datetime
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash
-from flask_login import login_required, current_user
+from flask import flash, redirect, render_template, request, url_for
+from flask_login import current_user, login_required
 
 from app import db
+from app.blueprints.mapas import mapas_bp
 from app.constants import ESTADOS_TRANSACCION
 from app.models.bitacora import BitacoraTransaccion
 from app.models.geomatica import MapaRegistro
 
-# Creamos el Blueprint para agrupar las rutas de Geomática
-geomatica_bp = Blueprint('geomatica', __name__, url_prefix='/geomatica')
 
-@geomatica_bp.route('/')
+@mapas_bp.route('/geomatica/')
 @login_required
-def index():
+def mapas_riesgo_index():
     mapas = MapaRegistro.query.order_by(MapaRegistro.creado_en.desc()).all()
     return render_template('geomatica/carga_ssbc.html', cargas=mapas, estados_flujo=ESTADOS_TRANSACCION)
 
-@geomatica_bp.route('/procesar', methods=['POST'])
+
+@mapas_bp.route('/geomatica/procesar', methods=['POST'])
 @login_required
 def procesar_archivo():
     if 'archivo_ssbc' not in request.files:
         flash('No se encontró ningún archivo en la petición.', 'error')
         return redirect(url_for('geomatica.index'))
-        
+
     archivo = request.files['archivo_ssbc']
-    
+
     if archivo.filename == '':
         flash('No seleccionó ningún archivo válido para subir.', 'error')
         return redirect(url_for('geomatica.index'))
-        
+
     if archivo:
         nombre_archivo = archivo.filename.strip()
         tipo_mapa = request.form.get('tipo_mapa', 'riesgo').strip()
@@ -60,7 +60,7 @@ def procesar_archivo():
     return redirect(url_for('geomatica.index'))
 
 
-@geomatica_bp.route('/<int:mapa_id>/estado', methods=['POST'])
+@mapas_bp.route('/geomatica/<int:mapa_id>/estado', methods=['POST'])
 @login_required
 def cambiar_estado(mapa_id):
     mapa = MapaRegistro.query.get_or_404(mapa_id)

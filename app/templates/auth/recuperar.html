@@ -32,9 +32,10 @@
             {% endwith %}
 
             <form method="post" class="space-y-5">
+                {{ form.hidden_tag() }}
                 <div>
                     <label class="block text-xs font-semibold uppercase mb-1 text-gray-600 dark:text-gray-400">Correo institucional</label>
-                    <input name="email" type="email" required class="w-full border rounded-md p-2 text-sm focus:border-green-500 bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="ejemplo@oncc.gob.ve" />
+                    {{ form.correo(class_="w-full border rounded-md p-2 text-sm focus:border-green-500 bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white", placeholder="ejemplo@oncc.gob.ve") }}
                 </div>
 
                 <div class="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-700">

@@ -37,6 +37,7 @@
         
         <!-- Formulario Multipart para subir archivos a Flask -->
         <form method="POST" action="{{ url_for('geomatica.procesar_archivo') }}" enctype="multipart/form-data" class="flex flex-col items-center w-full max-w-md">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             
             <div class="w-full mb-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                 <select name="tipo_mapa" class="border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
@@ -89,6 +90,7 @@
                         <td class="p-4">{{ carga.cobertura }}</td>
                         <td class="p-4">
                             <form method="POST" action="{{ url_for('geomatica.cambiar_estado', mapa_id=carga.id) }}" class="flex items-center gap-2">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <select name="estado" class="border rounded-md p-1 text-xs bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                                     {% for estado in estados_flujo %}
                                         <option value="{{ estado }}" {% if estado == carga.estado %}selected{% endif %}>{{ estado }}</option>

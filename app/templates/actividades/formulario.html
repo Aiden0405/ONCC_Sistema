@@ -18,6 +18,7 @@
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
         <!-- enctype="multipart/form-data" es OBLIGATORIO para poder subir archivos (PDF/Fotos) -->
         <form method="POST" action="{{ url_for('actividad.nueva') }}" enctype="multipart/form-data" class="p-8 space-y-8">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             
             <!-- SECCIÓN 1: Datos Generales -->
             <div>

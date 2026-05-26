@@ -1,174 +1,282 @@
 {% extends 'base.html' %}
 
-{% block title %}Panel de Control - ONCC{% endblock %}
+{% block title %}Monitoreo General - ONCC{% endblock %}
 
 {% block content %}
 <div class="space-y-8 animate-in fade-in duration-700">
-    
-    <!-- Encabezado del Dashboard -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Panel de Control General</h1>
-            <p class="text-sm text-gray-500 dark:text-gray-400">Observatorio Nacional de la Crisis Climática - Región Nororiental</p>
-        </div>
-        <div class="flex items-center space-x-2 text-xs font-medium text-gray-500 bg-white dark:bg-gray-800 px-3 py-2 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
-            <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-            <span>Sincronizado con Estaciones Meteorológicas</span>
-        </div>
-    </div>
-
-    <!-- TARJETAS DE ESTADISTICAS (KPIs) -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
-            <div class="flex items-center justify-between mb-4">
-                <div class="p-2 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg text-emerald-600 dark:text-emerald-400">
-                    <i data-lucide="wrench" class="w-6 h-6"></i>
-                </div>
-                <span class="text-xs font-bold text-green-600 bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded">Activo</span>
-            </div>
-            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Modulo Inventario</p>
-            <h3 class="text-3xl font-bold text-gray-800 dark:text-white">{{ resumen.inventario }}</h3>
-        </div>
-
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
-            <div class="flex items-center justify-between mb-4">
-                <div class="p-2 bg-green-50 dark:bg-green-900/30 rounded-lg text-green-600 dark:text-green-400">
-                    <i data-lucide="map" class="w-6 h-6"></i>
-                </div>
-                <span class="text-xs font-bold text-green-600 bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded">Riesgo/Tematico</span>
-            </div>
-            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Modulo Mapas</p>
-            <h3 class="text-3xl font-bold text-gray-800 dark:text-white">{{ resumen.mapas }}</h3>
-        </div>
-
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
-            <div class="flex items-center justify-between mb-4">
-                <div class="p-2 bg-sky-50 dark:bg-sky-900/30 rounded-lg text-sky-600 dark:text-sky-400">
-                    <i data-lucide="bar-chart-3" class="w-6 h-6"></i>
-                </div>
-                <span class="text-xs font-bold text-sky-600 bg-sky-50 dark:bg-sky-900/30 px-2 py-1 rounded">Seguimiento</span>
-            </div>
-            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Modulo Reportes</p>
-            <h3 class="text-3xl font-bold text-gray-800 dark:text-white">{{ resumen.reportes }}</h3>
-        </div>
-
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
-            <div class="flex items-center justify-between mb-4">
-                <div class="p-2 bg-amber-50 dark:bg-amber-900/30 rounded-lg text-amber-600 dark:text-amber-400">
-                    <i data-lucide="graduation-cap" class="w-6 h-6"></i>
-                </div>
-                <span class="text-xs font-bold text-amber-600 bg-amber-50 dark:bg-amber-900/30 px-2 py-1 rounded">Planificacion</span>
-            </div>
-            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Modulo Formaciones</p>
-            <h3 class="text-3xl font-bold text-gray-800 dark:text-white">{{ resumen.formaciones }}</h3>
-        </div>
-
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
-            <div class="flex items-center justify-between mb-4">
-                <div class="p-2 bg-rose-50 dark:bg-rose-900/30 rounded-lg text-rose-600 dark:text-rose-400">
-                    <i data-lucide="megaphone" class="w-6 h-6"></i>
-                </div>
-                <span class="text-xs font-bold text-rose-600 bg-rose-50 dark:bg-rose-900/30 px-2 py-1 rounded">Impacto</span>
-            </div>
-            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Modulo Sensibilizaciones</p>
-            <h3 class="text-3xl font-bold text-gray-800 dark:text-white">{{ resumen.sensibilizaciones }}</h3>
-        </div>
-    </div>
-
-    <!-- RESUMEN OPERATIVO -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
-            <p class="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 font-semibold">Comunidades activas</p>
-            <p class="text-2xl font-bold text-gray-800 dark:text-white">{{ modulos_operativos.comunidades }}</p>
-        </div>
-        <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
-            <p class="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 font-semibold">Actividades recientes</p>
-            <p class="text-2xl font-bold text-gray-800 dark:text-white">{{ modulos_operativos.actividades }}</p>
-        </div>
-        <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
-            <p class="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 font-semibold">Mapa priorizado</p>
-            <p class="text-2xl font-bold text-gray-800 dark:text-white">Estados con expedientes abiertos</p>
-        </div>
-    </div>
-
-    <!-- SECCIÓN DE GRÁFICAS -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        
-        <!-- Mapa interactivo: Mapas por Estado -->
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-bold text-gray-800 dark:text-white flex items-center">
-                    <i data-lucide="map-pinned" class="mr-2 w-5 h-5 text-green-600"></i> Mapas de Riesgo por Estado
-                </h3>
-                <span class="text-xs font-semibold uppercase tracking-wider text-green-600 bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded">Vista rápida</span>
-            </div>
-            <div id="mapaRiesgoDashboard" class="h-72 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700"></div>
-            <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-                {% for estado in mapa_estados %}
-                <div class="flex items-center justify-between rounded-lg bg-gray-50 dark:bg-gray-700/50 px-3 py-2">
-                    <span class="font-medium text-gray-700 dark:text-gray-200">{{ estado.nombre }}</span>
-                    <span class="text-xs font-bold px-2 py-1 rounded text-white {% if estado.nombre == 'Lara' %}bg-green-600{% elif estado.nombre == 'Yaracuy' %}bg-blue-600{% else %}bg-amber-500{% endif %}">{{ estado.conteo }} exp.</span>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-
-        <!-- Tabla: Últimas Actividades -->
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
-            <h3 class="text-lg font-bold mb-6 text-gray-800 dark:text-white flex items-center">
-                <i data-lucide="list" class="mr-2 w-5 h-5 text-green-600"></i> Actividades Recientes
-            </h3>
+    <div class="relative overflow-hidden rounded-3xl border border-emerald-100 bg-gradient-to-br from-white via-emerald-50/70 to-slate-50 p-6 shadow-sm dark:border-gray-700 dark:from-gray-800 dark:via-gray-800 dark:to-gray-900">
+        <div class="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-emerald-200/30 blur-3xl dark:bg-emerald-900/20"></div>
+        <div class="relative grid gap-6 lg:grid-cols-[1.4fr_1fr] lg:items-center">
             <div class="space-y-4">
+                <div class="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700 shadow-sm dark:border-emerald-900/40 dark:bg-gray-900/60 dark:text-emerald-300">
+                    <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+                    Monitoreo general
+                </div>
+                <div class="space-y-2">
+                    <h1 class="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Monitoreo General</h1>
+                    <p class="max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">Vista central del sistema con indicadores útiles, accesos rápidos y estado resumido de los módulos operativos.</p>
+                </div>
+                <div class="flex flex-wrap gap-3 text-xs font-medium text-slate-600 dark:text-slate-300">
+                    <div class="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-2 shadow-sm ring-1 ring-slate-200 dark:bg-gray-900/50 dark:ring-gray-700">
+                        <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+                        Operación continua
+                    </div>
+                    <div class="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-2 shadow-sm ring-1 ring-slate-200 dark:bg-gray-900/50 dark:ring-gray-700">
+                        <span class="h-2 w-2 rounded-full bg-fuchsia-500"></span>
+                        Divulgación integrada
+                    </div>
+                    <div class="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-2 shadow-sm ring-1 ring-slate-200 dark:bg-gray-900/50 dark:ring-gray-700">
+                        <span class="h-2 w-2 rounded-full bg-sky-500"></span>
+                        Vista clara / oscura
+                    </div>
+                </div>
+            </div>
+
+            <div class="rounded-2xl border border-white/70 bg-white/85 p-5 shadow-lg shadow-emerald-100/40 backdrop-blur dark:border-gray-700 dark:bg-gray-900/80 dark:shadow-none">
+                <div class="flex items-center justify-between gap-3">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Estado del tablero</p>
+                        <p class="mt-1 text-lg font-bold text-slate-900 dark:text-white">{{ modulos_operativos.divulgacion }} publicaciones</p>
+                    </div>
+                    <div class="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-600 text-sm font-black text-white shadow-md shadow-emerald-200 dark:shadow-none">
+                        <i data-lucide="layout-dashboard" class="h-5 w-5"></i>
+                    </div>
+                </div>
+                <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
+                    <div class="rounded-xl bg-slate-50 p-3 dark:bg-gray-800/80">
+                        <p class="text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400">Publicadas</p>
+                        <p class="mt-1 font-semibold text-slate-900 dark:text-white">{{ modulos_operativos.divulgacion_publicadas }}</p>
+                    </div>
+                    <div class="rounded-xl bg-slate-50 p-3 dark:bg-gray-800/80">
+                        <p class="text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400">Borradores</p>
+                        <p class="mt-1 font-semibold text-slate-900 dark:text-white">{{ modulos_operativos.divulgacion_borradores }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Inventario</p>
+                    <p class="mt-2 text-3xl font-black text-slate-900 dark:text-white">{{ resumen.inventario }}</p>
+                    <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Equipos y recursos registrados.</p>
+                </div>
+                <div class="rounded-2xl bg-emerald-50 p-3 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-300">
+                    <i data-lucide="wrench" class="h-6 w-6"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Divulgación</p>
+                    <p class="mt-2 text-3xl font-black text-slate-900 dark:text-white">{{ resumen.divulgacion }}</p>
+                    <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">{{ modulos_operativos.divulgacion_borradores }} borrador(es), {{ modulos_operativos.divulgacion_publicadas }} publicado(s).</p>
+                </div>
+                <div class="rounded-2xl bg-fuchsia-50 p-3 text-fuchsia-600 dark:bg-fuchsia-900/30 dark:text-fuchsia-300">
+                    <i data-lucide="newspaper" class="h-6 w-6"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Mapas</p>
+                    <p class="mt-2 text-3xl font-black text-slate-900 dark:text-white">{{ resumen.mapas }}</p>
+                    <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Riesgo y contexto territorial.</p>
+                </div>
+                <div class="rounded-2xl bg-sky-50 p-3 text-sky-600 dark:bg-sky-900/30 dark:text-sky-300">
+                    <i data-lucide="map" class="h-6 w-6"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Comunitario</p>
+                    <p class="mt-2 text-3xl font-black text-slate-900 dark:text-white">{{ resumen.formaciones + resumen.sensibilizaciones }}</p>
+                    <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Formaciones + sensibilizaciones.</p>
+                </div>
+                <div class="rounded-2xl bg-violet-50 p-3 text-violet-600 dark:bg-violet-900/30 dark:text-violet-300">
+                    <i data-lucide="users-round" class="h-6 w-6"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 xl:grid-cols-[1.25fr_0.95fr]">
+        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div class="flex items-center justify-between gap-3">
+                <div>
+                    <h3 class="flex items-center text-lg font-bold text-slate-900 dark:text-white">
+                        <i data-lucide="map-pinned" class="mr-2 h-5 w-5 text-emerald-600"></i>
+                        Mapa de Riesgo
+                    </h3>
+                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Vista compacta de estados con actividad operacional.</p>
+                </div>
+                <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">Resumen</span>
+            </div>
+            <div id="mapaRiesgoDashboard" class="mt-5 h-80 overflow-hidden rounded-2xl border border-slate-100 dark:border-gray-700"></div>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div class="flex items-center justify-between gap-3">
+                <div>
+                    <h3 class="flex items-center text-lg font-bold text-slate-900 dark:text-white">
+                        <i data-lucide="bolt" class="mr-2 h-5 w-5 text-emerald-600"></i>
+                        Accesos rápidos
+                    </h3>
+                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Entradas directas a los módulos que más usas.</p>
+                </div>
+            </div>
+
+            <div class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <a href="{{ url_for('usuario.index') }}" class="group rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-emerald-300 hover:bg-white dark:border-gray-700 dark:bg-gray-700/50 dark:hover:border-emerald-800 dark:hover:bg-gray-700">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-semibold text-slate-900 dark:text-white">Usuarios</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Autenticación y acceso</p>
+                        </div>
+                        <i data-lucide="users" class="h-5 w-5 text-emerald-600 group-hover:scale-110 transition-transform"></i>
+                    </div>
+                </a>
+
+                <a href="{{ url_for('core.divulgacion_admin_index') }}" class="group rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-fuchsia-300 hover:bg-white dark:border-gray-700 dark:bg-gray-700/50 dark:hover:border-fuchsia-800 dark:hover:bg-gray-700">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-semibold text-slate-900 dark:text-white">Divulgación</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Borradores y publicaciones</p>
+                        </div>
+                        <i data-lucide="newspaper" class="h-5 w-5 text-fuchsia-600 group-hover:scale-110 transition-transform"></i>
+                    </div>
+                </a>
+
+                <a href="{{ url_for('actividad.index') }}" class="group rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-sky-300 hover:bg-white dark:border-gray-700 dark:bg-gray-700/50 dark:hover:border-sky-800 dark:hover:bg-gray-700">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-semibold text-slate-900 dark:text-white">Actividades</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Tabla operativa</p>
+                        </div>
+                        <i data-lucide="clipboard-list" class="h-5 w-5 text-sky-600 group-hover:scale-110 transition-transform"></i>
+                    </div>
+                </a>
+
+                <a href="{{ url_for('geomatica.index') }}" class="group rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-amber-300 hover:bg-white dark:border-gray-700 dark:bg-gray-700/50 dark:hover:border-amber-800 dark:hover:bg-gray-700">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-semibold text-slate-900 dark:text-white">Mapas</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Riesgo y geografía</p>
+                        </div>
+                        <i data-lucide="map-pinned" class="h-5 w-5 text-amber-600 group-hover:scale-110 transition-transform"></i>
+                    </div>
+                </a>
+            </div>
+
+            <div class="mt-6 rounded-2xl bg-slate-50 p-4 dark:bg-gray-700/50">
+                <h4 class="text-sm font-semibold text-slate-900 dark:text-white">Último estado de divulgación</h4>
+                <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">Las publicaciones publicadas aparecen automáticamente en el portal público desde la misma tabla del sistema.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 xl:grid-cols-[1.25fr_0.95fr]">
+        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div class="flex items-center justify-between gap-3">
+                <div>
+                    <h3 class="flex items-center text-lg font-bold text-slate-900 dark:text-white">
+                        <i data-lucide="list" class="mr-2 h-5 w-5 text-emerald-600"></i>
+                        Actividades recientes
+                    </h3>
+                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Lo más reciente para no saturar la vista.</p>
+                </div>
+            </div>
+            <div class="mt-5 space-y-3">
                 {% for actividad in actividades_recientes %}
-                <div class="flex items-center p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
-                    <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-blue-600 dark:text-blue-400 mr-4">
-                        <i data-lucide="file-text" class="w-5 h-5"></i>
+                <div class="flex items-center gap-4 rounded-2xl bg-slate-50 px-4 py-3 dark:bg-gray-700/50">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-sky-600 shadow-sm dark:bg-gray-800 dark:text-sky-300">
+                        <i data-lucide="file-text" class="h-5 w-5"></i>
                     </div>
-                    <div class="flex-1">
-                        <p class="text-sm font-bold dark:text-white">{{ actividad.actividad }}</p>
-                        <p class="text-xs text-gray-500">{{ actividad.municipio }}, {{ actividad.estado_geo }}</p>
+                    <div class="min-w-0 flex-1">
+                        <p class="truncate text-sm font-semibold text-slate-900 dark:text-white">{{ actividad.actividad }}</p>
+                        <p class="truncate text-xs text-slate-500 dark:text-slate-400">{{ actividad.municipio }}, {{ actividad.estado_geo }}</p>
                     </div>
-                    <span class="text-[10px] font-medium text-gray-400">{{ actividad.estado }}</span>
+                    <span class="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500 shadow-sm dark:bg-gray-800 dark:text-slate-300">{{ actividad.estado }}</span>
                 </div>
                 {% else %}
-                <div class="p-4 text-sm text-gray-500 dark:text-gray-400 rounded-lg bg-gray-50 dark:bg-gray-700/50">Todavia no hay actividades registradas.</div>
+                <div class="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500 dark:bg-gray-700/50 dark:text-slate-400">Todavía no hay actividades registradas.</div>
                 {% endfor %}
             </div>
-            <button class="w-full mt-6 py-2 text-sm font-medium text-green-600 hover:text-green-700 transition-colors">Ver todo el reporte →</button>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div class="flex items-center justify-between gap-3">
+                <div>
+                    <h3 class="flex items-center text-lg font-bold text-slate-900 dark:text-white">
+                        <i data-lucide="newspaper" class="mr-2 h-5 w-5 text-fuchsia-600"></i>
+                        Resumen de divulgación
+                    </h3>
+                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Control editorial y salida al portal.</p>
+                </div>
+            </div>
+
+            <div class="mt-5 space-y-3">
+                <div class="flex items-center justify-between rounded-2xl bg-fuchsia-50 px-4 py-3 dark:bg-fuchsia-900/20">
+                    <span class="text-sm font-medium text-slate-700 dark:text-slate-200">Publicaciones totales</span>
+                    <span class="text-sm font-bold text-fuchsia-700 dark:text-fuchsia-300">{{ modulos_operativos.divulgacion }}</span>
+                </div>
+                <div class="flex items-center justify-between rounded-2xl bg-emerald-50 px-4 py-3 dark:bg-emerald-900/20">
+                    <span class="text-sm font-medium text-slate-700 dark:text-slate-200">Publicadas</span>
+                    <span class="text-sm font-bold text-emerald-700 dark:text-emerald-300">{{ modulos_operativos.divulgacion_publicadas }}</span>
+                </div>
+                <div class="flex items-center justify-between rounded-2xl bg-amber-50 px-4 py-3 dark:bg-amber-900/20">
+                    <span class="text-sm font-medium text-slate-700 dark:text-slate-200">Borradores</span>
+                    <span class="text-sm font-bold text-amber-700 dark:text-amber-300">{{ modulos_operativos.divulgacion_borradores }}</span>
+                </div>
+                <div class="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600 dark:bg-gray-700/50 dark:text-slate-300">
+                    El panel interno crea y aprueba publicaciones; el portal público solo muestra las que ya están publicadas.
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 <div id="mapa-estados-data" class="hidden" data-estados='{{ mapa_estados | tojson | e }}'></div>
 
-<!-- Scripts de Mapa e Iconos -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script src="https://unpkg.com/lucide@latest"></script>
 <script>
-    const mapaEstEstados = JSON.parse(document.getElementById('mapa-estados-data').dataset.estados);
+    const mapaEstadosDataElement = document.getElementById('mapa-estados-data');
+    const mapaEstEstados = mapaEstadosDataElement ? JSON.parse(mapaEstadosDataElement.dataset.estados) : [];
 
-    const mapa = L.map('mapaRiesgoDashboard', { scrollWheelZoom: false }).setView([10.35, -68.95], 7);
+    if (document.getElementById('mapaRiesgoDashboard')) {
+        const mapa = L.map('mapaRiesgoDashboard', { scrollWheelZoom: false }).setView([10.35, -68.95], 7);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 18,
-        attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(mapa);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(mapa);
 
-    mapaEstEstados.forEach((estado) => {
-        const tamaño = Math.max(14, estado.conteo * 4 + 12);
-        L.circleMarker([estado.lat, estado.lng], {
-            radius: tamaño,
-            color: estado.color,
-            weight: 2,
-            fillColor: estado.color,
-            fillOpacity: 0.35
-        }).addTo(mapa).bindPopup(`<strong>${estado.nombre}</strong><br>Expedientes abiertos: ${estado.conteo}`);
+        mapaEstEstados.forEach((estado) => {
+            const tamaño = Math.max(14, estado.conteo * 4 + 12);
 
-        L.marker([estado.lat, estado.lng]).addTo(mapa).bindTooltip(`${estado.nombre}: ${estado.conteo}`, { permanent: true, direction: 'top', className: 'text-xs' });
-    });
+            L.circleMarker([estado.lat, estado.lng], {
+                radius: tamaño,
+                color: estado.color,
+                weight: 2,
+                fillColor: estado.color,
+                fillOpacity: 0.35
+            }).addTo(mapa).bindPopup(`<strong>${estado.nombre}</strong><br>Expedientes abiertos: ${estado.conteo}`);
 
-    // Reiniciar Iconos Lucide
+            L.marker([estado.lat, estado.lng]).addTo(mapa).bindTooltip(`${estado.nombre}: ${estado.conteo}`, { permanent: true, direction: 'top', className: 'text-xs' });
+        });
+    }
+
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
     }

@@ -21,6 +21,7 @@
 
     <div class="rounded-xl shadow-sm border p-4 bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
         <form method="POST" action="{{ url_for('sensibilizacion.nuevo') }}" class="grid grid-cols-1 md:grid-cols-6 gap-3">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input name="campana" placeholder="Campana" required class="md:col-span-2 border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
             <input name="territorio" placeholder="Territorio" required class="border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
             <input name="vocero" placeholder="Vocero" class="border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
@@ -51,6 +52,7 @@
                         <td class="p-4">{{ item.alcance }}</td>
                         <td class="p-4">
                             <form method="POST" action="{{ url_for('sensibilizacion.cambiar_estado', sensibilizacion_id=item.id) }}" class="flex items-center gap-2">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <select name="estado" class="border rounded-md p-1 text-xs bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                                     {% for estado in estados_flujo %}
                                         <option value="{{ estado }}" {% if estado == item.estado %}selected{% endif %}>{{ estado }}</option>

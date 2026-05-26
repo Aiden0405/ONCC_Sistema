@@ -48,6 +48,7 @@
                         <td class="p-4 text-xs text-gray-500 dark:text-gray-400">{{ act.estado_geo }}, {{ act.municipio }}</td>
                         <td class="p-4">
                             <form method="POST" action="{{ url_for('actividad.cambiar_estado', actividad_id=act.id) }}" class="flex items-center gap-2">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <select name="estado" class="border rounded-md p-1 text-xs bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                                     {% for estado in estados_actividad %}
                                         <option value="{{ estado }}" {% if estado == act.estado %}selected{% endif %}>{{ estado }}</option>

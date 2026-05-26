@@ -1,18 +1,15 @@
 import os
 from datetime import datetime
 
-from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
+from flask import current_app, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from werkzeug.utils import secure_filename
 
 from app import db
+from app.blueprints.monitoreo import monitoreo_bp
 from app.constants import ESTADOS_ACTIVIDAD
-
-# Creamos el Blueprint para agrupar las rutas de actividades
 from app.models.actividad import Actividad
 from app.models.bitacora import BitacoraTransaccion
-
-actividad_bp = Blueprint('actividad', __name__, url_prefix='/actividades')
 
 
 def _guardar_archivo(archivo, carpeta):
@@ -26,13 +23,15 @@ def _guardar_archivo(archivo, carpeta):
     archivo.save(ruta_completa)
     return os.path.join('uploads', carpeta, nombre_archivo).replace('\\', '/')
 
-@actividad_bp.route('/')
+
+@monitoreo_bp.route('/actividades/')
 @login_required
-def index():
+def actividades_index():
     actividades = Actividad.query.order_by(Actividad.fecha.desc(), Actividad.creado_en.desc()).all()
     return render_template('actividades/index.html', actividades=actividades, estados_actividad=ESTADOS_ACTIVIDAD)
 
-@actividad_bp.route('/nueva', methods=['GET', 'POST'])
+
+@monitoreo_bp.route('/actividades/nueva', methods=['GET', 'POST'])
 @login_required
 def nueva():
     if request.method == 'POST':
@@ -85,9 +84,9 @@ def nueva():
     return render_template('actividades/formulario.html')
 
 
-@actividad_bp.route('/<int:actividad_id>/estado', methods=['POST'])
+@monitoreo_bp.route('/actividades/<int:actividad_id>/estado', methods=['POST'])
 @login_required
-def cambiar_estado(actividad_id):
+def actividades_cambiar_estado(actividad_id):
     actividad = Actividad.query.get_or_404(actividad_id)
     nuevo_estado = request.form.get('estado', '').strip()
 

@@ -26,6 +26,7 @@
                     <td class="text-right">
                         <a href="{{ url_for('rol.editar', rol_id=r.id) }}" class="text-blue-600 mr-2">Editar</a>
                         <form action="{{ url_for('rol.eliminar', rol_id=r.id) }}" method="post" style="display:inline" onsubmit="return confirm('Eliminar rol?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button class="text-red-600">Eliminar</button>
                         </form>
                     </td>

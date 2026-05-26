@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}Nueva Publicación - Divulgación{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div class="flex items-center justify-between mb-2">
+        <div>
+            <h1 class="text-2xl font-bold dark:text-white text-gray-800">Crear Publicación</h1>
+            <p class="text-sm dark:text-gray-400 text-gray-500">Crea contenido que luego podrá ser publicado en el portal público</p>
+        </div>
+        <a href="{{ url_for('core.divulgacion_admin_index') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white transition-colors">
+            <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i> Volver
+        </a>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+        <form method="post" class="p-8 space-y-6">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div>
+                <h3 class="text-sm font-bold uppercase tracking-wide mb-4 flex items-center text-green-700 dark:text-green-400">
+                    <i data-lucide="file-text" class="mr-2 w-4 h-4"></i> Datos de la Publicación
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        {{ form.tipo.label(class_='block text-xs font-semibold uppercase mb-1 text-gray-600 dark:text-gray-400') }}
+                        {{ form.tipo(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white') }}
+                    </div>
+
+                    <div class="md:col-span-2">
+                        {{ form.titulo.label(class_='block text-xs font-semibold uppercase mb-1 text-gray-600 dark:text-gray-400') }}
+                        {{ form.titulo(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white') }}
+                    </div>
+
+                    <div class="md:col-span-2">
+                        {{ form.resumen.label(class_='block text-xs font-semibold uppercase mb-1 text-gray-600 dark:text-gray-400') }}
+                        {{ form.resumen(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white') }}
+                    </div>
+
+                    <div class="md:col-span-2">
+                        {{ form.contenido.label(class_='block text-xs font-semibold uppercase mb-1 text-gray-600 dark:text-gray-400') }}
+                        {{ form.contenido(class_='w-full h-48 border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white') }}
+                    </div>
+
+                    <div>
+                        {{ form.estado.label(class_='block text-xs font-semibold uppercase mb-1 text-gray-600 dark:text-gray-400') }}
+                        {{ form.estado(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white') }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end pt-6 border-t border-gray-100 dark:border-gray-700">
+                <button type="submit" class="px-6 py-2 bg-green-600 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-green-700 transition-colors">Guardar Publicación</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

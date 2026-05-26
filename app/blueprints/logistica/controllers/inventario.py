@@ -1,23 +1,23 @@
 from datetime import datetime
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash
-from flask_login import login_required, current_user
+from flask import flash, redirect, render_template, request, url_for
+from flask_login import current_user, login_required
 
 from app import db
+from app.blueprints.logistica import logistica_bp
 from app.constants import ESTADOS_TRANSACCION
 from app.models.bitacora import BitacoraTransaccion
 from app.models.inventario import InventarioEquipo
 
-# Creamos el Blueprint para agrupar las rutas de Inventario Físico
-inventario_bp = Blueprint('inventario', __name__, url_prefix='/inventario')
 
-@inventario_bp.route('/')
+@logistica_bp.route('/inventario/')
 @login_required
-def index():
+def inventario_index():
     equipos = InventarioEquipo.query.order_by(InventarioEquipo.creado_en.desc()).all()
     return render_template('inventario/index.html', inventario=equipos, estados_flujo=ESTADOS_TRANSACCION)
 
-@inventario_bp.route('/nuevo', methods=['POST'])
+
+@logistica_bp.route('/inventario/nuevo', methods=['POST'])
 @login_required
 def nuevo():
     codigo = request.form.get('codigo', '').strip()
@@ -60,7 +60,7 @@ def nuevo():
     return redirect(url_for('inventario.index'))
 
 
-@inventario_bp.route('/<int:equipo_id>/estado', methods=['POST'])
+@logistica_bp.route('/inventario/<int:equipo_id>/estado', methods=['POST'])
 @login_required
 def cambiar_estado(equipo_id):
     equipo = InventarioEquipo.query.get_or_404(equipo_id)

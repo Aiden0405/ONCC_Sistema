@@ -59,7 +59,7 @@ class Config:
     REMEMBER_COOKIE_SECURE = False  # True en producción HTTPS
     REMEMBER_COOKIE_SAMESITE = 'Lax'
 
-    # CSRF: no lo activamos globalmente aún (convertir formularios a Flask-WTF primero)
-    WTF_CSRF_ENABLED = False
+    # CSRF habilitado para formularios de Flask-WTF
+    WTF_CSRF_ENABLED = True
     # Nombre del rol que tiene permisos totales en el sistema
     SUPER_ROLE_NAME = os.environ.get('SUPER_ROLE_NAME', 'Director Regional')

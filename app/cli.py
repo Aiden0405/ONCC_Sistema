@@ -60,14 +60,14 @@ def do_seed():
 
         # Crear usuario Director
         director_email = os.environ.get('ADMIN_EMAIL', 'director@oncc.gob.ve')
-        director = Usuario.query.filter_by(email=director_email).first()
+        director = Usuario.query.filter_by(correo=director_email).first()
         if not director:
             pw = os.environ.get('ADMIN_PASSWORD')
             if not pw:
                 pw = secrets.token_urlsafe(8)
                 print(f'ADMIN_PASSWORD no definido. Se generó: {pw}')
 
-            nuevo = Usuario(nombre=super_role_name, email=director_email, rol=super_role_name, estatus=True)
+            nuevo = Usuario(nombre=super_role_name, correo=director_email, rol=super_role_name, estatus=True)
             nuevo.set_password(pw)
             db.session.add(nuevo)
             db.session.commit()

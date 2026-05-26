@@ -1,26 +1,25 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
-from flask_login import login_required, current_user
+from flask import flash, redirect, render_template, request, url_for
+from flask_login import current_user, login_required
+
 from app import db
-from app.models.role import Role, Permission
-from app.utils.authorization import role_required
+from app.blueprints.core import core_bp
+from app.models.role import Permission, Role
 from app.services.auditoria import registrar_accion
-from app.utils.authorization import permission_required
-
-rol_bp = Blueprint('rol', __name__, url_prefix='/admin/roles')
+from app.utils.authorization import role_required
 
 
-@rol_bp.route('/')
+@core_bp.route('/admin/roles/')
 @login_required
 @role_required('Superusuario', 'Administrador', 'Director')
-def index():
+def rol_index():
     roles = Role.query.order_by(Role.nombre).all()
     return render_template('roles/index.html', roles=roles)
 
 
-@rol_bp.route('/nuevo', methods=['GET', 'POST'])
+@core_bp.route('/admin/roles/nuevo', methods=['GET', 'POST'])
 @login_required
 @role_required('Superusuario', 'Administrador', 'Director')
-def nuevo():
+def rol_nuevo():
     if request.method == 'POST':
         nombre = (request.form.get('nombre') or '').strip()
         descripcion = (request.form.get('descripcion') or '').strip()
@@ -32,20 +31,20 @@ def nuevo():
             flash('Rol ya existe.', 'error')
             return render_template('roles/formulario.html')
 
-        r = Role(nombre=nombre, descripcion=descripcion)
-        db.session.add(r)
+        rol = Role(nombre=nombre, descripcion=descripcion)
+        db.session.add(rol)
         db.session.commit()
-        registrar_accion('Roles', r.id, 'Crear', current_user.nombre, detalle=f'Creado rol {r.nombre}')
+        registrar_accion('Roles', rol.id, 'Crear', current_user.nombre, detalle=f'Creado rol {rol.nombre}')
         flash('Rol creado.', 'success')
         return redirect(url_for('rol.index'))
 
     return render_template('roles/formulario.html')
 
 
-@rol_bp.route('/<int:rol_id>/editar', methods=['GET', 'POST'])
+@core_bp.route('/admin/roles/<int:rol_id>/editar', methods=['GET', 'POST'])
 @login_required
 @role_required('Superusuario', 'Administrador', 'Director')
-def editar(rol_id):
+def rol_editar(rol_id):
     rol = Role.query.get_or_404(rol_id)
     if request.method == 'POST':
         rol.nombre = (request.form.get('nombre') or rol.nombre).strip()
@@ -58,10 +57,10 @@ def editar(rol_id):
     return render_template('roles/formulario.html', rol=rol)
 
 
-@rol_bp.route('/<int:rol_id>/eliminar', methods=['POST'])
+@core_bp.route('/admin/roles/<int:rol_id>/eliminar', methods=['POST'])
 @login_required
 @role_required('Superusuario', 'Administrador', 'Director')
-def eliminar(rol_id):
+def rol_eliminar(rol_id):
     rol = Role.query.get_or_404(rol_id)
     db.session.delete(rol)
     db.session.commit()
@@ -70,18 +69,18 @@ def eliminar(rol_id):
     return redirect(url_for('rol.index'))
 
 
-@rol_bp.route('/permisos')
+@core_bp.route('/admin/roles/permisos')
 @login_required
 @role_required('Superusuario', 'Administrador', 'Director')
-def permisos_index():
+def rol_permisos_index():
     permisos = Permission.query.order_by(Permission.nombre).all()
     return render_template('roles/permissions_index.html', permisos=permisos)
 
 
-@rol_bp.route('/permisos/nuevo', methods=['GET', 'POST'])
+@core_bp.route('/admin/roles/permisos/nuevo', methods=['GET', 'POST'])
 @login_required
 @role_required('Superusuario', 'Administrador', 'Director')
-def permiso_nuevo():
+def rol_permiso_nuevo():
     if request.method == 'POST':
         nombre = (request.form.get('nombre') or '').strip()
         descripcion = (request.form.get('descripcion') or '').strip()
@@ -93,25 +92,24 @@ def permiso_nuevo():
             flash('Permiso ya existe.', 'error')
             return render_template('roles/permission_form.html')
 
-        p = Permission(nombre=nombre, descripcion=descripcion)
-        db.session.add(p)
+        permiso = Permission(nombre=nombre, descripcion=descripcion)
+        db.session.add(permiso)
         db.session.commit()
-        registrar_accion('Permisos', p.id, 'Crear', current_user.nombre, detalle=f'Creado permiso {p.nombre}')
+        registrar_accion('Permisos', permiso.id, 'Crear', current_user.nombre, detalle=f'Creado permiso {permiso.nombre}')
         flash('Permiso creado.', 'success')
         return redirect(url_for('rol.permisos_index'))
 
     return render_template('roles/permission_form.html')
 
 
-@rol_bp.route('/<int:rol_id>/permisos', methods=['GET', 'POST'])
+@core_bp.route('/admin/roles/<int:rol_id>/permisos', methods=['GET', 'POST'])
 @login_required
 @role_required('Superusuario', 'Administrador', 'Director')
-def gestionar_permisos(rol_id):
+def rol_gestionar_permisos(rol_id):
     rol = Role.query.get_or_404(rol_id)
     permisos = Permission.query.order_by(Permission.nombre).all()
     if request.method == 'POST':
         seleccion = request.form.getlist('permisos')
-        # Asignar los permisos seleccionados
         rol.permissions = [Permission.query.get(int(pid)) for pid in seleccion if pid.isdigit()]
         db.session.commit()
         registrar_accion('Roles', rol.id, 'ActualizarPermisos', current_user.nombre, detalle=f'Permisos actualizados: {seleccion}')

@@ -1,18 +1,21 @@
 from collections import Counter
 
 from flask import Flask, render_template
-from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_required
-from config import Config
 from flask_migrate import Migrate
+from flask_sqlalchemy import SQLAlchemy
+from flask_wtf import CSRFProtect
+
+from config import Config
 
 # Inicializar extensiones que se conectarán en create_app
 migrate = Migrate()
+csrf = CSRFProtect()
 
 # 1. Herramientas
 db = SQLAlchemy()
 login_manager = LoginManager()
-login_manager.login_view = 'auth.login'
+login_manager.login_view = 'core.login'
 login_manager.login_message = "Por favor, inicie sesión para acceder al sistema ONCC."
 
 # 2. Función Factory
@@ -24,6 +27,7 @@ def create_app(config_class=Config):
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
+    csrf.init_app(app)
 
     # ==============================================================
     # Cargador de Usuarios para Flask-Login
@@ -38,35 +42,114 @@ def create_app(config_class=Config):
     # REGISTRO DE CONTROLADORES (Blueprints)
     # ¡Aquí es donde debes agregar los que faltaban!
     # ==============================================================
-    from app.controllers.auth_controller import auth_bp
-    from app.controllers.usuario_controller import usuario_bp
-    from app.controllers.public_controller import public_bp
-    from app.controllers.actividad_controller import actividad_bp
-    from app.controllers.inventario_controller import inventario_bp
-    from app.controllers.geomatica_controller import geomatica_bp
-    from app.controllers.reporte_controller import reporte_bp
-    from app.controllers.rol_controller import rol_bp
+    from app.blueprints.comunitario import comunitario_bp
+    from app.blueprints.core import core_bp
+    from app.blueprints.logistica import logistica_bp
+    from app.blueprints.mapas import mapas_bp
+    from app.blueprints.monitoreo import monitoreo_bp
 
-    # Registramos todos para que el menú pueda encontrar las rutas
-    app.register_blueprint(public_bp)
-    app.register_blueprint(auth_bp)
-    app.register_blueprint(usuario_bp)
-    app.register_blueprint(actividad_bp)
-    app.register_blueprint(inventario_bp)
-    app.register_blueprint(geomatica_bp)
-    app.register_blueprint(reporte_bp)
-    app.register_blueprint(rol_bp)
+    # Registramos los cinco dominios principales
+    app.register_blueprint(core_bp)
+    app.register_blueprint(comunitario_bp)
+    app.register_blueprint(mapas_bp)
+    app.register_blueprint(monitoreo_bp)
+    app.register_blueprint(logistica_bp)
 
     # Importar modelos para que las migraciones/CLI los detecten
     with app.app_context():
         from app.models.actividad import Actividad  # noqa: F401
         from app.models.bitacora import BitacoraTransaccion  # noqa: F401
+        from app.models.divulgacion import Publicacion  # noqa: F401
         from app.models.geomatica import MapaRegistro  # noqa: F401
         from app.models.inventario import InventarioEquipo  # noqa: F401
         from app.models.reporte import ReporteTransaccional  # noqa: F401
         from app.models.visita_portal import VisitaPortal  # noqa: F401
         from app.models.usuario import Usuario  # noqa: F401
         from app.models.role import Role, Permission  # noqa: F401
+
+    from app.blueprints.core.controllers.auth import login as core_login
+    from app.blueprints.core.controllers.auth import logout as core_logout
+    from app.blueprints.core.controllers.auth import recuperar_contrasena as core_recuperar
+    from app.blueprints.core.controllers.bitacora import bitacora_index as core_bitacora_index
+    from app.blueprints.core.controllers.divulgacion import acerca as core_acerca
+    from app.blueprints.core.controllers.divulgacion import contacto as core_contacto
+    from app.blueprints.core.controllers.divulgacion import home as core_home
+    from app.blueprints.core.controllers.divulgacion import servicios as core_servicios
+    from app.blueprints.core.controllers.roles import rol_editar as core_rol_editar
+    from app.blueprints.core.controllers.roles import rol_eliminar as core_rol_eliminar
+    from app.blueprints.core.controllers.roles import rol_gestionar_permisos as core_rol_gestionar_permisos
+    from app.blueprints.core.controllers.roles import rol_index as core_rol_index
+    from app.blueprints.core.controllers.roles import rol_nuevo as core_rol_nuevo
+    from app.blueprints.core.controllers.roles import rol_permiso_nuevo as core_permiso_nuevo
+    from app.blueprints.core.controllers.roles import rol_permisos_index as core_permisos_index
+    from app.blueprints.core.controllers.usuarios import usuario_editar as core_usuario_editar
+    from app.blueprints.core.controllers.usuarios import usuario_eliminar as core_usuario_eliminar
+    from app.blueprints.core.controllers.usuarios import usuario_index as core_usuario_index
+    from app.blueprints.core.controllers.usuarios import usuario_nuevo as core_usuario_nuevo
+    from app.blueprints.core.controllers.usuarios import usuario_perfil as core_usuario_perfil
+    from app.blueprints.logistica.controllers.inventario import cambiar_estado as logistica_inventario_cambiar_estado
+    from app.blueprints.logistica.controllers.inventario import inventario_index as logistica_inventario_index
+    from app.blueprints.logistica.controllers.inventario import nuevo as logistica_inventario_nuevo
+    from app.blueprints.mapas.controllers.riesgo import cambiar_estado as mapas_cambiar_estado
+    from app.blueprints.mapas.controllers.riesgo import mapas_riesgo_index as mapas_index
+    from app.blueprints.mapas.controllers.riesgo import procesar_archivo as mapas_procesar_archivo
+    from app.blueprints.monitoreo.controllers.actividades import actividades_cambiar_estado as monitoreo_actividad_cambiar_estado
+    from app.blueprints.monitoreo.controllers.actividades import actividades_index as monitoreo_actividad_index
+    from app.blueprints.monitoreo.controllers.actividades import nueva as monitoreo_actividad_nueva
+    from app.blueprints.monitoreo.controllers.comparacion_mapas_climaticos import reporte_cambiar_estado as monitoreo_reporte_cambiar_estado
+    from app.blueprints.monitoreo.controllers.comparacion_mapas_climaticos import comparacion_index as monitoreo_reporte_index
+    from app.blueprints.monitoreo.controllers.comparacion_mapas_climaticos import nuevo as monitoreo_reporte_nuevo
+    from app.blueprints.comunitario.controllers.formaciones import formacion_cambiar_estado
+    from app.blueprints.comunitario.controllers.formaciones import formacion_nuevo
+    from app.blueprints.comunitario.controllers.formaciones import formaciones_index as comunitario_formaciones_index
+    from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizacion_cambiar_estado
+    from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizacion_nuevo
+    from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizaciones_index as comunitario_sensibilizaciones_index
+
+    app.add_url_rule('/', endpoint='public.home', view_func=core_home)
+    app.add_url_rule('/acerca', endpoint='public.acerca', view_func=core_acerca)
+    app.add_url_rule('/servicios', endpoint='public.servicios', view_func=core_servicios)
+    app.add_url_rule('/contacto', endpoint='public.contacto', view_func=core_contacto)
+    app.add_url_rule('/auth/login', endpoint='auth.login', view_func=core_login, methods=['GET', 'POST'])
+    app.add_url_rule('/auth/logout', endpoint='auth.logout', view_func=core_logout)
+    app.add_url_rule('/auth/recuperar', endpoint='auth.recuperar_contrasena', view_func=core_recuperar, methods=['GET', 'POST'])
+
+    app.add_url_rule('/formaciones', endpoint='formacion.index', view_func=comunitario_formaciones_index)
+    app.add_url_rule('/formaciones/nuevo', endpoint='formacion.nuevo', view_func=formacion_nuevo, methods=['POST'])
+    app.add_url_rule('/formaciones/<int:formacion_id>/estado', endpoint='formacion.cambiar_estado', view_func=formacion_cambiar_estado, methods=['POST'])
+    app.add_url_rule('/sensibilizaciones', endpoint='sensibilizacion.index', view_func=comunitario_sensibilizaciones_index)
+    app.add_url_rule('/sensibilizaciones/nuevo', endpoint='sensibilizacion.nuevo', view_func=sensibilizacion_nuevo, methods=['POST'])
+    app.add_url_rule('/sensibilizaciones/<int:sensibilizacion_id>/estado', endpoint='sensibilizacion.cambiar_estado', view_func=sensibilizacion_cambiar_estado, methods=['POST'])
+
+    app.add_url_rule('/admin/usuarios/', endpoint='usuario.index', view_func=core_usuario_index)
+    app.add_url_rule('/admin/usuarios/nuevo', endpoint='usuario.nuevo', view_func=core_usuario_nuevo, methods=['GET', 'POST'])
+    app.add_url_rule('/admin/usuarios/<int:usuario_id>/editar', endpoint='usuario.editar', view_func=core_usuario_editar, methods=['GET', 'POST'])
+    app.add_url_rule('/admin/usuarios/<int:usuario_id>/eliminar', endpoint='usuario.eliminar', view_func=core_usuario_eliminar, methods=['POST'])
+    app.add_url_rule('/admin/usuarios/perfil', endpoint='usuario.perfil', view_func=core_usuario_perfil, methods=['GET', 'POST'])
+
+    app.add_url_rule('/admin/roles/', endpoint='rol.index', view_func=core_rol_index)
+    app.add_url_rule('/admin/roles/nuevo', endpoint='rol.nuevo', view_func=core_rol_nuevo, methods=['GET', 'POST'])
+    app.add_url_rule('/admin/roles/<int:rol_id>/editar', endpoint='rol.editar', view_func=core_rol_editar, methods=['GET', 'POST'])
+    app.add_url_rule('/admin/roles/<int:rol_id>/eliminar', endpoint='rol.eliminar', view_func=core_rol_eliminar, methods=['POST'])
+    app.add_url_rule('/admin/roles/permisos', endpoint='rol.permisos_index', view_func=core_permisos_index)
+    app.add_url_rule('/admin/roles/permisos/nuevo', endpoint='rol.permiso_nuevo', view_func=core_permiso_nuevo, methods=['GET', 'POST'])
+    app.add_url_rule('/admin/roles/<int:rol_id>/permisos', endpoint='rol.gestionar_permisos', view_func=core_rol_gestionar_permisos, methods=['GET', 'POST'])
+
+    app.add_url_rule('/actividades/', endpoint='actividad.index', view_func=monitoreo_actividad_index)
+    app.add_url_rule('/actividades/nueva', endpoint='actividad.nueva', view_func=monitoreo_actividad_nueva, methods=['GET', 'POST'])
+    app.add_url_rule('/actividades/<int:actividad_id>/estado', endpoint='actividad.cambiar_estado', view_func=monitoreo_actividad_cambiar_estado, methods=['POST'])
+
+    app.add_url_rule('/inventario/', endpoint='inventario.index', view_func=logistica_inventario_index)
+    app.add_url_rule('/inventario/nuevo', endpoint='inventario.nuevo', view_func=logistica_inventario_nuevo, methods=['POST'])
+    app.add_url_rule('/inventario/<int:equipo_id>/estado', endpoint='inventario.cambiar_estado', view_func=logistica_inventario_cambiar_estado, methods=['POST'])
+
+    app.add_url_rule('/geomatica/', endpoint='geomatica.index', view_func=mapas_index)
+    app.add_url_rule('/geomatica/procesar', endpoint='geomatica.procesar_archivo', view_func=mapas_procesar_archivo, methods=['POST'])
+    app.add_url_rule('/geomatica/<int:mapa_id>/estado', endpoint='geomatica.cambiar_estado', view_func=mapas_cambiar_estado, methods=['POST'])
+
+    app.add_url_rule('/reportes/', endpoint='reporte.index', view_func=monitoreo_reporte_index)
+    app.add_url_rule('/reportes/nuevo', endpoint='reporte.nuevo', view_func=monitoreo_reporte_nuevo, methods=['POST'])
+    app.add_url_rule('/reportes/<int:reporte_id>/estado', endpoint='reporte.cambiar_estado', view_func=monitoreo_reporte_cambiar_estado, methods=['POST'])
 
     # Registrar comandos CLI (seed, etc.)
     try:
@@ -84,6 +167,7 @@ def create_app(config_class=Config):
     @login_required
     def dashboard():
         from app.models.actividad import Actividad
+        from app.models.divulgacion import Publicacion
         from app.models.geomatica import MapaRegistro
         from app.models.inventario import InventarioEquipo
         from app.models.reporte import ReporteTransaccional
@@ -102,6 +186,9 @@ def create_app(config_class=Config):
             'mapas': MapaRegistro.query.count(),
             'reportes': ReporteTransaccional.query.count(),
             'actividades': total_actividades,
+            'divulgacion': Publicacion.query.count(),
+            'divulgacion_publicadas': Publicacion.query.filter_by(estado='publicado').count(),
+            'divulgacion_borradores': Publicacion.query.filter_by(estado='borrador').count(),
             'comunidades': 0,
             'formaciones': 0,
             'sensibilizaciones': 0,
@@ -113,6 +200,7 @@ def create_app(config_class=Config):
             'reportes': modulos_operativos['reportes'],
             'formaciones': modulos_operativos['formaciones'],
             'sensibilizaciones': modulos_operativos['sensibilizaciones'],
+            'divulgacion': modulos_operativos['divulgacion'],
         }
 
         return render_template(
