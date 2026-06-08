@@ -73,7 +73,7 @@ def do_seed():
             db.session.commit()
 
             # Asignar rol
-            nuevo.roles.append(director_role)
+            nuevo.id_rol = director_role.id_rol
             db.session.commit()
             print(f"Usuario '{director_email}' creado con rol {super_role_name}.")
         else:
@@ -92,15 +92,15 @@ def assign_super_role():
             db.session.commit()
             print(f'Rol creado: {super_role_name}')
 
-        users = Usuario.query.filter_by(rol=super_role_name).all()
+        users = Usuario.query.join(Role, Usuario.id_rol == Role.id_rol).filter(Role.nombre_rol == super_role_name).all()
         if not users:
             print(f'No se encontraron usuarios con campo `rol` = "{super_role_name}"')
             return
 
         updated = 0
         for u in users:
-            if role not in u.roles:
-                u.roles.append(role)
+            if u.id_rol != role.id_rol:
+                u.id_rol = role.id_rol
                 updated += 1
         db.session.commit()
         print(f'Asociado rol {super_role_name} a {updated} usuario(s).')

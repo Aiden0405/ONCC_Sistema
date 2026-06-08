@@ -59,11 +59,21 @@ def create_app(config_class=Config):
     with app.app_context():
         from app.models.actividad import Actividad  # noqa: F401
         from app.models.bitacora import BitacoraTransaccion  # noqa: F401
+        from app.models.esquema_activo import ActividadActiva  # noqa: F401
+        from app.models.esquema_activo import ComunidadActiva  # noqa: F401
+        from app.models.esquema_activo import EstadoActivo  # noqa: F401
+        from app.models.esquema_activo import FormacionActiva  # noqa: F401
+        from app.models.esquema_activo import InstitucionActiva  # noqa: F401
+        from app.models.esquema_activo import NivelActivo  # noqa: F401
+        from app.models.esquema_activo import MunicipioActivo  # noqa: F401
+        from app.models.esquema_activo import ParroquiaActiva  # noqa: F401
+        from app.models.esquema_activo import SensibilizacionActiva  # noqa: F401
         from app.models.divulgacion import Publicacion  # noqa: F401
         from app.models.geomatica import MapaRegistro  # noqa: F401
         from app.models.inventario import InventarioEquipo  # noqa: F401
         from app.models.reporte import ReporteTransaccional  # noqa: F401
         from app.models.visita_portal import VisitaPortal  # noqa: F401
+        from app.models.password_reset import PasswordReset  # noqa: F401
         from app.models.usuario import Usuario  # noqa: F401
         from app.models.role import Role, Permission  # noqa: F401
 

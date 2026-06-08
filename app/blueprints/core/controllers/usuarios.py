@@ -13,7 +13,7 @@ from app.utils.authorization import role_required
 @login_required
 @role_required('Superusuario', 'Administrador', 'Director Regional')
 def usuario_index():
-    usuarios = Usuario.query.order_by(Usuario.nombre).all()
+    usuarios = Usuario.query.order_by(Usuario.nombre_usuario).all()
     return render_template('usuarios/index.html', usuarios=usuarios)
 
 
@@ -29,26 +29,38 @@ def usuario_nuevo():
 
         if not nombre or not correo or not password:
             flash('Nombre, correo y contraseña son obligatorios.', 'error')
-            return render_template('usuarios/formulario.html')
-        if Usuario.query.filter_by(correo=correo).first():
+            roles = Role.query.order_by(Role.nombre_rol).all()
+            return render_template('usuarios/formulario.html', roles=roles)
+            
+        existe = Usuario.query.filter_by(correo=correo).first()
+        if existe:
             flash('Ya existe un usuario con ese correo.', 'error')
-            return render_template('usuarios/formulario.html')
-        nuevo_usuario = Usuario(nombre=nombre, correo=correo, rol=rol, estatus=True)
-        nuevo_usuario.set_password(password)
+            roles = Role.query.order_by(Role.nombre_rol).all()
+            return render_template('usuarios/formulario.html', roles=roles)
 
-        role_obj = Role.query.filter_by(nombre=rol).first()
-        if role_obj:
-            nuevo_usuario.roles = [role_obj]
+        # 1. Buscamos el rol usando la columna real de Postgres (nombre_rol)
+        role_obj = Role.query.filter_by(nombre_rol=rol).first()
+        if not role_obj:
+            role_obj = Role.query.filter_by(nombre_rol='Técnico').first()
+
+        # 2. Instanciamos el usuario pasando el id_rol directo para cumplir el NOT NULL
+        nuevo_usuario = Usuario(
+            nombre_usuario=nombre,
+            correo=correo,
+            id_rol=role_obj.id_rol if role_obj else None
+        )
+        nuevo_usuario.set_password(password)
 
         db.session.add(nuevo_usuario)
         db.session.commit()
 
-        registrar_accion('Usuarios', nuevo_usuario.id, 'Crear', current_user.nombre, detalle=f'Creado usuario {correo}', estado_nuevo=nuevo_usuario.rol)
+        user_rol = getattr(nuevo_usuario, 'rol', rol)
+        registrar_accion('Usuarios', nuevo_usuario.id_usuario, 'Crear', current_user.nombre_usuario, detalle=f'Creado usuario {correo}', estado_nuevo=user_rol)
 
         flash('Usuario creado correctamente.', 'success')
-        return redirect(url_for('usuario.index'))
+        return redirect(url_for('core.usuario_index'))
 
-    roles = Role.query.order_by(Role.nombre).all()
+    roles = Role.query.order_by(Role.nombre_rol).all()
     return render_template('usuarios/formulario.html', roles=roles)
 
 
@@ -60,28 +72,29 @@ def usuario_editar(usuario_id):
 
     if request.method == 'POST':
         nombre = (request.form.get('nombre') or '').strip()
-        rol = (request.form.get('rol') or usuario.rol).strip()
-        estatus = bool(request.form.get('estatus'))
+        rol = (request.form.get('rol') or getattr(usuario, 'rol', 'Técnico')).strip()
 
-        usuario.nombre = nombre or usuario.nombre
-        usuario.rol = rol
-        usuario.estatus = estatus
+        usuario.nombre_usuario = nombre or usuario.nombre_usuario
+
+        # Buscamos el nuevo rol asignado en el formulario
+        role_obj = Role.query.filter_by(nombre_rol=rol).first()
+        if role_obj:
+            usuario.id_rol = role_obj.id_rol  # Modificación directa de la FK
 
         nueva_pass = (request.form.get('password') or '').strip()
         if nueva_pass:
             usuario.set_password(nueva_pass)
 
-        role_obj = Role.query.filter_by(nombre=rol).first()
-        if role_obj:
-            usuario.roles = [role_obj]
-
         db.session.commit()
-        registrar_accion('Usuarios', usuario.id, 'Modificar', current_user.nombre, detalle=f'Editado usuario {usuario.correo}', estado_nuevo=usuario.rol)
+        
+        user_correo = getattr(usuario, 'correo', usuario.nombre_usuario)
+        user_rol = getattr(usuario, 'rol', rol)
+        registrar_accion('Usuarios', usuario.id_usuario, 'Modificar', current_user.nombre_usuario, detalle=f'Editado usuario {user_correo}', estado_nuevo=user_rol)
 
         flash('Usuario actualizado.', 'success')
-        return redirect(url_for('usuario.index'))
+        return redirect(url_for('core.usuario_index'))
 
-    roles = Role.query.order_by(Role.nombre).all()
+    roles = Role.query.order_by(Role.nombre_rol).all()
     return render_template('usuarios/formulario.html', usuario=usuario, roles=roles)
 
 
@@ -90,34 +103,36 @@ def usuario_editar(usuario_id):
 @role_required('Superusuario', 'Administrador', 'Director Regional')
 def usuario_eliminar(usuario_id):
     usuario = Usuario.query.get_or_404(usuario_id)
-    if usuario.id == current_user.id:
+    if usuario.id_usuario == current_user.id_usuario:
         flash('No puede eliminar su propio usuario mientras esté autenticado.', 'error')
-        return redirect(url_for('usuario.index'))
+        return redirect(url_for('core.usuario_index'))
 
     db.session.delete(usuario)
     db.session.commit()
-    registrar_accion('Usuarios', usuario_id, 'Eliminar', current_user.nombre, detalle=f'Eliminado usuario {usuario.correo}')
+    
+    user_correo = getattr(usuario, 'correo', usuario.nombre_usuario)
+    registrar_accion('Usuarios', usuario_id, 'Eliminar', current_user.nombre_usuario, detalle=f'Eliminado usuario {user_correo}')
 
     flash('Usuario eliminado.', 'success')
-    return redirect(url_for('usuario.index'))
+    return redirect(url_for('core.usuario_index'))
 
 
 @core_bp.route('/admin/usuarios/perfil', methods=['GET', 'POST'])
 @login_required
 def usuario_perfil():
-    usuario = Usuario.query.get_or_404(current_user.id)
+    usuario = Usuario.query.get_or_404(current_user.id_usuario)
     if request.method == 'POST':
-        nombre = (request.form.get('nombre') or usuario.nombre).strip()
-        usuario.nombre = nombre
+        nombre = (request.form.get('nombre') or usuario.nombre_usuario).strip()
+        usuario.nombre_usuario = nombre
 
         nueva_pass = (request.form.get('password') or '').strip()
         if nueva_pass:
             usuario.set_password(nueva_pass)
 
         db.session.commit()
-        registrar_accion('Usuarios', usuario.id, 'ModificarPerfil', usuario.nombre, detalle='Actualizó perfil propio')
+        registrar_accion('Usuarios', usuario.id_usuario, 'ModificarPerfil', usuario.nombre_usuario, detalle='Actualizó perfil propio')
         flash('Perfil actualizado.', 'success')
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('core.dashboard'))
 
-    roles = Role.query.order_by(Role.nombre).all()
+    roles = Role.query.order_by(Role.nombre_rol).all()
     return render_template('usuarios/formulario.html', usuario=usuario, es_perfil=True, roles=roles)

@@ -3,67 +3,125 @@
 {% block title %}Formaciones - ONCC{% endblock %}
 
 {% block content %}
-<div class="space-y-6 animate-in fade-in duration-500">
-    <div>
-        <h1 class="text-2xl font-bold dark:text-white text-gray-800">Modulo de Formaciones</h1>
-        <p class="text-sm dark:text-gray-400 text-gray-500">Planificacion, asistencia y seguimiento de jornadas</p>
+<div class="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
+    
+    <div class="flex items-center justify-between mb-2">
+        <div>
+            <h1 class="text-2xl font-bold dark:text-white text-gray-800">Módulo de Formaciones</h1>
+            <p class="text-sm dark:text-gray-400 text-gray-500">Planificación, vinculación institucional y seguimiento pedagógico de jornadas climáticas</p>
+        </div>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
-                <div class="p-4 rounded-md {% if category == 'error' %}bg-red-50 text-red-700 border-red-200{% else %}bg-green-50 text-green-700 border-green-200{% endif %} border flex items-center">
-                    <i data-lucide="{% if category == 'error' %}alert-triangle{% else %}check-circle{% endif %}" class="mr-2 w-5 h-5"></i> {{ message }}
-                </div>
+                {% if category == 'error' %}
+                    <div class="p-4 rounded-md bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800 flex items-center shadow-sm">
+                        <i data-lucide="alert-triangle" class="mr-2 w-5 h-5"></i> 
+                        <span class="text-sm font-medium">{{ message }}</span>
+                    </div>
+                {% else %}
+                    <div class="p-4 rounded-md bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800 flex items-center shadow-sm">
+                        <i data-lucide="check-circle" class="mr-2 w-5 h-5"></i> 
+                        <span class="text-sm font-medium">{{ message }}</span>
+                    </div>
+                {% endif %}
             {% endfor %}
         {% endif %}
     {% endwith %}
 
-    <div class="rounded-xl shadow-sm border p-4 bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
-        <form method="POST" action="{{ url_for('formacion.nuevo') }}" class="grid grid-cols-1 md:grid-cols-6 gap-3">
+    <div class="rounded-xl shadow-sm border p-6 bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+        <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400 mb-4 flex items-center">
+            <i data-lucide="graduation-cap" class="w-4 h-4 mr-2"></i> Registrar Nueva Jornada de Formación
+        </h3>
+        
+        <form method="POST" action="{{ url_for('formacion.nuevo') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input name="tema" placeholder="Tema" required class="md:col-span-2 border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-            <input name="comunidad" placeholder="Comunidad" required class="border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-            <input name="facilitador" placeholder="Facilitador" class="border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-            <input type="date" name="fecha" required class="border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-            <input type="number" min="0" name="asistentes" placeholder="Asistentes" class="border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-medium px-4">Registrar</button>
+            
+            <div class="md:col-span-2 space-y-1">
+                <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Tema o Contenido de la Formación</label>
+                <input type="text" name="nombre_formacion" placeholder="Ej: Introducción al Cambio Climático y Gestión de Riesgos" required 
+                       class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" />
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Vincular a Actividad de Campo</label>
+                <select name="id_actividad" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                    <option value="" disabled selected>Seleccione actividad origen...</option>
+                    {% for act in actividades_disponibles %}
+                        <option value="{{ act.id_actividad }}">ID: {{ act.id_actividad }} - {{ act.fecha_actividad }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Institución Educativa / Ente Sede</label>
+                <select name="id_institucion" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                    <option value="" disabled selected>Seleccione la institución...</option>
+                    {% for inst in instituciones_disponibles %}
+                        <option value="{{ inst.id_institucion }}">{{ inst.nombre_institucion }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="md:col-span-4 flex justify-end pt-2">
+                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-medium px-6 py-2 transition-colors shadow-sm inline-flex items-center justify-center">
+                    <i data-lucide="plus-circle" class="w-4 h-4 mr-2"></i> Registrar Formación
+                </button>
+            </div>
         </form>
     </div>
 
     <div class="rounded-xl shadow-sm border overflow-hidden bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+        <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+            <div>
+                <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400">Historial de Jornadas de Formación</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Nómina consolidada a través de las consultas de cruce (JOIN) del sistema</p>
+            </div>
+            <span class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ formaciones|length }} registro(s)</span>
+        </div>
+
         <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
+            <table class="w-full text-sm text-left border-collapse">
                 <thead>
-                    <tr class="text-xs uppercase tracking-wider bg-gray-50 text-gray-600 dark:bg-gray-900/50 dark:text-gray-400">
-                        <th class="p-4 font-semibold border-b border-gray-200 dark:border-gray-700">Tema</th>
-                        <th class="p-4 font-semibold border-b border-gray-200 dark:border-gray-700">Comunidad</th>
-                        <th class="p-4 font-semibold border-b border-gray-200 dark:border-gray-700">Fecha</th>
-                        <th class="p-4 font-semibold border-b border-gray-200 dark:border-gray-700">Asistentes</th>
-                        <th class="p-4 font-semibold border-b border-gray-200 dark:border-gray-700">Estado</th>
+                    <tr class="text-xs uppercase tracking-wider bg-gray-50 text-gray-500 dark:bg-gray-700/40 dark:text-gray-400">
+                        <th class="px-6 py-3 font-semibold">ID</th>
+                        <th class="px-6 py-3 font-semibold">Tema de la Formación</th>
+                        <th class="px-6 py-3 font-semibold">Institución / Sede Académica</th>
+                        <th class="px-6 py-3 font-semibold text-center">Actividad Origen</th>
+                        <th class="px-6 py-3 font-semibold">Fecha Ejecución</th>
+                        <th class="px-6 py-3 text-right">Comunidad</th>
                     </tr>
                 </thead>
-                <tbody class="text-sm text-gray-700 dark:text-gray-300">
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
                     {% for item in formaciones %}
-                    <tr class="border-b hover:bg-gray-50 border-gray-100 dark:hover:bg-gray-700/50 dark:border-gray-700">
-                        <td class="p-4">{{ item.tema }}</td>
-                        <td class="p-4">{{ item.comunidad }}</td>
-                        <td class="p-4">{{ item.fecha.strftime('%Y-%m-%d') }}</td>
-                        <td class="p-4">{{ item.asistentes }}</td>
-                        <td class="p-4">
-                            <form method="POST" action="{{ url_for('formacion.cambiar_estado', formacion_id=item.id) }}" class="flex items-center gap-2">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <select name="estado" class="border rounded-md p-1 text-xs bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                                    {% for estado in estados_flujo %}
-                                        <option value="{{ estado }}" {% if estado == item.estado %}selected{% endif %}>{{ estado }}</option>
-                                    {% endfor %}
-                                </select>
-                                <button class="text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-700">Guardar</button>
-                            </form>
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                        <td class="px-6 py-4 font-mono text-xs text-gray-400">{{ item.id_formacion }}</td>
+                        <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-100 max-w-xs truncate">{{ item.nombre_formacion }}</td>
+                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400 font-medium">
+                            {{ item.nombre_institucion if item.nombre_institucion else 'No asignada' }}
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300">
+                                Actividad #{{ item.id_actividad }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-400">
+                            {{ item.fecha_actividad if item.fecha_actividad else 'N/D' }}
+                        </td>
+                        <td class="px-6 py-4 text-right text-xs font-medium text-gray-500 dark:text-gray-400">
+                            {{ item.nombre_comunidad if item.nombre_comunidad else 'N/D' }}
                         </td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="5" class="p-8 text-center text-gray-500 dark:text-gray-400">Aun no hay formaciones registradas.</td></tr>
+                    <tr>
+                        <td colspan="6" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
+                            <div class="flex flex-col items-center justify-center space-y-1">
+                                <i data-lucide="graduation-cap" class="w-6 h-6 text-gray-300 dark:text-gray-600"></i>
+                                <p class="text-sm font-medium">No se encuentran jornadas pedagógicas registradas en la bitácora.</p>
+                            </div>
+                        </td>
+                    </tr>
                     {% endfor %}
                 </tbody>
             </table>

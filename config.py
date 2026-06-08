@@ -9,31 +9,28 @@ load_dotenv(os.path.join(basedir, '.env'))
 
 
 def build_database_uri():
-    database_url = os.environ.get('DATABASE_URL')
-    if database_url:
-        return database_url
-
-    engine = os.environ.get('DB_ENGINE', 'sqlite').lower().strip()
+    # Forzamos el motor a PostgreSQL local
+    engine = 'postgresql'
 
     if engine in ['postgres', 'postgresql']:
-        user = os.environ.get('DB_USER', 'oncc_user')
-        password = quote_plus(os.environ.get('DB_PASSWORD', 'oncc_password'))
-        host = os.environ.get('DB_HOST', 'localhost')
-        port = os.environ.get('DB_PORT', '5432')
-        name = os.environ.get('DB_NAME', 'oncc_sistema')
+        user = 'postgres'
+        # Metemos la contraseña larga de Chocolatey directamente
+        password = quote_plus('32d7685ab62d4b23a50383d157c539fd')
+        host = 'localhost'
+        port = '5432'
+        name = 'oncc_sistema'
         return f'postgresql+psycopg2://{user}:{password}@{host}:{port}/{name}'
 
     if engine in ['mysql', 'mariadb']:
         user = os.environ.get('DB_USER', 'oncc_user')
         password = quote_plus(os.environ.get('DB_PASSWORD', 'oncc_password'))
         host = os.environ.get('DB_HOST', 'localhost')
-        port = os.environ.get('DB_PORT', '3306')
+        port = '3306'
         name = os.environ.get('DB_NAME', 'oncc_sistema')
         return f'mysql+pymysql://{user}:{password}@{host}:{port}/{name}'
 
     sqlite_name = os.environ.get('SQLITE_DB_NAME', 'oncc_sistema.db')
     return f'sqlite:///{os.path.join(basedir, sqlite_name)}'
-
 
 class Config:
     # 1. Clave de seguridad (Obligatoria para que funcionen los formularios de Flask-WTF)

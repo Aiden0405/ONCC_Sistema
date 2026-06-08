@@ -1,109 +1,101 @@
 {% extends 'base.html' %}
 
-{% block title %}Geomática y SSBC - ONCC{% endblock %}
+{% block title %}Mapas de Riesgo - ONCC{% endblock %}
 
 {% block content %}
-<div class="space-y-6 animate-in fade-in duration-500">
+<div class="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
     
-    <!-- ENCABEZADO -->
-    <div class="flex justify-between items-center">
+    <div class="flex justify-between items-center mb-2">
         <div>
-            <h1 class="text-2xl font-bold dark:text-white text-gray-800">Geomática - Carga Data Cruda (SSBC)</h1>
-            <p class="text-sm dark:text-gray-400 text-gray-500">Almacenamiento de variables climáticas y precipitación</p>
+            <h1 class="text-2xl font-bold dark:text-white text-gray-800">Mapas de Riesgo y Vulnerabilidad</h1>
+            <p class="text-sm dark:text-gray-400 text-gray-500">Carga, procesamiento y consulta de matrices cartográficas de zonas de peligro regional</p>
         </div>
     </div>
 
-    <!-- Mensajes Flash (Ej: Archivo procesado correctamente) -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="p-4 rounded-md text-white {% if category == 'error' %}bg-red-500{% else %}bg-green-500{% endif %} flex items-center">
-                    <i data-lucide="{% if category == 'error' %}alert-triangle{% else %}check-circle{% endif %}" class="mr-2 w-5 h-5"></i> 
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-
-    <!-- CAJA DE SUBIDA DE ARCHIVO -->
-    <div class="p-8 rounded-xl shadow-sm border flex flex-col items-center justify-center text-center bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
-        <div class="w-16 h-16 rounded-full flex items-center justify-center mb-4 bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400">
-            <i data-lucide="upload-cloud" class="w-8 h-8"></i>
+    <div class="p-6 rounded-xl shadow-sm border bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700 space-y-6">
+        <div class="flex items-center space-x-4">
+            <div class="w-12 h-12 rounded-full flex items-center justify-center bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 shrink-0">
+                <i data-lucide="shield-alert" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold text-gray-800 dark:text-white">Cargar Matriz de Riesgo Comunitario</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Suba el archivo de datos georeferenciados para actualizar el mapa de contingencias</p>
+            </div>
         </div>
-        <h3 class="text-lg font-medium mb-2 text-gray-800 dark:text-white">Procesar Archivo del Equipo Transmisor</h3>
-        <p class="text-sm mb-6 max-w-md text-gray-500 dark:text-gray-400">
-            Sube el archivo Excel o SSBC y clasificalo por tipo de mapa. Luego podras gestionar su flujo transaccional.
-        </p>
         
-        <!-- Formulario Multipart para subir archivos a Flask -->
-        <form method="POST" action="{{ url_for('geomatica.procesar_archivo') }}" enctype="multipart/form-data" class="flex flex-col items-center w-full max-w-md">
+        <form method="POST" action="{{ url_for('geomatica.procesar_archivo') }}" enctype="multipart/form-data" class="space-y-4">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="tipo_mapa" value="riesgo">
             
-            <div class="w-full mb-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-                <select name="tipo_mapa" class="border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                    <option value="riesgo">Mapa de riesgo</option>
-                    <option value="temperatura">Mapa tematico de temperatura</option>
-                    <option value="precipitacion">Mapa tematico de precipitacion</option>
-                </select>
-                <input type="text" name="cobertura" placeholder="Cobertura (estado/municipio)" class="border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-                <input type="file" name="archivo_ssbc" accept=".xlsx, .xls, .ssbc, .csv" required
-                    class="block w-full text-sm text-gray-500 dark:text-gray-400
-                    file:mr-4 file:py-2 file:px-4
-                    file:rounded-full file:border-0
-                    file:text-sm file:font-semibold
-                    file:bg-green-50 file:text-green-700
-                    hover:file:bg-green-100
-                    dark:file:bg-green-900/30 dark:file:text-green-400 dark:hover:file:bg-green-900/50
-                        border border-gray-300 dark:border-gray-600 rounded-lg p-2 cursor-pointer bg-white dark:bg-gray-700 md:col-span-2"/>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Identificador / Nombre del Mapa</label>
+                    <input type="text" name="nombre" placeholder="Ej: Mapa de Riesgo de Inundación - Quíbor" required 
+                           class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none" />
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Versión Cartográfica</label>
+                    <input type="text" name="version" placeholder="Ej: v1.0" required 
+                           class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none" />
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Cobertura Territorial</label>
+                    <input type="text" name="cobertura" placeholder="Ej: Municipio Jiménez, Lara" required 
+                           class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none" />
+                </div>
             </div>
 
-            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg text-sm font-medium shadow-sm transition-colors flex items-center">
-                <i data-lucide="database" class="mr-2 w-4 h-4"></i> Iniciar Procesamiento
-            </button>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end pt-2">
+                <div class="md:col-span-2 space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Archivo Data Cruda (SSBC / Excel / CSV)</label>
+                    <input type="file" name="archivo_ssbc" accept=".xlsx, .xls, .ssbc, .csv" required
+                           class="block w-full text-xs text-gray-500 dark:text-gray-400 border border-gray-300 dark:border-gray-600 rounded-md p-1.5 bg-white dark:bg-gray-700
+                           file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-red-50 file:text-red-700 dark:file:bg-red-900/30 dark:file:text-red-400" />
+                </div>
+                <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white rounded-md text-sm font-medium h-9 transition-colors shadow-sm flex items-center justify-center">
+                    <i data-lucide="alert-triangle" class="mr-2 w-4 h-4"></i> Procesar Capa de Riesgo
+                </button>
+            </div>
         </form>
     </div>
 
-    <!-- BITÁCORA DE CARGAS -->
-    <div class="rounded-xl shadow-sm border overflow-hidden mt-6 bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
-        <div class="p-4 border-b bg-gray-50 border-gray-100 dark:bg-gray-900/50 dark:border-gray-700">
-            <h3 class="font-semibold flex items-center text-gray-700 dark:text-gray-300">
-                <i data-lucide="database" class="mr-2 w-4 h-4"></i> Bitácora de Cargas Históricas
-            </h3>
+    <div class="rounded-xl shadow-sm border overflow-hidden bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+        <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+            <h3 class="text-sm font-bold uppercase tracking-wide text-red-700 dark:text-red-400">Historial de Mapas de Riesgo Registrados</h3>
+            <span class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ cargas|length }} registro(s)</span>
         </div>
         <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
+            <table class="w-full text-sm text-left border-collapse">
                 <thead>
-                    <tr class="text-xs uppercase tracking-wider bg-white text-gray-600 dark:bg-gray-800 dark:text-gray-400">
-                        <th class="p-4 font-semibold border-b border-gray-200 dark:border-gray-700">Nombre</th>
-                        <th class="p-4 font-semibold border-b border-gray-200 dark:border-gray-700">Tipo</th>
-                        <th class="p-4 font-semibold border-b border-gray-200 dark:border-gray-700">Archivo</th>
-                        <th class="p-4 font-semibold border-b border-gray-200 dark:border-gray-700">Cobertura</th>
-                        <th class="p-4 font-semibold border-b border-gray-200 dark:border-gray-700">Estado</th>
+                    <tr class="text-xs uppercase tracking-wider bg-gray-50 text-gray-500 dark:bg-gray-700/40 dark:text-gray-400">
+                        <th class="px-6 py-3 font-semibold">Título del Mapa</th>
+                        <th class="px-6 py-3 font-semibold">Versión</th>
+                        <th class="px-6 py-3 font-semibold">Archivo Fuente</th>
+                        <th class="px-6 py-3 font-semibold">Cobertura</th>
+                        <th class="px-6 py-3 text-right">Estatus / Flujo</th>
                     </tr>
                 </thead>
-                <tbody class="text-sm text-gray-700 dark:text-gray-300">
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
                     {% for carga in cargas %}
-                    <tr class="border-b hover:bg-gray-50 border-gray-100 dark:hover:bg-gray-700/50 dark:border-gray-700">
-                        <td class="p-4">{{ carga.nombre }}</td>
-                        <td class="p-4">{{ carga.tipo_mapa }}</td>
-                        <td class="p-4 font-mono text-xs">{{ carga.archivo or 'N/D' }}</td>
-                        <td class="p-4">{{ carga.cobertura }}</td>
-                        <td class="p-4">
-                            <form method="POST" action="{{ url_for('geomatica.cambiar_estado', mapa_id=carga.id) }}" class="flex items-center gap-2">
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                        <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-100">{{ carga.nombre }}</td>
+                        <td class="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-400">{{ carga.version }}</td>
+                        <td class="px-6 py-4 font-mono text-xs text-gray-500 dark:text-gray-400 max-w-xs truncate">{{ carga.archivo or 'N/D' }}</td>
+                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400">{{ carga.cobertura }}</td>
+                        <td class="px-6 py-4 text-right whitespace-nowrap">
+                            <form method="POST" action="{{ url_for('geomatica.cambiar_estado', mapa_id=carga.id) }}" class="inline-flex items-center gap-1.5 bg-gray-50 dark:bg-gray-900/60 p-1 rounded-md border border-gray-100 dark:border-gray-700">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <select name="estado" class="border rounded-md p-1 text-xs bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                <select name="estado" class="border rounded bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white px-2 py-0.5 text-xs focus:ring-1 focus:ring-red-500 outline-none">
                                     {% for estado in estados_flujo %}
                                         <option value="{{ estado }}" {% if estado == carga.estado %}selected{% endif %}>{{ estado }}</option>
                                     {% endfor %}
                                 </select>
-                                <button class="text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-700">Guardar</button>
+                                <button class="text-[11px] font-semibold px-2 py-0.5 rounded bg-red-600 text-white hover:bg-red-700 transition-colors shadow-2xs">Actualizar</button>
                             </form>
                         </td>
                     </tr>
                     {% else %}
-                    <tr>
-                        <td colspan="5" class="p-8 text-center text-gray-500 dark:text-gray-400">No hay mapas registrados aun.</td>
-                    </tr>
+                    <tr><td colspan="5" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">No hay capas de riesgo registradas.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>

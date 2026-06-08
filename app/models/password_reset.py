@@ -7,7 +7,7 @@ class PasswordReset(db.Model):
     __tablename__ = 'password_resets'
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('usuarios.id', ondelete='CASCADE'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('usuario.id_usuario', ondelete='CASCADE'), nullable=False)
     token = db.Column(db.String(128), unique=True, nullable=False)
     creado_en = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     expiracion = db.Column(db.DateTime, nullable=False, default=lambda: datetime.utcnow() + timedelta(hours=2))

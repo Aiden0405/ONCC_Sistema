@@ -8,135 +8,153 @@
     <div class="flex items-center justify-between mb-2">
         <div>
             <h1 class="text-2xl font-bold dark:text-white text-gray-800">Reporte Oficial de Actividad</h1>
-            <p class="text-sm dark:text-gray-400 text-gray-500">Complete todos los campos para la estadística regional</p>
+            <p class="text-sm dark:text-gray-400 text-gray-500">Complete todos los parámetros mandatorios para la auditoría estadística regional</p>
         </div>
-        <a href="{{ url_for('actividad.index') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white transition-colors flex items-center">
+        <a href="{{ url_for('actividad.index') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white transition-colors flex items-center text-sm font-medium">
             <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i> Volver
         </a>
     </div>
 
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-        <!-- enctype="multipart/form-data" es OBLIGATORIO para poder subir archivos (PDF/Fotos) -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
         <form method="POST" action="{{ url_for('actividad.nueva') }}" enctype="multipart/form-data" class="p-8 space-y-8">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             
-            <!-- SECCIÓN 1: Datos Generales -->
-            <div>
-                <h3 class="text-sm font-bold uppercase tracking-wide mb-4 flex items-center text-green-700 dark:text-green-400">
-                    <i data-lucide="activity" class="mr-2 w-4 h-4"></i> 1. Datos Generales
+            <div class="space-y-4">
+                <h3 class="text-sm font-bold uppercase tracking-wide flex items-center text-green-700 dark:text-green-400 border-b border-gray-100 dark:border-gray-700 pb-2">
+                    <i data-lucide="activity" class="mr-2 w-4 h-4"></i> 1. Datos Generales de la Jornada
                 </h3>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div class="md:col-span-2">
-                        <label class="block text-xs font-semibold uppercase mb-1 text-gray-600 dark:text-gray-400">Nombre de la Actividad</label>
-                        <input type="text" name="actividad" class="w-full border rounded-md p-2 text-sm focus:border-green-500 bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Ej: Taller de sensibilización comunitaria" required>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Nombre de la Actividad</label>
+                        <input type="text" name="actividad" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: Taller de sensibilización comunitaria" required>
                     </div>
-                    <div>
-                        <label class="block text-xs font-semibold uppercase mb-1 text-gray-600 dark:text-gray-400">Área de Acción</label>
-                        <select name="area" class="w-full border rounded-md p-2 text-sm focus:border-green-500 bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Área de Acción</label>
+                        <select name="area" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
                             <option value="Monitoreo y seguridad">Monitoreo y seguridad</option>
                             <option value="Investigación">Investigación</option>
                             <option value="Divulgación">Divulgación</option>
                             <option value="Formación y sensibilización">Formación y sensibilización</option>
                         </select>
                     </div>
-                    <div>
-                        <label class="block text-xs font-semibold uppercase mb-1 text-gray-600 dark:text-gray-400">Estado Actual</label>
-                        <select name="estado_actividad" class="w-full border rounded-md p-2 text-sm focus:border-green-500 bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estatus Operativo</label>
+                        <select name="estado" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
                             <option value="Planificada">Planificada</option>
                             <option value="En proceso">En proceso</option>
                             <option value="Completado">Completado</option>
                             <option value="Suspendida">Suspendida</option>
                         </select>
                     </div>
-                    <div>
-                        <label class="block text-xs font-semibold uppercase mb-1 text-gray-600 dark:text-gray-400">Técnico Responsable</label>
-                        <input type="text" name="responsable" class="w-full border rounded-md p-2 text-sm focus:border-green-500 bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Nombre del HP" required>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold uppercase mb-1 text-gray-600 dark:text-gray-400">Fecha Ejecución</label>
-                        <input type="date" name="fecha" class="w-full border rounded-md p-2 text-sm focus:border-green-500 bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SECCIÓN 2: Ubicación -->
-            <div>
-                <h3 class="text-sm font-bold uppercase tracking-wide mb-4 flex items-center text-green-700 dark:text-green-400">
-                    <i data-lucide="map-pin" class="mr-2 w-4 h-4"></i> 2. Ubicación Geográfica
-                </h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <label class="block text-xs font-semibold uppercase mb-1 text-gray-600 dark:text-gray-400">Estado</label>
-                        <select name="estado_geo" class="w-full border rounded-md p-2 text-sm focus:border-green-500 bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                            <option>Lara</option><option>Yaracuy</option><option>Falcón</option>
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Técnico Responsable</label>
+                        <select name="responsable" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                            <option value="" disabled selected>Seleccione el analista...</option>
+                            {% for t in tecnicos_disponibles %}
+                                <option value="{{ t.nombre_usuario }}">{{ t.nombre_usuario }}</option>
+                            {% endfor %}
                         </select>
                     </div>
-                    <div>
-                        <label class="block text-xs font-semibold uppercase mb-1 text-gray-600 dark:text-gray-400">Municipio</label>
-                        <input type="text" name="municipio" class="w-full border rounded-md p-2 text-sm focus:border-green-500 bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Ej: Iribarren">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold uppercase mb-1 text-gray-600 dark:text-gray-400">Parroquia / Sector</label>
-                        <input type="text" name="parroquia" class="w-full border rounded-md p-2 text-sm focus:border-green-500 bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Ej: El Cují">
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Fecha de Ejecución</label>
+                        <input type="date" name="fecha" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required>
                     </div>
                 </div>
             </div>
 
-            <!-- SECCIÓN 3: Detalles -->
-            <div>
-                <h3 class="text-sm font-bold uppercase tracking-wide mb-4 flex items-center text-green-700 dark:text-green-400">
-                    <i data-lucide="file-text" class="mr-2 w-4 h-4"></i> 3. Detalles y Resultados
+            <div class="space-y-4">
+                <h3 class="text-sm font-bold uppercase tracking-wide flex items-center text-green-700 dark:text-green-400 border-b border-gray-100 dark:border-gray-700 pb-2">
+                    <i data-lucide="map-pin" class="mr-2 w-4 h-4"></i> 2. Despliegue Territorial
                 </h3>
-                <textarea name="descripcion" rows="3" class="w-full border rounded-md p-2 text-sm focus:border-green-500 bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white mb-4" placeholder="Resumen detallado de la actividad..."></textarea>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-semibold uppercase mb-1 text-gray-600 dark:text-gray-400">Población Beneficiada</label>
-                        <input type="number" name="poblacion" class="w-full border rounded-md p-2 text-sm focus:border-green-500 bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Cantidad de personas">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estado</label>
+                        <select name="estado_geo" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                            <option value="Lara">Lara</option>
+                            <option value="Yaracuy">Yaracuy</option>
+                            <option value="Falcón">Falcón</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Municipio</label>
+                        <input type="text" name="municipio" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: Jiménez">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Parroquia / Sector</label>
+                        <input type="text" name="parroquia" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: Juan de Villegas">
                     </div>
                 </div>
             </div>
 
-            <!-- SECCIÓN 4: Evidencias y Minutas (NUEVA) -->
-            <div>
-                <h3 class="text-sm font-bold uppercase tracking-wide mb-4 flex items-center text-green-700 dark:text-green-400">
-                    <i data-lucide="paperclip" class="mr-2 w-4 h-4"></i> 4. Evidencias, Acuerdos y Minutas
+            <div class="space-y-4">
+                <h3 class="text-sm font-bold uppercase tracking-wide flex items-center text-green-700 dark:text-green-400 border-b border-gray-100 dark:border-gray-700 pb-2">
+                    <i data-lucide="file-text" class="mr-2 w-4 h-4"></i> 3. Descripción y Alcance
+                </h3>
+                <div class="space-y-4">
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Resumen Detallado</label>
+                        <textarea name="descripcion" rows="3" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Describa los hitos y hallazgos principales observados en campo..."></textarea>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-1">
+                            <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Población Beneficiada (NOT NULL)</label>
+                            <input type="number" name="poblacion" min="0" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Cantidad total de personas impactadas">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <h3 class="text-sm font-bold uppercase tracking-wide flex items-center text-green-700 dark:text-green-400 border-b border-gray-100 dark:border-gray-700 pb-2">
+                    <i data-lucide="paperclip" class="mr-2 w-4 h-4"></i> 4. Soportes, Acuerdos y Archivos Vinculados
                 </h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Columna Izquierda: Minuta y Acuerdos -->
-                    <div class="p-4 rounded-lg border bg-gray-50 border-gray-100 dark:bg-gray-700/30 dark:border-gray-700">
-                        <label class="block text-xs font-semibold uppercase mb-3 text-gray-600 dark:text-gray-400 flex items-center">
-                            <i data-lucide="check-square" class="mr-2 w-4 h-4 text-green-500"></i> Documento Minuta (PDF)
-                        </label>
-                        <input type="file" name="minuta_archivo" accept=".pdf" class="block w-full text-sm text-gray-500 dark:text-gray-400 mb-4
-                            file:mr-4 file:py-2 file:px-4
-                            file:rounded-full file:border-0
-                            file:text-xs file:font-semibold
-                            file:bg-green-50 file:text-green-700
-                            hover:file:bg-green-100
-                            dark:file:bg-green-900/30 dark:file:text-green-400">
+                    <div class="p-5 rounded-xl border bg-gray-50/50 border-gray-100 dark:bg-gray-900/20 dark:border-gray-700 space-y-4">
+                        <div class="space-y-1">
+                            <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400 flex items-center">
+                                <i data-lucide="file-up" class="mr-1.5 w-4 h-4 text-green-600 dark:text-green-400"></i> Cargar Archivo Minuta (PDF)
+                            </label>
+                            <input type="file" name="minuta_archivo" accept=".pdf" 
+                                   class="block w-full text-xs text-gray-500 dark:text-gray-400
+                                   file:mr-4 file:py-2 file:px-4
+                                   file:rounded-md file:border-0
+                                   file:text-xs file:font-bold
+                                   file:bg-green-50 file:text-green-700
+                                   hover:file:bg-green-100
+                                   dark:file:bg-green-900/30 dark:file:text-green-400 transition-colors">
+                        </div>
                         
-                        <label class="block text-xs font-semibold uppercase mb-1 text-gray-600 dark:text-gray-400">Acuerdos Principales</label>
-                        <textarea name="acuerdos" rows="3" class="w-full border rounded-md p-2 text-sm focus:border-green-500 bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Listar acuerdos alcanzados..."></textarea>
+                        <div class="space-y-1">
+                            <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Acuerdos Institucionales Alcanzados</label>
+                            <textarea name="acuerdos" rows="3" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: Compromiso comunitario para resguardo física de estación climática..."></textarea>
+                        </div>
                     </div>
 
-                    <!-- Columna Derecha: Fotos -->
-                    <div class="p-4 rounded-lg border bg-gray-50 border-gray-100 dark:bg-gray-700/30 dark:border-gray-700">
-                        <label class="block text-xs font-semibold uppercase mb-3 text-gray-600 dark:text-gray-400 flex items-center">
-                            <i data-lucide="camera" class="mr-2 w-4 h-4 text-blue-500"></i> Registro Fotográfico
-                        </label>
-                        <div class="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors cursor-pointer relative">
-                            <i data-lucide="upload-cloud" class="w-8 h-8 text-gray-400 mb-2"></i>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 text-center">Selecciona hasta 4 fotos (JPG, PNG)</p>
-                            <input type="file" name="fotos_archivos" accept="image/*" multiple class="absolute inset-0 opacity-0 cursor-pointer">
+                    <div class="p-5 rounded-xl border bg-gray-50/50 border-gray-100 dark:bg-gray-900/20 dark:border-gray-700 flex flex-col justify-between">
+                        <div class="space-y-1">
+                            <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400 flex items-center mb-2">
+                                <i data-lucide="camera" class="mr-1.5 w-4 h-4 text-blue-600 dark:text-blue-400"></i> Registro Fotográfico de Evidencias
+                            </label>
+                            <div class="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-5 hover:bg-gray-100 dark:hover:bg-gray-700/40 transition-colors cursor-pointer relative group">
+                                <i data-lucide="upload-cloud" class="w-8 h-8 text-gray-400 mb-2 group-hover:text-green-500 transition-colors"></i>
+                                <p class="text-xs font-semibold text-gray-600 dark:text-gray-300 text-center">Seleccionar Imágenes de Campo</p>
+                                <p class="text-[10px] text-gray-400 mt-1 text-center">Formatos soportados: JPG, PNG (Máx. 4 archivos)</p>
+                                <input type="file" name="fotos_archivos" accept="image/*" multiple class="absolute inset-0 opacity-0 cursor-pointer">
+                            </div>
                         </div>
-                        <p class="text-[10px] text-gray-400 mt-2 italic">* Las fotos son obligatorias para la validación del hito.</p>
+                        <p class="text-[10px] text-gray-400 dark:text-gray-500 italic mt-3">* Las evidencias visuales son mandatorias para la validación automática del hito regional.</p>
                     </div>
                 </div>
             </div>
 
             <div class="flex justify-end pt-6 border-t border-gray-100 dark:border-gray-700">
                 <a href="{{ url_for('actividad.index') }}" class="mr-3 px-6 py-2 border rounded-md text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Cancelar</a>
-                <button type="submit" class="px-6 py-2 bg-green-600 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-green-700 transition-colors">Guardar Reporte en BD</button>
+                <button type="submit" class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md text-sm shadow-sm transition-colors border border-transparent">
+                    Guardar Actividad en Sistema
+                </button>
             </div>
         </form>
     </div>

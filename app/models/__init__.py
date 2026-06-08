@@ -3,6 +3,15 @@ from app.models.bitacora import BitacoraTransaccion
 from app.models.divulgacion import Publicacion
 from app.models.geomatica import MapaRegistro
 from app.models.inventario import InventarioEquipo
+from app.models.esquema_activo import ActividadActiva
+from app.models.esquema_activo import ComunidadActiva
+from app.models.esquema_activo import EstadoActivo
+from app.models.esquema_activo import FormacionActiva
+from app.models.esquema_activo import InstitucionActiva
+from app.models.esquema_activo import NivelActivo
+from app.models.esquema_activo import MunicipioActivo
+from app.models.esquema_activo import ParroquiaActiva
+from app.models.esquema_activo import SensibilizacionActiva
 from app.models.reporte import ReporteTransaccional
 from app.models.usuario import Usuario
 

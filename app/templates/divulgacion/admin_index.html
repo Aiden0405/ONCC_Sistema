@@ -4,55 +4,107 @@
 
 {% block content %}
 <div class="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
+    
     <div class="flex items-center justify-between mb-2">
         <div>
             <h1 class="text-2xl font-bold dark:text-white text-gray-800">Panel de Divulgación</h1>
-            <p class="text-sm dark:text-gray-400 text-gray-500">Crear, revisar y publicar contenidos que se mostrarán en el portal público</p>
+            <p class="text-sm dark:text-gray-400 text-gray-500">Crear, revisar y publicar contenidos informativos destinados al portal público institucional</p>
         </div>
         <a href="{{ url_for('core.divulgacion_admin_nuevo') }}" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md shadow-sm hover:bg-green-700 transition-colors text-sm font-medium">
-            <i data-lucide="plus" class="w-4 h-4 mr-2"></i> Nuevo
+            <i data-lucide="plus" class="w-4 h-4 mr-2"></i> Nueva Publicación
         </a>
     </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                {% if category == 'error' %}
+                    <div class="p-4 rounded-md bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800 flex items-center shadow-sm">
+                        <i data-lucide="alert-triangle" class="mr-2 w-5 h-5"></i> 
+                        <span class="text-sm font-medium">{{ message }}</span>
+                    </div>
+                {% else %}
+                    <div class="p-4 rounded-md bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800 flex items-center shadow-sm">
+                        <i data-lucide="check-circle" class="mr-2 w-5 h-5"></i> 
+                        <span class="text-sm font-medium">{{ message }}</span>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
 
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
             <div>
-                <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400">Publicaciones</h3>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Administra borradores y publica contenido visible en el portal</p>
+                <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400">Gobernanza de Contenidos</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Administre borradores, apruebe informes y verifique el material visible en la web</p>
             </div>
-            <span class="text-xs text-gray-500 dark:text-gray-400">{{ publicaciones|length }} registro(s)</span>
+            <span class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ publicaciones|length }} registro(s)</span>
         </div>
 
         <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead class="bg-gray-50 dark:bg-gray-700/40">
-                    <tr class="text-left text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                        <th class="px-6 py-3">Título</th>
-                        <th class="px-6 py-3">Tipo</th>
-                        <th class="px-6 py-3">Estado</th>
-                        <th class="px-6 py-3">Creado</th>
-                        <th class="px-6 py-3 text-right">Acciones</th>
+            <table class="w-full text-sm text-left border-collapse">
+                <thead>
+                    <tr class="text-xs uppercase tracking-wider bg-gray-50 text-gray-500 dark:bg-gray-700/40 dark:text-gray-400">
+                        <th class="px-6 py-3 font-semibold">Título del Contenido</th>
+                        <th class="px-6 py-3 font-semibold">Tipo</th>
+                        <th class="px-6 py-3 font-semibold">Estatus de Publicación</th>
+                        <th class="px-6 py-3 font-semibold">Fecha de Creación</th>
+                        <th class="px-6 py-3 text-right">Acciones Transaccionales</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
                     {% for p in publicaciones %}
                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
-                        <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-100">{{ p.titulo }}</td>
-                        <td class="px-6 py-4 text-gray-600 dark:text-gray-300">{{ p.tipo }}</td>
-                        <td class="px-6 py-4 text-gray-600 dark:text-gray-300">{{ p.estado }}</td>
-                        <td class="px-6 py-4 text-gray-600 dark:text-gray-300">{{ p.creado_en.strftime('%Y-%m-%d') }}</td>
+                        <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-100 max-w-sm truncate">
+                            {{ p.titulo }}
+                        </td>
+                        
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 uppercase tracking-tight">
+                                <i data-lucide="file-text" class="w-3 h-3 mr-1 text-blue-400"></i> {{ p.tipo }}
+                            </span>
+                        </td>
+                        
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if p.estado == 'publicado' %}
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5 animate-pulse"></span> Publicado
+                                </span>
+                            {% else %}
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-yellow-50 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-yellow-500 mr-1.5"></span> Borrador
+                                </span>
+                            {% endif %}
+                        </td>
+                        
+                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400 font-mono text-xs whitespace-nowrap">
+                            {{ p.creado_en.strftime('%Y-%m-%d') }}
+                        </td>
+                        
                         <td class="px-6 py-4 text-right whitespace-nowrap">
                             {% if p.estado != 'publicado' %}
-                            <form action="{{ url_for('core.divulgacion_admin_aprobar', pub_id=p.id) }}" method="post" class="inline">
+                            <form action="{{ url_for('core.divulgacion_admin_aprobar', pub_id=p.id) }}" method="post" class="inline" onsubmit="return confirm('¿Desea aprobar y lanzar esta publicación al portal público?');">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <button class="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors mr-2">Aprobar</button>
+                                <button class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-bold text-white bg-green-600 hover:bg-green-700 transition-colors shadow-2xs">
+                                    <i data-lucide="globe" class="w-3.5 h-3.5 mr-1"></i> Aprobar y Publicar
+                                </button>
                             </form>
+                            {% else %}
+                            <span class="text-xs font-medium text-gray-400 dark:text-gray-500 italic inline-flex items-center">
+                                <i data-lucide="check" class="w-3.5 h-3.5 mr-1 text-green-500"></i> Visible en Web
+                            </span>
                             {% endif %}
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="5" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">No hay publicaciones.</td>
+                        <td colspan="5" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                            <div class="flex flex-col items-center justify-center space-y-2">
+                                <i data-lucide="newspaper" class="w-8 h-8 text-gray-300 dark:text-gray-600"></i>
+                                <p class="text-sm font-medium">No hay registros informativos cargados en la bitácora de divulgación.</p>
+                            </div>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
