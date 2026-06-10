@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict oadSHYKzJ15WT5GzyF6C3ZeIPF6m0cQCc64dzbimmmtdWF3FCzq0McyYJPZCXt6
+\restrict mT7YxgpZOAk3lMsTQgRu1lu040QOFrvEBV4hOEIwDopb0KSzqgMWDlgnxEaFcxQ
 
 -- Dumped from database version 17.10
 -- Dumped by pg_dump version 17.10
@@ -74,6 +74,41 @@ ALTER SEQUENCE public.actividad_id_actividad_seq OWNER TO postgres;
 --
 
 ALTER SEQUENCE public.actividad_id_actividad_seq OWNED BY public.actividad.id_actividad;
+
+
+--
+-- Name: actividad_tecnico; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.actividad_tecnico (
+    id_actividad_tecnico integer NOT NULL,
+    id_actividad integer NOT NULL,
+    id_tecnico integer NOT NULL
+);
+
+
+ALTER TABLE public.actividad_tecnico OWNER TO postgres;
+
+--
+-- Name: actividad_tecnico_id_actividad_tecnico_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.actividad_tecnico_id_actividad_tecnico_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.actividad_tecnico_id_actividad_tecnico_seq OWNER TO postgres;
+
+--
+-- Name: actividad_tecnico_id_actividad_tecnico_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.actividad_tecnico_id_actividad_tecnico_seq OWNED BY public.actividad_tecnico.id_actividad_tecnico;
 
 
 --
@@ -333,7 +368,11 @@ CREATE TABLE public.inventario_equipos (
     ultimo_mantenimiento date,
     responsable character varying(120) NOT NULL,
     creado_en timestamp without time zone NOT NULL,
-    actualizado_en timestamp without time zone NOT NULL
+    actualizado_en timestamp without time zone NOT NULL,
+    numero_serie character varying(100),
+    marca character varying(50),
+    modelo character varying(50),
+    observaciones text
 );
 
 
@@ -375,7 +414,8 @@ CREATE TABLE public.mapas_registro (
     cobertura character varying(120) NOT NULL,
     responsable character varying(120) NOT NULL,
     creado_en timestamp without time zone NOT NULL,
-    actualizado_en timestamp without time zone NOT NULL
+    actualizado_en timestamp without time zone NOT NULL,
+    id_parroquia integer
 );
 
 
@@ -606,7 +646,8 @@ CREATE TABLE public.publicaciones (
     estado character varying(20) NOT NULL,
     publicado_en timestamp without time zone,
     creado_en timestamp without time zone NOT NULL,
-    actualizado_en timestamp without time zone NOT NULL
+    actualizado_en timestamp without time zone NOT NULL,
+    id_usuario integer NOT NULL
 );
 
 
@@ -746,6 +787,77 @@ ALTER SEQUENCE public."sensibilizacion _id_sensivilizacion_seq" OWNED BY public.
 
 
 --
+-- Name: tecnicos; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.tecnicos (
+    id_tecnico integer NOT NULL,
+    cedula character varying(15) NOT NULL,
+    nombres character varying(60) NOT NULL,
+    apellidos character varying(60) NOT NULL
+);
+
+
+ALTER TABLE public.tecnicos OWNER TO postgres;
+
+--
+-- Name: tecnicos_id_tecnico_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.tecnicos_id_tecnico_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.tecnicos_id_tecnico_seq OWNER TO postgres;
+
+--
+-- Name: tecnicos_id_tecnico_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.tecnicos_id_tecnico_seq OWNED BY public.tecnicos.id_tecnico;
+
+
+--
+-- Name: temas; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.temas (
+    id_tema integer NOT NULL,
+    nombre_tema character varying(100) NOT NULL,
+    descripcion_tema text
+);
+
+
+ALTER TABLE public.temas OWNER TO postgres;
+
+--
+-- Name: temas_id_tema_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.temas_id_tema_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.temas_id_tema_seq OWNER TO postgres;
+
+--
+-- Name: temas_id_tema_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.temas_id_tema_seq OWNED BY public.temas.id_tema;
+
+
+--
 -- Name: usuario; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -823,6 +935,13 @@ ALTER SEQUENCE public.visitas_portal_id_seq OWNED BY public.visitas_portal.id;
 --
 
 ALTER TABLE ONLY public.actividad ALTER COLUMN id_actividad SET DEFAULT nextval('public.actividad_id_actividad_seq'::regclass);
+
+
+--
+-- Name: actividad_tecnico id_actividad_tecnico; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.actividad_tecnico ALTER COLUMN id_actividad_tecnico SET DEFAULT nextval('public.actividad_tecnico_id_actividad_tecnico_seq'::regclass);
 
 
 --
@@ -945,6 +1064,20 @@ ALTER TABLE ONLY public."sensibilizacion " ALTER COLUMN id_sensivilizacion SET D
 
 
 --
+-- Name: tecnicos id_tecnico; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.tecnicos ALTER COLUMN id_tecnico SET DEFAULT nextval('public.tecnicos_id_tecnico_seq'::regclass);
+
+
+--
+-- Name: temas id_tema; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.temas ALTER COLUMN id_tema SET DEFAULT nextval('public.temas_id_tema_seq'::regclass);
+
+
+--
 -- Name: usuario id_usuario; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -963,6 +1096,14 @@ ALTER TABLE ONLY public.visitas_portal ALTER COLUMN id SET DEFAULT nextval('publ
 --
 
 COPY public.actividad (id_actividad, fecha_actividad, tipo_actividad, id_comunidad, id_nivel) FROM stdin;
+\.
+
+
+--
+-- Data for Name: actividad_tecnico; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.actividad_tecnico (id_actividad_tecnico, id_actividad, id_tecnico) FROM stdin;
 \.
 
 
@@ -1008,6 +1149,20 @@ COPY public.bitacora_transacciones (id, modulo, registro_id, accion, estado_nuev
 18	Usuarios	8	Crear	Administrador	Director	Creado usuario moyejada@gmail.com	2026-06-07 22:31:08.459992
 19	Usuarios	9	Crear	Técnico	Director	Creado usuario ferarri@gmail.com	2026-06-07 22:31:44.228089
 20	Usuarios	10	Crear	Administrador	Director	Creado usuario gabrilucho@gmail.com	2026-06-07 22:33:17.58571
+21	Usuarios	1	Modificar	Director Regional	Director	Editado usuario director@oncc.gob.ve	2026-06-07 23:43:53.127196
+22	Divulgación	3	Crear	borrador	Aileen Moyeja	Creado contenido informativo: Taller de Crisis Climática en Quíbor...	2026-06-10 10:26:22.982312
+23	Divulgación	3	Modificar	borrador	Aileen Moyeja	Actualizado el borrador de la publicación ID: 3	2026-06-10 10:27:07.434817
+24	Divulgación	3	Modificar	publicado	Director	Aprobada y publicada en la Web institucional: Taller de Crisis Climática en Quíbor...	2026-06-10 19:10:08.515401
+25	Divulgación	4	Crear	borrador	Mariangel Reyes	Creado contenido informativo: Bobare...	2026-06-10 19:52:35.64167
+26	Divulgación	4	Eliminar	\N	Mariangel Reyes	Eliminado borrador permanentemente: Bobare...	2026-06-10 20:07:46.147818
+27	Divulgación	5	Crear	borrador	Mariangel Reyes	Creado contenido informativo: Bobare...	2026-06-10 20:08:01.509544
+28	Divulgación	6	Crear	borrador	Angel Ferrer	Creado contenido informativo: Finlandia...	2026-06-10 20:12:45.050829
+29	Divulgación	7	Crear	borrador	Mariangel Reyes	Creado contenido informativo: 22...	2026-06-10 20:37:17.341712
+30	Divulgación	7	Eliminar	\N	Gabriel Castañeda	Eliminado borrador permanentemente: 22...	2026-06-10 20:54:58.892448
+31	Divulgación	5	Modificar	publicado	Gabriel Castañeda	Aprobada y publicada en la Web institucional: Bobare...	2026-06-10 21:05:52.641039
+32	Divulgación	5	Modificar	borrador	Aileen Moyeja	Retirada de la web (Devuelta a borrador): Bobare...	2026-06-10 21:14:54.551101
+33	Divulgación	5	Modificar	publicado	Aileen Moyeja	Actualizado ID: 5	2026-06-10 21:20:06.006219
+34	Divulgación	6	Eliminar	\N	Aileen Moyeja	Eliminado permanentemente: Finlandia...	2026-06-10 21:20:15.391376
 \.
 
 
@@ -1047,7 +1202,7 @@ COPY public.intitucion (id_institucion, id_comunidad, nombre_institucion, tipo_i
 -- Data for Name: inventario_equipos; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.inventario_equipos (id, tipo_equipo, codigo, ubicacion, estado_operativo, estado_flujo, ultimo_mantenimiento, responsable, creado_en, actualizado_en) FROM stdin;
+COPY public.inventario_equipos (id, tipo_equipo, codigo, ubicacion, estado_operativo, estado_flujo, ultimo_mantenimiento, responsable, creado_en, actualizado_en, numero_serie, marca, modelo, observaciones) FROM stdin;
 \.
 
 
@@ -1055,7 +1210,7 @@ COPY public.inventario_equipos (id, tipo_equipo, codigo, ubicacion, estado_opera
 -- Data for Name: mapas_registro; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.mapas_registro (id, nombre, tipo_mapa, archivo, estado, version, cobertura, responsable, creado_en, actualizado_en) FROM stdin;
+COPY public.mapas_registro (id, nombre, tipo_mapa, archivo, estado, version, cobertura, responsable, creado_en, actualizado_en, id_parroquia) FROM stdin;
 \.
 
 
@@ -1115,8 +1270,8 @@ COPY public.permiso (id_modulo, id_rol) FROM stdin;
 -- Data for Name: publicaciones; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.publicaciones (id, tipo, titulo, resumen, contenido, estado, publicado_en, creado_en, actualizado_en) FROM stdin;
-1	informe	Adolf Hitler	Se murio	Sin comentarios	borrador	\N	2026-06-07 19:28:57.572646	2026-06-07 19:28:57.572646
+COPY public.publicaciones (id, tipo, titulo, resumen, contenido, estado, publicado_en, creado_en, actualizado_en, id_usuario) FROM stdin;
+5	informe	Estado del Clima Global 2026: Aceleración del Calentamiento y Eventos Extremos	El presente informe ofrece un análisis exhaustivo de los indicadores climáticos globales correspondientes al primer semestre de 2026. Se destaca un incremento sin precedentes en las anomalías de temperatura de la superficie del mar, una pérdida acelerada de masa boral y un aumento drástico en la frecuencia de fenómenos meteorológicos extremos en latitudes medias. El documento insta a la revisión urgente de las metas de descarbonización para evitar puntos de no retorno del sistema climático.	El año 2026 ha comenzado registrando hitos climáticos alarmantes que desafían las proyecciones más conservadoras de los modelos meteorológicos. A continuación, se detallan los tres ejes principales de observación y preocupación científica: 1. Anomalías Térmicas y OcéanosLos océanos del planeta han absorbido más del 90% del exceso de calor atrapado por los gases de efecto invernadero. Durante los últimos seis meses, la temperatura media de la superficie del mar ha superado en el promedio histórico del periodo 1991-2020. Esto ha desencadenado eventos de blanqueamiento masivo de corales en el Pacífico y ha alterado las corrientes marinas que regulan el clima de Europa y América del Norte. 2. Desglaciación y Nivel del Mar La tasa de fusión en las capas de hielo de Groenlandia y la Antártida Occidental ha mostrado un incremento del 15% en comparación con el año anterior. El agua de deshielo continental, sumada a la expansión térmica del agua marina, ha elevado el nivel medio del mar a una velocidad. 3. Fenómenos Meteorológicos Extremos La atmósfera, al estar más caliente, retiene mayor humedad (aproximadamente un 7% más por cada grado Celsius de calentamiento). Esto ha provocado una preocupante dualidad climática: Precipitaciones torrenciales e inundaciones récord en regiones monzónicas y zonas costeras de Asia. Sequías prolongadas y olas de calor persistentes en el sur de Europa y el cono sur de América, intensificando la temporada de incendios forestales. Conclusión del Panel de Expertos: "Los datos de 2026 no son una simple desviación estadística; son el reflejo de un sistema climático que busca un nuevo equilibrio, uno mucho más hostil para la infraestructura y la vida humana tal como la conocemos."	publicado	\N	2026-06-10 20:08:01.473563	2026-06-10 21:20:05.982824	7
 \.
 
 
@@ -1148,6 +1303,22 @@ COPY public."sensibilizacion " (id_sensivilizacion, nombre_sensivilizacion, id_a
 
 
 --
+-- Data for Name: tecnicos; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.tecnicos (id_tecnico, cedula, nombres, apellidos) FROM stdin;
+\.
+
+
+--
+-- Data for Name: temas; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.temas (id_tema, nombre_tema, descripcion_tema) FROM stdin;
+\.
+
+
+--
 -- Data for Name: usuario; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -1166,6 +1337,11 @@ COPY public.usuario (id_usuario, nombre_usuario, "clave usuario", id_rol, correo
 
 COPY public.visitas_portal (id, mes, creado_en) FROM stdin;
 1	2026-06	2026-06-07 22:20:07.775002
+2	2026-06	2026-06-09 00:00:57.921269
+3	2026-06	2026-06-10 03:05:30.337987
+4	2026-06	2026-06-10 03:05:32.802172
+5	2026-06	2026-06-10 10:05:00.336891
+6	2026-06	2026-06-10 18:31:25.747203
 \.
 
 
@@ -1174,6 +1350,13 @@ COPY public.visitas_portal (id, mes, creado_en) FROM stdin;
 --
 
 SELECT pg_catalog.setval('public.actividad_id_actividad_seq', 1, false);
+
+
+--
+-- Name: actividad_tecnico_id_actividad_tecnico_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.actividad_tecnico_id_actividad_tecnico_seq', 1, false);
 
 
 --
@@ -1187,21 +1370,21 @@ SELECT pg_catalog.setval('public.actividades_id_seq', 1, false);
 -- Name: bitacora_transacciones_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.bitacora_transacciones_id_seq', 20, true);
+SELECT pg_catalog.setval('public.bitacora_transacciones_id_seq', 34, true);
 
 
 --
 -- Name: comunidad_id_comunidad_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.comunidad_id_comunidad_seq', 9, true);
+SELECT pg_catalog.setval('public.comunidad_id_comunidad_seq', 26, true);
 
 
 --
 -- Name: estado_id_estado_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.estado_id_estado_seq', 9, true);
+SELECT pg_catalog.setval('public.estado_id_estado_seq', 26, true);
 
 
 --
@@ -1215,7 +1398,7 @@ SELECT pg_catalog.setval('public.formacion_id_formacion_seq', 1, false);
 -- Name: intitucion_id_institucion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.intitucion_id_institucion_seq', 9, true);
+SELECT pg_catalog.setval('public.intitucion_id_institucion_seq', 26, true);
 
 
 --
@@ -1243,21 +1426,21 @@ SELECT pg_catalog.setval('public.modulos_id_modulo_seq', 2, true);
 -- Name: municipio_id_municipio_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.municipio_id_municipio_seq', 9, true);
+SELECT pg_catalog.setval('public.municipio_id_municipio_seq', 26, true);
 
 
 --
 -- Name: nivel_id_nivel_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.nivel_id_nivel_seq', 9, true);
+SELECT pg_catalog.setval('public.nivel_id_nivel_seq', 26, true);
 
 
 --
 -- Name: parroquia_id_parroquia_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.parroquia_id_parroquia_seq', 9, true);
+SELECT pg_catalog.setval('public.parroquia_id_parroquia_seq', 26, true);
 
 
 --
@@ -1271,7 +1454,7 @@ SELECT pg_catalog.setval('public.password_resets_id_seq', 1, false);
 -- Name: publicaciones_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.publicaciones_id_seq', 1, true);
+SELECT pg_catalog.setval('public.publicaciones_id_seq', 7, true);
 
 
 --
@@ -1296,6 +1479,20 @@ SELECT pg_catalog.setval('public."sensibilizacion _id_sensivilizacion_seq"', 1, 
 
 
 --
+-- Name: tecnicos_id_tecnico_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.tecnicos_id_tecnico_seq', 1, false);
+
+
+--
+-- Name: temas_id_tema_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.temas_id_tema_seq', 1, false);
+
+
+--
 -- Name: usuario_id_usuario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -1306,7 +1503,7 @@ SELECT pg_catalog.setval('public.usuario_id_usuario_seq', 10, true);
 -- Name: visitas_portal_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.visitas_portal_id_seq', 1, true);
+SELECT pg_catalog.setval('public.visitas_portal_id_seq', 6, true);
 
 
 --
@@ -1315,6 +1512,14 @@ SELECT pg_catalog.setval('public.visitas_portal_id_seq', 1, true);
 
 ALTER TABLE ONLY public.actividad
     ADD CONSTRAINT actividad_pkey PRIMARY KEY (id_actividad);
+
+
+--
+-- Name: actividad_tecnico actividad_tecnico_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.actividad_tecnico
+    ADD CONSTRAINT actividad_tecnico_pkey PRIMARY KEY (id_actividad_tecnico);
 
 
 --
@@ -1526,6 +1731,30 @@ ALTER TABLE ONLY public."sensibilizacion "
 
 
 --
+-- Name: tecnicos tecnicos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.tecnicos
+    ADD CONSTRAINT tecnicos_pkey PRIMARY KEY (id_tecnico);
+
+
+--
+-- Name: temas temas_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.temas
+    ADD CONSTRAINT temas_pkey PRIMARY KEY (id_tema);
+
+
+--
+-- Name: tecnicos uq_cedula_tecnico; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.tecnicos
+    ADD CONSTRAINT uq_cedula_tecnico UNIQUE (cedula);
+
+
+--
 -- Name: usuario usuario_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1570,6 +1799,38 @@ ALTER TABLE ONLY public.actividad
 
 ALTER TABLE ONLY public.comunidad
     ADD CONSTRAINT comunidad_id_parroquia_fkey FOREIGN KEY (id_parroquia) REFERENCES public.parroquia(id_parroquia);
+
+
+--
+-- Name: actividad_tecnico fk_actividad_intermedia; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.actividad_tecnico
+    ADD CONSTRAINT fk_actividad_intermedia FOREIGN KEY (id_actividad) REFERENCES public.actividades(id) ON DELETE CASCADE;
+
+
+--
+-- Name: mapas_registro fk_mapas_parroquia; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.mapas_registro
+    ADD CONSTRAINT fk_mapas_parroquia FOREIGN KEY (id_parroquia) REFERENCES public.parroquia(id_parroquia) ON DELETE SET NULL;
+
+
+--
+-- Name: publicaciones fk_publicaciones_usuario; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.publicaciones
+    ADD CONSTRAINT fk_publicaciones_usuario FOREIGN KEY (id_usuario) REFERENCES public.usuario(id_usuario) ON DELETE CASCADE;
+
+
+--
+-- Name: actividad_tecnico fk_tecnico_intermedia; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.actividad_tecnico
+    ADD CONSTRAINT fk_tecnico_intermedia FOREIGN KEY (id_tecnico) REFERENCES public.tecnicos(id_tecnico) ON DELETE CASCADE;
 
 
 --
@@ -1663,5 +1924,5 @@ REVOKE USAGE ON SCHEMA public FROM PUBLIC;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict oadSHYKzJ15WT5GzyF6C3ZeIPF6m0cQCc64dzbimmmtdWF3FCzq0McyYJPZCXt6
+\unrestrict mT7YxgpZOAk3lMsTQgRu1lu040QOFrvEBV4hOEIwDopb0KSzqgMWDlgnxEaFcxQ
 
