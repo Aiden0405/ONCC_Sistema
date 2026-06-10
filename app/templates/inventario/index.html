@@ -104,6 +104,75 @@
         </div>
     </div>
 
+    <!-- Modal Editar Equipo -->
+    <div id="modal-editar-inventario" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
+        <div class="rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+            <div class="flex justify-between items-center p-6 border-b sticky top-0 z-10 border-gray-100 bg-white dark:border-gray-700 dark:bg-gray-800">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-white">Editar Equipo</h2>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Actualiza los datos del equipo seleccionado</p>
+                </div>
+                <button onclick="document.getElementById('modal-editar-inventario').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <form id="form-editar-equipo" method="POST" class="p-6 space-y-5">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Tipo de Equipo</label>
+                        <select id="edit-tipo_equipo" name="tipo_equipo" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                            <option>Estación Meteorológica (EMA)</option>
+                            <option>Pluviómetro de Campo</option>
+                            <option>Aparato Transmisor Data (SSBC)</option>
+                            <option>Equipo Tecnológico (GPS/Drone)</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Código Patrimonial / Serial</label>
+                        <input type="text" id="edit-codigo" name="codigo" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: EMA-005" required />
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación / Asignación Territorial</label>
+                        <input type="text" id="edit-ubicacion" name="ubicacion" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Lugar o comunidad de instalación" required />
+                    </div>
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Responsable / Custodio</label>
+                        <input type="text" id="edit-responsable" name="responsable" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Nombre del funcionario a cargo" required />
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estado Operativo</label>
+                        <select id="edit-estado_operativo" name="estado_operativo" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                            <option>Operativo</option>
+                            <option>Requiere Mantenimiento</option>
+                            <option>Dañado / Inoperativo</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Última Calibración / Mantenimiento</label>
+                        <div class="relative">
+                            <i data-lucide="calendar" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
+                            <input type="date" id="edit-ultimo_mantenimiento" name="ultimo_mantenimiento" class="w-full border rounded-md pl-9 p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-700">
+                    <button type="button" onclick="document.getElementById('modal-editar-inventario').classList.add('hidden')" class="mr-3 px-4 py-2 border rounded-md text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 rounded-md text-sm font-medium text-white hover:bg-blue-700 transition-colors shadow-sm">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="rounded-xl shadow-sm border overflow-hidden bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
         <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
             <div>
@@ -124,6 +193,7 @@
                         <th class="px-6 py-3 font-semibold">Últ. Mantenimiento</th>
                         <th class="px-6 py-3 font-semibold">Condición</th>
                         <th class="px-6 py-3 text-right">Flujo Dinámico</th>
+                        <th class="px-6 py-3 text-center">Acciones</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
@@ -160,10 +230,18 @@
                                 <button class="text-[11px] font-semibold px-2 py-0.5 rounded bg-green-600 text-white hover:bg-green-700 transition-colors shadow-2xs">Actualizar</button>
                             </form>
                         </td>
+                        <td class="px-6 py-4 text-center">
+                            <button onclick="abrirModalEditar({{ inv.id }})" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors mr-2" title="Editar equipo">
+                                <i data-lucide="pencil" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="abrirModalEliminar({{ inv.id }})" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors" title="Eliminar equipo">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="7" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
+                        <td colspan="8" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
                             No hay equipos registrados en el inventario de la institución.
                         </td>
                     </tr>
@@ -173,4 +251,44 @@
         </div>
     </div>
 </div>
+
+<!-- Modal Confirmar Eliminacion -->
+<div id="modal-eliminar-inventario" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
+    <div class="rounded-xl shadow-xl w-full max-w-md bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-6 text-center">
+        <div class="w-14 h-14 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
+            <i data-lucide="alert-triangle" class="w-7 h-7 text-red-600 dark:text-red-400"></i>
+        </div>
+        <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-2">¿Estás seguro de eliminar este equipo?</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Esta acción no se puede deshacer. El registro será eliminado permanentemente.</p>
+        <form id="form-eliminar-equipo" method="POST" class="flex justify-center gap-3">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="button" onclick="document.getElementById('modal-eliminar-inventario').classList.add('hidden')" class="px-5 py-2.5 border rounded-lg text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Cancelar</button>
+            <button type="submit" class="px-5 py-2.5 bg-red-600 rounded-lg text-sm font-medium text-white hover:bg-red-700 transition-colors shadow-sm">Eliminar</button>
+        </form>
+    </div>
+</div>
+
+<script>
+const equiposData = {{ inventario_json | tojson | safe }};
+
+function abrirModalEditar(id) {
+    const equipo = equiposData.find(e => e.id === id);
+    if (!equipo) return;
+
+    document.getElementById('edit-tipo_equipo').value = equipo.tipo_equipo || '';
+    document.getElementById('edit-codigo').value = equipo.codigo || '';
+    document.getElementById('edit-ubicacion').value = equipo.ubicacion || '';
+    document.getElementById('edit-responsable').value = equipo.responsable || '';
+    document.getElementById('edit-estado_operativo').value = equipo.estado_operativo || '';
+    document.getElementById('edit-ultimo_mantenimiento').value = equipo.ultimo_mantenimiento || '';
+
+    document.getElementById('form-editar-equipo').action = "{{ url_for('inventario.editar', equipo_id=0) }}".replace('/0', '/' + id);
+    document.getElementById('modal-editar-inventario').classList.remove('hidden');
+}
+
+function abrirModalEliminar(id) {
+    document.getElementById('form-eliminar-equipo').action = "{{ url_for('inventario.eliminar', equipo_id=0) }}".replace('/0', '/' + id);
+    document.getElementById('modal-eliminar-inventario').classList.remove('hidden');
+}
+</script>
 {% endblock %}
