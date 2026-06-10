@@ -97,7 +97,6 @@ def create_app(config_class=Config):
     from app.blueprints.core.controllers.usuarios import usuario_index as core_usuario_index
     from app.blueprints.core.controllers.usuarios import usuario_nuevo as core_usuario_nuevo
     from app.blueprints.core.controllers.usuarios import usuario_perfil as core_usuario_perfil
-    from app.blueprints.logistica.controllers.inventario import cambiar_estado as logistica_inventario_cambiar_estado
     from app.blueprints.logistica.controllers.inventario import editar as logistica_inventario_editar
     from app.blueprints.logistica.controllers.inventario import eliminar as logistica_inventario_eliminar
     from app.blueprints.logistica.controllers.inventario import inventario_index as logistica_inventario_index
@@ -155,7 +154,6 @@ def create_app(config_class=Config):
     app.add_url_rule('/inventario/nuevo', endpoint='inventario.nuevo', view_func=logistica_inventario_nuevo, methods=['POST'])
     app.add_url_rule('/inventario/<int:equipo_id>/editar', endpoint='inventario.editar', view_func=logistica_inventario_editar, methods=['POST'])
     app.add_url_rule('/inventario/<int:equipo_id>/eliminar', endpoint='inventario.eliminar', view_func=logistica_inventario_eliminar, methods=['POST'])
-    app.add_url_rule('/inventario/<int:equipo_id>/estado', endpoint='inventario.cambiar_estado', view_func=logistica_inventario_cambiar_estado, methods=['POST'])
 
     app.add_url_rule('/geomatica/', endpoint='geomatica.index', view_func=mapas_index)
     app.add_url_rule('/geomatica/procesar', endpoint='geomatica.procesar_archivo', view_func=mapas_procesar_archivo, methods=['POST'])
