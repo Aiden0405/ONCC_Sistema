@@ -1,8 +1,8 @@
-"""Crear base de datos limpia
+"""Migracion inicial desde modelos
 
-Revision ID: 782178008bd1
+Revision ID: 7653e1663a01
 Revises: 
-Create Date: 2026-06-07 12:46:08.453490
+Create Date: 2026-06-09 22:48:26.143415
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '782178008bd1'
+revision = '7653e1663a01'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -153,6 +153,8 @@ def upgrade():
     sa.Column('nombre_usuario', sa.String(length=30), nullable=False),
     sa.Column('clave usuario', sa.String(length=255), nullable=False),
     sa.Column('id_rol', sa.Integer(), nullable=False),
+    sa.Column('correo', sa.String(length=100), nullable=True),
+    sa.Column('estatus', sa.Boolean(), nullable=True),
     sa.ForeignKeyConstraint(['id_rol'], ['roles.id_rol'], ),
     sa.PrimaryKeyConstraint('id_usuario')
     )

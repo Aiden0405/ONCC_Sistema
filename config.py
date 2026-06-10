@@ -9,16 +9,14 @@ load_dotenv(os.path.join(basedir, '.env'))
 
 
 def build_database_uri():
-    # Forzamos el motor a PostgreSQL local
-    engine = 'postgresql'
+    engine = os.environ.get('DB_ENGINE', 'postgresql')
 
     if engine in ['postgres', 'postgresql']:
-        user = 'postgres'
-        # Metemos la contraseña larga de Chocolatey directamente
-        password = quote_plus('32d7685ab62d4b23a50383d157c539fd')
-        host = 'localhost'
-        port = '5432'
-        name = 'oncc_sistema'
+        user = os.environ.get('DB_USER', 'postgres')
+        password = quote_plus(os.environ.get('DB_PASSWORD', ''))
+        host = os.environ.get('DB_HOST', 'localhost')
+        port = os.environ.get('DB_PORT', '5432')
+        name = os.environ.get('DB_NAME', 'oncc_sistema')
         return f'postgresql+psycopg2://{user}:{password}@{host}:{port}/{name}'
 
     if engine in ['mysql', 'mariadb']:

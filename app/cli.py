@@ -67,13 +67,9 @@ def do_seed():
                 pw = secrets.token_urlsafe(8)
                 print(f'ADMIN_PASSWORD no definido. Se generó: {pw}')
 
-            nuevo = Usuario(nombre=super_role_name, correo=director_email, rol=super_role_name, estatus=True)
+            nuevo = Usuario(nombre=super_role_name, correo=director_email, id_rol=director_role.id_rol, estatus=True)
             nuevo.set_password(pw)
             db.session.add(nuevo)
-            db.session.commit()
-
-            # Asignar rol
-            nuevo.id_rol = director_role.id_rol
             db.session.commit()
             print(f"Usuario '{director_email}' creado con rol {super_role_name}.")
         else:

@@ -3,8 +3,8 @@
 {% block title %}Inventario Físico - ONCC{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
-    
+<div class="max-w-6xl mx-auto space-y-6">
+
     <div class="flex justify-between items-center mb-2">
         <div>
             <h1 class="text-2xl font-bold dark:text-white text-gray-800">Control de Inventario Físico</h1>
@@ -18,93 +18,18 @@
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
-                <div class="p-4 rounded-md {% if category == 'error' %}bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800{% else %}bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800{% endif %} border flex items-center shadow-sm">
-                    <i data-lucide="{% if category == 'error' %}alert-triangle{% else %}check-circle{% endif %}" class="mr-2 w-5 h-5"></i> 
-                    <span class="text-sm font-medium">{{ message }}</span>
+                <div class="sticky top-0 z-40 p-4 rounded-md {% if category == 'error' %}bg-red-600 text-white border-red-700{% else %}bg-emerald-600 text-white border-emerald-700{% endif %} border flex items-center shadow-lg">
+                    <i data-lucide="{% if category == 'error' %}alert-triangle{% else %}check-circle{% endif %}" class="mr-3 w-5 h-5"></i> 
+                    <span class="text-sm font-semibold flex-1">{{ message }}</span>
+                    <button onclick="this.parentElement.remove()" class="ml-3 text-white/80 hover:text-white transition-colors">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
                 </div>
             {% endfor %}
         {% endif %}
     {% endwith %}
 
-    <div id="modal-inventario" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
-        <div class="rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
-            <div class="flex justify-between items-center p-6 border-b sticky top-0 z-10 border-gray-100 bg-white dark:border-gray-700 dark:bg-gray-800">
-                <div>
-                    <h2 class="text-xl font-bold text-gray-800 dark:text-white">Aperturar Expediente de Equipo</h2>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Todos los campos son mandatorios según el inventario patrimonial</p>
-                </div>
-                <button onclick="document.getElementById('modal-inventario').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-            </div>
-            
-            <form method="POST" action="{{ url_for('inventario.nuevo') }}" class="p-6 space-y-5">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="space-y-1">
-                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Tipo de Equipo</label>
-                        <select name="tipo_equipo" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
-                            <option>Estación Meteorológica (EMA)</option>
-                            <option>Pluviómetro de Campo</option>
-                            <option>Aparato Transmisor Data (SSBC)</option>
-                            <option>Equipo Tecnológico (GPS/Drone)</option>
-                        </select>
-                    </div>
-                    <div class="space-y-1">
-                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Código Patrimonial / Serial</label>
-                        <input type="text" name="codigo" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: EMA-005" required />
-                    </div>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="space-y-1">
-                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación / Asignación Territorial</label>
-                        <input type="text" name="ubicacion" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Lugar o comunidad de instalación" required />
-                    </div>
-                    <div class="space-y-1">
-                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Responsable / Custodio</label>
-                        <input type="text" name="responsable" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Nombre del funcionario a cargo" required />
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="space-y-1">
-                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estado Operativo</label>
-                        <select name="estado_operativo" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
-                            <option>Operativo</option>
-                            <option>Requiere Mantenimiento</option>
-                            <option>Dañado / Inoperativo</option>
-                        </select>
-                    </div>
-                    <div class="space-y-1">
-                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Flujo Inicial de Equipo</label>
-                        <select name="estado_flow_inicial" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
-                            <option value="Almacén">Almacén / Stock</option>
-                            <option value="Desplegado">Desplegado en Campo</option>
-                            <option value="En Revisión">En Revisión Técnica</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Fecha Última Calibración / Mantenimiento</label>
-                    <div class="relative">
-                        <i data-lucide="calendar" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
-                        <input type="date" name="ultimo_mantenimiento" class="w-full border rounded-md pl-9 p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required />
-                    </div>
-                    <p class="text-[10px] text-gray-500 dark:text-gray-400 italic">El sistema auditará la vigencia en base a este registro cronológico.</p>
-                </div>
-
-                <div class="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-700">
-                    <button type="button" onclick="document.getElementById('modal-inventario').classList.add('hidden')" class="mr-3 px-4 py-2 border rounded-md text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Cancelar</button>
-                    <button type="submit" class="px-4 py-2 bg-green-600 rounded-md text-sm font-medium text-white hover:bg-green-700 transition-colors shadow-sm">Guardar Equipo</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div class="rounded-xl shadow-sm border overflow-hidden bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+    <div class="rounded-xl shadow-sm border bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
         <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
             <div>
                 <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400">Listado Maestro de Equipos</h3>
@@ -118,12 +43,13 @@
                 <thead>
                     <tr class="text-xs uppercase tracking-wider bg-gray-50 text-gray-500 dark:bg-gray-700/40 dark:text-gray-400">
                         <th class="px-6 py-3 font-semibold">Código</th>
-                        <th class="px-6 py-3 font-semibold">Descripción del Equipo</th>
+                        <th class="px-6 py-3 font-semibold">Nombre del Equipo</th>
                         <th class="px-6 py-3 font-semibold">Ubicación Actual</th>
                         <th class="px-6 py-3 font-semibold">Custodio / Responsable</th>
                         <th class="px-6 py-3 font-semibold">Últ. Mantenimiento</th>
                         <th class="px-6 py-3 font-semibold">Condición</th>
-                        <th class="px-6 py-3 text-right">Flujo Dinámico</th>
+                        <th class="px-6 py-3">Estado</th>
+                        <th class="px-6 py-3 text-center">Acciones</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
@@ -149,21 +75,27 @@
                                 {{ inv.estado_operativo }}
                             </span>
                         </td>
-                        <td class="px-6 py-4 text-right whitespace-nowrap">
-                            <form method="POST" action="{{ url_for('inventario.cambiar_estado', equipo_id=inv.id) }}" class="inline-flex items-center gap-1.5 bg-gray-50 dark:bg-gray-900/60 p-1 rounded-md border border-gray-100 dark:border-gray-700">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <select name="estado_flujo" class="border rounded bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white px-2 py-0.5 text-xs focus:ring-1 focus:ring-green-500 outline-none">
-                                    {% for estado in estados_flujo %}
-                                        <option value="{{ estado }}" {% if estado == inv.estado_flujo %}selected{% endif %}>{{ estado }}</option>
-                                    {% endfor %}
-                                </select>
-                                <button class="text-[11px] font-semibold px-2 py-0.5 rounded bg-green-600 text-white hover:bg-green-700 transition-colors shadow-2xs">Actualizar</button>
-                            </form>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider
+                            {% if inv.estado_flujo == 'Disponible' %} bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300
+                            {% elif inv.estado_flujo == 'En Uso (Asignado)' %} bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300
+                            {% elif inv.estado_flujo == 'En Mantenimiento' %} bg-yellow-50 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300
+                            {% else %} bg-gray-50 text-gray-700 dark:bg-gray-700 dark:text-gray-300 {% endif %}">
+                                {{ inv.estado_flujo }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <button onclick="abrirModalEditar({{ inv.id }})" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors mr-2" title="Editar equipo">
+                                <i data-lucide="pencil" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="abrirModalEliminar({{ inv.id }})" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors" title="Eliminar equipo">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="7" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
+                        <td colspan="8" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
                             No hay equipos registrados en el inventario de la institución.
                         </td>
                     </tr>
@@ -173,4 +105,289 @@
         </div>
     </div>
 </div>
+
+<!-- Modal Crear Equipo -->
+<div id="modal-inventario" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+        <div class="flex justify-between items-center p-6 border-b sticky top-0 z-10 border-gray-100 bg-white dark:border-gray-700 dark:bg-gray-800">
+            <div>
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white">Aperturar Expediente de Equipo</h2>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Todos los campos son mandatorios según el inventario patrimonial</p>
+            </div>
+            <button onclick="document.getElementById('modal-inventario').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        
+        <form method="POST" action="{{ url_for('inventario.nuevo') }}" class="p-6 space-y-5">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Tipo de Equipo</label>
+                    <select name="tipo_equipo" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                        <option>Estación Meteorológica (EMA)</option>
+                        <option>Pluviómetro de Campo</option>
+                        <option>Aparato Transmisor Data (SSBC)</option>
+                        <option>Equipo Tecnológico (GPS/Drone)</option>
+                    </select>
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Código Patrimonial / Serial</label>
+                    <input type="text" name="codigo" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: EMA-005" required />
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación / Asignación Territorial</label>
+                    <input type="text" name="ubicacion" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Lugar o comunidad de instalación" required />
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Responsable / Custodio</label>
+                    <input type="text" name="responsable" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Nombre del funcionario a cargo" required />
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estado Operativo</label>
+                    <select name="estado_operativo" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                        <option>Operativo</option>
+                        <option>Requiere Mantenimiento</option>
+                        <option>Dañado / Inoperativo</option>
+                    </select>
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estado</label>
+                    <select name="estado" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                        <option value="Disponible">Disponible</option>
+                        <option value="En Uso (Asignado)">En Uso (Asignado)</option>
+                        <option value="En Mantenimiento">En Mantenimiento</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="space-y-1">
+                <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Fecha Última Calibración / Mantenimiento</label>
+                <div class="relative">
+                    <i data-lucide="calendar" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
+                    <input type="date" name="ultimo_mantenimiento" class="w-full border rounded-md pl-9 p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required />
+                </div>
+                <p class="text-[10px] text-gray-500 dark:text-gray-400 italic">El sistema auditará la vigencia en base a este registro cronológico.</p>
+            </div>
+
+            <div class="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-700">
+                <button type="button" onclick="document.getElementById('modal-inventario').classList.add('hidden')" class="mr-3 px-4 py-2 border rounded-md text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Cancelar</button>
+                <button type="submit" class="px-4 py-2 bg-green-600 rounded-md text-sm font-medium text-white hover:bg-green-700 transition-colors shadow-sm">Guardar Equipo</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Editar Equipo -->
+<div id="modal-editar-inventario" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+        <div class="flex justify-between items-center p-6 border-b sticky top-0 z-10 border-gray-100 bg-white dark:border-gray-700 dark:bg-gray-800">
+            <div>
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white">Editar Equipo</h2>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Actualiza los datos del equipo seleccionado</p>
+            </div>
+            <button onclick="document.getElementById('modal-editar-inventario').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        
+        <form id="form-editar-equipo" method="POST" class="p-6 space-y-5">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Tipo de Equipo</label>
+                    <select id="edit-tipo_equipo" name="tipo_equipo" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                        <option>Estación Meteorológica (EMA)</option>
+                        <option>Pluviómetro de Campo</option>
+                        <option>Aparato Transmisor Data (SSBC)</option>
+                        <option>Equipo Tecnológico (GPS/Drone)</option>
+                    </select>
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Código Patrimonial / Serial</label>
+                    <input type="text" id="edit-codigo" name="codigo" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: EMA-005" required />
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación / Asignación Territorial</label>
+                    <input type="text" id="edit-ubicacion" name="ubicacion" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Lugar o comunidad de instalación" required />
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Responsable / Custodio</label>
+                    <input type="text" id="edit-responsable" name="responsable" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Nombre del funcionario a cargo" required />
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estado Operativo</label>
+                    <select id="edit-estado_operativo" name="estado_operativo" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                        <option>Operativo</option>
+                        <option>Requiere Mantenimiento</option>
+                        <option>Dañado / Inoperativo</option>
+                    </select>
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estado</label>
+                    <select id="edit-estado" name="estado" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                        <option value="Disponible">Disponible</option>
+                        <option value="En Uso (Asignado)">En Uso (Asignado)</option>
+                        <option value="En Mantenimiento">En Mantenimiento</option>
+                    </select>
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Última Calibración / Mantenimiento</label>
+                    <div class="relative">
+                        <i data-lucide="calendar" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
+                        <input type="date" id="edit-ultimo_mantenimiento" name="ultimo_mantenimiento" class="w-full border rounded-md pl-9 p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-700">
+                <button type="button" onclick="document.getElementById('modal-editar-inventario').classList.add('hidden')" class="mr-3 px-4 py-2 border rounded-md text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Cancelar</button>
+                <button type="submit" class="px-4 py-2 bg-blue-600 rounded-md text-sm font-medium text-white hover:bg-blue-700 transition-colors shadow-sm">Guardar Cambios</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Confirmar Eliminacion -->
+<div id="modal-eliminar-inventario" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="rounded-xl shadow-xl w-full max-w-md bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-6 text-center">
+        <div class="w-14 h-14 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
+            <i data-lucide="alert-triangle" class="w-7 h-7 text-red-600 dark:text-red-400"></i>
+        </div>
+        <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-2">¿Estás seguro de eliminar este equipo?</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Esta acción no se puede deshacer. El registro será eliminado permanentemente.</p>
+        <form id="form-eliminar-equipo" method="POST" class="flex justify-center gap-3">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="button" onclick="document.getElementById('modal-eliminar-inventario').classList.add('hidden')" class="px-5 py-2.5 border rounded-lg text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Cancelar</button>
+            <button type="submit" class="px-5 py-2.5 bg-red-600 rounded-lg text-sm font-medium text-white hover:bg-red-700 transition-colors shadow-sm">Eliminar</button>
+        </form>
+    </div>
+</div>
+
+<script>
+const equiposData = {{ inventario_json | tojson | safe }};
+
+console.log('[DEBUG] Inventario - datos cargados:', equiposData.length, 'registros');
+
+document.addEventListener('DOMContentLoaded', function() {
+    const table = document.querySelector('table');
+    const tbody = document.querySelector('tbody');
+    const rows = tbody ? tbody.querySelectorAll('tr') : [];
+    const container = document.querySelector('.rounded-xl.shadow-sm.border.overflow-hidden');
+    
+    console.log('[DEBUG] Tabla existe:', !!table);
+    console.log('[DEBUG] Tbody existe:', !!tbody);
+    console.log('[DEBUG] Filas en tbody:', rows.length);
+    console.log('[DEBUG] Container existe:', !!container);
+    
+    if (table) {
+        const style = getComputedStyle(table);
+        console.log('[DEBUG] Table display:', style.display);
+        console.log('[DEBUG] Table visibility:', style.visibility);
+        console.log('[DEBUG] Table opacity:', style.opacity);
+        console.log('[DEBUG] Table height:', style.height);
+    }
+    
+    if (container) {
+        const cstyle = getComputedStyle(container);
+        console.log('[DEBUG] Container display:', cstyle.display);
+        console.log('[DEBUG] Container overflow:', cstyle.overflow);
+        console.log('[DEBUG] Container max-height:', cstyle.maxHeight);
+        console.log('[DEBUG] Container height:', cstyle.height);
+    }
+    
+    // Log all rows
+    rows.forEach((row, i) => {
+        console.log('[DEBUG] Fila', i, 'HTML:', row.innerHTML.substring(0, 100));
+    });
+    
+    console.log('[DEBUG] Document height:', document.documentElement.scrollHeight, 'Viewport:', window.innerHeight);
+    
+    // Check if there's a parent clipping
+    let el = table;
+    while (el && el !== document.body) {
+        const st = getComputedStyle(el);
+        if (st.overflow === 'hidden' || st.overflowX === 'hidden' || st.overflowY === 'hidden') {
+            console.log('[DEBUG] Elemento con overflow hidden:', el.tagName, el.className);
+        }
+        if (st.maxHeight !== 'none' && st.maxHeight !== '') {
+            console.log('[DEBUG] Elemento con maxHeight:', el.tagName, st.maxHeight);
+        }
+        if (st.display === 'none') {
+            console.log('[DEBUG] Elemento oculto:', el.tagName, el.className);
+        }
+        el = el.parentElement;
+    }
+    
+    // Check position
+    if (table) {
+        const rect = table.getBoundingClientRect();
+        console.log('[DEBUG] Tabla pos - top:', rect.top, 'bottom:', rect.bottom, 'width:', rect.width, 'height:', rect.height);
+        console.log('[DEBUG] Tabla visible en viewport:', rect.top < window.innerHeight && rect.bottom > 0);
+        
+        const tbodyRect = tbody.getBoundingClientRect();
+        console.log('[DEBUG] Tbody pos - top:', tbodyRect.top, 'bottom:', tbodyRect.bottom, 'height:', tbodyRect.height);
+        
+        const firstRow = rows[0];
+        if (firstRow) {
+            const rowRect = firstRow.getBoundingClientRect();
+            console.log('[DEBUG] Primera fila - top:', rowRect.top, 'bottom:', rowRect.bottom, 'height:', rowRect.height);
+            const cells = firstRow.querySelectorAll('td, th');
+            cells.forEach((cell, ci) => {
+                const cRect = cell.getBoundingClientRect();
+                console.log('[DEBUG] Celda', ci, 'ancho:', cRect.width, 'alto:', cRect.height);
+            });
+        }
+        
+        // Check if the header text is visible
+        const header = document.querySelector('h3');
+        if (header) {
+            const hRect = header.getBoundingClientRect();
+            console.log('[DEBUG] Header "Listado Maestro" pos - top:', hRect.top, 'bottom:', hRect.bottom, 'height:', hRect.height);
+        }
+        
+        // Check the content div (flex-1 overflow-auto)
+        const contentDiv = document.querySelector('.flex-1.overflow-auto');
+        if (contentDiv) {
+            const cRect = contentDiv.getBoundingClientRect();
+            console.log('[DEBUG] Content div (flex-1) - top:', cRect.top, 'bottom:', cRect.bottom, 'height:', cRect.height);
+        }
+    }
+});
+
+function abrirModalEditar(id) {
+    const equipo = equiposData.find(e => e.id === id);
+    if (!equipo) return;
+
+    document.getElementById('edit-tipo_equipo').value = equipo.tipo_equipo || '';
+    document.getElementById('edit-codigo').value = equipo.codigo || '';
+    document.getElementById('edit-ubicacion').value = equipo.ubicacion || '';
+    document.getElementById('edit-responsable').value = equipo.responsable || '';
+    document.getElementById('edit-estado_operativo').value = equipo.estado_operativo || '';
+    document.getElementById('edit-estado').value = equipo.estado_flujo || '';
+    document.getElementById('edit-ultimo_mantenimiento').value = equipo.ultimo_mantenimiento || '';
+
+    document.getElementById('form-editar-equipo').action = "{{ url_for('inventario.editar', equipo_id=0) }}".replace('/0', '/' + id);
+    document.getElementById('modal-editar-inventario').classList.remove('hidden');
+}
+
+function abrirModalEliminar(id) {
+    document.getElementById('form-eliminar-equipo').action = "{{ url_for('inventario.eliminar', equipo_id=0) }}".replace('/0', '/' + id);
+    document.getElementById('modal-eliminar-inventario').classList.remove('hidden');
+}
+</script>
 {% endblock %}
