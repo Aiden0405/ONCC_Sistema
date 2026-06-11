@@ -14,35 +14,37 @@ from app.models.esquema_activo import (
     SensibilizacionActiva,
     MunicipioActivo,
 )
+# Usamos los alias para mantener legibilidad
+Actividad = ActividadActiva
 
 
 def _asegurar_territorio_base():
     estado = EstadoActivo.query.filter_by(nombre_estado='Lara').first()
-    if not estado:
+    if not estado: # Si no existe, lo creamos
         estado = EstadoActivo(nombre_estado='Lara')
         db.session.add(estado)
         db.session.flush()
 
     municipio = MunicipioActivo.query.filter_by(nombre_municipio='Iribarren', id_estado=estado.id_estado).first()
-    if not municipio:
+    if not municipio: # Si no existe, lo creamos
         municipio = MunicipioActivo(id_estado=estado.id_estado, nombre_municipio='Iribarren')
         db.session.add(municipio)
         db.session.flush()
 
     parroquia = ParroquiaActiva.query.filter_by(nombre_parroquia='Catedral', id_municipio=municipio.id_municipio).first()
-    if not parroquia:
+    if not parroquia: # Si no existe, lo creamos
         parroquia = ParroquiaActiva(id_municipio=municipio.id_municipio, nombre_parroquia='Catedral')
         db.session.add(parroquia)
         db.session.flush()
 
     comunidad = ComunidadActiva.query.filter_by(nombre_comunidad='Comunidad General', id_parroquia=parroquia.id_parroquia).first()
-    if not comunidad:
+    if not comunidad: # Si no existe, lo creamos
         comunidad = ComunidadActiva(id_parroquia=parroquia.id_parroquia, nombre_comunidad='Comunidad General')
         db.session.add(comunidad)
         db.session.flush()
 
     nivel = NivelActivo.query.filter_by(nombre_nivel='Base').first()
-    if not nivel:
+    if not nivel: # Si no existe, lo creamos
         nivel = NivelActivo(nombre_nivel='Base', descripcion='Nivel base para registros iniciales')
         db.session.add(nivel)
         db.session.flush()
@@ -66,7 +68,7 @@ def _asegurar_territorio_base():
 @comunitario_bp.route('/sensibilizaciones')
 def sensibilizaciones_index():
     _asegurar_territorio_base()
-    sensibilizaciones = SensibilizacionActiva.query.order_by(SensibilizacionActiva.id_sensivilizacion.desc()).all()
+    sensibilizaciones = SensibilizacionActiva.query.order_by(SensibilizacionActiva.id_sensibilizacion.desc()).all()
     return render_template('sensibilizaciones/index.html', sensibilizaciones=sensibilizaciones, estados_flujo=['registrada'])
 
 
@@ -78,7 +80,7 @@ def sensibilizacion_nuevo():
 
     if not campana or not fecha:
         flash('Campaña y fecha son obligatorias.', 'error')
-        return redirect(url_for('sensibilizacion.index'))
+        return redirect(url_for('comunitario.sensibilizaciones_index'))
 
     comunidad, nivel, _ = _asegurar_territorio_base()
     if territorio_nombre and territorio_nombre != comunidad.nombre_comunidad:
@@ -88,7 +90,7 @@ def sensibilizacion_nuevo():
             db.session.add(comunidad)
             db.session.flush()
 
-    actividad = ActividadActiva(
+    actividad = Actividad(
         fecha_actividad=datetime.strptime(fecha, '%Y-%m-%d').date(),
         tipo_actividad=['sensibilizacion'],
         id_comunidad=comunidad.id_comunidad,
@@ -98,17 +100,17 @@ def sensibilizacion_nuevo():
     db.session.flush()
 
     sensibilizacion = SensibilizacionActiva(
-        nombre_sensibilizacion=campana,
+        nombre_sensivilizacion=campana, # Aseguramos coincidencia con el modelo 'v'
         id_actividad=actividad.id_actividad,
     )
     db.session.add(sensibilizacion)
     db.session.commit()
 
     flash('Sensibilización registrada correctamente.', 'success')
-    return redirect(url_for('sensibilizacion.index'))
+    return redirect(url_for('comunitario.sensibilizaciones_index'))
 
 
 @comunitario_bp.route('/sensibilizaciones/<int:sensibilizacion_id>/estado', methods=['POST'])
 def sensibilizacion_cambiar_estado(sensibilizacion_id):
     flash('El esquema entregado no guarda un estado persistente para sensibilizaciones.', 'info')
-    return redirect(url_for('sensibilizacion.index'))
+    return redirect(url_for('comunitario.sensibilizaciones_index'))
