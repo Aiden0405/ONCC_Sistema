@@ -35,10 +35,10 @@ def tecnicos_nuevo():
     estatus_val = request.form.get('estatus', '1')
     estatus = estatus_val == '1'
 
-    if not nombre or not correo:
+    if not nombre or not correo or not cedula or not especialidad:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({'ok': False, 'error': 'Nombre y correo son obligatorios.'})
-        flash('Nombre y correo son obligatorios.', 'error')
+            return jsonify({'ok': False, 'error': 'Todos los campos son obligatorios.'})
+        flash('Todos los campos son obligatorios.', 'error')
         return redirect(url_for('logistica.tecnicos_campo_index'))
 
     existe_correo = Usuario.query.filter_by(correo=correo).first()
@@ -66,8 +66,8 @@ def tecnicos_nuevo():
     usuario = Usuario(
         nombre_usuario=nombre,
         correo=correo,
-        cedula=cedula or None,
-        especialidad=especialidad or None,
+        cedula=cedula,
+        especialidad=especialidad,
         id_rol=role_tecnico.id_rol,
         estatus=estatus,
     )
@@ -93,10 +93,10 @@ def tecnicos_editar(tecnico_id):
     estatus_val = request.form.get('estatus', '1')
     estatus = estatus_val == '1'
 
-    if not nombre or not correo:
+    if not nombre or not correo or not cedula or not especialidad:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({'ok': False, 'error': 'Nombre y correo son obligatorios.'})
-        flash('Nombre y correo son obligatorios.', 'error')
+            return jsonify({'ok': False, 'error': 'Todos los campos son obligatorios.'})
+        flash('Todos los campos son obligatorios.', 'error')
         return redirect(url_for('logistica.tecnicos_campo_index'))
 
     existe_correo = Usuario.query.filter_by(correo=correo).first()
@@ -116,8 +116,8 @@ def tecnicos_editar(tecnico_id):
 
     usuario.nombre_usuario = nombre
     usuario.correo = correo
-    usuario.cedula = cedula or None
-    usuario.especialidad = especialidad or None
+    usuario.cedula = cedula
+    usuario.especialidad = especialidad
     usuario.estatus = estatus
 
     db.session.commit()

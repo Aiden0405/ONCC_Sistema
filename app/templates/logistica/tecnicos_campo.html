@@ -152,7 +152,7 @@
                 </div>
                 <div class="space-y-1">
                     <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Cédula</label>
-                    <input type="text" name="cedula" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" />
+                    <input type="text" name="cedula" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
                 </div>
             </div>
             <div class="space-y-1">
@@ -161,11 +161,11 @@
             </div>
             <div class="space-y-1">
                 <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Especialidad Científica</label>
-                <input type="text" name="especialidad" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" />
+                <input type="text" name="especialidad" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
             </div>
             <div class="space-y-1">
                 <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estatus de Disponibilidad</label>
-                <select name="estatus" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                <select name="estatus" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Seleccione un estatus')" oninput="this.setCustomValidity('')">
                     <option value="1">Disponible</option>
                     <option value="0">No Disponible</option>
                 </select>
@@ -196,7 +196,7 @@
                 </div>
                 <div class="space-y-1">
                     <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Cédula</label>
-                    <input type="text" id="edit-tec-cedula" name="cedula" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" />
+                    <input type="text" id="edit-tec-cedula" name="cedula" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
                 </div>
             </div>
             <div class="space-y-1">
@@ -205,11 +205,11 @@
             </div>
             <div class="space-y-1">
                 <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Especialidad Científica</label>
-                <input type="text" id="edit-tec-especialidad" name="especialidad" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" />
+                <input type="text" id="edit-tec-especialidad" name="especialidad" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
             </div>
             <div class="space-y-1">
                 <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estatus de Disponibilidad</label>
-                <select id="edit-tec-estatus" name="estatus" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                <select id="edit-tec-estatus" name="estatus" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Seleccione un estatus')" oninput="this.setCustomValidity('')">
                     <option value="1">Disponible</option>
                     <option value="0">No Disponible</option>
                 </select>
