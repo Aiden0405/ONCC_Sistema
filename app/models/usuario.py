@@ -11,7 +11,7 @@ class Usuario(UserMixin, db.Model):
     clave_usuario = db.Column('clave usuario', db.String(255), nullable=False)
     id_rol = db.Column(db.Integer, db.ForeignKey('roles.id_rol'), nullable=False)
     correo = db.Column(db.String(100), nullable=True)
-    cedula = db.Column(db.String(15), nullable=True)
+    cedula = db.Column(db.String(15), nullable=True, unique=True)
     especialidad = db.Column(db.String(120), nullable=True)
     estatus = db.Column(db.Boolean, default=True)
 
