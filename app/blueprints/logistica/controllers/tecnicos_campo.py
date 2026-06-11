@@ -1,7 +1,9 @@
+import secrets
 from datetime import datetime
 
 from flask import flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
+from sqlalchemy.exc import IntegrityError
 
 from app import db
 from app.blueprints.logistica import logistica_bp
@@ -71,10 +73,16 @@ def tecnicos_nuevo():
         id_rol=role_tecnico.id_rol,
         estatus=estatus,
     )
-    import secrets
     usuario.set_password(secrets.token_urlsafe(10))
     db.session.add(usuario)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'ok': False, 'error': 'Esa cédula ya está registrada en el sistema.'})
+        flash('Esa cédula ya está registrada en el sistema.', 'error')
+        return redirect(url_for('logistica.tecnicos_campo_index'))
 
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return jsonify({'ok': True, 'redirect': url_for('logistica.tecnicos_campo_index'), 'mensaje': 'Técnico registrado exitosamente.'})
@@ -120,7 +128,14 @@ def tecnicos_editar(tecnico_id):
     usuario.especialidad = especialidad
     usuario.estatus = estatus
 
-    db.session.commit()
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'ok': False, 'error': 'Esa cédula ya está registrada en el sistema.'})
+        flash('Esa cédula ya está registrada en el sistema.', 'error')
+        return redirect(url_for('logistica.tecnicos_campo_index'))
 
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return jsonify({'ok': True, 'redirect': url_for('logistica.tecnicos_campo_index'), 'mensaje': 'Técnico actualizado exitosamente.'})
