@@ -5,6 +5,7 @@ from app import db
 
 class Actividad(db.Model):
     __tablename__ = 'actividades'
+    __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.Integer, primary_key=True)
     area = db.Column(db.String(120), nullable=False)
@@ -34,3 +35,14 @@ class Actividad(db.Model):
     estatus_actividad = synonym('estado')
     created_at = synonym('creado_en')
     updated_at = synonym('actualizado_en')
+
+# class Nivel(db.Model):
+#     __tablename__ = 'nivel'
+#     __table_args__ = {'extend_existing': True}
+
+#     id_nivel = db.Column(db.Integer, primary_key=True)
+#     nombre_nivel = db.Column(db.String(25), nullable=False)
+#     descripcion = db.Column('descripción ', db.String(255), nullable=True)
+
+#     def __repr__(self):
+#         return f"<Nivel {self.nombre_nivel}>"

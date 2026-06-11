@@ -2,13 +2,12 @@
 -- Please log an issue at https://github.com/pgadmin-org/pgadmin4/issues/new/choose if you find any bugs, including reproduction steps.
 BEGIN;
 
-\c oncc_sistema;
 
 CREATE TABLE IF NOT EXISTS public.actividad
 (
     id_actividad serial NOT NULL,
     fecha_actividad date NOT NULL,
-    tipo_actividad character varying(20) NOT NULL,
+    tipo_actividad character varying(20)[] NOT NULL,
     id_comunidad serial NOT NULL,
     id_nivel serial NOT NULL,
     PRIMARY KEY (id_actividad),
@@ -37,8 +36,8 @@ CREATE TABLE IF NOT EXISTS public."sensibilizacion "
 CREATE TABLE IF NOT EXISTS public.usuario
 (
     id_usuario serial NOT NULL,
-    nombre_usuario character varying(30) NOT NULL,
-    "clave usuario" character varying(255) NOT NULL,
+    nombre_usuario character varying(30)[] NOT NULL,
+    "clave usuario" character varying(255)[] NOT NULL,
     id_rol serial NOT NULL,
     PRIMARY KEY (id_usuario)
 );
@@ -46,23 +45,23 @@ CREATE TABLE IF NOT EXISTS public.usuario
 CREATE TABLE IF NOT EXISTS public.roles
 (
     id_rol serial NOT NULL,
-    nombre_rol character varying(20) NOT NULL,
+    nombre_rol character varying(20)[] NOT NULL,
     PRIMARY KEY (id_rol)
 );
 
 CREATE TABLE IF NOT EXISTS public.tecnicos
 (
     id_tecnicos serial NOT NULL,
-    cedula character varying(10) NOT NULL,
+    cedula character varying(10)[] NOT NULL,
     nombres character(25) NOT NULL,
-    apellidos character varying(25) NOT NULL,
+    apellidos character varying(25)[] NOT NULL,
     PRIMARY KEY (id_tecnicos)
 );
 
 CREATE TABLE IF NOT EXISTS public.modelos_equipo
 (
     id_modelos_equipo serial NOT NULL,
-    nombre_modelos_equipo character varying(50) NOT NULL,
+    nombre_modelos_equipo character varying(50)[] NOT NULL,
     id_categoria serial NOT NULL,
     modelo character varying(100) NOT NULL,
     marca character varying(50) NOT NULL,
@@ -72,7 +71,7 @@ CREATE TABLE IF NOT EXISTS public.modelos_equipo
 CREATE TABLE IF NOT EXISTS public.monitoreo
 (
     id_monitoreo serial NOT NULL,
-    nombre_monitoreo character varying(50) NOT NULL,
+    nombre_monitoreo character varying(50)[] NOT NULL,
     id_actividad serial NOT NULL,
     PRIMARY KEY (id_monitoreo),
     UNIQUE (id_actividad)
@@ -81,7 +80,7 @@ CREATE TABLE IF NOT EXISTS public.monitoreo
 CREATE TABLE IF NOT EXISTS public.mapa_climatico
 (
     id_mapa_climatico serial NOT NULL,
-    tipo_de_mapa character varying(20) NOT NULL,
+    tipo_de_mapa character varying(20)[] NOT NULL,
     id_parroquia serial NOT NULL,
     PRIMARY KEY (id_mapa_climatico)
 );
@@ -89,7 +88,7 @@ CREATE TABLE IF NOT EXISTS public.mapa_climatico
 CREATE TABLE IF NOT EXISTS public.comunidad
 (
     id_comunidad serial NOT NULL,
-    nombre_comunidad character varying(20) NOT NULL,
+    nombre_comunidad character varying(20)[] NOT NULL,
     id_parroquia serial NOT NULL,
     PRIMARY KEY (id_comunidad)
 );
@@ -105,7 +104,7 @@ CREATE TABLE IF NOT EXISTS public.actividad_tecnico
 CREATE TABLE IF NOT EXISTS public.nivel
 (
     id_nivel serial NOT NULL,
-    nombre_nivel character varying(20) NOT NULL,
+    nombre_nivel character varying(20)[] NOT NULL,
     "descripción " text NOT NULL,
     PRIMARY KEY (id_nivel)
 );
@@ -129,7 +128,7 @@ CREATE TABLE IF NOT EXISTS public.mapa_riesgo
 CREATE TABLE IF NOT EXISTS public.municipio
 (
     id_municipio serial NOT NULL,
-    nombre_municipio character varying(20) NOT NULL,
+    nombre_municipio character varying(20)[] NOT NULL,
     id_estado serial NOT NULL,
     PRIMARY KEY (id_municipio)
 );
@@ -137,7 +136,7 @@ CREATE TABLE IF NOT EXISTS public.municipio
 CREATE TABLE IF NOT EXISTS public.parroquia
 (
     id_parroquia serial NOT NULL,
-    nombre_parroquia character varying(30) NOT NULL,
+    nombre_parroquia character varying(30)[] NOT NULL,
     id_municipio serial NOT NULL,
     PRIMARY KEY (id_parroquia)
 );
@@ -145,7 +144,7 @@ CREATE TABLE IF NOT EXISTS public.parroquia
 CREATE TABLE IF NOT EXISTS public.estado
 (
     id_estado serial NOT NULL,
-    nombre_estado character varying(30) NOT NULL,
+    nombre_estado character varying(30)[] NOT NULL,
     PRIMARY KEY (id_estado)
 );
 
@@ -574,93 +573,5 @@ ALTER TABLE IF EXISTS public.imagenes_pruebas
     ON UPDATE NO ACTION
     ON DELETE NO ACTION
     NOT VALID;
-
-
--- Tablas de compatibilidad para el runtime actual del sistema.
--- El ERD principal se conserva arriba; estas tablas permiten que los módulos heredados sigan funcionando.
-
-CREATE TABLE IF NOT EXISTS public.publicaciones
-(
-    id SERIAL PRIMARY KEY,
-    tipo VARCHAR(40) NOT NULL DEFAULT 'boletin',
-    titulo VARCHAR(180) NOT NULL,
-    resumen TEXT,
-    contenido TEXT,
-    estado VARCHAR(20) NOT NULL DEFAULT 'borrador',
-    publicado_en TIMESTAMP WITHOUT TIME ZONE,
-    creado_en TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS public.bitacora_transacciones
-(
-    id SERIAL PRIMARY KEY,
-    modulo VARCHAR(40) NOT NULL,
-    registro_id INTEGER NOT NULL,
-    accion VARCHAR(60) NOT NULL,
-    estado_nuevo VARCHAR(20),
-    usuario VARCHAR(120) NOT NULL,
-    detalle VARCHAR(255),
-    creado_en TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS public.visitas_portal
-(
-    id SERIAL PRIMARY KEY,
-    mes VARCHAR(7) NOT NULL UNIQUE,
-    creado_en TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS public.password_resets
-(
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES public.usuario(id_usuario) ON UPDATE CASCADE ON DELETE CASCADE,
-    token VARCHAR(128) NOT NULL UNIQUE,
-    creado_en TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
-    expiracion TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-    usado BOOLEAN NOT NULL DEFAULT FALSE
-);
-
-CREATE TABLE IF NOT EXISTS public.reportes_transaccionales
-(
-    id SERIAL PRIMARY KEY,
-    titulo VARCHAR(150) NOT NULL,
-    modulo_origen VARCHAR(50) NOT NULL,
-    rango_desde DATE,
-    rango_hasta DATE,
-    formato VARCHAR(20) NOT NULL DEFAULT 'PDF',
-    estado VARCHAR(20) NOT NULL DEFAULT 'borrador',
-    responsable VARCHAR(120) NOT NULL DEFAULT 'Analista ONCC',
-    creado_en TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS public.inventario_equipos
-(
-    id SERIAL PRIMARY KEY,
-    tipo_equipo VARCHAR(120) NOT NULL,
-    codigo VARCHAR(50) NOT NULL UNIQUE,
-    ubicacion VARCHAR(150) NOT NULL,
-    estado_operativo VARCHAR(60) NOT NULL DEFAULT 'Operativo',
-    estado_flujo VARCHAR(20) NOT NULL DEFAULT 'borrador',
-    ultimo_mantenimiento DATE,
-    responsable VARCHAR(120) NOT NULL DEFAULT 'Sin asignar',
-    creado_en TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS public.mapas_registro
-(
-    id SERIAL PRIMARY KEY,
-    nombre VARCHAR(150) NOT NULL,
-    tipo_mapa VARCHAR(40) NOT NULL,
-    archivo VARCHAR(255),
-    estado VARCHAR(20) NOT NULL DEFAULT 'borrador',
-    version VARCHAR(30) NOT NULL DEFAULT 'v1.0',
-    cobertura VARCHAR(120) NOT NULL DEFAULT 'Regional',
-    responsable VARCHAR(120) NOT NULL DEFAULT 'Equipo Geomatica',
-    creado_en TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
-    actualizado_en TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
-);
 
 END;
