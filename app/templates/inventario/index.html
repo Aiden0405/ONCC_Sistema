@@ -359,6 +359,10 @@ function enviarFormulario(form, modalId) {
     const exitoDiv = form.querySelector('.modal-exito');
     if (exitoDiv) exitoDiv.remove();
 
+    if (!form.reportValidity()) {
+        return false;
+    }
+
     const btn = form.querySelector('button[type="submit"]');
     mostrarLoading(btn, true);
 

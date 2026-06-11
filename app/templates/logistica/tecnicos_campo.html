@@ -255,13 +255,28 @@ function mostrarErrorTecnico(modalId, mensaje) {
     if (window.lucide) lucide.createIcons();
 }
 
+function mostrarExitoTecnico(modalId, mensaje) {
+    limpiarErrorTecnico(modalId);
+    const modal = document.getElementById(modalId);
+    const exito = document.createElement('div');
+    exito.className = 'tec-exito p-3 rounded-md bg-emerald-600 text-white text-sm font-semibold flex items-center shadow-lg';
+    exito.innerHTML = '<i data-lucide="check-circle" class="mr-2 w-4 h-4"></i> <span>' + mensaje + '</span>';
+    modal.querySelector('form').prepend(exito);
+    if (window.lucide) lucide.createIcons();
+}
+
 function limpiarErrorTecnico(modalId) {
     const err = document.getElementById(modalId).querySelector('.tec-error');
     if (err) err.remove();
+    const exito = document.getElementById(modalId).querySelector('.tec-exito');
+    if (exito) exito.remove();
 }
 
 function enviarFormTecnico(form, modalId) {
     limpiarErrorTecnico(modalId);
+    if (!form.reportValidity()) {
+        return false;
+    }
     const btn = form.querySelector('button[type="submit"]');
     btn.disabled = true;
     const htmlOrig = btn.innerHTML;
@@ -280,7 +295,12 @@ function enviarFormTecnico(form, modalId) {
         btn.disabled = false;
         btn.innerHTML = htmlOrig;
         if (data.ok) {
-            window.location.href = data.redirect;
+            btn.disabled = false;
+            btn.innerHTML = htmlOrig;
+            mostrarExitoTecnico(modalId, data.mensaje || 'Registro guardado exitosamente.');
+            setTimeout(function() {
+                window.location.href = data.redirect;
+            }, 5000);
         } else {
             mostrarErrorTecnico(modalId, data.error);
         }
