@@ -10,9 +10,6 @@ class Usuario(UserMixin, db.Model):
     nombre_usuario = db.Column(db.String(30), nullable=False)
     clave_usuario = db.Column('clave usuario', db.String(255), nullable=False)
     id_rol = db.Column(db.Integer, db.ForeignKey('roles.id_rol'), nullable=False)
-    
-    # 1. AGREGADOS: Columnas esenciales que pide tu controlador y tu base de datos
-    # (Nota: Si en tu Postgres la columna se llama 'correo_usuario', cambia el nombre aquí)
     correo = db.Column(db.String(100), nullable=True) 
     estatus = db.Column(db.Boolean, default=True)
 
@@ -21,7 +18,6 @@ class Usuario(UserMixin, db.Model):
 
     role = db.relationship('Role', back_populates='usuarios')
 
-    # 2. SOLUCIÓN PARA EL HTML: Mapea automáticamente {{ usuario.rol }} al nombre del rol real
     @property
     def rol(self):
         return self.role.nombre if self.role else 'Sin Rol'

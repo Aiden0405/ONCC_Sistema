@@ -1,0 +1,43 @@
+{% extends 'public/base_public.html' %}
+
+{% block title %}{{ publicacion.titulo }} - ONCC{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6 py-6 animate-in fade-in duration-500">
+    <div class="space-y-3">
+        <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-700">
+            <i data-lucide="file-text" class="w-4 h-4"></i>
+            <span>Boletín Institucional / {{ publicacion.tipo }}</span>
+        </div>
+        <h1 class="text-3xl md:text-4xl font-black text-slate-900 leading-tight">
+            {{ publicacion.titulo }}
+        </h1>
+        <p class="text-xs text-slate-500 font-mono">
+            Publicado el: {{ publicacion.publicado_en.strftime('%Y-%m-%d') if publicacion.publicado_en else 'Reciente' }}
+        </p>
+    </div>
+
+    <div class="w-full h-64 rounded-2xl bg-emerald-50 border border-emerald-100 flex flex-col items-center justify-center text-emerald-700/40 space-y-2 shadow-inner">
+        <i data-lucide="layers" class="w-16 h-16"></i>
+        <span class="text-xs font-medium uppercase tracking-[0.2em] text-emerald-800/60">Observatorio Nacional de la Crisis Climática</span>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-gray-200 p-6 md:p-8 shadow-sm space-y-6">
+        {% if publicacion.resumen %}
+        <div class="p-4 rounded-xl bg-slate-50 border-l-4 border-emerald-600 italic text-slate-700 text-sm leading-relaxed">
+            <strong>Resumen Ejecutivo:</strong> {{ publicacion.resumen }}
+        </div>
+        {% endif %}
+
+        <div class="text-slate-800 text-sm leading-relaxed whitespace-pre-line font-normal">
+            {{ publicacion.contenido }}
+        </div>
+    </div>
+
+    <div class="pt-4 flex justify-start">
+        <a href="{{ url_for('core.home') }}" class="inline-flex items-center text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors">
+            <i data-lucide="arrow-left" class="w-4 h-4 mr-1.5"></i> Volver al inicio
+        </a>
+    </div>
+</div>
+{% endblock %}

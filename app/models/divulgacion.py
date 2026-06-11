@@ -1,13 +1,11 @@
 from datetime import datetime
-
 from app import db
 from sqlalchemy.orm import synonym
-
 
 class Publicacion(db.Model):
     __tablename__ = 'publicaciones'
 
-    # Columnas según database/sql.sql
+    # Columnas según database/sql.sql y actualización en Postgres
     id = db.Column(db.Integer, primary_key=True)
     tipo = db.Column(db.String(40), nullable=False, default='boletin')
     titulo = db.Column(db.String(180), nullable=False)
@@ -18,8 +16,11 @@ class Publicacion(db.Model):
     creado_en = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     actualizado_en = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    # === NUEVAS COLUMNAS CONECTADAS CON TU TABLA USUARIO ===
+    id_usuario = db.Column(db.Integer, db.ForeignKey('usuario.id_usuario'), nullable=False)
+    autor = db.relationship('Usuario', backref='publicaciones')
+
     # Sinónimos para compatibilidad con el código que esperaba otros nombres
-    from sqlalchemy.orm import synonym
     id_divulgacion = synonym('id')
     titulo_publicidad = synonym('titulo')
     estatus_revision = synonym('estado')
