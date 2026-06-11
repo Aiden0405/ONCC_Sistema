@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from flask import flash, redirect, render_template, request, url_for
+from flask import flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from app import db
@@ -34,11 +34,15 @@ def inventario_index():
 def nuevo():
     codigo = request.form.get('codigo', '').strip()
     if not codigo:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'ok': False, 'error': 'Debe indicar el codigo del equipo.'})
         flash('Debe indicar el codigo del equipo.', 'error')
         return redirect(url_for('inventario.index'))
 
     existe = InventarioEquipo.query.filter_by(codigo=codigo).first()
     if existe:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'ok': False, 'error': 'Ya existe un equipo con ese codigo.'})
         flash('Ya existe un equipo con ese codigo.', 'error')
         return redirect(url_for('inventario.index'))
 
@@ -46,6 +50,11 @@ def nuevo():
     fecha = None
     if fecha_mantenimiento:
         fecha = datetime.strptime(fecha_mantenimiento, '%Y-%m-%d').date()
+        if fecha > datetime.utcnow().date():
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'ok': False, 'error': 'La fecha no puede ser posterior a hoy.'})
+            flash('La fecha no puede ser posterior a hoy.', 'error')
+            return redirect(url_for('inventario.index'))
 
     equipo = InventarioEquipo(
         tipo_equipo=request.form.get('tipo_equipo', 'Equipo Tecnico').strip(),
@@ -69,6 +78,8 @@ def nuevo():
     ))
     db.session.commit()
 
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'ok': True, 'redirect': url_for('inventario.index')})
     flash('Equipo registrado exitosamente en el inventario.', 'success')
     return redirect(url_for('inventario.index'))
 
@@ -80,11 +91,15 @@ def editar(equipo_id):
     codigo = request.form.get('codigo', '').strip()
 
     if not codigo:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'ok': False, 'error': 'Debe indicar el codigo del equipo.'})
         flash('Debe indicar el codigo del equipo.', 'error')
         return redirect(url_for('inventario.index'))
 
     existe = InventarioEquipo.query.filter_by(codigo=codigo).first()
     if existe and existe.id != equipo.id:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'ok': False, 'error': 'Ya existe otro equipo con ese codigo.'})
         flash('Ya existe otro equipo con ese codigo.', 'error')
         return redirect(url_for('inventario.index'))
 
@@ -92,6 +107,11 @@ def editar(equipo_id):
     fecha = None
     if fecha_mantenimiento:
         fecha = datetime.strptime(fecha_mantenimiento, '%Y-%m-%d').date()
+        if fecha > datetime.utcnow().date():
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'ok': False, 'error': 'La fecha no puede ser posterior a hoy.'})
+            flash('La fecha no puede ser posterior a hoy.', 'error')
+            return redirect(url_for('inventario.index'))
 
     equipo.tipo_equipo = request.form.get('tipo_equipo', equipo.tipo_equipo).strip()
     equipo.codigo = codigo
@@ -110,6 +130,8 @@ def editar(equipo_id):
         detalle=f'Datos del equipo {equipo.codigo} actualizados',
     ))
     db.session.commit()
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'ok': True, 'redirect': url_for('inventario.index')})
     flash('Equipo actualizado exitosamente.', 'success')
     return redirect(url_for('inventario.index'))
 

@@ -10,7 +10,7 @@
             <h1 class="text-2xl font-bold dark:text-white text-gray-800">Control de Inventario Físico</h1>
             <p class="text-sm dark:text-gray-400 text-gray-500">Expediente, custodia y estatus operativo de equipos tecnológicos (EMAs, Pluviómetros, GPS)</p>
         </div>
-        <button onclick="document.getElementById('modal-inventario').classList.remove('hidden')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center shadow-sm transition-colors">
+        <button onclick="limpiarErrorModal('modal-inventario'); document.getElementById('modal-inventario').classList.remove('hidden')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center shadow-sm transition-colors">
             <i data-lucide="plus" class="mr-2 w-4 h-4"></i> Nuevo Equipo
         </button>
     </div>
@@ -39,16 +39,16 @@
         </div>
 
         <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse text-sm">
+            <table class="w-full text-left border-collapse text-sm min-w-[640px]">
                 <thead>
                     <tr class="text-xs uppercase tracking-wider bg-gray-50 text-gray-500 dark:bg-gray-700/40 dark:text-gray-400">
                         <th class="px-6 py-3 font-semibold">Código</th>
                         <th class="px-6 py-3 font-semibold">Nombre del Equipo</th>
-                        <th class="px-6 py-3 font-semibold">Ubicación Actual</th>
-                        <th class="px-6 py-3 font-semibold">Custodio / Responsable</th>
-                        <th class="px-6 py-3 font-semibold">Últ. Mantenimiento</th>
-                        <th class="px-6 py-3 font-semibold">Condición</th>
-                        <th class="px-6 py-3">Estado</th>
+                        <th class="px-6 py-3 font-semibold hidden md:table-cell">Ubicación Actual</th>
+                        <th class="px-6 py-3 font-semibold hidden lg:table-cell">Responsable</th>
+                        <th class="px-6 py-3 font-semibold hidden sm:table-cell">Últ. Modificación</th>
+                        <th class="px-6 py-3 font-semibold hidden sm:table-cell">Condición</th>
+                        <th class="px-6 py-3 hidden md:table-cell">Estado</th>
                         <th class="px-6 py-3 text-center">Acciones</th>
                     </tr>
                 </thead>
@@ -62,12 +62,12 @@
                                 {{ inv.tipo_equipo }}
                             </div>
                         </td>
-                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400">{{ inv.ubicacion }}</td>
-                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400 font-medium">{{ inv.responsable }}</td>
-                        <td class="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-400">
+                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400 hidden md:table-cell">{{ inv.ubicacion }}</td>
+                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400 font-medium hidden lg:table-cell">{{ inv.responsable }}</td>
+                        <td class="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-400 hidden sm:table-cell">
                             {{ inv.ultimo_mantenimiento.strftime('%Y-%m-%d') if inv.ultimo_mantenimiento else 'N/D' }}
                         </td>
-                        <td class="px-6 py-4">
+                        <td class="px-6 py-4 hidden sm:table-cell">
                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider 
                             {% if inv.estado_operativo == 'Operativo' %} bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300
                             {% elif inv.estado_operativo == 'Requierre Mantenimiento' or inv.estado_operativo == 'Requiere Mantenimiento' %} bg-yellow-50 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300
@@ -75,7 +75,7 @@
                                 {{ inv.estado_operativo }}
                             </span>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
+                        <td class="px-6 py-4 hidden md:table-cell">
                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider
                             {% if inv.estado_flujo == 'Disponible' %} bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300
                             {% elif inv.estado_flujo == 'En Uso (Asignado)' %} bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300
@@ -119,13 +119,14 @@
             </button>
         </div>
         
-        <form method="POST" action="{{ url_for('inventario.nuevo') }}" class="p-6 space-y-5">
+        <form method="POST" action="{{ url_for('inventario.nuevo') }}" class="p-6 space-y-5" onsubmit="return enviarFormulario(this, 'modal-inventario')">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-1">
                     <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Tipo de Equipo</label>
-                    <select name="tipo_equipo" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                    <select name="tipo_equipo" required oninvalid="this.setCustomValidity('Seleccione un tipo de equipo')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                        <option value="">Seleccione...</option>
                         <option>Estación Meteorológica (EMA)</option>
                         <option>Pluviómetro de Campo</option>
                         <option>Aparato Transmisor Data (SSBC)</option>
@@ -134,25 +135,26 @@
                 </div>
                 <div class="space-y-1">
                     <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Código Patrimonial / Serial</label>
-                    <input type="text" name="codigo" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: EMA-005" required />
+                    <input type="text" name="codigo" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: EMA-005" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
                 </div>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-1">
                     <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación / Asignación Territorial</label>
-                    <input type="text" name="ubicacion" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Lugar o comunidad de instalación" required />
+                    <input type="text" name="ubicacion" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Lugar o comunidad de instalación" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
                 </div>
                 <div class="space-y-1">
                     <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Responsable / Custodio</label>
-                    <input type="text" name="responsable" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Nombre del funcionario a cargo" required />
+                    <input type="text" name="responsable" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Nombre del funcionario a cargo" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
                 </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-1">
                     <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estado Operativo</label>
-                    <select name="estado_operativo" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                    <select name="estado_operativo" required oninvalid="this.setCustomValidity('Seleccione un estado operativo')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                        <option value="">Seleccione...</option>
                         <option>Operativo</option>
                         <option>Requiere Mantenimiento</option>
                         <option>Dañado / Inoperativo</option>
@@ -160,7 +162,8 @@
                 </div>
                 <div class="space-y-1">
                     <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estado</label>
-                    <select name="estado" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                    <select name="estado" required oninvalid="this.setCustomValidity('Seleccione un estado')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                        <option value="">Seleccione...</option>
                         <option value="Disponible">Disponible</option>
                         <option value="En Uso (Asignado)">En Uso (Asignado)</option>
                         <option value="En Mantenimiento">En Mantenimiento</option>
@@ -172,7 +175,7 @@
                 <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Fecha Última Calibración / Mantenimiento</label>
                 <div class="relative">
                     <i data-lucide="calendar" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
-                    <input type="date" name="ultimo_mantenimiento" class="w-full border rounded-md pl-9 p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required />
+                    <input type="date" name="ultimo_mantenimiento" id="fecha-mantenimiento" class="w-full border rounded-md pl-9 p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Seleccione una fecha')" oninput="this.setCustomValidity('')" />
                 </div>
                 <p class="text-[10px] text-gray-500 dark:text-gray-400 italic">El sistema auditará la vigencia en base a este registro cronológico.</p>
             </div>
@@ -198,13 +201,14 @@
             </button>
         </div>
         
-        <form id="form-editar-equipo" method="POST" class="p-6 space-y-5">
+        <form id="form-editar-equipo" method="POST" class="p-6 space-y-5" onsubmit="return enviarFormulario(this, 'modal-editar-inventario')">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-1">
                     <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Tipo de Equipo</label>
-                    <select id="edit-tipo_equipo" name="tipo_equipo" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                    <select id="edit-tipo_equipo" name="tipo_equipo" required oninvalid="this.setCustomValidity('Seleccione un tipo de equipo')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                        <option value="">Seleccione...</option>
                         <option>Estación Meteorológica (EMA)</option>
                         <option>Pluviómetro de Campo</option>
                         <option>Aparato Transmisor Data (SSBC)</option>
@@ -213,25 +217,26 @@
                 </div>
                 <div class="space-y-1">
                     <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Código Patrimonial / Serial</label>
-                    <input type="text" id="edit-codigo" name="codigo" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: EMA-005" required />
+                    <input type="text" id="edit-codigo" name="codigo" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: EMA-005" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
                 </div>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-1">
                     <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación / Asignación Territorial</label>
-                    <input type="text" id="edit-ubicacion" name="ubicacion" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Lugar o comunidad de instalación" required />
+                    <input type="text" id="edit-ubicacion" name="ubicacion" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Lugar o comunidad de instalación" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
                 </div>
                 <div class="space-y-1">
                     <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Responsable / Custodio</label>
-                    <input type="text" id="edit-responsable" name="responsable" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Nombre del funcionario a cargo" required />
+                    <input type="text" id="edit-responsable" name="responsable" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Nombre del funcionario a cargo" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
                 </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-1">
                     <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estado Operativo</label>
-                    <select id="edit-estado_operativo" name="estado_operativo" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                    <select id="edit-estado_operativo" name="estado_operativo" required oninvalid="this.setCustomValidity('Seleccione un estado operativo')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                        <option value="">Seleccione...</option>
                         <option>Operativo</option>
                         <option>Requiere Mantenimiento</option>
                         <option>Dañado / Inoperativo</option>
@@ -239,7 +244,8 @@
                 </div>
                 <div class="space-y-1">
                     <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estado</label>
-                    <select id="edit-estado" name="estado" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                    <select id="edit-estado" name="estado" required oninvalid="this.setCustomValidity('Seleccione un estado')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                        <option value="">Seleccione...</option>
                         <option value="Disponible">Disponible</option>
                         <option value="En Uso (Asignado)">En Uso (Asignado)</option>
                         <option value="En Mantenimiento">En Mantenimiento</option>
@@ -281,97 +287,60 @@
 <script>
 const equiposData = {{ inventario_json | tojson | safe }};
 
-console.log('[DEBUG] Inventario - datos cargados:', equiposData.length, 'registros');
+(function() {
+    const hoy = new Date().toISOString().split('T')[0];
+    document.querySelectorAll('input[type="date"]').forEach(el => el.setAttribute('max', hoy));
+})();
 
-document.addEventListener('DOMContentLoaded', function() {
-    const table = document.querySelector('table');
-    const tbody = document.querySelector('tbody');
-    const rows = tbody ? tbody.querySelectorAll('tr') : [];
-    const container = document.querySelector('.rounded-xl.shadow-sm.border.overflow-hidden');
-    
-    console.log('[DEBUG] Tabla existe:', !!table);
-    console.log('[DEBUG] Tbody existe:', !!tbody);
-    console.log('[DEBUG] Filas en tbody:', rows.length);
-    console.log('[DEBUG] Container existe:', !!container);
-    
-    if (table) {
-        const style = getComputedStyle(table);
-        console.log('[DEBUG] Table display:', style.display);
-        console.log('[DEBUG] Table visibility:', style.visibility);
-        console.log('[DEBUG] Table opacity:', style.opacity);
-        console.log('[DEBUG] Table height:', style.height);
+function limpiarErrorModal(modalId) {
+    const error = document.getElementById(modalId).querySelector('.modal-error');
+    if (error) error.remove();
+}
+
+function mostrarErrorModal(modalId, mensaje) {
+    const modal = document.getElementById(modalId);
+    let existing = modal.querySelector('.modal-error');
+    if (!existing) {
+        existing = document.createElement('div');
+        existing.className = 'modal-error p-3 rounded-md bg-red-600 text-white text-sm font-semibold flex items-center shadow-lg';
+        existing.innerHTML = '<i data-lucide="alert-triangle" class="mr-2 w-4 h-4"></i> <span></span>';
+        modal.querySelector('.p-6.space-y-5').prepend(existing);
     }
-    
-    if (container) {
-        const cstyle = getComputedStyle(container);
-        console.log('[DEBUG] Container display:', cstyle.display);
-        console.log('[DEBUG] Container overflow:', cstyle.overflow);
-        console.log('[DEBUG] Container max-height:', cstyle.maxHeight);
-        console.log('[DEBUG] Container height:', cstyle.height);
-    }
-    
-    // Log all rows
-    rows.forEach((row, i) => {
-        console.log('[DEBUG] Fila', i, 'HTML:', row.innerHTML.substring(0, 100));
+    existing.querySelector('span').textContent = mensaje;
+    if (window.lucide) lucide.createIcons();
+}
+
+function enviarFormulario(form, modalId) {
+    const errorDiv = form.querySelector('.modal-error');
+    if (errorDiv) errorDiv.remove();
+
+    const formData = new FormData(form);
+    formData.append('csrf_token', form.querySelector('[name=csrf_token]').value);
+
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.ok) {
+            window.location.href = data.redirect;
+        } else {
+            mostrarErrorModal(modalId, data.error);
+        }
+    })
+    .catch(() => {
+        form.submit();
     });
-    
-    console.log('[DEBUG] Document height:', document.documentElement.scrollHeight, 'Viewport:', window.innerHeight);
-    
-    // Check if there's a parent clipping
-    let el = table;
-    while (el && el !== document.body) {
-        const st = getComputedStyle(el);
-        if (st.overflow === 'hidden' || st.overflowX === 'hidden' || st.overflowY === 'hidden') {
-            console.log('[DEBUG] Elemento con overflow hidden:', el.tagName, el.className);
-        }
-        if (st.maxHeight !== 'none' && st.maxHeight !== '') {
-            console.log('[DEBUG] Elemento con maxHeight:', el.tagName, st.maxHeight);
-        }
-        if (st.display === 'none') {
-            console.log('[DEBUG] Elemento oculto:', el.tagName, el.className);
-        }
-        el = el.parentElement;
-    }
-    
-    // Check position
-    if (table) {
-        const rect = table.getBoundingClientRect();
-        console.log('[DEBUG] Tabla pos - top:', rect.top, 'bottom:', rect.bottom, 'width:', rect.width, 'height:', rect.height);
-        console.log('[DEBUG] Tabla visible en viewport:', rect.top < window.innerHeight && rect.bottom > 0);
-        
-        const tbodyRect = tbody.getBoundingClientRect();
-        console.log('[DEBUG] Tbody pos - top:', tbodyRect.top, 'bottom:', tbodyRect.bottom, 'height:', tbodyRect.height);
-        
-        const firstRow = rows[0];
-        if (firstRow) {
-            const rowRect = firstRow.getBoundingClientRect();
-            console.log('[DEBUG] Primera fila - top:', rowRect.top, 'bottom:', rowRect.bottom, 'height:', rowRect.height);
-            const cells = firstRow.querySelectorAll('td, th');
-            cells.forEach((cell, ci) => {
-                const cRect = cell.getBoundingClientRect();
-                console.log('[DEBUG] Celda', ci, 'ancho:', cRect.width, 'alto:', cRect.height);
-            });
-        }
-        
-        // Check if the header text is visible
-        const header = document.querySelector('h3');
-        if (header) {
-            const hRect = header.getBoundingClientRect();
-            console.log('[DEBUG] Header "Listado Maestro" pos - top:', hRect.top, 'bottom:', hRect.bottom, 'height:', hRect.height);
-        }
-        
-        // Check the content div (flex-1 overflow-auto)
-        const contentDiv = document.querySelector('.flex-1.overflow-auto');
-        if (contentDiv) {
-            const cRect = contentDiv.getBoundingClientRect();
-            console.log('[DEBUG] Content div (flex-1) - top:', cRect.top, 'bottom:', cRect.bottom, 'height:', cRect.height);
-        }
-    }
-});
+    return false;
+}
 
 function abrirModalEditar(id) {
     const equipo = equiposData.find(e => e.id === id);
     if (!equipo) return;
+
+    limpiarErrorModal('modal-editar-inventario');
 
     document.getElementById('edit-tipo_equipo').value = equipo.tipo_equipo || '';
     document.getElementById('edit-codigo').value = equipo.codigo || '';
