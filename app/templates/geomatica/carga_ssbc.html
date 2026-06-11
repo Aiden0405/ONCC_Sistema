@@ -4,43 +4,25 @@
 
 {% block content %}
 <div class="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
-    
-    <div class="flex justify-between items-center mb-2">
-        <div>
-            <h1 class="text-2xl font-bold dark:text-white text-gray-800">Mapas de Riesgo y Vulnerabilidad</h1>
-            <p class="text-sm dark:text-gray-400 text-gray-500">Carga, procesamiento y consulta de matrices cartográficas de zonas de peligro regional</p>
-        </div>
-    </div>
-
     <div class="p-6 rounded-xl shadow-sm border bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700 space-y-6">
-        <div class="flex items-center space-x-4">
-            <div class="w-12 h-12 rounded-full flex items-center justify-center bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 shrink-0">
-                <i data-lucide="shield-alert" class="w-6 h-6"></i>
-            </div>
-            <div>
-                <h3 class="text-lg font-bold text-gray-800 dark:text-white">Cargar Matriz de Riesgo Comunitario</h3>
-                <p class="text-xs text-gray-500 dark:text-gray-400">Suba el archivo de datos georeferenciados para actualizar el mapa de contingencias</p>
-            </div>
-        </div>
-        
-        <form method="POST" action="{{ url_for('geomatica.procesar_archivo') }}" enctype="multipart/form-data" class="space-y-4">
+        <form method="POST" action="{{ url_for('mapas.procesar_archivo') }}" enctype="multipart/form-data" class="space-y-4">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="tipo_mapa" value="riesgo">
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="space-y-1">
                     <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Identificador / Nombre del Mapa</label>
-                    <input type="text" name="nombre" placeholder="Ej: Mapa de Riesgo de Inundación - Quíbor" required 
+                    <input type="text" name="nombre" placeholder="Ej: Mapa de Riesgo de Inundación - Barquisimeto" required maxlength="150" minlength="5"
                            class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none" />
                 </div>
                 <div class="space-y-1">
                     <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Versión Cartográfica</label>
-                    <input type="text" name="version" placeholder="Ej: v1.0" required 
+                    <input type="text" name="version" placeholder="Ej: v1.0" required maxlength="30"
                            class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none" />
                 </div>
                 <div class="space-y-1">
                     <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Cobertura Territorial</label>
-                    <input type="text" name="cobertura" placeholder="Ej: Municipio Jiménez, Lara" required 
+                    <input type="text" name="cobertura" placeholder="Ej: Municipio Jiménez, Lara" required maxlength="120"
                            class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none" />
                 </div>
             </div>
@@ -60,21 +42,8 @@
     </div>
 
     <div class="rounded-xl shadow-sm border overflow-hidden bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
-        <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
-            <h3 class="text-sm font-bold uppercase tracking-wide text-red-700 dark:text-red-400">Historial de Mapas de Riesgo Registrados</h3>
-            <span class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ cargas|length }} registro(s)</span>
-        </div>
         <div class="overflow-x-auto">
             <table class="w-full text-sm text-left border-collapse">
-                <thead>
-                    <tr class="text-xs uppercase tracking-wider bg-gray-50 text-gray-500 dark:bg-gray-700/40 dark:text-gray-400">
-                        <th class="px-6 py-3 font-semibold">Título del Mapa</th>
-                        <th class="px-6 py-3 font-semibold">Versión</th>
-                        <th class="px-6 py-3 font-semibold">Archivo Fuente</th>
-                        <th class="px-6 py-3 font-semibold">Cobertura</th>
-                        <th class="px-6 py-3 text-right">Estatus / Flujo</th>
-                    </tr>
-                </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
                     {% for carga in cargas %}
                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
@@ -82,20 +51,25 @@
                         <td class="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-400">{{ carga.version }}</td>
                         <td class="px-6 py-4 font-mono text-xs text-gray-500 dark:text-gray-400 max-w-xs truncate">{{ carga.archivo or 'N/D' }}</td>
                         <td class="px-6 py-4 text-gray-600 dark:text-gray-400">{{ carga.cobertura }}</td>
-                        <td class="px-6 py-4 text-right whitespace-nowrap">
-                            <form method="POST" action="{{ url_for('geomatica.cambiar_estado', mapa_id=carga.id) }}" class="inline-flex items-center gap-1.5 bg-gray-50 dark:bg-gray-900/60 p-1 rounded-md border border-gray-100 dark:border-gray-700">
+                        <td class="px-6 py-4 text-right flex justify-end gap-2 whitespace-nowrap">
+                            <form method="POST" action="{{ url_for('mapas.cambiar_estado', mapa_id=carga.id) }}" class="inline-flex items-center gap-1.5 bg-gray-50 dark:bg-gray-900/60 p-1 rounded-md border border-gray-100 dark:border-gray-700">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <select name="estado" class="border rounded bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white px-2 py-0.5 text-xs focus:ring-1 focus:ring-red-500 outline-none">
+                                <select name="estado" class="border rounded bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white px-2 py-0.5 text-xs outline-none">
                                     {% for estado in estados_flujo %}
                                         <option value="{{ estado }}" {% if estado == carga.estado %}selected{% endif %}>{{ estado }}</option>
                                     {% endfor %}
                                 </select>
-                                <button class="text-[11px] font-semibold px-2 py-0.5 rounded bg-red-600 text-white hover:bg-red-700 transition-colors shadow-2xs">Actualizar</button>
+                                <button class="text-[11px] font-semibold px-2 py-0.5 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors">Guardar</button>
+                            </form>
+
+                            <form method="POST" action="{{ url_for('mapas.eliminar_mapa', mapa_id=carga.id) }}" onsubmit="return confirm('¿Está seguro de eliminar el mapa {{ carga.nombre }}? Esta acción no se puede deshacer.');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="text-[11px] font-semibold px-2 py-1.5 rounded bg-red-600 text-white hover:bg-red-700 transition-colors" title="Eliminar Registro">
+                                    <i data-lucide="trash-2" class="w-3 h-3"></i>
+                                </button>
                             </form>
                         </td>
                     </tr>
-                    {% else %}
-                    <tr><td colspan="5" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">No hay capas de riesgo registradas.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
