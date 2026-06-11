@@ -13,7 +13,7 @@ def build_database_uri():
 
     if engine in ['postgres', 'postgresql']:
         user = os.environ.get('DB_USER', 'postgres')
-        password = quote_plus(os.environ.get('DB_PASSWORD', ''))
+        password = quote_plus(os.environ.get('DB_PASSWORD', 'admin'))
         host = os.environ.get('DB_HOST', 'localhost')
         port = os.environ.get('DB_PORT', '5432')
         name = os.environ.get('DB_NAME', 'oncc_sistema')

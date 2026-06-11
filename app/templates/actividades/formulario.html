@@ -51,12 +51,7 @@
                     </div>
                     <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Técnico Responsable</label>
-                        <select name="responsable" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
-                            <option value="" disabled selected>Seleccione el analista...</option>
-                            {% for t in tecnicos_disponibles %}
-                                <option value="{{ t.nombre_usuario }}">{{ t.nombre_usuario }}</option>
-                            {% endfor %}
-                        </select>
+                        <input type="text" name="responsable" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: Ing. Carlos Mendoza">
                     </div>
                     <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Fecha de Ejecución</label>

@@ -107,3 +107,19 @@ def actividades_cambiar_estado(actividad_id):
 
     flash('Estado de la actividad actualizado.', 'success')
     return redirect(url_for('actividad.index'))
+
+@monitoreo_bp.route('/actividades/<int:actividad_id>/eliminar_fisico', methods=['POST'])
+@login_required
+def eliminar_actividad(actividad_id):
+    actividad = Actividad.query.get_or_404(actividad_id)
+    
+    try:
+        db.session.delete(actividad)
+        db.session.commit()
+        flash('Actividad eliminada físicamente del sistema.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        # Si falla aquí, es 100% seguro que otra tabla (como bitácora) tiene una FK real que impide borrarlo
+        flash('No se pudo eliminar el registro debido a dependencias en la base de datos.', 'error')
+        
+    return redirect(url_for('actividad.index'))
