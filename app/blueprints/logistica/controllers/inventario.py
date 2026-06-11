@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from flask import flash, jsonify, redirect, render_template, request, url_for
+from flask import current_app, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from app import db
@@ -79,7 +79,7 @@ def nuevo():
     db.session.commit()
 
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return jsonify({'ok': True, 'redirect': url_for('inventario.index')})
+        return jsonify({'ok': True, 'redirect': url_for('inventario.index'), 'mensaje': 'Equipo registrado exitosamente en el inventario.'})
     flash('Equipo registrado exitosamente en el inventario.', 'success')
     return redirect(url_for('inventario.index'))
 
@@ -131,7 +131,7 @@ def editar(equipo_id):
     ))
     db.session.commit()
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return jsonify({'ok': True, 'redirect': url_for('inventario.index')})
+        return jsonify({'ok': True, 'redirect': url_for('inventario.index'), 'mensaje': 'Equipo actualizado exitosamente.'})
     flash('Equipo actualizado exitosamente.', 'success')
     return redirect(url_for('inventario.index'))
 
@@ -153,5 +153,228 @@ def eliminar(equipo_id):
     db.session.commit()
     flash('Equipo eliminado del inventario.', 'success')
     return redirect(url_for('inventario.index'))
+
+
+@logistica_bp.route('/inventario/<int:equipo_id>/acta', methods=['GET'])
+@login_required
+def acta_responsabilidad(equipo_id):
+    equipo = InventarioEquipo.query.get_or_404(equipo_id)
+    from flask import Response
+    import io, os
+    from reportlab.lib.pagesizes import letter
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image, HRFlowable
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib import colors
+    from reportlab.lib.units import inch, mm
+
+    buf = io.BytesIO()
+
+    def footer_pagina(canvas, doc):
+        canvas.saveState()
+        margen_x = 0.75 * inch
+        ancho_pag = letter[0]
+        footer_y = 0.4 * inch
+        canvas.setStrokeColor(colors.HexColor('#d1d5db'))
+        canvas.setLineWidth(0.3)
+        canvas.line(margen_x, footer_y + 0.15*inch, ancho_pag - margen_x, footer_y + 0.15*inch)
+        canvas.setFont('Helvetica', 7)
+        canvas.setFillColor(colors.HexColor('#9ca3af'))
+        canvas.drawString(margen_x, footer_y - 2, 'Código: REG-INV-042 | Versión 2.1')
+        canvas.drawRightString(ancho_pag - margen_x, footer_y - 2, f'Página {doc.page}')
+        canvas.restoreState()
+
+    doc = SimpleDocTemplate(buf, pagesize=letter,
+                            title='Acta de Responsabilidad',
+                            topMargin=0.7*inch, bottomMargin=0.65*inch,
+                            leftMargin=0.75*inch, rightMargin=0.75*inch)
+    doc.onFirstPage = footer_pagina
+    doc.onLaterPages = footer_pagina
+    styles = getSampleStyleSheet()
+    ancho = letter[0] - 1.5*inch  # ~7.0 inches
+
+    # --- Estilos ---
+    estilo_titulo = ParagraphStyle('TituloActa', parent=styles['Title'],
+                                    fontSize=18, leading=22, textColor=colors.HexColor('#15803d'),
+                                    spaceAfter=2, alignment=1)
+    estilo_subtitulo = ParagraphStyle('SubActa', parent=styles['Normal'],
+                                      fontSize=10, leading=13, textColor=colors.HexColor('#6b7280'),
+                                      alignment=1, spaceAfter=4)
+    estilo_linea_titulo = ParagraphStyle('LineaTit', parent=styles['Normal'],
+                                          fontSize=6, textColor=colors.HexColor('#16a34a'), alignment=1)
+    estilo_info_label = ParagraphStyle('InfoLabel', parent=styles['Normal'],
+                                       fontSize=8, leading=10, textColor=colors.HexColor('#4b5563'))
+    estilo_info_valor = ParagraphStyle('InfoValor', parent=styles['Normal'],
+                                       fontSize=9, leading=11, textColor=colors.HexColor('#111827'))
+    estilo_cuerpo = ParagraphStyle('CuerpoActa', parent=styles['Normal'],
+                                   fontSize=9, leading=13, textColor=colors.HexColor('#374151'),
+                                   alignment=4)
+    estilo_tabla_titulo = ParagraphStyle('TabTit', parent=styles['Normal'],
+                                         fontSize=8, leading=10, textColor=colors.white, alignment=1)
+    estilo_tabla_celda = ParagraphStyle('TabCel', parent=styles['Normal'],
+                                        fontSize=8, leading=10, alignment=1)
+    estilo_termino = ParagraphStyle('TermActa', parent=styles['Normal'],
+                                    fontSize=8.5, leading=12, leftIndent=14, textColor=colors.HexColor('#374151'))
+    estilo_firma_nombre = ParagraphStyle('FirmaNom', parent=styles['Normal'],
+                                         fontSize=10, leading=13, alignment=1)
+    estilo_firma_cargo = ParagraphStyle('FirmaCar', parent=styles['Normal'],
+                                        fontSize=8.5, leading=11, textColor=colors.HexColor('#6b7280'), alignment=1)
+    estilo_footer = ParagraphStyle('FooterActa', parent=styles['Normal'],
+                                   fontSize=7, textColor=colors.HexColor('#9ca3af'), alignment=1)
+
+    verde = colors.HexColor('#16a34a')
+    verde_claro = colors.HexColor('#f0fdf4')
+    gris_borde = colors.HexColor('#d1d5db')
+
+    elementos = []
+
+    # === ENCABEZADO ===
+    logo_path = os.path.join(current_app.root_path, 'static', 'img', 'oncc_logo.png')
+    logo_celda = []
+    if os.path.exists(logo_path):
+        img = Image(logo_path, width=1.3*inch, height=0.5*inch)
+        logo_celda.append(img)
+    logo_celda.append(Spacer(1, 6))
+    logo_celda.append(Paragraph("<b>ONCC</b> - Región Nororiental",
+                     ParagraphStyle('LogoTxt', parent=styles['Normal'], fontSize=7, textColor=colors.grey)))
+
+    titulo_celda = [
+        Paragraph("ACTA DE ASIGNACIÓN Y RESPONSABILIDAD", estilo_titulo),
+        Paragraph("Gestión de Inventario de Equipos", estilo_subtitulo),
+        Paragraph("──────────────────────────────────────", estilo_linea_titulo),
+    ]
+
+    tbl_enc = Table([[logo_celda, titulo_celda]], colWidths=[2.0*inch, ancho-2.0*inch])
+    tbl_enc.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+        ('ALIGN', (1, 0), (1, 0), 'CENTER'),
+        ('TOPPADDING', (0, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+    ]))
+    elementos.append(tbl_enc)
+    elementos.append(Spacer(1, 0.25*inch))
+
+    # === DATOS DEL ACTA (tabla con fondo) ===
+    codigo_acta = f"ACT-{datetime.now().year}-{equipo.id:05d}"
+    fecha_acta = datetime.now().strftime('%d de %B, %Y')
+    meses_es = {'January': 'Enero', 'February': 'Febrero', 'March': 'Marzo', 'April': 'Abril',
+                'May': 'Mayo', 'June': 'Junio', 'July': 'Julio', 'August': 'Agosto',
+                'September': 'Septiembre', 'October': 'Octubre', 'November': 'Noviembre', 'December': 'Diciembre'}
+    for eng, esp in meses_es.items():
+        fecha_acta = fecha_acta.replace(eng, esp)
+
+    def info_fila(label, valor, label2, valor2):
+        return [
+            Paragraph(f'<font size=8 color="#4b5563"><b>{label}</b></font>', estilo_info_label),
+            Paragraph(f'<font size=9 color="#111827">{valor}</font>', estilo_info_valor),
+            Paragraph(f'<font size=8 color="#4b5563"><b>{label2}</b></font>', estilo_info_label),
+            Paragraph(f'<font size=9 color="#111827">{valor2}</font>', estilo_info_valor),
+        ]
+
+    datos_acta = [
+        info_fila('Código Acta', codigo_acta, 'Fecha Emisión', fecha_acta),
+        info_fila('Responsable', equipo.responsable, 'Departamento', 'Tecnología e Información'),
+        info_fila('Documento ID', '—', 'Ubicación', equipo.ubicacion),
+    ]
+    t_datos = Table(datos_acta, colWidths=[1.2*inch, 2.0*inch, 1.2*inch, 2.0*inch])
+    t_datos.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), verde_claro),
+        ('BOX', (0, 0), (-1, -1), 0.5, gris_borde),
+        ('INNERGRID', (0, 0), (-1, -1), 0.3, gris_borde),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('LEFTPADDING', (0, 0), (-1, -1), 8),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+    ]))
+    elementos.append(t_datos)
+    elementos.append(Spacer(1, 0.25*inch))
+
+    # === TEXTO LEGAL ===
+    elementos.append(Paragraph(
+        "Por medio del presente documento, se hace entrega formal del/los equipo(s) de trabajo que "
+        "se detallan a continuación. El trabajador/colaborador mencionado declara "
+        "recibir el equipo en óptimas condiciones de funcionamiento y uso, obligándose a utilizarlos "
+        "exclusivamente para el desempeño de sus funciones laborales.",
+        estilo_cuerpo))
+    elementos.append(Spacer(1, 0.25*inch))
+
+    # === TABLA DE DETALLE ===
+    detalle_data = [
+        [Paragraph('<b>ID EQUIPO</b>', estilo_tabla_titulo),
+         Paragraph('<b>NOMBRE DEL EQUIPO</b>', estilo_tabla_titulo),
+         Paragraph('<b>UBICACIÓN ACTUAL</b>', estilo_tabla_titulo),
+         Paragraph('<b>RESPONSABLE</b>', estilo_tabla_titulo),
+         Paragraph('<b>ÚLT. MODIFICACIÓN</b>', estilo_tabla_titulo),
+         Paragraph('<b>CONDICIÓN</b>', estilo_tabla_titulo),
+         Paragraph('<b>ESTADO</b>', estilo_tabla_titulo)],
+        [Paragraph(equipo.codigo, estilo_tabla_celda),
+         Paragraph(equipo.tipo_equipo, estilo_tabla_celda),
+         Paragraph(equipo.ubicacion, estilo_tabla_celda),
+         Paragraph(equipo.responsable, estilo_tabla_celda),
+         Paragraph(equipo.ultimo_mantenimiento.strftime('%d/%m/%Y') if equipo.ultimo_mantenimiento else 'N/D', estilo_tabla_celda),
+         Paragraph(equipo.estado_operativo, estilo_tabla_celda),
+         Paragraph(equipo.estado_flujo, estilo_tabla_celda)],
+    ]
+    cols_tabla = [0.85*inch, 1.2*inch, 1.05*inch, 1.05*inch, 0.85*inch, 0.85*inch, 0.85*inch]
+    t_det = Table(detalle_data, colWidths=cols_tabla)
+    t_det.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), verde),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 8),
+        ('FONTSIZE', (0, 1), (-1, -1), 8),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('GRID', (0, 0), (-1, -1), 0.5, gris_borde),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, verde_claro]),
+        ('TOPPADDING', (0, 0), (-1, -1), 5),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+    ]))
+    elementos.append(Paragraph('<b>DETALLE DEL EQUIPO(S)</b>', estilo_info_label))
+    elementos.append(Spacer(1, 4))
+    elementos.append(t_det)
+    elementos.append(Spacer(1, 0.25*inch))
+
+    # --- Términos ---
+    elementos.append(Paragraph('<b>TÉRMINOS Y OBLIGACIONES DEL RESPONSABLE</b>', estilo_info_label))
+    elementos.append(Spacer(1, 6))
+
+    terminos = [
+        "1. <b>Custodia y Cuidado:</b> El empleado se compromete a velar por la seguridad, conservación y correcto uso de los equipos asignados, evitando pérdidas, deterioros por negligencia o configuraciones de software no autorizadas.",
+        "2. <b>Uso Profesional:</b> Los activos asignados son herramientas exclusivas para el cumplimiento de las responsabilidades asignadas por la organización, quedando prohibido su uso para fines personales o comerciales ajenos a la empresa.",
+        "3. <b>Reporte de Incidencias:</b> Cualquier falla técnica, daño físico, pérdida, hurto o robo del material debe ser reportado inmediatamente (en un lapso no mayor a 24 horas) al Departamento de TI o Inventario. En caso de robo, se debe adjuntar la denuncia policial respectiva.",
+        "4. <b>Devolución de Activos:</b> Al término de la relación laboral o cuando la organización lo requiera, el trabajador se obliga a restituir la totalidad de los bienes descritos en este documento en las mismas condiciones en que los recibió, salvo el desgaste natural por uso legítimo.",
+        "5. <b>Sanciones:</b> El incumplimiento de estas normas o el daño por uso negligente comprobado podrá facultar a la empresa a realizar los cobros respectivos de reparación o reposición, según la legislación laboral vigente.",
+    ]
+    for t in terminos:
+        elementos.append(Paragraph(t, estilo_termino))
+        elementos.append(Spacer(1, 3))
+
+    elementos.append(Spacer(1, 0.4*inch))
+    elementos.append(HRFlowable(width="100%", thickness=0.5, color=gris_borde))
+    elementos.append(Spacer(1, 0.25*inch))
+
+    # --- Firmas ---
+    firma_data = [
+        [Paragraph('<b>Recibí Conforme (Trabajador)</b>', estilo_firma_cargo)],
+        [Spacer(1, 0.5*inch)],
+        [Paragraph('_________________________', estilo_firma_nombre)],
+        [Paragraph(f'<b>{equipo.responsable}</b>', estilo_firma_nombre)],
+    ]
+    t_firmas = Table(firma_data, colWidths=[ancho])
+    t_firmas.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'BOTTOM'),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('TOPPADDING', (0, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
+    ]))
+    elementos.append(t_firmas)
+    elementos.append(Spacer(1, 0.3*inch))
+
+    doc.build(elementos)
+    buf.seek(0)
+    return Response(buf, mimetype='application/pdf',
+                    headers={'Content-Disposition': f'inline; filename=acta_{equipo.codigo}.pdf'})
 
 

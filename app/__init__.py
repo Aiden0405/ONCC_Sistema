@@ -97,10 +97,14 @@ def create_app(config_class=Config):
     from app.blueprints.core.controllers.usuarios import usuario_index as core_usuario_index
     from app.blueprints.core.controllers.usuarios import usuario_nuevo as core_usuario_nuevo
     from app.blueprints.core.controllers.usuarios import usuario_perfil as core_usuario_perfil
+    from app.blueprints.logistica.controllers.inventario import acta_responsabilidad as logistica_inventario_acta
     from app.blueprints.logistica.controllers.inventario import editar as logistica_inventario_editar
     from app.blueprints.logistica.controllers.inventario import eliminar as logistica_inventario_eliminar
     from app.blueprints.logistica.controllers.inventario import inventario_index as logistica_inventario_index
     from app.blueprints.logistica.controllers.inventario import nuevo as logistica_inventario_nuevo
+    from app.blueprints.logistica.controllers.tecnicos_campo import tecnicos_nuevo as logistica_tecnicos_nuevo
+    from app.blueprints.logistica.controllers.tecnicos_campo import tecnicos_editar as logistica_tecnicos_editar
+    from app.blueprints.logistica.controllers.tecnicos_campo import tecnicos_eliminar as logistica_tecnicos_eliminar
     from app.blueprints.mapas.controllers.riesgo import cambiar_estado as mapas_cambiar_estado
     from app.blueprints.mapas.controllers.riesgo import mapas_riesgo_index as mapas_index
     from app.blueprints.mapas.controllers.riesgo import procesar_archivo as mapas_procesar_archivo
@@ -153,7 +157,11 @@ def create_app(config_class=Config):
     app.add_url_rule('/inventario/', endpoint='inventario.index', view_func=logistica_inventario_index)
     app.add_url_rule('/inventario/nuevo', endpoint='inventario.nuevo', view_func=logistica_inventario_nuevo, methods=['POST'])
     app.add_url_rule('/inventario/<int:equipo_id>/editar', endpoint='inventario.editar', view_func=logistica_inventario_editar, methods=['POST'])
+    app.add_url_rule('/inventario/<int:equipo_id>/acta', endpoint='inventario.acta_responsabilidad', view_func=logistica_inventario_acta)
     app.add_url_rule('/inventario/<int:equipo_id>/eliminar', endpoint='inventario.eliminar', view_func=logistica_inventario_eliminar, methods=['POST'])
+    app.add_url_rule('/tecnicos-campo/nuevo', endpoint='logistica.tecnicos_nuevo', view_func=logistica_tecnicos_nuevo, methods=['POST'])
+    app.add_url_rule('/tecnicos-campo/<int:tecnico_id>/editar', endpoint='logistica.tecnicos_editar', view_func=logistica_tecnicos_editar, methods=['POST'])
+    app.add_url_rule('/tecnicos-campo/<int:tecnico_id>/eliminar', endpoint='logistica.tecnicos_eliminar', view_func=logistica_tecnicos_eliminar, methods=['POST'])
 
     app.add_url_rule('/geomatica/', endpoint='geomatica.index', view_func=mapas_index)
     app.add_url_rule('/geomatica/procesar', endpoint='geomatica.procesar_archivo', view_func=mapas_procesar_archivo, methods=['POST'])

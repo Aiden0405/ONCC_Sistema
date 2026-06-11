@@ -7,7 +7,7 @@
 
     <div class="flex justify-between items-center mb-2">
         <div>
-            <h1 class="text-2xl font-bold dark:text-white text-gray-800">Control de Inventario Físico</h1>
+            <h1 class="text-2xl font-bold dark:text-white text-gray-800">Gestión de Inventario de Equipos</h1>
             <p class="text-sm dark:text-gray-400 text-gray-500">Expediente, custodia y estatus operativo de equipos tecnológicos (EMAs, Pluviómetros, GPS)</p>
         </div>
         <button onclick="limpiarErrorModal('modal-inventario'); document.getElementById('modal-inventario').classList.remove('hidden')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center shadow-sm transition-colors">
@@ -32,8 +32,7 @@
     <div class="rounded-xl shadow-sm border bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
         <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
             <div>
-                <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400">Listado Maestro de Equipos</h3>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Filtro global de activos y flujos operativos vigentes</p>
+                <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400">Detalles de equipos</h3>
             </div>
             <span class="text-xs text-gray-500 dark:text-gray-400">{{ inventario|length }} registro(s)</span>
         </div>
@@ -42,7 +41,7 @@
             <table class="w-full text-left border-collapse text-sm min-w-[640px]">
                 <thead>
                     <tr class="text-xs uppercase tracking-wider bg-gray-50 text-gray-500 dark:bg-gray-700/40 dark:text-gray-400">
-                        <th class="px-6 py-3 font-semibold">Código</th>
+                        <th class="px-6 py-3 font-semibold">ID Equipo</th>
                         <th class="px-6 py-3 font-semibold">Nombre del Equipo</th>
                         <th class="px-6 py-3 font-semibold hidden md:table-cell">Ubicación Actual</th>
                         <th class="px-6 py-3 font-semibold hidden lg:table-cell">Responsable</th>
@@ -84,13 +83,18 @@
                                 {{ inv.estado_flujo }}
                             </span>
                         </td>
-                        <td class="px-6 py-4 text-center">
-                            <button onclick="abrirModalEditar({{ inv.id }})" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors mr-2" title="Editar equipo">
-                                <i data-lucide="pencil" class="w-4 h-4"></i>
-                            </button>
-                            <button onclick="abrirModalEliminar({{ inv.id }})" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors" title="Eliminar equipo">
-                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                            </button>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center justify-center gap-2">
+                                <button onclick="abrirModalEditar({{ inv.id }})" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors" title="Editar equipo">
+                                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="abrirModalEliminar({{ inv.id }})" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors" title="Eliminar equipo">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="abrirModalActa({{ inv.id }})" class="text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 transition-colors" title="Generar acta de responsabilidad">
+                                    <i data-lucide="file-text" class="w-4 h-4"></i>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                     {% else %}
@@ -124,44 +128,44 @@
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Tipo de Equipo</label>
-                    <select name="tipo_equipo" required oninvalid="this.setCustomValidity('Seleccione un tipo de equipo')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
-                        <option value="">Seleccione...</option>
-                        <option>Estación Meteorológica (EMA)</option>
-                        <option>Pluviómetro de Campo</option>
-                        <option>Aparato Transmisor Data (SSBC)</option>
-                        <option>Equipo Tecnológico (GPS/Drone)</option>
-                    </select>
-                </div>
-                <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Código Patrimonial / Serial</label>
-                    <input type="text" name="codigo" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: EMA-005" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Nombre del Equipo</label>
+                        <select name="tipo_equipo" required oninvalid="this.setCustomValidity('Seleccione un tipo de equipo')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                            <option value="">Seleccione...</option>
+                            <option>Estación Meteorológica (EMA)</option>
+                            <option>Pluviómetro de Campo</option>
+                            <option>Aparato Transmisor Data (SSBC)</option>
+                            <option>Equipo Tecnológico (GPS/Drone)</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">ID Equipo</label>
+                        <input type="text" name="codigo" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: EMA-005" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
                 </div>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación / Asignación Territorial</label>
-                    <input type="text" name="ubicacion" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Lugar o comunidad de instalación" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
-                </div>
-                <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Responsable / Custodio</label>
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación Actual</label>
+                        <input type="text" name="ubicacion" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Lugar o comunidad de instalación" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                    </div>
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Responsable</label>
                     <input type="text" name="responsable" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Nombre del funcionario a cargo" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
                 </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estado Operativo</label>
-                    <select name="estado_operativo" required oninvalid="this.setCustomValidity('Seleccione un estado operativo')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
-                        <option value="">Seleccione...</option>
-                        <option>Operativo</option>
-                        <option>Requiere Mantenimiento</option>
-                        <option>Dañado / Inoperativo</option>
-                    </select>
-                </div>
-                <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estado</label>
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Condición</label>
+                        <select name="estado_operativo" required oninvalid="this.setCustomValidity('Seleccione una condición')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                            <option value="">Seleccione...</option>
+                            <option>Operativo</option>
+                            <option>Requiere Mantenimiento</option>
+                            <option>Dañado / Inoperativo</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estado</label>
                     <select name="estado" required oninvalid="this.setCustomValidity('Seleccione un estado')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
                         <option value="">Seleccione...</option>
                         <option value="Disponible">Disponible</option>
@@ -172,7 +176,7 @@
             </div>
 
             <div class="space-y-1">
-                <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Fecha Última Calibración / Mantenimiento</label>
+                <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Últ. Modificación</label>
                 <div class="relative">
                     <i data-lucide="calendar" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
                     <input type="date" name="ultimo_mantenimiento" id="fecha-mantenimiento" class="w-full border rounded-md pl-9 p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Seleccione una fecha')" oninput="this.setCustomValidity('')" />
@@ -206,44 +210,44 @@
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Tipo de Equipo</label>
-                    <select id="edit-tipo_equipo" name="tipo_equipo" required oninvalid="this.setCustomValidity('Seleccione un tipo de equipo')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
-                        <option value="">Seleccione...</option>
-                        <option>Estación Meteorológica (EMA)</option>
-                        <option>Pluviómetro de Campo</option>
-                        <option>Aparato Transmisor Data (SSBC)</option>
-                        <option>Equipo Tecnológico (GPS/Drone)</option>
-                    </select>
-                </div>
-                <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Código Patrimonial / Serial</label>
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Nombre del Equipo</label>
+                        <select id="edit-tipo_equipo" name="tipo_equipo" required oninvalid="this.setCustomValidity('Seleccione un tipo de equipo')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                            <option value="">Seleccione...</option>
+                            <option>Estación Meteorológica (EMA)</option>
+                            <option>Pluviómetro de Campo</option>
+                            <option>Aparato Transmisor Data (SSBC)</option>
+                            <option>Equipo Tecnológico (GPS/Drone)</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">ID Equipo</label>
                     <input type="text" id="edit-codigo" name="codigo" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: EMA-005" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
                 </div>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación / Asignación Territorial</label>
-                    <input type="text" id="edit-ubicacion" name="ubicacion" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Lugar o comunidad de instalación" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
-                </div>
-                <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Responsable / Custodio</label>
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación Actual</label>
+                        <input type="text" id="edit-ubicacion" name="ubicacion" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Lugar o comunidad de instalación" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                    </div>
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Responsable</label>
                     <input type="text" id="edit-responsable" name="responsable" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Nombre del funcionario a cargo" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
                 </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estado Operativo</label>
-                    <select id="edit-estado_operativo" name="estado_operativo" required oninvalid="this.setCustomValidity('Seleccione un estado operativo')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
-                        <option value="">Seleccione...</option>
-                        <option>Operativo</option>
-                        <option>Requiere Mantenimiento</option>
-                        <option>Dañado / Inoperativo</option>
-                    </select>
-                </div>
-                <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estado</label>
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Condición</label>
+                        <select id="edit-estado_operativo" name="estado_operativo" required oninvalid="this.setCustomValidity('Seleccione una condición')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                            <option value="">Seleccione...</option>
+                            <option>Operativo</option>
+                            <option>Requiere Mantenimiento</option>
+                            <option>Dañado / Inoperativo</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estado</label>
                     <select id="edit-estado" name="estado" required oninvalid="this.setCustomValidity('Seleccione un estado')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
                         <option value="">Seleccione...</option>
                         <option value="Disponible">Disponible</option>
@@ -252,7 +256,7 @@
                     </select>
                 </div>
                 <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Última Calibración / Mantenimiento</label>
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Últ. Modificación</label>
                     <div class="relative">
                         <i data-lucide="calendar" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
                         <input type="date" id="edit-ultimo_mantenimiento" name="ultimo_mantenimiento" class="w-full border rounded-md pl-9 p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" />
@@ -284,6 +288,24 @@
     </div>
 </div>
 
+<!-- Modal Acta de Responsabilidad -->
+<div id="modal-acta-inventario" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="rounded-xl shadow-xl w-full max-w-md bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-6 text-center relative">
+        <button onclick="document.getElementById('modal-acta-inventario').classList.add('hidden')" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+            <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+        <div class="w-14 h-14 mx-auto mb-4 rounded-full bg-amber-100 dark:bg-amber-900/20 flex items-center justify-center">
+            <i data-lucide="file-text" class="w-7 h-7 text-amber-600 dark:text-amber-400"></i>
+        </div>
+        <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-2">Generar Acta de Responsabilidad</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">¿Desea exportar el acta de responsabilidad del equipo seleccionado?</p>
+        <form id="form-acta-equipo" method="GET" target="_blank" class="flex justify-center gap-3">
+            <button type="button" onclick="document.getElementById('modal-acta-inventario').classList.add('hidden')" class="px-5 py-2.5 border rounded-lg text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Volver</button>
+            <button type="submit" class="px-5 py-2.5 bg-amber-600 rounded-lg text-sm font-medium text-white hover:bg-amber-700 transition-colors shadow-sm">Continuar</button>
+        </form>
+    </div>
+</div>
+
 <script>
 const equiposData = {{ inventario_json | tojson | safe }};
 
@@ -310,14 +332,40 @@ function mostrarErrorModal(modalId, mensaje) {
     if (window.lucide) lucide.createIcons();
 }
 
+function mostrarLoading(btn, activo) {
+    if (activo) {
+        btn._originalHTML = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Guardando...';
+    } else {
+        btn.disabled = false;
+        btn.innerHTML = btn._originalHTML || 'Guardar';
+    }
+}
+
+function mostrarExitoModal(modalId, mensaje) {
+    limpiarErrorModal(modalId);
+    const modal = document.getElementById(modalId);
+    const exito = document.createElement('div');
+    exito.className = 'modal-exito p-3 rounded-md bg-emerald-600 text-white text-sm font-semibold flex items-center shadow-lg';
+    exito.innerHTML = '<i data-lucide="check-circle" class="mr-2 w-4 h-4"></i> <span>' + mensaje + '</span>';
+    modal.querySelector('.p-6.space-y-5').prepend(exito);
+    if (window.lucide) lucide.createIcons();
+}
+
 function enviarFormulario(form, modalId) {
     const errorDiv = form.querySelector('.modal-error');
     if (errorDiv) errorDiv.remove();
+    const exitoDiv = form.querySelector('.modal-exito');
+    if (exitoDiv) exitoDiv.remove();
+
+    const btn = form.querySelector('button[type="submit"]');
+    mostrarLoading(btn, true);
 
     const formData = new FormData(form);
     formData.append('csrf_token', form.querySelector('[name=csrf_token]').value);
 
-    fetch(form.action, {
+    return fetch(form.action, {
         method: 'POST',
         body: formData,
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
@@ -325,15 +373,20 @@ function enviarFormulario(form, modalId) {
     .then(r => r.json())
     .then(data => {
         if (data.ok) {
-            window.location.href = data.redirect;
+            mostrarLoading(btn, false);
+            mostrarExitoModal(modalId, data.mensaje || 'Registro guardado exitosamente.');
+            setTimeout(function() {
+                window.location.href = data.redirect;
+            }, 5000);
         } else {
+            mostrarLoading(btn, false);
             mostrarErrorModal(modalId, data.error);
         }
     })
-    .catch(() => {
+    .catch(function() {
+        mostrarLoading(btn, false);
         form.submit();
     });
-    return false;
 }
 
 function abrirModalEditar(id) {
@@ -352,6 +405,11 @@ function abrirModalEditar(id) {
 
     document.getElementById('form-editar-equipo').action = "{{ url_for('inventario.editar', equipo_id=0) }}".replace('/0', '/' + id);
     document.getElementById('modal-editar-inventario').classList.remove('hidden');
+}
+
+function abrirModalActa(id) {
+    document.getElementById('form-acta-equipo').action = "{{ url_for('inventario.acta_responsabilidad', equipo_id=0) }}".replace('/0', '/' + id);
+    document.getElementById('modal-acta-inventario').classList.remove('hidden');
 }
 
 function abrirModalEliminar(id) {
