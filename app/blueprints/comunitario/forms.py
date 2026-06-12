@@ -1,3 +1,5 @@
+#MODELO
+
 from flask_wtf import FlaskForm
 from wtforms import StringField, SelectField, DateField
 from wtforms.validators import DataRequired
@@ -33,7 +35,35 @@ class FormacionForm(FlaskForm):
     )
     
 
-    
+class SensibilizacionForm(FlaskForm):
+    # Menú desplegable para el Nivel de Instrucción
+    id_nivel = SelectField(
+        'Nivel de Instrucción',
+        coerce=int,
+        validators=[DataRequired(message='Debe seleccionar el nivel de instrucción.')]
+    )
+    # Campo para el nombre de la sensibilización
+    nombre_sensibilizacion = StringField(
+        'Nombre del Taller / Campaña de Sensibilización',
+        validators=[DataRequired(message='El nombre de la sensibilización es obligatorio.')]
+    )
+    # Menú desplegable para las Comunidades 
+    id_comunidad = SelectField(
+        'Comunidad / Territorio',
+        coerce=int,
+        validators=[DataRequired(message='Debe seleccionar una comunidad.')]
+    )
+    # Campo de fecha (calendario)
+    fecha = DateField(
+        'Fecha de Ejecución',
+        format='%Y-%m-%d',
+        validators=[DataRequired(message='La fecha es obligatoria.')]
+    )
+    # Campo para el vocero o facilitador
+    vocero = StringField(
+        'Vocero / Facilitador',
+        validators=[DataRequired(message='Debe ingresar el nombre del vocero.')]
+    )
 
     
 
