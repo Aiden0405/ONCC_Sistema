@@ -26,6 +26,25 @@
                 <h3 class="text-sm font-bold uppercase tracking-wide mb-4 flex items-center text-green-700 dark:text-green-400">
                     <i data-lucide="file-text" class="mr-2 w-4 h-4"></i> Datos de la Publicación
                 </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 p-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-gray-100 dark:border-gray-700">
+                    <div>
+                        <label class="block text-xs font-bold uppercase mb-1 text-gray-600 dark:text-gray-400">
+                            <i data-lucide="activity" class="inline w-3 h-3 mr-1 text-green-600"></i> Monitoreo / Actividad de Origen
+                        </label>
+                        {{ form.id_divulgacion(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white') }}
+                        <p class="text-[10px] text-gray-400 mt-1">Obligatorio: Vincula esta publicación a un despliegue técnico previo.</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase mb-1 text-gray-600 dark:text-gray-400">
+                            <i data-lucide="alert-circle" class="inline w-3 h-3 mr-1 text-orange-500"></i> Prioridad de Alerta (1 al 10)
+                        </label>
+                        {{ form.prioridad(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white', type='number', min='1', max='10') }}
+                        <p class="text-[10px] text-gray-400 mt-1">Ej: Prioridad 10 para incendios, 7 para riesgos graves por lluvias.</p>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         {{ form.tipo.label(class_='block text-xs font-semibold uppercase mb-1 text-gray-600 dark:text-gray-400') }}

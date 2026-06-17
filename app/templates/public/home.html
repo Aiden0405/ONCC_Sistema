@@ -198,15 +198,30 @@
     {% if publicaciones %}
     <div class="grid md:grid-cols-2 gap-6 text-sm">
         {% for publicacion in publicaciones %}
-        <article class="group flex flex-col justify-between p-6 rounded-3xl border border-slate-200 bg-white hover:shadow-xl transition-all duration-300">
+        <article class="group flex flex-col justify-between p-6 rounded-3xl border border-slate-200 bg-white hover:shadow-xl transition-all duration-300 {% if publicacion.prioridad and publicacion.prioridad >= 8 %} ring-2 ring-red-500/50 bg-red-50/10 {% endif %}">
             <div class="space-y-4">
-                <div class="w-full h-44 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-50 border border-slate-200/60 overflow-hidden flex items-center justify-center text-emerald-600/40 group-hover:scale-[1.01] transition-transform">
-                    <i data-lucide="newspaper" class="w-12 h-12 stroke-[1.2]"></i>
+                <div class="w-full h-44 rounded-2xl border overflow-hidden flex flex-col items-center justify-center group-hover:scale-[1.01] transition-transform 
+                    {% if publicacion.prioridad and publicacion.prioridad >= 8 %} bg-gradient-to-br from-red-600 to-amber-700 text-white border-transparent
+                    {% elif publicacion.prioridad and publicacion.prioridad >= 5 %} bg-gradient-to-br from-orange-500 to-yellow-600 text-white border-transparent
+                    {% else %} bg-gradient-to-br from-slate-100 to-slate-50 text-emerald-600/40 border-slate-200/60 {% endif %}">
+                    
+                    {% if publicacion.prioridad and publicacion.prioridad >= 8 %}
+                        <i data-lucide="alert-triangle" class="w-12 h-12 animate-bounce"></i>
+                        <span class="text-[10px] font-black uppercase tracking-[0.2em] mt-2">ALERTA CLIMÁTICA CRÍTICA</span>
+                    {% else %}
+                        <i data-lucide="newspaper" class="w-12 h-12 stroke-[1.2]"></i>
+                    {% endif %}
                 </div>
                 
                 <div class="flex items-start justify-between gap-3 pt-2">
                     <h3 class="font-black text-lg text-slate-900 group-hover:text-emerald-700 transition-colors leading-snug">{{ publicacion.titulo }}</h3>
-                    <span class="text-[10px] uppercase tracking-[0.2em] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-bold whitespace-nowrap">{{ publicacion.tipo }}</span>
+                    
+                    <span class="text-[10px] uppercase tracking-[0.2em] px-2 py-0.5 rounded font-bold whitespace-nowrap
+                        {% if publicacion.prioridad and publicacion.prioridad >= 8 %} bg-red-100 text-red-800
+                        {% elif publicacion.prioridad and publicacion.prioridad >= 5 %} bg-orange-100 text-orange-800
+                        {% else %} bg-emerald-50 text-emerald-700 {% endif %}">
+                        Nivel {{ publicacion.prioridad|default(1) }}
+                    </span>
                 </div>
                 
                 {% if publicacion.resumen %}

@@ -1,16 +1,17 @@
 from app import db
-from sqlalchemy.orm import synonym
+from sqlalchemy.orm import synonym, foreign
 
-
-role_permissions = db.Table(
-    'permiso',
-    db.Column('id_modulo', db.Integer, db.ForeignKey('modulos.id_modulo')),
-    db.Column('id_rol', db.Integer, db.ForeignKey('roles.id_rol')),
-)
+class Permiso(db.Model):
+    __bind_key__ = 'seguridad'
+    __tablename__ = 'permisos'
+    
+    id_modulo = db.Column(db.Integer, primary_key=True)
+    id_rol = db.Column(db.Integer, primary_key=True)
 
 
 class Role(db.Model):
-    __tablename__ = 'roles'
+    __bind_key__ = 'seguridad'
+    __tablename__ = 'rol'
 
     id_rol = db.Column(db.Integer, primary_key=True)
     nombre_rol = db.Column(db.String(80), unique=True, nullable=False)
@@ -18,8 +19,24 @@ class Role(db.Model):
     id = synonym('id_rol')
     nombre = synonym('nombre_rol')
 
-    usuarios = db.relationship('Usuario', back_populates='role')
-    permissions = db.relationship('Permission', secondary=role_permissions, back_populates='roles')
+    # Relación en espejo con Usuario usando la columna limpia id_rol
+    usuarios = db.relationship(
+        'Usuario', 
+        back_populates='role',
+        primaryjoin="Role.id_rol == foreign(Usuario.id_rol)"
+    )
+    
+    # Relación directa para evitar conflictos de metadatos cruzados
+    permissions_rel = db.relationship(
+        'Permiso',
+        primaryjoin="Role.id_rol == foreign(Permiso.id_rol)",
+        backref='role_obj'
+    )
+
+    @property
+    def permissions(self):
+        modulos_ids = [p.id_modulo for p in self.permissions_rel]
+        return Permission.query.filter(Permission.id_modulo.in_(modulos_ids)).all() if modulos_ids else []
 
     def __init__(self, **kwargs):
         nombre = kwargs.pop('nombre', None)
@@ -42,17 +59,28 @@ class Role(db.Model):
 
 
 class Permission(db.Model):
+    __bind_key__ = 'seguridad'
     __tablename__ = 'modulos'
 
     id_modulo = db.Column(db.Integer, primary_key=True)
     nombre_modulo = db.Column(db.String(80), unique=True, nullable=False)
-    descripcion_modulo = db.Column(db.Text, nullable=False)
+    descripcion_modulo = db.Column(db.Text, nullable=True) 
 
     id = synonym('id_modulo')
     nombre = synonym('nombre_modulo')
     descripcion = synonym('descripcion_modulo')
 
-    roles = db.relationship('Role', secondary=role_permissions, back_populates='permissions')
+    # Relación directa inversa
+    roles_rel = db.relationship(
+        'Permiso',
+        primaryjoin="Permission.id_modulo == foreign(Permiso.id_modulo)",
+        backref='permission_obj'
+    )
+
+    @property
+    def roles(self):
+        roles_ids = [r.id_rol for r in self.roles_rel]
+        return Role.query.filter(Role.id_rol.in_(roles_ids)).all() if roles_ids else []
 
     def __init__(self, **kwargs):
         nombre = kwargs.pop('nombre', None)

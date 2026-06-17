@@ -66,10 +66,13 @@
             
             <p class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">Core</p>
 
+            <!-- 🔒 FILTRO DE SEGURIDAD: Solo visible para Superusuario (1) y Administrador (2) -->
+            {% if current_user.id_rol in [1, 2] %}
             <a href="{{ url_for('usuario.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
                 <i data-lucide="users" class="mr-3 w-5 h-5 flex-shrink-0"></i>
                 <span class="sidebar-text whitespace-nowrap">Usuarios y Autenticación</span>
             </a>
+            {% endif %}
 
             <a href="{{ url_for('core.divulgacion_admin_index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
                 <i data-lucide="newspaper" class="mr-3 w-5 h-5 flex-shrink-0"></i>

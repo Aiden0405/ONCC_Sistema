@@ -54,7 +54,7 @@ def home():
     try:
         publicaciones = (
             Publicacion.query.filter_by(estado='publicado')
-            .order_by(Publicacion.publicado_en.desc(), Publicacion.creado_en.desc())
+            .order_by(Publicacion.prioridad.desc(), Publicacion.publicado_en.desc())
             .limit(4)
             .all()
         )
@@ -107,7 +107,7 @@ def contacto():
 
 @core_bp.route('/admin/divulgacion/')
 @login_required
-@role_required('Superusuario', 'Administrador', 'Director Regional', 'Técnico')
+@role_required('Superusuario', 'Administrador', 'Director Regional', 'Tecnico')
 def divulgacion_admin_index():
     usuario_id_actual = int(current_user.get_id())
     rol_id_actual = int(current_user.id_rol)
@@ -124,8 +124,9 @@ def divulgacion_admin_index():
     else:
         cant_borradores = Publicacion.query.filter_by(estado='borrador').count()
         cant_publicados = Publicacion.query.filter_by(estado='publicado').count()
-        publicaciones = Publicacion.query.order_by(Publicacion.creado_en.desc()).all()
+        publicaciones = Publicacion.query.order_by(Publicacion.prioridad.desc(), Publicacion.creado_en.desc()).all()
         
+    # 🌟 CORREGIDO: Se agregó 'divulgacion/'
     return render_template(
         'divulgacion/admin_index.html', 
         publicaciones=publicaciones,
@@ -136,7 +137,7 @@ def divulgacion_admin_index():
 
 @core_bp.route('/admin/divulgacion/nuevo', methods=['GET', 'POST'])
 @login_required
-@role_required('Superusuario', 'Administrador', 'Director Regional', 'Técnico')
+@role_required('Superusuario', 'Administrador', 'Director Regional', 'Tecnico')
 def divulgacion_admin_nuevo():
     form = PublicacionForm()
     if form.validate_on_submit():
@@ -148,6 +149,7 @@ def divulgacion_admin_nuevo():
             titulo=form.titulo.data,
             resumen=form.resumen.data,
             contenido=form.contenido.data,
+            prioridad=form.prioridad.data if form.prioridad.data else 1,
             id_usuario=usuario_id_actual
         )
         
@@ -165,12 +167,13 @@ def divulgacion_admin_nuevo():
         flash('Publicación guardada de forma exitosa.', 'success')
         return redirect(url_for('core.divulgacion_admin_index'))
         
+    # 🌟 CORREGIDO: Se agregó 'divulgacion/'
     return render_template('divulgacion/admin_form.html', form=form, es_edicion=False)
 
 
 @core_bp.route('/admin/divulgacion/<int:pub_id>/editar', methods=['GET', 'POST'])
 @login_required
-@role_required('Superusuario', 'Administrador', 'Director Regional', 'Técnico')
+@role_required('Superusuario', 'Administrador', 'Director Regional', 'Tecnico')
 def divulgacion_admin_editar(pub_id):
     pub = Publicacion.query.get_or_404(pub_id)
     
@@ -197,12 +200,11 @@ def divulgacion_admin_editar(pub_id):
 
 @core_bp.route('/admin/divulgacion/<int:pub_id>/eliminar', methods=['POST'])
 @login_required
-@role_required('Superusuario', 'Administrador', 'Director Regional', 'Técnico')
+@role_required('Superusuario', 'Administrador', 'Director Regional', 'Tecnico')
 def divulgacion_admin_eliminar(pub_id):
     pub = Publicacion.query.get_or_404(pub_id)
     rol_id_actual = int(current_user.id_rol)
     
-    # MODIFICACIÓN DE SEGURIDAD: Los técnicos no pueden borrar cosas activas, los jefes sí.
     if pub.estado == 'publicado' and rol_id_actual not in [1, 2]:
         flash('No se permite la eliminación de un contenido activo en el portal institucional.', 'error')
         return redirect(url_for('core.divulgacion_admin_index'))
@@ -231,16 +233,12 @@ def divulgacion_admin_aprobar(pub_id):
     return redirect(url_for('core.divulgacion_admin_index'))
 
 
-# ==============================================================================
-# NUEVA RUTA TRANSACCIONAL: BAJAR CONTENIDO DE LA WEB (DESPUBLICAR)
-# ==============================================================================
 @core_bp.route('/admin/divulgacion/<int:pub_id>/despublicar', methods=['POST'])
 @login_required
 @role_required('Superusuario', 'Administrador', 'Director Regional')
 def divulgacion_admin_despublicar(pub_id):
     pub = Publicacion.query.get_or_404(pub_id)
     
-    # Cambiamos el estado a borrador para que la consulta del home la ignore de inmediato
     pub.estado = 'borrador'
     pub.publicado_en = None
     db.session.commit()

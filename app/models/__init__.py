@@ -1,3 +1,8 @@
+# === SUBIMOS LA SEGURIDAD AL PRINCIPIO PARA EVITAR QUE FALLE LA TABLA INTERMEDIA ===
+from app.models.role import Role
+from app.models.usuario import Usuario
+
+# === EL RESTO DE TUS MODELOS TRANSACCIONALES ===
 from app.models.actividad import Actividad
 from app.models.bitacora import BitacoraTransaccion
 from app.models.divulgacion import Publicacion
@@ -13,5 +18,3 @@ from app.models.esquema_activo import MunicipioActivo
 from app.models.esquema_activo import ParroquiaActiva
 from app.models.esquema_activo import SensibilizacionActiva
 from app.models.reporte import ReporteTransaccional
-from app.models.usuario import Usuario
-

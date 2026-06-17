@@ -158,6 +158,8 @@
             </div>
 
             <div class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <!-- 🔒 FILTRO DE ACCESO RÁPIDO -->
+                {% if current_user.id_rol in [1, 2] %}
                 <a href="{{ url_for('usuario.index') }}" class="group rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-emerald-300 hover:bg-white dark:border-gray-700 dark:bg-gray-700/50 dark:hover:border-emerald-800 dark:hover:bg-gray-700">
                     <div class="flex items-center justify-between">
                         <div>
@@ -167,6 +169,7 @@
                         <i data-lucide="users" class="h-5 w-5 text-emerald-600 group-hover:scale-110 transition-transform"></i>
                     </div>
                 </a>
+                {% endif %}
 
                 <a href="{{ url_for('core.divulgacion_admin_index') }}" class="group rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-fuchsia-300 hover:bg-white dark:border-gray-700 dark:bg-gray-700/50 dark:hover:border-fuchsia-800 dark:hover:bg-gray-700">
                     <div class="flex items-center justify-between">
