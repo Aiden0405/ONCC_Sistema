@@ -40,7 +40,6 @@ def create_app(config_class=Config):
 
     # ==============================================================
     # REGISTRO DE CONTROLADORES (Blueprints)
-    # ¡Aquí es donde debes agregar los que faltaban!
     # ==============================================================
     from app.blueprints.comunitario import comunitario_bp
     from app.blueprints.core import core_bp
@@ -101,22 +100,30 @@ def create_app(config_class=Config):
     from app.blueprints.logistica.controllers.inventario import eliminar as logistica_inventario_eliminar
     from app.blueprints.logistica.controllers.inventario import inventario_index as logistica_inventario_index
     from app.blueprints.logistica.controllers.inventario import nuevo as logistica_inventario_nuevo
-    from app.blueprints.mapas.controllers.riesgo import cambiar_estado as mapas_cambiar_estado
-    from app.blueprints.mapas.controllers.riesgo import mapas_riesgo_index as mapas_index
-    from app.blueprints.mapas.controllers.riesgo import procesar_archivo as mapas_procesar_archivo
+    from app.blueprints.comunitario.controllers.sensibilizaciones import (
+        sensibilizaciones_index as comunitario_sensibilizaciones_index,
+        sensibilizacion_editar,
+        sensibilizacion_eliminar,
+        sensibilizacion_cambiar_estado
+    )
+    from app.blueprints.mapas.controllers.riesgo import mapas_riesgo_index as mapas_index, procesar_archivo as mapas_procesar_archivo, cambiar_estado as mapas_cambiar_estado
     from app.blueprints.monitoreo.controllers.actividades import actividades_cambiar_estado as monitoreo_actividad_cambiar_estado
     from app.blueprints.monitoreo.controllers.actividades import actividades_index as monitoreo_actividad_index
     from app.blueprints.monitoreo.controllers.actividades import nueva as monitoreo_actividad_nueva
     from app.blueprints.monitoreo.controllers.comparacion_mapas_climaticos import reporte_cambiar_estado as monitoreo_reporte_cambiar_estado
     from app.blueprints.monitoreo.controllers.comparacion_mapas_climaticos import comparacion_index as monitoreo_reporte_index
     from app.blueprints.monitoreo.controllers.comparacion_mapas_climaticos import nuevo as monitoreo_reporte_nuevo
-    from app.blueprints.comunitario.controllers.formaciones import formacion_cambiar_estado
-    from app.blueprints.comunitario.controllers.formaciones import formacion_nuevo
-    from app.blueprints.comunitario.controllers.formaciones import formaciones_index as comunitario_formaciones_index
-    from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizacion_cambiar_estado
-    from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizacion_nuevo
-    from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizaciones_index as comunitario_sensibilizaciones_index
-
+    from app.blueprints.comunitario.controllers.formaciones import (
+        formaciones_index as comunitario_formaciones_index,
+        formacion_nuevo,
+        formacion_cambiar_estado
+    )
+    from app.blueprints.comunitario.controllers.sensibilizaciones import (
+        sensibilizaciones_index as comunitario_sensibilizaciones_index,
+        sensibilizacion_editar,
+        sensibilizacion_eliminar,
+        sensibilizacion_cambiar_estado)
+    
     app.add_url_rule('/', endpoint='public.home', view_func=core_home)
     app.add_url_rule('/acerca', endpoint='public.acerca', view_func=core_acerca)
     app.add_url_rule('/servicios', endpoint='public.servicios', view_func=core_servicios)
@@ -128,8 +135,9 @@ def create_app(config_class=Config):
     app.add_url_rule('/formaciones', endpoint='formacion.index', view_func=comunitario_formaciones_index)
     app.add_url_rule('/formaciones/nuevo', endpoint='formacion.nuevo', view_func=formacion_nuevo, methods=['POST'])
     app.add_url_rule('/formaciones/<int:formacion_id>/estado', endpoint='formacion.cambiar_estado', view_func=formacion_cambiar_estado, methods=['POST'])
-    app.add_url_rule('/sensibilizaciones', endpoint='sensibilizacion.index', view_func=comunitario_sensibilizaciones_index)
-    app.add_url_rule('/sensibilizaciones/nuevo', endpoint='sensibilizacion.nuevo', view_func=sensibilizacion_nuevo, methods=['POST'])
+    app.add_url_rule('/sensibilizaciones', endpoint='sensibilizacion.index', view_func=comunitario_sensibilizaciones_index, methods=['GET', 'POST'])
+    app.add_url_rule('/sensibilizaciones/editar/<int:id_sensibilizacion>', endpoint='sensibilizacion.editar', view_func=sensibilizacion_editar, methods=['POST'])
+    app.add_url_rule('/sensibilizaciones/eliminar/<int:id_sensibilizacion>', endpoint='sensibilizacion.eliminar', view_func=sensibilizacion_eliminar, methods=['POST'])
     app.add_url_rule('/sensibilizaciones/<int:sensibilizacion_id>/estado', endpoint='sensibilizacion.cambiar_estado', view_func=sensibilizacion_cambiar_estado, methods=['POST'])
 
     app.add_url_rule('/admin/usuarios/', endpoint='usuario.index', view_func=core_usuario_index)

@@ -33,7 +33,35 @@ class FormacionForm(FlaskForm):
     )
     
 
-    
+class SensibilizacionForm(FlaskForm):
+    # Menú desplegable para el Nivel de Instrucción
+    id_nivel = SelectField(
+        'Nivel de Instrucción',
+        coerce=int,
+        validators=[DataRequired(message='Debe seleccionar el nivel de instrucción.')]
+    )
+    # Campo para el nombre o campaña de la sensibilización
+    nombre_sensibilizacion = StringField(
+        'Nombre del Taller / Campaña de Sensibilización',
+        validators=[DataRequired(message='El nombre de la sensibilización es obligatorio.')]
+    )
+    # Menú desplegable para las Comunidades (Territorio)
+    id_comunidad = SelectField(
+        'Comunidad / Territorio',
+        coerce=int,
+        validators=[DataRequired(message='Debe seleccionar una comunidad.')]
+    )
+    # Campo de fecha (calendario)
+    fecha = DateField(
+        'Fecha de Ejecución',
+        format='%Y-%m-%d',
+        validators=[DataRequired(message='La fecha es obligatoria.')]
+    )
+    # Campo para el técnico / facilitador
+    facilitador = StringField(
+        'Técnico / Facilitador',
+        validators=[DataRequired(message='Debe ingresar el nombre del técnico.')]
+    )
 
     
 

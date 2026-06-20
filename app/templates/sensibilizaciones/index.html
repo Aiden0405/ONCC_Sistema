@@ -1,108 +1,239 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %} 
 
-{% block title %}Sensibilizacion - ONCC{% endblock %}
+{% block title %}Sensibilizaciones - ONCC{% endblock %} 
 
 {% block content %}
 <div class="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
-    <div class="flex items-center justify-between mb-2">
-        <div>
-            <h1 class="text-2xl font-bold dark:text-white text-gray-800">Módulo de Sensibilización</h1>
-            <p class="text-sm dark:text-gray-400 text-gray-500">Campañas comunitarias, comunicación preventiva y alcance de impacto institucional</p>
-        </div>
+  <div class="flex items-center justify-between mb-2">
+    <div>
+      <h1 class="text-2xl font-bold dark:text-white text-gray-800">
+        Módulo de Sensibilización
+      </h1>
+      <p class="text-sm dark:text-gray-400 text-gray-500">
+        Campañas comunitarias, comunicación preventiva y alcance de impacto institucional
+      </p>
+    </div>
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %} 
+    {% if messages %} 
+      {% for category, message in messages %}
+      <div class="p-4 rounded-md border text-sm font-medium shadow-sm flex items-center {% if category == 'error' %}bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800{% else %}bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800{% endif %}">
+        <i data-lucide="{% if category == 'error' %}alert-triangle{% else %}check-circle{% endif %}" class="mr-2 w-5 h-5"></i>
+        <span>{{ message }}</span>
+      </div>
+      {% endfor %} 
+    {% endif %} 
+  {% endwith %}
+
+  <!-- FORMULARIO DE REGISTRO DIRECTO -->
+  <div class="rounded-xl shadow-sm border p-6 bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+    <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400 mb-4 flex items-center">
+      <i data-lucide="megaphone" class="w-4 h-4 mr-2"></i> Registrar Nueva Campaña de Sensibilización
+    </h3>
+
+    <form method="POST" action="{{ url_for('sensibilizacion.index') }}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+      {{ form.csrf_token }}
+
+      <div class="space-y-1">
+        <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Técnico / Facilitador</label>
+        <input type="text" name="facilitador" placeholder="Ej: Ing. María Pérez" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" />
+      </div>
+
+      <div class="space-y-1">
+        <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Tema de Sensibilización</label>
+        <input type="text" name="nombre_sensibilizacion" placeholder="Ej: Gestión de Desechos" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" />
+      </div>
+
+      <div class="space-y-1">
+        <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Fecha Ejecución</label>
+        <input type="date" name="fecha" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" />
+      </div>
+
+      <div class="space-y-1">
+        <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Nivel de Instrucción</label>
+        <select name="id_nivel" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+          <option value="" disabled selected>Seleccione nivel...</option>
+          {% for id, nombre in form.id_nivel.choices %}
+          <option value="{{ id }}">{{ nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="space-y-1">
+        <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Comunidad / Territorio</label>
+        <select name="id_comunidad" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+          <option value="" disabled selected>Seleccione comunidad...</option>
+          {% for id, nombre in form.id_comunidad.choices %}
+          <option value="{{ id }}">{{ nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="md:col-span-2 lg:col-span-5 flex justify-end pt-2">
+        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-medium px-6 py-2 transition-colors shadow-sm inline-flex items-center justify-center">
+          <i data-lucide="plus-circle" class="w-4 h-4 mr-2"></i> Registrar Sensibilización
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- TABLA DE HISTORIAL CONSOLIDADO -->
+  <div class="rounded-xl shadow-sm border overflow-hidden bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+    <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+      <div>
+        <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400">
+          Historial de Sensibilizaciones
+        </h3>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          Bitácora consolidada del despliegue territorial
+        </p>
+      </div>
+      <span class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ sensibilizaciones|length }} registro(s)</span>
     </div>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="p-4 rounded-md {% if category == 'error' %}bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800{% else %}bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800{% endif %} border flex items-center shadow-sm">
-                    <i data-lucide="{% if category == 'error' %}alert-triangle{% else %}check-circle{% endif %}" class="mr-2 w-5 h-5"></i> 
-                    <span class="text-sm font-medium">{{ message }}</span>
-                </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm text-left border-collapse">
+        <thead>
+          <tr class="text-xs uppercase tracking-wider bg-gray-50 text-gray-500 dark:bg-gray-700/40 dark:text-gray-400">
+            <th class="px-6 py-3 font-semibold">ID</th>
+            <th class="px-6 py-3 font-semibold">Sensibilización / Campaña</th>
+            <th class="px-6 py-3 font-semibold">Técnico / Facilitador</th>
+            <th class="px-6 py-3 font-semibold">Comunidad / Territorio</th>
+            <th class="px-6 py-3 font-semibold">Fecha Ejecución</th>
+            <th class="px-6 py-3 font-semibold text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
+          {% for item in sensibilizaciones %}
+          <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+            <td class="px-6 py-4 font-mono text-xs text-gray-400">
+              {{ item.id_sensibilizacion }}
+            </td>
+            <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-100">
+              {{ item.campana }}
+            </td>
+            <td class="px-6 py-4 text-gray-600 dark:text-gray-400">
+              {{ item.facilitador }}
+            </td>
+            <td class="px-6 py-4 text-gray-600 dark:text-gray-400 font-medium">
+              {{ item.nombre_comunidad }}
+            </td>
+            <td class="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-400">
+              {{ item.fecha_actividad.strftime('%d/%m/%Y') if item.fecha_actividad else 'N/D' }}
+            </td>
 
-    <div class="rounded-xl shadow-sm border p-6 bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
-        <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400 mb-4">Registrar Nueva Sensibilización</h3>
-        
-        <form method="POST" action="{{ url_for('sensibilizacion.nuevo') }}" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            
-            <div class="space-y-1">
-                <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Nombre de la Campaña / Sensibilización</label>
-                <input type="text" name="nombre_sensibilizacion" placeholder="Ej. Prevención de Riesgos Comunitarios" required 
-                       class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" />
-            </div>
+            <td class="px-6 py-4 text-center space-x-3">
+              {% if current_user.id_rol in [1, 2] %}
+              <button onclick="abrirModalEdicion('{{ item.id_sensibilizacion }}', '{{ item.campana }}', '{{ item.facilitador }}', '{{ item.fecha_actividad }}', '{{ item.id_comunidad }}', '{{ item.id_nivel }}')" class="text-blue-600 hover:text-blue-800 transition-colors" title="Editar">
+                <i data-lucide="edit" class="w-4 h-4 inline"></i>
+              </button>
 
-            <div class="space-y-1">
-                <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Vincular a Actividad Realizada</label>
-                <select name="id_actividad" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
-                    <option value="" disabled selected>Seleccione una actividad...</option>
-                    {% for act in actividades_disponibles %}
-                        <option value="{{ act.id_actividad }}">ID: {{ act.id_actividad }} - {{ act.fecha_actividad }} ({{ act.nombre_comunidad }})</option>
-                    {% endfor %}
-                </select>
-            </div>
-            
-            <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-medium h-9 transition-colors shadow-sm inline-flex items-center justify-center">
-                <i data-lucide="plus-circle" class="w-4 h-4 mr-2"></i> Registrar
-            </button>
-        </form>
+              <form action="{{ url_for('sensibilizacion.eliminar', id_sensibilizacion=item.id_sensibilizacion) }}" method="POST" class="inline" onsubmit="return confirm('¿Estás completamente segura de eliminar esta sensibilización? Esta acción borrará la actividad asociada.');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <button type="submit" class="text-red-600 hover:text-red-800 transition-colors" title="Eliminar">
+                  <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
+                </button>
+              </form>
+              {% else %}
+              <span class="text-xs text-gray-400 italic">Solo lectura</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
+              <div class="flex flex-col items-center justify-center space-y-1">
+                <i data-lucide="megaphone" class="w-6 h-6 text-gray-300 dark:text-gray-600"></i>
+                <p class="text-sm font-medium">
+                  No se encuentran jornadas de sensibilización registradas en la bitácora.
+                </p>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
-
-    <div class="rounded-xl shadow-sm border overflow-hidden bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
-        <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
-            <div>
-                <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400">Historial de Sensibilizaciones</h3>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Listado consolidado a través del despliegue territorial</p>
-            </div>
-            <span class="text-xs text-gray-500 dark:text-gray-400">{{ sensibilizaciones|length }} registro(s)</span>
-        </div>
-
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left border-collapse">
-                <thead>
-                    <tr class="text-xs uppercase tracking-wider bg-gray-50 text-gray-500 dark:bg-gray-700/40 dark:text-gray-400">
-                        <th class="px-6 py-3 font-semibold">ID</th>
-                        <th class="px-6 py-3 font-semibold">Sensibilización / Campaña</th>
-                        <th class="px-6 py-3 font-semibold">Actividad Vinculada</th>
-                        <th class="px-6 py-3 font-semibold">Fecha de Despliegue</th>
-                        <th class="px-6 py-3 font-semibold">Comunidad / Territorio</th>
-                        <th class="px-6 py-3 font-semibold text-right">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
-                    {% for item in sensibilizaciones %}
-                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
-                        <td class="px-6 py-4 font-mono text-xs text-gray-400">{{ item.id_sensibilizacion }}</td>
-                        <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-100">{{ item.nombre_sensibilizacion }}</td>
-                        <td class="px-6 py-4">
-                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
-                                Actividad #{{ item.id_actividad }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400">{{ item.fecha_actividad }}</td>
-                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400">{{ item.nombre_comunidad }}</td>
-                        
-                        <td class="px-6 py-4 text-right whitespace-nowrap">
-                            <form action="{{ url_for('sensibilizacion.eliminar', id=item.id_sensibilizacion) }}" method="post" class="inline" onsubmit="return confirm('¿Seguro que deseas eliminar esta sensibilización?');">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <button class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 dark:text-red-300 dark:bg-red-900/20 dark:hover:bg-red-900/30 transition-colors">
-                                    <i data-lucide="trash-2" class="w-3.5 h-3.5 mr-1"></i> Eliminar
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="6" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
-                            No hay sensibilizaciones registradas bajo los parámetros del sistema.
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
+  </div>
 </div>
+
+<!-- MODAL DE EDICIÓN DINÁMICA -->
+<div id="modalEdicion" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+  <div class="bg-white dark:bg-gray-800 rounded-xl max-w-lg w-full p-6 shadow-xl space-y-4 border border-gray-100 dark:border-gray-700">
+    <div class="flex justify-between items-center border-b pb-2 dark:border-gray-700">
+      <h3 class="text-lg font-bold text-gray-800 dark:text-white">
+        Modificar Jornada de Sensibilización
+      </h3>
+      <button onclick="cerrarModalEdicion()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">&times;</button>
+    </div>
+
+    <form id="formEditar" method="POST" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+      <div class="space-y-1">
+        <label class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Técnico / Facilitador</label>
+        <input type="text" id="edit_facilitador" name="edit_facilitador" required class="w-full border rounded-md p-2 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white outline-none" />
+      </div>
+
+      <div class="space-y-1">
+        <label class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Tema de la Sensibilización</label>
+        <input type="text" id="edit_nombre_sensibilizacion" name="edit_nombre_sensibilizacion" required class="w-full border rounded-md p-2 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white outline-none" />
+      </div>
+
+      <div class="space-y-1">
+        <label class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Fecha Ejecución</label>
+        <input type="date" id="edit_fecha" name="edit_fecha" required class="w-full border rounded-md p-2 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white outline-none" />
+      </div>
+
+      <div class="space-y-1">
+        <label class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Nivel de Instrucción</label>
+        <select id="edit_id_nivel" name="edit_id_nivel" required class="w-full border rounded-md p-2 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white outline-none">
+          {% for id, nombre in form.id_nivel.choices %}
+          <option value="{{ id }}">{{ nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="space-y-1">
+        <label class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Comunidad / Territorio</label>
+        <select id="edit_id_comunidad" name="edit_id_comunidad" required class="w-full border rounded-md p-2 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white outline-none">
+          {% for id, nombre in form.id_comunidad.choices %}
+          <option value="{{ id }}">{{ nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="flex justify-end space-x-2 pt-2 border-t dark:border-gray-700">
+        <button type="button" onclick="cerrarModalEdicion()" class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md text-sm px-4 py-2 hover:bg-gray-300">
+          Cancelar
+        </button>
+        <button type="submit" class="bg-blue-600 text-white rounded-md text-sm px-4 py-2 hover:bg-blue-700">
+          Guardar Cambios
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function abrirModalEdicion(id, campana, facilitador, fecha, idComunidad, idNivel) {
+    // Apuntamos dinámicamente al endpoint del controlador de sensibilizaciones
+    document.getElementById("formEditar").action = "/sensibilizaciones/editar/" + id;
+
+    // Cargamos la data procesada en los inputs correspondientes del modal
+    document.getElementById('edit_nombre_sensibilizacion').value = campana;
+    document.getElementById('edit_facilitador').value = facilitador;
+    document.getElementById('edit_fecha').value = fecha;
+    document.getElementById('edit_id_comunidad').value = idComunidad;
+    document.getElementById('edit_id_nivel').value = idNivel;
+
+    // Removemos la clase 'hidden' para renderizar el modal
+    document.getElementById("modalEdicion").classList.remove("hidden");
+  }
+
+  function cerrarModalEdicion() {
+    document.getElementById("modalEdicion").classList.add("hidden");
+  }
+</script>
 {% endblock %}
