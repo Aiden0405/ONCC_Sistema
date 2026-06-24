@@ -77,44 +77,6 @@ class ActividadActiva(db.Model):
     nivel = db.relationship('NivelActivo', backref=db.backref('actividades', lazy='dynamic'))
 
 
-class FormacionActiva(db.Model):
-    __tablename__ = 'formacion'
-    __table_args__ = {'extend_existing': True}
-
-    id_formacion = db.Column(db.Integer, primary_key=True)
-    nombre_formacion = db.Column(db.Text, nullable=False)
-    id_actividad = db.Column('id_actividad ', db.Integer, db.ForeignKey('actividad.id_actividad'), nullable=False, unique=True)
-    id_institucion = db.Column(db.Integer, db.ForeignKey('intitucion.id_institucion'), nullable=False)
-
-    # Se agrega foreign_keys explícito para evitar confusiones en SQLAlchemy
-    actividad = db.relationship('ActividadActiva', foreign_keys=[id_actividad], backref=db.backref('formacion', uselist=False))
-    institucion = db.relationship('InstitucionActiva', backref=db.backref('formaciones', lazy='dynamic'))
-
-    @property
-    def id(self):
-        return self.id_formacion
-
-    @property
-    def tema(self):
-        return self.nombre_formacion
-
-    @property
-    def comunidad(self):
-        return getattr(getattr(self.actividad, 'comunidad', None), 'nombre_comunidad', '') or ''
-
-    @property
-    def fecha(self):
-        return getattr(self.actividad, 'fecha_actividad', None)
-
-    @property
-    def asistentes(self):
-        return 0
-
-    @property
-    def estado(self):
-        return 'registrada'
-
-
 class SensibilizacionActiva(db.Model):
     __tablename__ = 'sensibilizacion '
     __table_args__ = {'extend_existing': True}
@@ -129,7 +91,7 @@ class SensibilizacionActiva(db.Model):
     @property
     def id(self):
         return self.id_sensibilizacion
-
+  
     @property
     def campana(self):
         return self.nombre_sensivilizacion
@@ -161,4 +123,3 @@ class SensibilizacionActiva(db.Model):
 Actividad = ActividadActiva
 Institucion = InstitucionActiva
 Sensibilizacion = SensibilizacionActiva
-Formacion = FormacionActiva

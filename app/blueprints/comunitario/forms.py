@@ -62,7 +62,3 @@ class SensibilizacionForm(FlaskForm):
         'Técnico / Facilitador',
         validators=[DataRequired(message='Debe ingresar el nombre del técnico.')]
     )
-
-    
-
-    

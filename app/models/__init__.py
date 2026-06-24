@@ -1,6 +1,5 @@
 # Priorizamos los modelos del esquema activo para evitar conflictos con el esquema legado
 from app.models.esquema_activo import (
-    FormacionActiva,
     InstitucionActiva,
     NivelActivo,
     ActividadActiva,
@@ -8,12 +7,9 @@ from app.models.esquema_activo import (
     EstadoActivo,
     MunicipioActivo,
     ParroquiaActiva,
-    SensibilizacionActiva,
-    Actividad as ActividadActivaAlias,
-    Institucion as InstitucionActivaAlias,
-    Sensibilizacion as SensibilizacionActivaAlias
+    SensibilizacionActiva
 )
-
+from app.models.formacion import FormacionActiva
 from app.models.bitacora import BitacoraTransaccion
 from app.models.divulgacion import Publicacion
 from app.models.geomatica import MapaRegistro

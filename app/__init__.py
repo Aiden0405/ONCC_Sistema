@@ -56,25 +56,25 @@ def create_app(config_class=Config):
 
     # Importar modelos para que las migraciones/CLI los detecten
     with app.app_context():
-        from app.models.actividad import Actividad  # noqa: F401
-        from app.models.bitacora import BitacoraTransaccion  # noqa: F401
-        from app.models.esquema_activo import ActividadActiva  # noqa: F401
-        from app.models.esquema_activo import ComunidadActiva  # noqa: F401
-        from app.models.esquema_activo import EstadoActivo  # noqa: F401
-        from app.models.esquema_activo import FormacionActiva  # noqa: F401
-        from app.models.esquema_activo import InstitucionActiva  # noqa: F401
-        from app.models.esquema_activo import NivelActivo  # noqa: F401
-        from app.models.esquema_activo import MunicipioActivo  # noqa: F401
-        from app.models.esquema_activo import ParroquiaActiva  # noqa: F401
-        from app.models.esquema_activo import SensibilizacionActiva  # noqa: F401
-        from app.models.divulgacion import Publicacion  # noqa: F401
-        from app.models.geomatica import MapaRegistro  # noqa: F401
-        from app.models.inventario import InventarioEquipo  # noqa: F401
-        from app.models.reporte import ReporteTransaccional  # noqa: F401
-        from app.models.visita_portal import VisitaPortal  # noqa: F401
-        from app.models.password_reset import PasswordReset  # noqa: F401
-        from app.models.usuario import Usuario  # noqa: F401
-        from app.models.role import Role, Permission  # noqa: F401
+        from app.models.actividad import Actividad  
+        from app.models.bitacora import BitacoraTransaccion  
+        from app.models.esquema_activo import ActividadActiva  
+        from app.models.esquema_activo import ComunidadActiva  
+        from app.models.esquema_activo import EstadoActivo  
+        from app.models.formacion import FormacionActiva  
+        from app.models.esquema_activo import InstitucionActiva  
+        from app.models.esquema_activo import NivelActivo  
+        from app.models.esquema_activo import MunicipioActivo  
+        from app.models.esquema_activo import ParroquiaActiva  
+        from app.models.esquema_activo import SensibilizacionActiva
+        from app.models.divulgacion import Publicacion  
+        from app.models.geomatica import MapaRegistro  
+        from app.models.inventario import InventarioEquipo  
+        from app.models.reporte import ReporteTransaccional  
+        from app.models.visita_portal import VisitaPortal  
+        from app.models.password_reset import PasswordReset  
+        from app.models.usuario import Usuario
+        from app.models.role import Role, Permission  
 
     from app.blueprints.core.controllers.auth import login as core_login
     from app.blueprints.core.controllers.auth import logout as core_logout
