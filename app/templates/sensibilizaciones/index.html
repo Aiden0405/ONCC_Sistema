@@ -27,27 +27,28 @@
   {% endwith %}
 
   <!-- FORMULARIO DE REGISTRO DIRECTO -->
-  <div class="rounded-xl shadow-sm border p-6 bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
-    <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400 mb-4 flex items-center">
-      <i data-lucide="megaphone" class="w-4 h-4 mr-2"></i> Registrar Nueva Campaña de Sensibilización
-    </h3>
+<div class="rounded-xl shadow-sm border p-6 bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+  <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400 mb-4 flex items-center">
+    <i data-lucide="megaphone" class="w-4 h-4 mr-2"></i> Registrar Nueva Campaña de Sensibilización
+  </h3>
 
-    <form method="POST" action="{{ url_for('sensibilizacion.index') }}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+  <form method="POST" action="{{ url_for('comunitario.sensibilizaciones_index') }}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+
       {{ form.csrf_token }}
 
       <div class="space-y-1">
         <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Técnico / Facilitador</label>
-        <input type="text" name="facilitador" placeholder="Ej: Ing. María Pérez" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" />
+        {{ form.facilitador(class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none", placeholder="Ej: Ing. María Pérez", required=True) }}
       </div>
 
       <div class="space-y-1">
         <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Tema de Sensibilización</label>
-        <input type="text" name="nombre_sensibilizacion" placeholder="Ej: Gestión de Desechos" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" />
+        {{ form.nombre_sensibilizacion(class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none", placeholder="Ej: Gestión de Desechos", required=True) }}
       </div>
 
       <div class="space-y-1">
         <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Fecha Ejecución</label>
-        <input type="date" name="fecha" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" />
+        {{ form.fecha(class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none", required=True) }}
       </div>
 
       <div class="space-y-1">
@@ -76,7 +77,6 @@
         </button>
       </div>
     </form>
-  </div>
 
   <!-- TABLA DE HISTORIAL CONSOLIDADO -->
   <div class="rounded-xl shadow-sm border overflow-hidden bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
@@ -129,7 +129,7 @@
                 <i data-lucide="edit" class="w-4 h-4 inline"></i>
               </button>
 
-              <form action="{{ url_for('sensibilizacion.eliminar', id_sensibilizacion=item.id_sensibilizacion) }}" method="POST" class="inline" onsubmit="return confirm('¿Estás completamente segura de eliminar esta sensibilización? Esta acción borrará la actividad asociada.');">
+             <form action="{{ url_for('comunitario.sensibilizacion_eliminar', id_sensibilizacion=item.id_sensibilizacion) }}" method="POST" class="inline" onsubmit="return confirm('¿Estás completamente segura de eliminar esta sensibilización? Esta acción borrará la actividad asociada.');">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                 <button type="submit" class="text-red-600 hover:text-red-800 transition-colors" title="Eliminar">
                   <i data-lucide="trash-2" class="w-4 h-4 inline"></i>

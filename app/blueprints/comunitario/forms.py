@@ -31,8 +31,6 @@ class FormacionForm(FlaskForm):
         'Técnico / Facilitador',
         validators=[DataRequired(message='Debe ingresar el nombre del facilitador.')]
     )
-    
-
 class SensibilizacionForm(FlaskForm):
     # Menú desplegable para el Nivel de Instrucción
     id_nivel = SelectField(

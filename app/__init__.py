@@ -66,7 +66,7 @@ def create_app(config_class=Config):
         from app.models.esquema_activo import NivelActivo  
         from app.models.esquema_activo import MunicipioActivo  
         from app.models.esquema_activo import ParroquiaActiva  
-        from app.models.esquema_activo import SensibilizacionActiva
+        from app.models.sensibilizacion import SensibilizacionActiva
         from app.models.divulgacion import Publicacion  
         from app.models.geomatica import MapaRegistro  
         from app.models.inventario import InventarioEquipo  
