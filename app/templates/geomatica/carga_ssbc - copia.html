@@ -2,15 +2,6 @@
 
 {% block title %}Mapas de Riesgo - ONCC{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<style>
-    .leaflet-container {
-        z-index: 0 !important;
-    }
-</style>
-{% endblock %}
-
 {% block content %}
 <div class="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
     
@@ -19,15 +10,6 @@
             <h1 class="text-2xl font-bold dark:text-white text-gray-800">Mapas de Riesgo y Vulnerabilidad</h1>
             <p class="text-sm dark:text-gray-400 text-gray-500">Carga, procesamiento y consulta de matrices cartográficas de zonas de peligro regional</p>
         </div>
-    </div>
-
-    <div class="rounded-xl shadow-sm border bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
-            <h3 class="text-sm font-bold uppercase tracking-wide text-red-700 dark:text-red-400 flex items-center">
-                <i data-lucide="map" class="w-4 h-4 mr-2"></i> Visor Cartográfico
-            </h3>
-        </div>
-        <div id="mapa-riesgo" class="w-full h-[450px] bg-gray-100 dark:bg-gray-900"></div>
     </div>
 
     <div class="p-6 rounded-xl shadow-sm border bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700 space-y-6">
@@ -91,7 +73,6 @@
                         <th class="px-6 py-3 font-semibold">Archivo Fuente</th>
                         <th class="px-6 py-3 font-semibold">Cobertura</th>
                         <th class="px-6 py-3 text-right">Estatus / Flujo</th>
-                        <th class="px-6 py-3 text-center">Acciones</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
@@ -112,71 +93,13 @@
                                 <button class="text-[11px] font-semibold px-2 py-0.5 rounded bg-red-600 text-white hover:bg-red-700 transition-colors shadow-2xs">Actualizar</button>
                             </form>
                         </td>
-                        <td class="px-6 py-4 text-center">
-                           <button onclick="cargarCapaRiesgo('{{ carga.id }}')" class="text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 transition-colors" title="Ver en el mapa">
-                                 <i data-lucide="eye" class="w-5 h-5 inline"></i>
-                        </button>
-                        </td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="6" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">No hay capas de riesgo registradas.</td></tr>
+                    <tr><td colspan="5" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">No hay capas de riesgo registradas.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_scripts %}
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        // Coordenadas establecidas en Barquisimeto
-        const mapaRiesgo = L.map('mapa-riesgo').setView([10.0639, -69.3494], 11);
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '© OpenStreetMap | ONCC Geomatica'
-        }).addTo(mapaRiesgo);
-
-        let capaActual = null;
-
-        // Función renombrada y adaptada para consultar las áreas de peligro
-        window.cargarCapaRiesgo = async function(idMapa) {
-            try {
-                if (capaActual) {
-                    mapaRiesgo.removeLayer(capaActual);
-                }
-
-                const response = await fetch(`/api/mapas/${idMapa}`);
-                if (!response.ok) throw new Error('Error al recuperar los datos de riesgo geoespaciales');
-                
-                const data = await response.json();
-                
-                capaActual = L.geoJSON(data.geometria, {
-                    style: {
-                        color: '#dc2626', 
-                        fillColor: '#ef4444', 
-                        fillOpacity: 0.4,
-                        weight: 2
-                    }
-                }).addTo(mapaRiesgo);
-
-                mapaRiesgo.fitBounds(capaActual.getBounds());
-                
-                capaActual.bindPopup(`
-                    <div class="text-sm">
-                        <strong class="text-gray-800">${data.nombre}</strong><br>
-                        <span class="text-gray-600">${data.descripcion || 'Zona de riesgo demarcada'}</span>
-                    </div>
-                `).openPopup();
-                
-            } catch (error) {
-                console.error('Error en la carga de matrices de riesgo:', error);
-                alert('No se pudo cargar la geometría del mapa seleccionado.');
-            }
-        };
-    });
-</script>
 {% endblock %}

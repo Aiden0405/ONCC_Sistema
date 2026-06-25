@@ -40,7 +40,6 @@ def create_app(config_class=Config):
 
     # ==============================================================
     # REGISTRO DE CONTROLADORES (Blueprints)
-    # ¡Aquí es donde debes agregar los que faltaban!
     # ==============================================================
     from app.blueprints.comunitario import comunitario_bp
     from app.blueprints.core import core_bp
@@ -69,7 +68,10 @@ def create_app(config_class=Config):
         from app.models.esquema_activo import ParroquiaActiva  # noqa: F401
         from app.models.esquema_activo import SensibilizacionActiva  # noqa: F401
         from app.models.divulgacion import Publicacion  # noqa: F401
-        from app.models.geomatica import MapaRegistro  # noqa: F401
+        
+        # CORRECCIÓN AQUÍ: Importación completa de ambos modelos de mapas de riesgo
+        from app.models.geomatica import MapaRiesgo, ElementoMapaRiesgo  # noqa: F401
+        
         from app.models.inventario import InventarioEquipo  # noqa: F401
         from app.models.reporte import ReporteTransaccional  # noqa: F401
         from app.models.visita_portal import VisitaPortal  # noqa: F401
@@ -77,6 +79,7 @@ def create_app(config_class=Config):
         from app.models.usuario import Usuario  # noqa: F401
         from app.models.role import Role, Permission  # noqa: F401
 
+    # Importación de funciones controladoras para add_url_rule
     from app.blueprints.core.controllers.auth import login as core_login
     from app.blueprints.core.controllers.auth import logout as core_logout
     from app.blueprints.core.controllers.auth import recuperar_contrasena as core_recuperar
@@ -101,6 +104,10 @@ def create_app(config_class=Config):
     from app.blueprints.logistica.controllers.inventario import eliminar as logistica_inventario_eliminar
     from app.blueprints.logistica.controllers.inventario import inventario_index as logistica_inventario_index
     from app.blueprints.logistica.controllers.inventario import nuevo as logistica_inventario_nuevo
+    from app.blueprints.mapas.controllers.riesgo import crear_mapa as mapas_crear_mapa
+    from app.blueprints.mapas.controllers.riesgo import obtener_mapa as mapas_obtener_mapa
+    from app.blueprints.mapas.controllers.riesgo import actualizar_mapa as mapas_actualizar_mapa
+    from app.blueprints.mapas.controllers.riesgo import eliminar_mapa as mapas_eliminar_mapa   
     from app.blueprints.mapas.controllers.riesgo import cambiar_estado as mapas_cambiar_estado
     from app.blueprints.mapas.controllers.riesgo import mapas_riesgo_index as mapas_index
     from app.blueprints.mapas.controllers.riesgo import procesar_archivo as mapas_procesar_archivo
@@ -117,6 +124,7 @@ def create_app(config_class=Config):
     from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizacion_nuevo
     from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizaciones_index as comunitario_sensibilizaciones_index
 
+    # Rutas estáticas y de autenticación
     app.add_url_rule('/', endpoint='public.home', view_func=core_home)
     app.add_url_rule('/acerca', endpoint='public.acerca', view_func=core_acerca)
     app.add_url_rule('/servicios', endpoint='public.servicios', view_func=core_servicios)
@@ -125,6 +133,7 @@ def create_app(config_class=Config):
     app.add_url_rule('/auth/logout', endpoint='auth.logout', view_func=core_logout)
     app.add_url_rule('/auth/recuperar', endpoint='auth.recuperar_contrasena', view_func=core_recuperar, methods=['GET', 'POST'])
 
+    # Rutas del módulo comunitario (Formación y Sensibilización)
     app.add_url_rule('/formaciones', endpoint='formacion.index', view_func=comunitario_formaciones_index)
     app.add_url_rule('/formaciones/nuevo', endpoint='formacion.nuevo', view_func=formacion_nuevo, methods=['POST'])
     app.add_url_rule('/formaciones/<int:formacion_id>/estado', endpoint='formacion.cambiar_estado', view_func=formacion_cambiar_estado, methods=['POST'])
@@ -132,12 +141,14 @@ def create_app(config_class=Config):
     app.add_url_rule('/sensibilizaciones/nuevo', endpoint='sensibilizacion.nuevo', view_func=sensibilizacion_nuevo, methods=['POST'])
     app.add_url_rule('/sensibilizaciones/<int:sensibilizacion_id>/estado', endpoint='sensibilizacion.cambiar_estado', view_func=sensibilizacion_cambiar_estado, methods=['POST'])
 
+    # Rutas de administración de Usuarios (Base de datos: seguridad)
     app.add_url_rule('/admin/usuarios/', endpoint='usuario.index', view_func=core_usuario_index)
     app.add_url_rule('/admin/usuarios/nuevo', endpoint='usuario.nuevo', view_func=core_usuario_nuevo, methods=['GET', 'POST'])
     app.add_url_rule('/admin/usuarios/<int:usuario_id>/editar', endpoint='usuario.editar', view_func=core_usuario_editar, methods=['GET', 'POST'])
     app.add_url_rule('/admin/usuarios/<int:usuario_id>/eliminar', endpoint='usuario.eliminar', view_func=core_usuario_eliminar, methods=['POST'])
     app.add_url_rule('/admin/usuarios/perfil', endpoint='usuario.perfil', view_func=core_usuario_perfil, methods=['GET', 'POST'])
 
+    # Rutas de administración de Roles y Permisos (Base de datos: seguridad)
     app.add_url_rule('/admin/roles/', endpoint='rol.index', view_func=core_rol_index)
     app.add_url_rule('/admin/roles/nuevo', endpoint='rol.nuevo', view_func=core_rol_nuevo, methods=['GET', 'POST'])
     app.add_url_rule('/admin/roles/<int:rol_id>/editar', endpoint='rol.editar', view_func=core_rol_editar, methods=['GET', 'POST'])
@@ -146,19 +157,27 @@ def create_app(config_class=Config):
     app.add_url_rule('/admin/roles/permisos/nuevo', endpoint='rol.permiso_nuevo', view_func=core_permiso_nuevo, methods=['GET', 'POST'])
     app.add_url_rule('/admin/roles/<int:rol_id>/permisos', endpoint='rol.gestionar_permisos', view_func=core_rol_gestionar_permisos, methods=['GET', 'POST'])
 
+    # Rutas de Monitoreo de Actividades generales
     app.add_url_rule('/actividades/', endpoint='actividad.index', view_func=monitoreo_actividad_index)
     app.add_url_rule('/actividades/nueva', endpoint='actividad.nueva', view_func=monitoreo_actividad_nueva, methods=['GET', 'POST'])
     app.add_url_rule('/actividades/<int:actividad_id>/estado', endpoint='actividad.cambiar_estado', view_func=monitoreo_actividad_cambiar_estado, methods=['POST'])
 
+    # Rutas del módulo Logística (Inventario)
     app.add_url_rule('/inventario/', endpoint='inventario.index', view_func=logistica_inventario_index)
     app.add_url_rule('/inventario/nuevo', endpoint='inventario.nuevo', view_func=logistica_inventario_nuevo, methods=['POST'])
     app.add_url_rule('/inventario/<int:equipo_id>/editar', endpoint='inventario.editar', view_func=logistica_inventario_editar, methods=['POST'])
     app.add_url_rule('/inventario/<int:equipo_id>/eliminar', endpoint='inventario.eliminar', view_func=logistica_inventario_eliminar, methods=['POST'])
 
+    # Rutas del módulo Geomática (CRUD de Mapas de Riesgo - Base de datos: oncc)
+    app.add_url_rule('/geomatica/api/mapas', endpoint='geomatica.crear_mapa', view_func=mapas_crear_mapa, methods=['POST'])
+    app.add_url_rule('/geomatica/api/mapas/<int:mapa_id>', endpoint='geomatica.obtener_mapa', view_func=mapas_obtener_mapa, methods=['GET'])
+    app.add_url_rule('/geomatica/api/mapas/<int:mapa_id>', endpoint='geomatica.actualizar_mapa', view_func=mapas_actualizar_mapa, methods=['PUT'])
+    app.add_url_rule('/geomatica/api/mapas/<int:mapa_id>', endpoint='geomatica.eliminar_mapa', view_func=mapas_eliminar_mapa, methods=['DELETE'])    
     app.add_url_rule('/geomatica/', endpoint='geomatica.index', view_func=mapas_index)
     app.add_url_rule('/geomatica/procesar', endpoint='geomatica.procesar_archivo', view_func=mapas_procesar_archivo, methods=['POST'])
     app.add_url_rule('/geomatica/<int:mapa_id>/estado', endpoint='geomatica.cambiar_estado', view_func=mapas_cambiar_estado, methods=['POST'])
 
+    # Rutas para Reportes Transaccionales
     app.add_url_rule('/reportes/', endpoint='reporte.index', view_func=monitoreo_reporte_index)
     app.add_url_rule('/reportes/nuevo', endpoint='reporte.nuevo', view_func=monitoreo_reporte_nuevo, methods=['POST'])
     app.add_url_rule('/reportes/<int:reporte_id>/estado', endpoint='reporte.cambiar_estado', view_func=monitoreo_reporte_cambiar_estado, methods=['POST'])
@@ -171,7 +190,7 @@ def create_app(config_class=Config):
         pass
 
     # ==============================================================
-    # RUTAS PROTEGIDAS
+    # RUTAS PROTEGIDAS (Dashboard unificado)
     # ==============================================================
     @app.route('/sistema')
     @app.route('/dashboard')
@@ -180,7 +199,7 @@ def create_app(config_class=Config):
     def dashboard():
         from app.models.actividad import Actividad
         from app.models.divulgacion import Publicacion
-        from app.models.geomatica import MapaRegistro
+        from app.models.geomatica import MapaRiesgo
         from app.models.inventario import InventarioEquipo
         from app.models.reporte import ReporteTransaccional
 
@@ -195,7 +214,7 @@ def create_app(config_class=Config):
 
         modulos_operativos = {
             'inventario': InventarioEquipo.query.count(),
-            'mapas': MapaRegistro.query.count(),
+            'mapas': MapaRiesgo.query.count(), # Consulta automáticamente la BD 'oncc'
             'reportes': ReporteTransaccional.query.count(),
             'actividades': total_actividades,
             'divulgacion': Publicacion.query.count(),

@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict mT7YxgpZOAk3lMsTQgRu1lu040QOFrvEBV4hOEIwDopb0KSzqgMWDlgnxEaFcxQ
+\restrict egLdFXOyq8F9tUp5pBRDMftm2fkLkJqGghTLH7UMUMhfB3QSNRMm1fyPu1OK86u
 
 -- Dumped from database version 17.10
 -- Dumped by pg_dump version 17.10
@@ -48,7 +48,8 @@ CREATE TABLE public.actividad (
     fecha_actividad date NOT NULL,
     tipo_actividad character varying(20)[] NOT NULL,
     id_comunidad integer NOT NULL,
-    id_nivel integer NOT NULL
+    id_nivel integer NOT NULL,
+    id_usuario integer
 );
 
 
@@ -109,54 +110,6 @@ ALTER SEQUENCE public.actividad_tecnico_id_actividad_tecnico_seq OWNER TO postgr
 --
 
 ALTER SEQUENCE public.actividad_tecnico_id_actividad_tecnico_seq OWNED BY public.actividad_tecnico.id_actividad_tecnico;
-
-
---
--- Name: actividades; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.actividades (
-    id integer NOT NULL,
-    area character varying(120) NOT NULL,
-    actividad character varying(180) NOT NULL,
-    responsable character varying(120) NOT NULL,
-    fecha date NOT NULL,
-    estado character varying(20) NOT NULL,
-    estado_geo character varying(80) NOT NULL,
-    municipio character varying(120) NOT NULL,
-    parroquia character varying(120),
-    descripcion text,
-    poblacion integer NOT NULL,
-    acuerdos text,
-    minuta_archivo character varying(255),
-    fotos_archivos text,
-    creado_en timestamp without time zone NOT NULL,
-    actualizado_en timestamp without time zone NOT NULL
-);
-
-
-ALTER TABLE public.actividades OWNER TO postgres;
-
---
--- Name: actividades_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.actividades_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE public.actividades_id_seq OWNER TO postgres;
-
---
--- Name: actividades_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.actividades_id_seq OWNED BY public.actividades.id;
 
 
 --
@@ -246,6 +199,43 @@ ALTER SEQUENCE public.comunidad_id_comunidad_seq OWNED BY public.comunidad.id_co
 
 
 --
+-- Name: divulgacion; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.divulgacion (
+    id_divulgacion integer NOT NULL,
+    id_actividad integer NOT NULL,
+    nombre_divulgacion character varying(100) NOT NULL,
+    descripcion_divulgacion text NOT NULL,
+    permiso_divulgacion character varying(50) NOT NULL
+);
+
+
+ALTER TABLE public.divulgacion OWNER TO postgres;
+
+--
+-- Name: divulgacion_id_divulgacion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.divulgacion_id_divulgacion_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.divulgacion_id_divulgacion_seq OWNER TO postgres;
+
+--
+-- Name: divulgacion_id_divulgacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.divulgacion_id_divulgacion_seq OWNED BY public.divulgacion.id_divulgacion;
+
+
+--
 -- Name: estado; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -286,7 +276,7 @@ ALTER SEQUENCE public.estado_id_estado_seq OWNED BY public.estado.id_estado;
 CREATE TABLE public.formacion (
     id_formacion integer NOT NULL,
     nombre_formacion text NOT NULL,
-    "id_actividad " integer NOT NULL,
+    id_actividad integer NOT NULL,
     id_institucion integer NOT NULL
 );
 
@@ -316,21 +306,21 @@ ALTER SEQUENCE public.formacion_id_formacion_seq OWNED BY public.formacion.id_fo
 
 
 --
--- Name: intitucion; Type: TABLE; Schema: public; Owner: postgres
+-- Name: institucion; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.intitucion (
+CREATE TABLE public.institucion (
     id_institucion integer NOT NULL,
     id_comunidad integer NOT NULL,
     nombre_institucion character varying(50) NOT NULL,
-    tipo_intitucion character varying(20) NOT NULL,
+    tipo_institucion character varying(20) NOT NULL,
     direccion_exacta character varying(100) NOT NULL,
     numero_contacto character varying(25) NOT NULL,
     correo_electronico character varying(40) NOT NULL
 );
 
 
-ALTER TABLE public.intitucion OWNER TO postgres;
+ALTER TABLE public.institucion OWNER TO postgres;
 
 --
 -- Name: intitucion_id_institucion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
@@ -351,7 +341,7 @@ ALTER SEQUENCE public.intitucion_id_institucion_seq OWNER TO postgres;
 -- Name: intitucion_id_institucion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
-ALTER SEQUENCE public.intitucion_id_institucion_seq OWNED BY public.intitucion.id_institucion;
+ALTER SEQUENCE public.intitucion_id_institucion_seq OWNED BY public.institucion.id_institucion;
 
 
 --
@@ -372,7 +362,8 @@ CREATE TABLE public.inventario_equipos (
     numero_serie character varying(100),
     marca character varying(50),
     modelo character varying(50),
-    observaciones text
+    observaciones text,
+    id_usuario integer
 );
 
 
@@ -584,56 +575,6 @@ ALTER SEQUENCE public.parroquia_id_parroquia_seq OWNED BY public.parroquia.id_pa
 
 
 --
--- Name: password_resets; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.password_resets (
-    id integer NOT NULL,
-    user_id integer NOT NULL,
-    token character varying(128) NOT NULL,
-    creado_en timestamp without time zone NOT NULL,
-    expiracion timestamp without time zone NOT NULL,
-    usado boolean NOT NULL
-);
-
-
-ALTER TABLE public.password_resets OWNER TO postgres;
-
---
--- Name: password_resets_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.password_resets_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE public.password_resets_id_seq OWNER TO postgres;
-
---
--- Name: password_resets_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.password_resets_id_seq OWNED BY public.password_resets.id;
-
-
---
--- Name: permiso; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.permiso (
-    id_modulo integer,
-    id_rol integer
-);
-
-
-ALTER TABLE public.permiso OWNER TO postgres;
-
---
 -- Name: publicaciones; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -647,7 +588,9 @@ CREATE TABLE public.publicaciones (
     publicado_en timestamp without time zone,
     creado_en timestamp without time zone NOT NULL,
     actualizado_en timestamp without time zone NOT NULL,
-    id_usuario integer NOT NULL
+    id_usuario integer NOT NULL,
+    id_divulgacion integer,
+    prioridad integer DEFAULT 1
 );
 
 
@@ -718,51 +661,17 @@ ALTER SEQUENCE public.reportes_transaccionales_id_seq OWNED BY public.reportes_t
 
 
 --
--- Name: roles; Type: TABLE; Schema: public; Owner: postgres
+-- Name: sensibilizacion; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.roles (
-    id_rol integer NOT NULL,
-    nombre_rol character varying(80) NOT NULL
-);
-
-
-ALTER TABLE public.roles OWNER TO postgres;
-
---
--- Name: roles_id_rol_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.roles_id_rol_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE public.roles_id_rol_seq OWNER TO postgres;
-
---
--- Name: roles_id_rol_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.roles_id_rol_seq OWNED BY public.roles.id_rol;
-
-
---
--- Name: sensibilizacion ; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public."sensibilizacion " (
+CREATE TABLE public.sensibilizacion (
     id_sensivilizacion integer NOT NULL,
     nombre_sensivilizacion text NOT NULL,
     id_actividad integer NOT NULL
 );
 
 
-ALTER TABLE public."sensibilizacion " OWNER TO postgres;
+ALTER TABLE public.sensibilizacion OWNER TO postgres;
 
 --
 -- Name: sensibilizacion _id_sensivilizacion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
@@ -783,7 +692,7 @@ ALTER SEQUENCE public."sensibilizacion _id_sensivilizacion_seq" OWNER TO postgre
 -- Name: sensibilizacion _id_sensivilizacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
-ALTER SEQUENCE public."sensibilizacion _id_sensivilizacion_seq" OWNED BY public."sensibilizacion ".id_sensivilizacion;
+ALTER SEQUENCE public."sensibilizacion _id_sensivilizacion_seq" OWNED BY public.sensibilizacion.id_sensivilizacion;
 
 
 --
@@ -794,7 +703,8 @@ CREATE TABLE public.tecnicos (
     id_tecnico integer NOT NULL,
     cedula character varying(15) NOT NULL,
     nombres character varying(60) NOT NULL,
-    apellidos character varying(60) NOT NULL
+    apellidos character varying(60) NOT NULL,
+    id_usuario integer
 );
 
 
@@ -864,10 +774,7 @@ ALTER SEQUENCE public.temas_id_tema_seq OWNED BY public.temas.id_tema;
 CREATE TABLE public.usuario (
     id_usuario integer NOT NULL,
     nombre_usuario character varying(30) NOT NULL,
-    "clave usuario" character varying(255) NOT NULL,
-    id_rol integer NOT NULL,
-    correo character varying(100),
-    estatus boolean DEFAULT true
+    "clave usuario" character varying(255) NOT NULL
 );
 
 
@@ -945,13 +852,6 @@ ALTER TABLE ONLY public.actividad_tecnico ALTER COLUMN id_actividad_tecnico SET 
 
 
 --
--- Name: actividades id; Type: DEFAULT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.actividades ALTER COLUMN id SET DEFAULT nextval('public.actividades_id_seq'::regclass);
-
-
---
 -- Name: bitacora_transacciones id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -963,6 +863,13 @@ ALTER TABLE ONLY public.bitacora_transacciones ALTER COLUMN id SET DEFAULT nextv
 --
 
 ALTER TABLE ONLY public.comunidad ALTER COLUMN id_comunidad SET DEFAULT nextval('public.comunidad_id_comunidad_seq'::regclass);
+
+
+--
+-- Name: divulgacion id_divulgacion; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.divulgacion ALTER COLUMN id_divulgacion SET DEFAULT nextval('public.divulgacion_id_divulgacion_seq'::regclass);
 
 
 --
@@ -980,10 +887,10 @@ ALTER TABLE ONLY public.formacion ALTER COLUMN id_formacion SET DEFAULT nextval(
 
 
 --
--- Name: intitucion id_institucion; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: institucion id_institucion; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.intitucion ALTER COLUMN id_institucion SET DEFAULT nextval('public.intitucion_id_institucion_seq'::regclass);
+ALTER TABLE ONLY public.institucion ALTER COLUMN id_institucion SET DEFAULT nextval('public.intitucion_id_institucion_seq'::regclass);
 
 
 --
@@ -1029,13 +936,6 @@ ALTER TABLE ONLY public.parroquia ALTER COLUMN id_parroquia SET DEFAULT nextval(
 
 
 --
--- Name: password_resets id; Type: DEFAULT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.password_resets ALTER COLUMN id SET DEFAULT nextval('public.password_resets_id_seq'::regclass);
-
-
---
 -- Name: publicaciones id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -1050,17 +950,10 @@ ALTER TABLE ONLY public.reportes_transaccionales ALTER COLUMN id SET DEFAULT nex
 
 
 --
--- Name: roles id_rol; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: sensibilizacion id_sensivilizacion; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.roles ALTER COLUMN id_rol SET DEFAULT nextval('public.roles_id_rol_seq'::regclass);
-
-
---
--- Name: sensibilizacion  id_sensivilizacion; Type: DEFAULT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public."sensibilizacion " ALTER COLUMN id_sensivilizacion SET DEFAULT nextval('public."sensibilizacion _id_sensivilizacion_seq"'::regclass);
+ALTER TABLE ONLY public.sensibilizacion ALTER COLUMN id_sensivilizacion SET DEFAULT nextval('public."sensibilizacion _id_sensivilizacion_seq"'::regclass);
 
 
 --
@@ -1095,7 +988,7 @@ ALTER TABLE ONLY public.visitas_portal ALTER COLUMN id SET DEFAULT nextval('publ
 -- Data for Name: actividad; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.actividad (id_actividad, fecha_actividad, tipo_actividad, id_comunidad, id_nivel) FROM stdin;
+COPY public.actividad (id_actividad, fecha_actividad, tipo_actividad, id_comunidad, id_nivel, id_usuario) FROM stdin;
 \.
 
 
@@ -1104,14 +997,6 @@ COPY public.actividad (id_actividad, fecha_actividad, tipo_actividad, id_comunid
 --
 
 COPY public.actividad_tecnico (id_actividad_tecnico, id_actividad, id_tecnico) FROM stdin;
-\.
-
-
---
--- Data for Name: actividades; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.actividades (id, area, actividad, responsable, fecha, estado, estado_geo, municipio, parroquia, descripcion, poblacion, acuerdos, minuta_archivo, fotos_archivos, creado_en, actualizado_en) FROM stdin;
 \.
 
 
@@ -1163,6 +1048,17 @@ COPY public.bitacora_transacciones (id, modulo, registro_id, accion, estado_nuev
 32	Divulgación	5	Modificar	borrador	Aileen Moyeja	Retirada de la web (Devuelta a borrador): Bobare...	2026-06-10 21:14:54.551101
 33	Divulgación	5	Modificar	publicado	Aileen Moyeja	Actualizado ID: 5	2026-06-10 21:20:06.006219
 34	Divulgación	6	Eliminar	\N	Aileen Moyeja	Eliminado permanentemente: Finlandia...	2026-06-10 21:20:15.391376
+35	Usuarios	1	Modificar	Administrador	Alcides Romero	Editado usuario director@oncc.com	2026-06-17 11:07:43.24596
+36	Usuarios	2	Crear	Administrador	Alcides Romero	Creado usuario maruchan@gmail.com	2026-06-17 11:14:57.864447
+37	Usuarios	1	Modificar	Administrador	Director Regional	Editado usuario director@oncc.com	2026-06-17 11:18:09.126253
+38	Usuarios	3	Crear	Administrador	Director Regional	Creado usuario a@gmail.com	2026-06-17 11:18:35.411456
+39	Usuarios	3	Eliminar	\N	Director Regional	Eliminado usuario a@gmail.com	2026-06-17 11:18:42.621297
+40	Usuarios	4	Crear	Administrador	Mariangel Reyes	Creado usuario moyejada@gmail.com	2026-06-17 12:41:46.50531
+41	inventario	1	creacion	En Uso (Asignado)	Mariangel Reyes	Registro del equipo EMA-055	2026-06-17 12:43:28.62243
+42	inventario	1	modificacion	En Uso (Asignado)	Mariangel Reyes	Datos del equipo EMA-055 actualizados	2026-06-17 12:43:48.556601
+43	Usuarios	2	Modificar	Tecnico	Mariangel Reyes	Editado usuario maruchan@gmail.com	2026-06-17 13:17:31.779376
+44	Usuarios	5	Crear	Administrador	Aileen Moyeja	Creado usuario gabrilucho@gmail.com	2026-06-17 13:38:50.017072
+45	Usuarios	6	Crear	Tecnico	Aileen Moyeja	Creado usuario ferrari@gmai.com	2026-06-17 13:39:27.883761
 \.
 
 
@@ -1171,6 +1067,15 @@ COPY public.bitacora_transacciones (id, modulo, registro_id, accion, estado_nuev
 --
 
 COPY public.comunidad (id_comunidad, id_parroquia, nombre_comunidad) FROM stdin;
+1	1	Comunidad General
+\.
+
+
+--
+-- Data for Name: divulgacion; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.divulgacion (id_divulgacion, id_actividad, nombre_divulgacion, descripcion_divulgacion, permiso_divulgacion) FROM stdin;
 \.
 
 
@@ -1179,6 +1084,7 @@ COPY public.comunidad (id_comunidad, id_parroquia, nombre_comunidad) FROM stdin;
 --
 
 COPY public.estado (id_estado, nombre_estado) FROM stdin;
+1	Lara
 \.
 
 
@@ -1186,15 +1092,16 @@ COPY public.estado (id_estado, nombre_estado) FROM stdin;
 -- Data for Name: formacion; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.formacion (id_formacion, nombre_formacion, "id_actividad ", id_institucion) FROM stdin;
+COPY public.formacion (id_formacion, nombre_formacion, id_actividad, id_institucion) FROM stdin;
 \.
 
 
 --
--- Data for Name: intitucion; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: institucion; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.intitucion (id_institucion, id_comunidad, nombre_institucion, tipo_intitucion, direccion_exacta, numero_contacto, correo_electronico) FROM stdin;
+COPY public.institucion (id_institucion, id_comunidad, nombre_institucion, tipo_institucion, direccion_exacta, numero_contacto, correo_electronico) FROM stdin;
+34	1	Institución General	Comunitaria	Sin dirección registrada	Sin contacto	sin-correo@oncc.local
 \.
 
 
@@ -1202,7 +1109,8 @@ COPY public.intitucion (id_institucion, id_comunidad, nombre_institucion, tipo_i
 -- Data for Name: inventario_equipos; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.inventario_equipos (id, tipo_equipo, codigo, ubicacion, estado_operativo, estado_flujo, ultimo_mantenimiento, responsable, creado_en, actualizado_en, numero_serie, marca, modelo, observaciones) FROM stdin;
+COPY public.inventario_equipos (id, tipo_equipo, codigo, ubicacion, estado_operativo, estado_flujo, ultimo_mantenimiento, responsable, creado_en, actualizado_en, numero_serie, marca, modelo, observaciones, id_usuario) FROM stdin;
+1	Estación Meteorológica (EMA)	EMA-055	Carabobo	Requiere Mantenimiento	En Uso (Asignado)	2026-01-01	Aileen Moyeja	2026-06-17 12:43:28.609551	2026-06-17 12:43:48.556601	\N	\N	\N	\N	\N
 \.
 
 
@@ -1229,6 +1137,7 @@ COPY public.modulos (id_modulo, nombre_modulo, descripcion_modulo) FROM stdin;
 --
 
 COPY public.municipio (id_municipio, id_estado, nombre_municipio) FROM stdin;
+1	1	Iribarren
 \.
 
 
@@ -1237,6 +1146,7 @@ COPY public.municipio (id_municipio, id_estado, nombre_municipio) FROM stdin;
 --
 
 COPY public.nivel (id_nivel, nombre_nivel, "descripción ") FROM stdin;
+41	Base	Nivel base para registros iniciales
 \.
 
 
@@ -1245,24 +1155,7 @@ COPY public.nivel (id_nivel, nombre_nivel, "descripción ") FROM stdin;
 --
 
 COPY public.parroquia (id_parroquia, id_municipio, nombre_parroquia) FROM stdin;
-\.
-
-
---
--- Data for Name: password_resets; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.password_resets (id, user_id, token, creado_en, expiracion, usado) FROM stdin;
-\.
-
-
---
--- Data for Name: permiso; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.permiso (id_modulo, id_rol) FROM stdin;
-1	2
-2	1
+1	1	Catedral
 \.
 
 
@@ -1270,8 +1163,8 @@ COPY public.permiso (id_modulo, id_rol) FROM stdin;
 -- Data for Name: publicaciones; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.publicaciones (id, tipo, titulo, resumen, contenido, estado, publicado_en, creado_en, actualizado_en, id_usuario) FROM stdin;
-5	informe	Estado del Clima Global 2026: Aceleración del Calentamiento y Eventos Extremos	El presente informe ofrece un análisis exhaustivo de los indicadores climáticos globales correspondientes al primer semestre de 2026. Se destaca un incremento sin precedentes en las anomalías de temperatura de la superficie del mar, una pérdida acelerada de masa boral y un aumento drástico en la frecuencia de fenómenos meteorológicos extremos en latitudes medias. El documento insta a la revisión urgente de las metas de descarbonización para evitar puntos de no retorno del sistema climático.	El año 2026 ha comenzado registrando hitos climáticos alarmantes que desafían las proyecciones más conservadoras de los modelos meteorológicos. A continuación, se detallan los tres ejes principales de observación y preocupación científica: 1. Anomalías Térmicas y OcéanosLos océanos del planeta han absorbido más del 90% del exceso de calor atrapado por los gases de efecto invernadero. Durante los últimos seis meses, la temperatura media de la superficie del mar ha superado en el promedio histórico del periodo 1991-2020. Esto ha desencadenado eventos de blanqueamiento masivo de corales en el Pacífico y ha alterado las corrientes marinas que regulan el clima de Europa y América del Norte. 2. Desglaciación y Nivel del Mar La tasa de fusión en las capas de hielo de Groenlandia y la Antártida Occidental ha mostrado un incremento del 15% en comparación con el año anterior. El agua de deshielo continental, sumada a la expansión térmica del agua marina, ha elevado el nivel medio del mar a una velocidad. 3. Fenómenos Meteorológicos Extremos La atmósfera, al estar más caliente, retiene mayor humedad (aproximadamente un 7% más por cada grado Celsius de calentamiento). Esto ha provocado una preocupante dualidad climática: Precipitaciones torrenciales e inundaciones récord en regiones monzónicas y zonas costeras de Asia. Sequías prolongadas y olas de calor persistentes en el sur de Europa y el cono sur de América, intensificando la temporada de incendios forestales. Conclusión del Panel de Expertos: "Los datos de 2026 no son una simple desviación estadística; son el reflejo de un sistema climático que busca un nuevo equilibrio, uno mucho más hostil para la infraestructura y la vida humana tal como la conocemos."	publicado	\N	2026-06-10 20:08:01.473563	2026-06-10 21:20:05.982824	7
+COPY public.publicaciones (id, tipo, titulo, resumen, contenido, estado, publicado_en, creado_en, actualizado_en, id_usuario, id_divulgacion, prioridad) FROM stdin;
+5	informe	Estado del Clima Global 2026: Aceleración del Calentamiento y Eventos Extremos	El presente informe ofrece un análisis exhaustivo de los indicadores climáticos globales correspondientes al primer semestre de 2026. Se destaca un incremento sin precedentes en las anomalías de temperatura de la superficie del mar, una pérdida acelerada de masa boral y un aumento drástico en la frecuencia de fenómenos meteorológicos extremos en latitudes medias. El documento insta a la revisión urgente de las metas de descarbonización para evitar puntos de no retorno del sistema climático.	El año 2026 ha comenzado registrando hitos climáticos alarmantes que desafían las proyecciones más conservadoras de los modelos meteorológicos. A continuación, se detallan los tres ejes principales de observación y preocupación científica: 1. Anomalías Térmicas y OcéanosLos océanos del planeta han absorbido más del 90% del exceso de calor atrapado por los gases de efecto invernadero. Durante los últimos seis meses, la temperatura media de la superficie del mar ha superado en el promedio histórico del periodo 1991-2020. Esto ha desencadenado eventos de blanqueamiento masivo de corales en el Pacífico y ha alterado las corrientes marinas que regulan el clima de Europa y América del Norte. 2. Desglaciación y Nivel del Mar La tasa de fusión en las capas de hielo de Groenlandia y la Antártida Occidental ha mostrado un incremento del 15% en comparación con el año anterior. El agua de deshielo continental, sumada a la expansión térmica del agua marina, ha elevado el nivel medio del mar a una velocidad. 3. Fenómenos Meteorológicos Extremos La atmósfera, al estar más caliente, retiene mayor humedad (aproximadamente un 7% más por cada grado Celsius de calentamiento). Esto ha provocado una preocupante dualidad climática: Precipitaciones torrenciales e inundaciones récord en regiones monzónicas y zonas costeras de Asia. Sequías prolongadas y olas de calor persistentes en el sur de Europa y el cono sur de América, intensificando la temporada de incendios forestales. Conclusión del Panel de Expertos: "Los datos de 2026 no son una simple desviación estadística; son el reflejo de un sistema climático que busca un nuevo equilibrio, uno mucho más hostil para la infraestructura y la vida humana tal como la conocemos."	publicado	\N	2026-06-10 20:08:01.473563	2026-06-10 21:20:05.982824	7	\N	1
 \.
 
 
@@ -1284,21 +1177,10 @@ COPY public.reportes_transaccionales (id, titulo, modulo_origen, rango_desde, ra
 
 
 --
--- Data for Name: roles; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: sensibilizacion; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.roles (id_rol, nombre_rol) FROM stdin;
-1	Director Regional
-2	Administrador
-3	Técnico
-\.
-
-
---
--- Data for Name: sensibilizacion ; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public."sensibilizacion " (id_sensivilizacion, nombre_sensivilizacion, id_actividad) FROM stdin;
+COPY public.sensibilizacion (id_sensivilizacion, nombre_sensivilizacion, id_actividad) FROM stdin;
 \.
 
 
@@ -1306,7 +1188,7 @@ COPY public."sensibilizacion " (id_sensivilizacion, nombre_sensivilizacion, id_a
 -- Data for Name: tecnicos; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.tecnicos (id_tecnico, cedula, nombres, apellidos) FROM stdin;
+COPY public.tecnicos (id_tecnico, cedula, nombres, apellidos, id_usuario) FROM stdin;
 \.
 
 
@@ -1322,12 +1204,12 @@ COPY public.temas (id_tema, nombre_tema, descripcion_tema) FROM stdin;
 -- Data for Name: usuario; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.usuario (id_usuario, nombre_usuario, "clave usuario", id_rol, correo, estatus) FROM stdin;
-1	Director	scrypt:32768:8:1$iPvDHWVySiWslJCE$d11ab552a937859fb34e8743fc7086d8b692801a465a8c17dd2a7664e8aa1ed255b47d7062271c8d9bc7039ca95f146b79bf7ef2329720d6cfa0cce42a95b8c6	1	director@oncc.gob.ve	t
-7	Mariangel Reyes	scrypt:32768:8:1$pqk91tK6ynyN1UE3$b977150f12639f60961e6d9bcb85b9d457b2339e30a8c9a5ce3bb4df55310bc75965fa09a956ec99c1637ff0fb9e55fbb826362045fdf3c5e53d022022e8f706	3	maruchan@gmail.com	t
-8	Aileen Moyeja	scrypt:32768:8:1$6WH5iJGAJvHfNmTZ$b58a41261ce490977c230b27ed35f90bef8962270da9f4bc9002186d7915b9f466bdee8dcfae1fd494fa156c45339bf95440f8fbaa18852dd30566981b359a49	2	moyejada@gmail.com	t
-9	Angel Ferrer	scrypt:32768:8:1$glkpKU3D5avbfljY$39d935a4e548391ed61dfcd9b6d0b1b026e9b404cbdc613df4520e44c65f81992fde6bf608621aa566632e510efcffe3bcdf0a53d1157c175052a6c7a2cd26b8	3	ferarri@gmail.com	t
-10	Gabriel Castañeda	scrypt:32768:8:1$O3feRPG6fm3DIcDX$87d4665da39ced29921e887a79b16b2cb9c40e2e99aa6d16fb7d8dd25417597af00738bdb1799c0bfef0075a5c7c34a240ad6c76012726ea8e5f9968f6ea3ade	2	gabrilucho@gmail.com	t
+COPY public.usuario (id_usuario, nombre_usuario, "clave usuario") FROM stdin;
+1	Director	scrypt:32768:8:1$iPvDHWVySiWslJCE$d11ab552a937859fb34e8743fc7086d8b692801a465a8c17dd2a7664e8aa1ed255b47d7062271c8d9bc7039ca95f146b79bf7ef2329720d6cfa0cce42a95b8c6
+7	Mariangel Reyes	scrypt:32768:8:1$pqk91tK6ynyN1UE3$b977150f12639f60961e6d9bcb85b9d457b2339e30a8c9a5ce3bb4df55310bc75965fa09a956ec99c1637ff0fb9e55fbb826362045fdf3c5e53d022022e8f706
+8	Aileen Moyeja	scrypt:32768:8:1$6WH5iJGAJvHfNmTZ$b58a41261ce490977c230b27ed35f90bef8962270da9f4bc9002186d7915b9f466bdee8dcfae1fd494fa156c45339bf95440f8fbaa18852dd30566981b359a49
+9	Angel Ferrer	scrypt:32768:8:1$glkpKU3D5avbfljY$39d935a4e548391ed61dfcd9b6d0b1b026e9b404cbdc613df4520e44c65f81992fde6bf608621aa566632e510efcffe3bcdf0a53d1157c175052a6c7a2cd26b8
+10	Gabriel Castañeda	scrypt:32768:8:1$O3feRPG6fm3DIcDX$87d4665da39ced29921e887a79b16b2cb9c40e2e99aa6d16fb7d8dd25417597af00738bdb1799c0bfef0075a5c7c34a240ad6c76012726ea8e5f9968f6ea3ade
 \.
 
 
@@ -1342,6 +1224,11 @@ COPY public.visitas_portal (id, mes, creado_en) FROM stdin;
 4	2026-06	2026-06-10 03:05:32.802172
 5	2026-06	2026-06-10 10:05:00.336891
 6	2026-06	2026-06-10 18:31:25.747203
+7	2026-06	2026-06-17 09:35:34.035413
+8	2026-06	2026-06-17 12:28:06.337253
+9	2026-06	2026-06-17 13:36:46.674893
+10	2026-06	2026-06-17 21:53:00.210292
+11	2026-06	2026-06-17 22:06:46.142903
 \.
 
 
@@ -1360,31 +1247,31 @@ SELECT pg_catalog.setval('public.actividad_tecnico_id_actividad_tecnico_seq', 1,
 
 
 --
--- Name: actividades_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
---
-
-SELECT pg_catalog.setval('public.actividades_id_seq', 1, false);
-
-
---
 -- Name: bitacora_transacciones_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.bitacora_transacciones_id_seq', 34, true);
+SELECT pg_catalog.setval('public.bitacora_transacciones_id_seq', 45, true);
 
 
 --
 -- Name: comunidad_id_comunidad_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.comunidad_id_comunidad_seq', 26, true);
+SELECT pg_catalog.setval('public.comunidad_id_comunidad_seq', 36, true);
+
+
+--
+-- Name: divulgacion_id_divulgacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.divulgacion_id_divulgacion_seq', 1, false);
 
 
 --
 -- Name: estado_id_estado_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.estado_id_estado_seq', 26, true);
+SELECT pg_catalog.setval('public.estado_id_estado_seq', 36, true);
 
 
 --
@@ -1398,14 +1285,14 @@ SELECT pg_catalog.setval('public.formacion_id_formacion_seq', 1, false);
 -- Name: intitucion_id_institucion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.intitucion_id_institucion_seq', 26, true);
+SELECT pg_catalog.setval('public.intitucion_id_institucion_seq', 34, true);
 
 
 --
 -- Name: inventario_equipos_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.inventario_equipos_id_seq', 1, false);
+SELECT pg_catalog.setval('public.inventario_equipos_id_seq', 1, true);
 
 
 --
@@ -1426,28 +1313,21 @@ SELECT pg_catalog.setval('public.modulos_id_modulo_seq', 2, true);
 -- Name: municipio_id_municipio_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.municipio_id_municipio_seq', 26, true);
+SELECT pg_catalog.setval('public.municipio_id_municipio_seq', 36, true);
 
 
 --
 -- Name: nivel_id_nivel_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.nivel_id_nivel_seq', 26, true);
+SELECT pg_catalog.setval('public.nivel_id_nivel_seq', 41, true);
 
 
 --
 -- Name: parroquia_id_parroquia_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.parroquia_id_parroquia_seq', 26, true);
-
-
---
--- Name: password_resets_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
---
-
-SELECT pg_catalog.setval('public.password_resets_id_seq', 1, false);
+SELECT pg_catalog.setval('public.parroquia_id_parroquia_seq', 36, true);
 
 
 --
@@ -1462,13 +1342,6 @@ SELECT pg_catalog.setval('public.publicaciones_id_seq', 7, true);
 --
 
 SELECT pg_catalog.setval('public.reportes_transaccionales_id_seq', 1, false);
-
-
---
--- Name: roles_id_rol_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
---
-
-SELECT pg_catalog.setval('public.roles_id_rol_seq', 3, true);
 
 
 --
@@ -1503,7 +1376,7 @@ SELECT pg_catalog.setval('public.usuario_id_usuario_seq', 10, true);
 -- Name: visitas_portal_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.visitas_portal_id_seq', 6, true);
+SELECT pg_catalog.setval('public.visitas_portal_id_seq', 11, true);
 
 
 --
@@ -1520,14 +1393,6 @@ ALTER TABLE ONLY public.actividad
 
 ALTER TABLE ONLY public.actividad_tecnico
     ADD CONSTRAINT actividad_tecnico_pkey PRIMARY KEY (id_actividad_tecnico);
-
-
---
--- Name: actividades actividades_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.actividades
-    ADD CONSTRAINT actividades_pkey PRIMARY KEY (id);
 
 
 --
@@ -1555,6 +1420,14 @@ ALTER TABLE ONLY public.comunidad
 
 
 --
+-- Name: divulgacion divulgacion_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.divulgacion
+    ADD CONSTRAINT divulgacion_pkey PRIMARY KEY (id_divulgacion);
+
+
+--
 -- Name: estado estado_nombre_estado_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1575,7 +1448,7 @@ ALTER TABLE ONLY public.estado
 --
 
 ALTER TABLE ONLY public.formacion
-    ADD CONSTRAINT "formacion_id_actividad _key" UNIQUE ("id_actividad ");
+    ADD CONSTRAINT "formacion_id_actividad _key" UNIQUE (id_actividad);
 
 
 --
@@ -1587,10 +1460,10 @@ ALTER TABLE ONLY public.formacion
 
 
 --
--- Name: intitucion intitucion_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: institucion intitucion_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.intitucion
+ALTER TABLE ONLY public.institucion
     ADD CONSTRAINT intitucion_pkey PRIMARY KEY (id_institucion);
 
 
@@ -1667,22 +1540,6 @@ ALTER TABLE ONLY public.parroquia
 
 
 --
--- Name: password_resets password_resets_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.password_resets
-    ADD CONSTRAINT password_resets_pkey PRIMARY KEY (id);
-
-
---
--- Name: password_resets password_resets_token_key; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.password_resets
-    ADD CONSTRAINT password_resets_token_key UNIQUE (token);
-
-
---
 -- Name: publicaciones publicaciones_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1699,34 +1556,18 @@ ALTER TABLE ONLY public.reportes_transaccionales
 
 
 --
--- Name: roles roles_nombre_rol_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: sensibilizacion sensibilizacion _id_actividad_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.roles
-    ADD CONSTRAINT roles_nombre_rol_key UNIQUE (nombre_rol);
-
-
---
--- Name: roles roles_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.roles
-    ADD CONSTRAINT roles_pkey PRIMARY KEY (id_rol);
-
-
---
--- Name: sensibilizacion  sensibilizacion _id_actividad_key; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public."sensibilizacion "
+ALTER TABLE ONLY public.sensibilizacion
     ADD CONSTRAINT "sensibilizacion _id_actividad_key" UNIQUE (id_actividad);
 
 
 --
--- Name: sensibilizacion  sensibilizacion _pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: sensibilizacion sensibilizacion _pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public."sensibilizacion "
+ALTER TABLE ONLY public.sensibilizacion
     ADD CONSTRAINT "sensibilizacion _pkey" PRIMARY KEY (id_sensivilizacion);
 
 
@@ -1778,6 +1619,22 @@ CREATE INDEX ix_visitas_portal_mes ON public.visitas_portal USING btree (mes);
 
 
 --
+-- Name: actividad_tecnico activ_tecn_id_actividad_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.actividad_tecnico
+    ADD CONSTRAINT activ_tecn_id_actividad_fkey FOREIGN KEY (id_actividad) REFERENCES public.actividad(id_actividad) ON DELETE CASCADE;
+
+
+--
+-- Name: actividad_tecnico activ_tecn_id_tecnico_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.actividad_tecnico
+    ADD CONSTRAINT activ_tecn_id_tecnico_fkey FOREIGN KEY (id_tecnico) REFERENCES public.tecnicos(id_tecnico) ON DELETE CASCADE;
+
+
+--
 -- Name: actividad actividad_id_comunidad_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1802,11 +1659,43 @@ ALTER TABLE ONLY public.comunidad
 
 
 --
--- Name: actividad_tecnico fk_actividad_intermedia; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: actividad fk_actividad_usuario; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.actividad_tecnico
-    ADD CONSTRAINT fk_actividad_intermedia FOREIGN KEY (id_actividad) REFERENCES public.actividades(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.actividad
+    ADD CONSTRAINT fk_actividad_usuario FOREIGN KEY (id_usuario) REFERENCES public.usuario(id_usuario) ON DELETE SET NULL;
+
+
+--
+-- Name: divulgacion fk_divulgacion_actividad; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.divulgacion
+    ADD CONSTRAINT fk_divulgacion_actividad FOREIGN KEY (id_actividad) REFERENCES public.actividad(id_actividad) ON DELETE CASCADE;
+
+
+--
+-- Name: formacion fk_formacion_actividad; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.formacion
+    ADD CONSTRAINT fk_formacion_actividad FOREIGN KEY (id_actividad) REFERENCES public.actividad(id_actividad) ON DELETE CASCADE;
+
+
+--
+-- Name: institucion fk_institucion_comunidad; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.institucion
+    ADD CONSTRAINT fk_institucion_comunidad FOREIGN KEY (id_comunidad) REFERENCES public.comunidad(id_comunidad) ON DELETE CASCADE;
+
+
+--
+-- Name: inventario_equipos fk_inventario_usuario; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.inventario_equipos
+    ADD CONSTRAINT fk_inventario_usuario FOREIGN KEY (id_usuario) REFERENCES public.usuario(id_usuario) ON DELETE SET NULL;
 
 
 --
@@ -1818,11 +1707,27 @@ ALTER TABLE ONLY public.mapas_registro
 
 
 --
+-- Name: publicaciones fk_publicaciones_divulgacion; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.publicaciones
+    ADD CONSTRAINT fk_publicaciones_divulgacion FOREIGN KEY (id_divulgacion) REFERENCES public.divulgacion(id_divulgacion) ON DELETE CASCADE;
+
+
+--
 -- Name: publicaciones fk_publicaciones_usuario; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.publicaciones
     ADD CONSTRAINT fk_publicaciones_usuario FOREIGN KEY (id_usuario) REFERENCES public.usuario(id_usuario) ON DELETE CASCADE;
+
+
+--
+-- Name: sensibilizacion fk_sensibilizacion_actividad; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.sensibilizacion
+    ADD CONSTRAINT fk_sensibilizacion_actividad FOREIGN KEY (id_actividad) REFERENCES public.actividad(id_actividad) ON DELETE CASCADE;
 
 
 --
@@ -1834,11 +1739,11 @@ ALTER TABLE ONLY public.actividad_tecnico
 
 
 --
--- Name: formacion formacion_id_actividad _fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: tecnicos fk_tecnicos_usuario; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.formacion
-    ADD CONSTRAINT "formacion_id_actividad _fkey" FOREIGN KEY ("id_actividad ") REFERENCES public.actividad(id_actividad);
+ALTER TABLE ONLY public.tecnicos
+    ADD CONSTRAINT fk_tecnicos_usuario FOREIGN KEY (id_usuario) REFERENCES public.usuario(id_usuario) ON DELETE SET NULL;
 
 
 --
@@ -1846,15 +1751,7 @@ ALTER TABLE ONLY public.formacion
 --
 
 ALTER TABLE ONLY public.formacion
-    ADD CONSTRAINT formacion_id_institucion_fkey FOREIGN KEY (id_institucion) REFERENCES public.intitucion(id_institucion);
-
-
---
--- Name: intitucion intitucion_id_comunidad_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.intitucion
-    ADD CONSTRAINT intitucion_id_comunidad_fkey FOREIGN KEY (id_comunidad) REFERENCES public.comunidad(id_comunidad);
+    ADD CONSTRAINT formacion_id_institucion_fkey FOREIGN KEY (id_institucion) REFERENCES public.institucion(id_institucion);
 
 
 --
@@ -1874,46 +1771,6 @@ ALTER TABLE ONLY public.parroquia
 
 
 --
--- Name: password_resets password_resets_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.password_resets
-    ADD CONSTRAINT password_resets_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.usuario(id_usuario) ON DELETE CASCADE;
-
-
---
--- Name: permiso permiso_id_modulo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.permiso
-    ADD CONSTRAINT permiso_id_modulo_fkey FOREIGN KEY (id_modulo) REFERENCES public.modulos(id_modulo);
-
-
---
--- Name: permiso permiso_id_rol_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.permiso
-    ADD CONSTRAINT permiso_id_rol_fkey FOREIGN KEY (id_rol) REFERENCES public.roles(id_rol);
-
-
---
--- Name: sensibilizacion  sensibilizacion _id_actividad_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public."sensibilizacion "
-    ADD CONSTRAINT "sensibilizacion _id_actividad_fkey" FOREIGN KEY (id_actividad) REFERENCES public.actividad(id_actividad);
-
-
---
--- Name: usuario usuario_id_rol_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.usuario
-    ADD CONSTRAINT usuario_id_rol_fkey FOREIGN KEY (id_rol) REFERENCES public.roles(id_rol);
-
-
---
 -- Name: SCHEMA public; Type: ACL; Schema: -; Owner: postgres
 --
 
@@ -1924,5 +1781,4 @@ REVOKE USAGE ON SCHEMA public FROM PUBLIC;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict mT7YxgpZOAk3lMsTQgRu1lu040QOFrvEBV4hOEIwDopb0KSzqgMWDlgnxEaFcxQ
-
+\unrestrict egLdFXOyq8F9tUp5pBRDMftm2fkLkJqGghTLH7UMUMhfB3QSNRMm1fyPu1OK86u

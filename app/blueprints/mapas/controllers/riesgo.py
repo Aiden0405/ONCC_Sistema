@@ -1,139 +1,156 @@
-import os
 from datetime import datetime
-from flask import flash, redirect, render_template, request, url_for
+
+from flask import flash, redirect, Blueprint, jsonify, render_template, request, url_for
 from flask_login import current_user, login_required
 from werkzeug.utils import secure_filename
-
 from app import db
 from app.blueprints.mapas import mapas_bp
 from app.constants import ESTADOS_TRANSACCION
 from app.models.bitacora import BitacoraTransaccion
-from app.models.geomatica import MapaRegistro
+from app.models.geomatica import MapaRiesgo
+from geoalchemy2.functions import ST_AsGeoJSON, ST_GeomFromGeoJSON
+import json
 
-# Extensiones permitidas por seguridad
-EXTENSIONES_PERMITIDAS = {'xlsx', 'xls', 'ssbc', 'csv'}
-
-def archivo_permitido(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in EXTENSIONES_PERMITIDAS
-
+mapa_bp = Blueprint('mapa_riesgo', __name__)
 @mapas_bp.route('/geomatica/')
 @login_required
+def vista_mapa():
+    return render_template('mapa_riesgo.html')
+
+# ==========================================
+#          API REST - CRUD OPERACIONES
+# ==========================================
+
+# 1. CREATE
+@mapa_bp.route('/api/mapas', methods=['POST'])
+def crear_mapa():
+    datos = request.get_json()
+    nombre = datos.get('nombre')
+    descripcion = datos.get('descripcion')
+    
+    # El objeto espacial llega desde el frontend en formato estándar GeoJSON
+    geojson_geom = json.dumps(datos.get('geometria')) 
+
+    nuevo_mapa = MapaRiesgo(
+        nombre=nombre,
+        descripcion=descripcion,
+        geometria=ST_GeomFromGeoJSON(geojson_geom)
+    )
+    
+    db.session.add(nuevo_mapa)
+    db.session.commit() # El Trigger de PostgreSQL registra de forma automática la acción en Seguridad
+    
+    return jsonify({
+        'status': 'success', 
+        'message': 'Capa de mapa de riesgo registrada con éxito', 
+        'id': nuevo_mapa.id
+    }), 201
+
+# 2. READ
+@mapa_bp.route('/api/mapas/<int:id>', methods=['GET'])
+def obtener_mapa(id):
+    resultado = db.session.query(
+        MapaRiesgo.id,
+        MapaRiesgo.nombre,
+        MapaRiesgo.descripcion,
+        ST_AsGeoJSON(MapaRiesgo.geometria).label('geojson'),
+        MapaRiesgo.fecha_creacion
+    ).filter(MapaRiesgo.id == id).first()
+
+    if not resultado:
+        return jsonify({'message': 'El mapa de riesgo solicitado no existe'}), 404
+
+    return jsonify({
+        'id': resultado.id,
+        'nombre': resultado.nombre,
+        'descripcion': resultado.descripcion,
+        'geometria': json.loads(resultado.geojson),
+        'fecha_creacion': resultado.fecha_creacion.isoformat() if resultado.fecha_creacion else None
+    }), 200
+
+# 3. UPDATE
+@mapa_bp.route('/api/mapas/<int:id>', methods=['PUT'])
+def actualizar_mapa(id):
+    mapa = MapaRiesgo.query.get(id)
+    if not mapa:
+        return jsonify({'message': 'El mapa de riesgo no fue encontrado'}), 404
+
+    datos = request.get_json()
+    mapa.nombre = datos.get('nombre', mapa.nombre)
+    mapa.descripcion = datos.get('descripcion', mapa.descripcion)
+    
+    if 'geometria' in datos:
+        geojson_geom = json.dumps(datos.get('geometria'))
+        mapa.geometria = ST_GeomFromGeoJSON(geojson_geom)
+
+    db.session.commit() # Disparador automático (Trigger) registra la actualización
+    return jsonify({'status': 'success', 'message': 'Datos del mapa de riesgo actualizados'}), 200
+
+# 4. DELETE
+@mapa_bp.route('/api/mapas/<int:id>', methods=['DELETE'])
+def eliminar_mapa(id):
+    mapa = MapaRiesgo.query.get(id)
+    if not mapa:
+        return jsonify({'message': 'El mapa de riesgo no fue encontrado'}), 404
+
+    db.session.delete(mapa)
+    db.session.commit() # El Trigger captura los datos y los aloja en la Bitácora
+    
+    return jsonify({'status': 'success', 'message': 'Capa de riesgo eliminada permanentemente del sistema'}), 200
+@mapa_bp.route('/mapa-riesgo', methods=['GET'])
 def mapas_riesgo_index():
-    mapas = MapaRegistro.query.order_by(MapaRegistro.creado_en.desc()).all()
-    return render_template('geomatica/carga_ssbc.html', cargas=mapas, estados_flujo=ESTADOS_TRANSACCION)
-
-# --- CREATE ---
-@mapas_bp.route('/geomatica/procesar', methods=['POST'])
-@login_required
-def procesar_archivo():
-    # 1. Validaciones del lado del servidor
-    nombre = request.form.get('nombre', '').strip()
-    version = request.form.get('version', '').strip()
-    cobertura = request.form.get('cobertura', '').strip()
-    tipo_mapa = request.form.get('tipo_mapa', 'riesgo').strip()
-
-    if not nombre or not version or not cobertura:
-        flash('Todos los campos de texto son obligatorios.', 'error')
-        return redirect(url_for('mapas.mapas_riesgo_index'))
-
-    if 'archivo_ssbc' not in request.files:
-        flash('Debe adjuntar un archivo de data.', 'error')
-        return redirect(url_for('mapas.mapas_riesgo_index'))
-
-    archivo = request.files['archivo_ssbc']
-
-    if archivo.filename == '' or not archivo_permitido(archivo.filename):
-        flash('Archivo inválido o formato no permitido (.ssbc, .xlsx, .csv).', 'error')
-        return redirect(url_for('mapas.mapas_riesgo_index'))
-
-    # 2. Sanitizar el nombre del archivo
-    nombre_archivo = secure_filename(archivo.filename)
-
-    try:
-        # Aquí guardarías el archivo físicamente: archivo.save(os.path.join(ruta, nombre_archivo))
-
-        # 3. Preparar la Inserción Multi-tabla
-        nuevo_mapa = MapaRegistro(
-            nombre=nombre,
-            tipo_mapa=tipo_mapa,
-            version=version,
-            archivo=nombre_archivo,
-            cobertura=cobertura,
-            responsable=current_user.nombre
-        )
-        db.session.add(nuevo_mapa)
-        db.session.flush() # Flush nos da el ID del nuevo_mapa sin hacer el commit final
-
-        nueva_bitacora = BitacoraTransaccion(
-            modulo='mapas_registro',
-            registro_id=nuevo_mapa.id,
-            accion='Crear',
-            estado_nuevo=nuevo_mapa.estado,
-            usuario=current_user.correo, # Tu BD usa correo en la bitácora según el volcado
-            detalle=f'Carga de capa de {tipo_mapa}: {nombre_archivo}'
-        )
-        db.session.add(nueva_bitacora)
-
-        # 4. Confirmar todo junto
-        db.session.commit()
-        flash(f'Mapa "{nombre}" registrado exitosamente.', 'success')
-
-    except Exception as e:
-        db.session.rollback() # Si algo falla, revertimos para no dejar datos a medias
-        flash(f'Error al guardar en la base de datos: {str(e)}', 'error')
-
-    return redirect(url_for('mapas.mapas_riesgo_index'))
-
-# --- UPDATE (Estado) ---
-@mapas_bp.route('/geomatica/<int:mapa_id>/estado', methods=['POST'])
-@login_required
+    # Se consultan todos los mapas registrados para llenar el historial
+    cargas = MapaRiesgo.query.all()
+    
+    # Se definen los estados posibles para el flujo (select del HTML)
+    estados_flujo = ['Pendiente', 'En Revisión', 'Aprobado', 'Rechazado']
+    
+    return render_template(
+        'geomatica/carga_ssbc.html', 
+        cargas=cargas, 
+        estados_flujo=estados_flujo
+    )
+@mapa_bp.route('/cambiar_estado/<int:mapa_id>', methods=['POST'])
 def cambiar_estado(mapa_id):
-    mapa = MapaRegistro.query.get_or_404(mapa_id)
-    nuevo_estado = request.form.get('estado', '').strip()
+    # Buscar el registro usando el modelo actualizado MapaRiesgo
+    mapa = MapaRiesgo.query.get(mapa_id)
     
-    if nuevo_estado not in ESTADOS_TRANSACCION:
-        flash('Estado de flujo inválido.', 'error')
-        return redirect(url_for('mapas.mapas_riesgo_index'))
+    if not mapa:
+        # Manejo de error si el registro no existe
+        return "Registro no encontrado", 404
 
-    try:
+    # Capturar el nuevo estado enviado desde el formulario <select name="estado">
+    nuevo_estado = request.form.get('estado')
+    
+    if nuevo_estado:
         mapa.estado = nuevo_estado
+        db.session.commit() # El disparador (trigger) registrará automáticamente esta acción en la bitácora
         
-        db.session.add(BitacoraTransaccion(
-            modulo='mapas_registro',
-            registro_id=mapa.id,
-            accion='Modificar',
-            estado_nuevo=nuevo_estado,
-            usuario=current_user.correo,
-            detalle=f'Actualización de estado a {nuevo_estado}'
-        ))
-        db.session.commit()
-        flash('Estado actualizado.', 'success')
-    except Exception as e:
-        db.session.rollback()
-        flash('Ocurrió un error al actualizar el estado.', 'error')
-
-    return redirect(url_for('mapas.mapas_riesgo_index'))
-
-# --- DELETE ---
-@mapas_bp.route('/geomatica/<int:mapa_id>/eliminar', methods=['POST'])
-@login_required
-def eliminar_mapa(mapa_id):
-    mapa = MapaRegistro.query.get_or_404(mapa_id)
+    # Redirigir nuevamente a la vista principal. 
+    # (El nombre 'geomatica.vista_mapa' debe coincidir con el nombre de registro del blueprint)
+    return redirect(url_for('geomatica.vista_mapa'))   
+@mapa_bp.route('/procesar_archivo', methods=['POST'])
+def procesar_archivo():
+    # 1. Captura de datos de texto del formulario
+    nombre = request.form.get('nombre')
+    version = request.form.get('version')
+    cobertura = request.form.get('cobertura')
     
-    try:
-        db.session.add(BitacoraTransaccion(
-            modulo='mapas_registro',
-            registro_id=mapa.id,
-            accion='Eliminar',
-            estado_nuevo=None,
-            usuario=current_user.correo,
-            detalle=f'Se eliminó el mapa: {mapa.nombre}'
-        ))
-        db.session.delete(mapa)
-        db.session.commit()
-        flash('Mapa eliminado correctamente.', 'success')
-    except Exception as e:
-        db.session.rollback()
-        flash('No se pudo eliminar el mapa por restricciones en la base de datos.', 'error')
+    # 2. Captura del archivo físico
+    archivo = request.files.get('archivo_ssbc')
+    
+    if archivo and archivo.filename != '':
+        nombre_archivo = secure_filename(archivo.filename)
+        # Aquí se integrará la lógica de extracción de coordenadas del Excel/CSV
+        # utilizando pandas o geopandas para generar el objeto ST_GeomFromGeoJSON
+        
+        # Simulación de guardado temporal (Ajustar ruta según configuración del servidor)
+        # ruta_guardado = os.path.join('app/static/uploads', nombre_archivo)
+        # archivo.save(ruta_guardado)
+        
+        # Una vez procesada la geometría, se instancia el modelo MapaRiesgo y se ejecuta db.session.commit()
+        pass
 
-    return redirect(url_for('mapas.mapas_riesgo_index'))
+    # Redirección a la vista principal para recargar la tabla del historial
+    # Se asume que el blueprint está registrado bajo el prefijo o nombre 'geomatica' o 'mapas'
+    return redirect(url_for('geomatica.mapas_riesgo_index'))

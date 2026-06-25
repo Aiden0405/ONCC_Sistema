@@ -13,7 +13,7 @@ from sqlalchemy.exc import OperationalError
 from app import db
 from app.blueprints.core import core_bp
 from app.models.divulgacion import Publicacion
-from app.models.geomatica import MapaRegistro
+from app.models.geomatica import MapaRiesgo
 from app.models.visita_portal import VisitaPortal
 
 
@@ -33,7 +33,7 @@ def _registrar_visita_mensual():
 @core_bp.route('/')
 def home():
     comunidades = []
-    mapas_registrados = MapaRegistro.query.count()
+    mapas_registrados = MapaRiesgo.query.count()
     visitas_mensuales = _registrar_visita_mensual()
     publicaciones = []
 
