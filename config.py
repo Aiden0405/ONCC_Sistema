@@ -14,11 +14,11 @@ def build_database_uri():
         password = quote_plus(os.environ.get('DB_PASSWORD', ''))
         host = os.environ.get('DB_HOST', 'localhost')
         port = os.environ.get('DB_PORT', '5432')
-        name = os.environ.get('DB_NAME', 'oncc_sistema')
+        name = os.environ.get('DB_NAME', 'oncc')
         return f'postgresql+psycopg2://{user}:{password}@{host}:{port}/{name}'
 
     # ... (Tus bloques de MySQL y SQLite se quedan exactamente igual)
-    sqlite_name = os.environ.get('SQLITE_DB_NAME', 'oncc_sistema.db')
+    sqlite_name = os.environ.get('SQLITE_DB_NAME', 'oncc.db')
     return f'sqlite:///{os.path.join(basedir, sqlite_name)}'
 
 
