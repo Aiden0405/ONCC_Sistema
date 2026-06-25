@@ -69,7 +69,7 @@ def create_app(config_class=Config):
         from app.models.esquema_activo import ParroquiaActiva  # noqa: F401
         from app.models.esquema_activo import SensibilizacionActiva  # noqa: F401
         from app.models.divulgacion import Publicacion  # noqa: F401
-        from app.models.geomatica import MapaRegistro  # noqa: F401
+        from app.models.geomatica import MapaRiesgo  # noqa: F401
         from app.models.inventario import InventarioEquipo  # noqa: F401
         from app.models.reporte import ReporteTransaccional  # noqa: F401
         from app.models.visita_portal import VisitaPortal  # noqa: F401
@@ -90,8 +90,11 @@ def create_app(config_class=Config):
     from app.blueprints.core.controllers.roles import rol_gestionar_permisos as core_rol_gestionar_permisos
     from app.blueprints.core.controllers.roles import rol_index as core_rol_index
     from app.blueprints.core.controllers.roles import rol_nuevo as core_rol_nuevo
-    from app.blueprints.core.controllers.roles import rol_permiso_nuevo as core_permiso_nuevo
-    from app.blueprints.core.controllers.roles import rol_permisos_index as core_permisos_index
+    # Comenta la línea 93
+# from app.blueprints.core.controllers.roles import rol_permiso_nuevo as core_permiso_nuevo
+
+# Comenta la línea 94
+# from app.blueprints.core.controllers.roles import rol_permisos_index as core_permisos_index
     from app.blueprints.core.controllers.usuarios import usuario_editar as core_usuario_editar
     from app.blueprints.core.controllers.usuarios import usuario_eliminar as core_usuario_eliminar
     from app.blueprints.core.controllers.usuarios import usuario_index as core_usuario_index
@@ -142,8 +145,11 @@ def create_app(config_class=Config):
     app.add_url_rule('/admin/roles/nuevo', endpoint='rol.nuevo', view_func=core_rol_nuevo, methods=['GET', 'POST'])
     app.add_url_rule('/admin/roles/<int:rol_id>/editar', endpoint='rol.editar', view_func=core_rol_editar, methods=['GET', 'POST'])
     app.add_url_rule('/admin/roles/<int:rol_id>/eliminar', endpoint='rol.eliminar', view_func=core_rol_eliminar, methods=['POST'])
-    app.add_url_rule('/admin/roles/permisos', endpoint='rol.permisos_index', view_func=core_permisos_index)
-    app.add_url_rule('/admin/roles/permisos/nuevo', endpoint='rol.permiso_nuevo', view_func=core_permiso_nuevo, methods=['GET', 'POST'])
+    # Comenta la línea 148 que causó el error
+# app.add_url_rule('/admin/roles/permisos', endpoint='rol.permisos_index', view_func=core_permisos_index)
+
+# Si hay más líneas similares de 'add_url_rule' para los permisos viejos abajo, coméntalas también:
+# app.add_url_rule('/admin/roles/permisos/nuevo', endpoint='rol.permiso_nuevo', view_func=core_permiso_nuevo)
     app.add_url_rule('/admin/roles/<int:rol_id>/permisos', endpoint='rol.gestionar_permisos', view_func=core_rol_gestionar_permisos, methods=['GET', 'POST'])
 
     app.add_url_rule('/actividades/', endpoint='actividad.index', view_func=monitoreo_actividad_index)
@@ -180,7 +186,7 @@ def create_app(config_class=Config):
     def dashboard():
         from app.models.actividad import Actividad
         from app.models.divulgacion import Publicacion
-        from app.models.geomatica import MapaRegistro
+        from app.models.geomatica import MapaRiesgo
         from app.models.inventario import InventarioEquipo
         from app.models.reporte import ReporteTransaccional
 
@@ -195,12 +201,12 @@ def create_app(config_class=Config):
 
         modulos_operativos = {
             'inventario': InventarioEquipo.query.count(),
-            'mapas': MapaRegistro.query.count(),
+            'mapas': MapaRiesgo.query.count(),
             'reportes': ReporteTransaccional.query.count(),
             'actividades': total_actividades,
             'divulgacion': Publicacion.query.count(),
-            'divulgacion_publicadas': Publicacion.query.filter_by(estado='publicado').count(),
-            'divulgacion_borradores': Publicacion.query.filter_by(estado='borrador').count(),
+            'divulgacion_publicadas': Publicacion.query.filter_by(estado_publicacion='publicado').count(),
+            'divulgacion_borradores': Publicacion.query.filter_by(estado_publicacion='borrador').count(),
             'comunidades': 0,
             'formaciones': 0,
             'sensibilizaciones': 0,

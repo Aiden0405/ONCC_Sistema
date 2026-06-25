@@ -6,7 +6,7 @@ from app.models.usuario import Usuario
 from app.models.actividad import Actividad
 from app.models.bitacora import BitacoraTransaccion
 from app.models.divulgacion import Publicacion
-from app.models.geomatica import MapaRegistro
+from app.models.geomatica import MapaRiesgo
 from app.models.inventario import InventarioEquipo
 from app.models.esquema_activo import ActividadActiva
 from app.models.esquema_activo import ComunidadActiva

@@ -169,6 +169,16 @@
                         <i data-lucide="users" class="h-5 w-5 text-emerald-600 group-hover:scale-110 transition-transform"></i>
                     </div>
                 </a>
+
+                <a href="{{ url_for('rol.index') }}" class="group rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-blue-300 hover:bg-white dark:border-gray-700 dark:bg-gray-700/50 dark:hover:border-blue-800 dark:hover:bg-gray-700">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-semibold text-slate-900 dark:text-white">Roles y Permisos</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Matriz dinámica de control</p>
+                        </div>
+                        <i data-lucide="shield-alert" class="h-5 w-5 text-blue-600 group-hover:scale-110 transition-transform"></i>
+                    </div>
+                </a>
                 {% endif %}
 
                 <a href="{{ url_for('core.divulgacion_admin_index') }}" class="group rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-fuchsia-300 hover:bg-white dark:border-gray-700 dark:bg-gray-700/50 dark:hover:border-fuchsia-800 dark:hover:bg-gray-700">

@@ -87,16 +87,39 @@
                             {% endif %}
                         </td>
                         
-                        <td class="px-6 py-4 text-right whitespace-nowrap">
-                            <a href="{{ url_for('usuario.editar', usuario_id=u.id_usuario) }}" class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 dark:text-blue-300 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 transition-colors mr-2">
-                                <i data-lucide="edit" class="w-3.5 h-3.5 mr-1"></i> Editar
-                            </a>
-                            <form action="{{ url_for('usuario.eliminar', usuario_id=u.id_usuario) }}" method="post" class="inline" onsubmit="return confirm('¿Seguro que desea revocar el acceso a este usuario?');">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <button type="submit" class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 dark:text-red-300 dark:bg-red-900/20 dark:hover:bg-red-900/30 transition-colors">
-                                    <i data-lucide="trash-2" class="w-3.5 h-3.5 mr-1"></i> Eliminar
-                                </button>
-                            </form>
+                        <td class="px-6 py-4 text-right whitespace-nowrap space-x-1">
+                            {# 🛠️ ACCIÓN 1: CONTROL SEPARADO PARA EL BOTÓN "EDITAR" (Bloqueado el auto-cambio para Admin y Técnico) #}
+                            {% if current_user.id_rol|int == 1 or (current_user.id_rol|int == 2 and u.id_rol|int >= 2 and u.id_usuario|int != current_user.id_usuario|int) or (current_user.id_rol|int == 3 and u.id_rol|int >= 3 and u.id_usuario|int != current_user.id_usuario|int) %}
+                                <a href="{{ url_for('usuario.editar', usuario_id=u.id_usuario) }}" class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 dark:text-blue-300 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 transition-colors mr-1">
+                                    <i data-lucide="edit" class="w-3.5 h-3.5 mr-1"></i> Editar
+                                </a>
+                            {% endif %}
+
+                            {# 🛠️ ACCIÓN 2: CONTROL SEPARADO PARA EL BOTÓN "ELIMINAR" (Nadie se auto-elimina) #}
+                            {% if u.id_usuario|int != current_user.id_usuario|int %}
+                                {% if current_user.id_rol|int == 1 or (current_user.id_rol|int == 2 and u.id_rol|int >= 2) or (current_user.id_rol|int == 3 and u.id_rol|int >= 3) %}
+                                    <form action="{{ url_for('usuario.eliminar', usuario_id=u.id_usuario) }}" method="post" class="inline" onsubmit="return confirm('¿Seguro que desea revocar el acceso a este usuario?');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 dark:text-red-300 dark:bg-red-900/20 dark:hover:bg-red-900/30 transition-colors">
+                                            <i data-lucide="trash-2" class="w-3.5 h-3.5 mr-1"></i> Eliminar
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            {% endif %}
+
+                            {# 👤 ACCIÓN 3: INDICADOR DE TU PROPIA CUENTA CONECTADA #}
+                            {% if u.id_usuario|int == current_user.id_usuario|int %}
+                                <span class="text-xs font-medium text-blue-700 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-300 italic inline-flex items-center px-2 py-1 rounded border border-blue-100 dark:border-blue-800">
+                                    <i data-lucide="user" class="w-3.5 h-3.5 mr-1 text-blue-500"></i> Tu Cuenta
+                                </span>
+                            {% endif %}
+
+                            {# 🔒 ACCIÓN 4: INDICADOR DE FILA TOTALMENTE PROTEGIDA (Rangos superiores) #}
+                            {% if current_user.id_rol|int != 1 and u.id_rol|int < current_user.id_rol|int %}
+                                <span class="text-xs font-medium text-gray-400 dark:text-gray-500 italic inline-flex items-center bg-gray-50 dark:bg-gray-700/50 px-2 py-1 rounded">
+                                    <i data-lucide="lock" class="w-3.5 h-3.5 mr-1 text-gray-400"></i> Protegido por el Sistema
+                                </span>
+                            {% endif %}
                         </td>
                     </tr>
                     {% else %}

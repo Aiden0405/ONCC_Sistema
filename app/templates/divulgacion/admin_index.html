@@ -10,9 +10,12 @@
             <h1 class="text-2xl font-bold dark:text-white text-gray-800">Panel de Divulgación</h1>
             <p class="text-sm dark:text-gray-400 text-gray-500">Crear, revisar y publicar contenidos informativos destinados al portal público institucional</p>
         </div>
+        
+        {% if 'crear_divulgaciones' in permisos_activos or current_user.id_rol|int in (1, 2) %}
         <a href="{{ url_for('core.divulgacion_admin_nuevo') }}" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md shadow-sm hover:bg-green-700 transition-colors text-sm font-medium">
             <i data-lucide="plus" class="w-4 h-4 mr-2"></i> Nueva Publicación
         </a>
+        {% endif %}
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -58,7 +61,15 @@
                     {% for p in publicaciones %}
                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
                         <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-100 max-w-sm truncate">
-                            {{ p.titulo }}
+                            <div class="font-semibold text-gray-900 dark:text-white">{{ p.titulo }}</div>
+                            <div class="text-[11px] text-gray-400 dark:text-gray-500 mt-1 flex items-center gap-1">
+                                <i data-lucide="link" class="w-3 h-3 text-green-600 dark:text-green-400"></i>
+                                {% if p.id_divulgacion %}
+                                    <span class="text-green-700 dark:text-green-400 font-bold">Origen:</span> Despliegue Técnico #{{ p.id_divulgacion }}
+                                {% else %}
+                                    <span class="text-gray-400 dark:text-gray-500 italic">Sin despliegue (Inyección directa por BD)</span>
+                                {% endif %}
+                            </div>
                         </td>
                         
                         <td class="px-6 py-4 whitespace-nowrap">
@@ -101,18 +112,21 @@
                         
                         <td class="px-6 py-4 text-right whitespace-nowrap space-x-2">
                             {% if p.estado != 'publicado' %}
-                                <a href="{{ url_for('core.divulgacion_admin_editar', pub_id=p.id) }}" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300 transition-colors">
-                                    <i data-lucide="edit" class="w-3.5 h-3.5 mr-1"></i> Editar
-                                </a>
+                                {# 🛡️ CONTROL DE AUTORÍA EN INTERFAZ #}
+                                {% if current_user.id_rol|int in (1, 2) or p.id_usuario|int == current_user.id|int %}
+                                    <a href="{{ url_for('core.divulgacion_admin_editar', pub_id=p.id) }}" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300 transition-colors">
+                                        <i data-lucide="edit" class="w-3.5 h-3.5 mr-1"></i> Editar
+                                    </a>
 
-                                <form action="{{ url_for('core.divulgacion_admin_eliminar', pub_id=p.id) }}" method="post" class="inline" onsubmit="return confirm('¿Está seguro de que desea eliminar este borrador de forma permanente?');">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <button type="submit" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300 transition-colors">
-                                        <i data-lucide="trash-2" class="w-3.5 h-3.5 mr-1"></i> Eliminar
-                                    </button>
-                                </form>
+                                    <form action="{{ url_for('core.divulgacion_admin_eliminar', pub_id=p.id) }}" method="post" class="inline" onsubmit="return confirm('¿Está seguro de que desea eliminar este borrador de forma permanente?');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300 transition-colors">
+                                            <i data-lucide="trash-2" class="w-3.5 h-3.5 mr-1"></i> Eliminar
+                                        </button>
+                                    </form>
+                                {% endif %}
 
-                                {% if current_user.id_rol in [1, 2] %}
+                                {% if 'aprobar_divulgaciones' in permisos_activos or current_user.id_rol|int in (1, 2) %}
                                 <form action="{{ url_for('core.divulgacion_admin_aprobar', pub_id=p.id) }}" method="post" class="inline" onsubmit="return confirm('¿Desea aprobar y lanzar esta publicación al portal público?');">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-bold text-white bg-green-600 hover:bg-green-700 transition-colors shadow-sm">
@@ -120,13 +134,14 @@
                                     </button>
                                 </form>
                                 {% endif %}
+                                
                             {% else %}
                                 <div class="inline-flex items-center gap-2">
                                     <span class="text-xs font-medium text-gray-400 dark:text-gray-500 italic inline-flex items-center mr-2">
                                         <i data-lucide="check" class="w-3.5 h-3.5 mr-1 text-green-500"></i> Visible en Web
                                     </span>
 
-                                    {% if current_user.id_rol in [1, 2] %}
+                                    {% if 'aprobar_divulgaciones' in permisos_activos or current_user.id_rol|int in (1, 2) %}
                                         <form action="{{ url_for('core.divulgacion_admin_despublicar', pub_id=p.id) }}" method="post" class="inline" onsubmit="return confirm('¿Desea retirar esta publicación del portal público y volverla borrador?');">
                                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <button type="submit" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300 transition-colors">

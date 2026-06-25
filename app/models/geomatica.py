@@ -1,19 +1,20 @@
 from datetime import datetime
-
 from app import db
 
+class MapaRiesgo(db.Model): # Cambiamos el nombre de la clase a MapaRiesgo
+    __tablename__ = 'mapa_riesgo'
 
-class MapaRegistro(db.Model):
-	__tablename__ = 'mapas_registro'
+    # Ajuste de nombre de columna según el backup oficial
+    id_mapa_riesgo = db.Column(db.Integer, primary_key=True) 
+    
+    # Columnas que sí existen en la tabla oficial
+    id_actividad = db.Column(db.Integer, nullable=False)
+    tipo_actividad = db.Column(db.String(50), default='MAPA_RIESGO', nullable=False)
+    ruta_kml = db.Column(db.String(250), nullable=True)
+    ruta_imagen_mapa = db.Column(db.String(250), nullable=True)
+    
+    # Campo con valor por defecto según el backup
+    fecha_registro = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
 
-	id = db.Column(db.Integer, primary_key=True)
-	nombre = db.Column(db.String(150), nullable=False)
-	tipo_mapa = db.Column(db.String(40), nullable=False)  # riesgo, temperatura, precipitacion
-	archivo = db.Column(db.String(255), nullable=True)
-	estado = db.Column(db.String(20), nullable=False, default='borrador')
-	version = db.Column(db.String(30), nullable=False, default='v1.0')
-	cobertura = db.Column(db.String(120), nullable=False, default='Regional')
-	responsable = db.Column(db.String(120), nullable=False, default='Equipo Geomatica')
-	creado_en = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-	actualizado_en = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
-
+    # NOTA: Los campos (nombre, archivo, estado, version, cobertura, responsable, creado_en, actualizado_en)
+    # fueron eliminados porque NO existen en la tabla 'mapa_riesgo' del respaldo oficial.

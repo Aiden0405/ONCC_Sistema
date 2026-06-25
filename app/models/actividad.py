@@ -6,22 +6,28 @@ class Actividad(db.Model):
     __tablename__ = 'actividad'
     __table_args__ = {'extend_existing': True}
 
-    # 1. Campos REALES estrictos de tu Base de Datos Actual (21 tablas)
+    # 1. Campos REALES estrictos (Coinciden exactamente con tu \d actividad de Postgres)
     id_actividad = db.Column(db.Integer, primary_key=True)
     fecha_actividad = db.Column(db.Date, nullable=False)
     tipo_actividad = db.Column(db.String(50), nullable=False)
     id_comunidad = db.Column(db.Integer, db.ForeignKey('comunidad.id_comunidad'), nullable=False)
-    id_nivel = db.Column(db.Integer, db.ForeignKey('nivel.id_nivel'), nullable=False)
-    id_usuario = db.Column(db.Integer, db.ForeignKey('usuario.id_usuario'), nullable=True)
 
-    # 2. Sinónimos reales para que SQLAlchemy soporte las consultas viejas (.desc() y filtros)
+    # 2. Sinónimos reales para soporte de consultas antiguas
     id = synonym('id_actividad')
     fecha = synonym('fecha_actividad')
     actividad = synonym('tipo_actividad')
     creado_en = synonym('fecha_actividad')      
     actualizado_en = synonym('fecha_actividad') 
 
-    # 3. 🚨 SOLUCIÓN: Propiedades virtuales (Evita que SQLAlchemy busque campos inexistentes en Postgres)
+    # 3. Propiedades virtuales (Evitan que SQLAlchemy las busque en la DB, pero responden si el código las pide)
+    @property
+    def id_nivel(self):
+        return 1  # Retorna un valor por defecto seguro para evitar errores en vistas
+
+    @property
+    def id_usuario(self):
+        return None
+
     @property
     def fotos_archivos(self):
         return None

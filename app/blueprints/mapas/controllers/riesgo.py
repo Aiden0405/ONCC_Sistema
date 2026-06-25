@@ -7,13 +7,13 @@ from app import db
 from app.blueprints.mapas import mapas_bp
 from app.constants import ESTADOS_TRANSACCION
 from app.models.bitacora import BitacoraTransaccion
-from app.models.geomatica import MapaRegistro
+from app.models.geomatica import MapaRiesgo
 
 
 @mapas_bp.route('/geomatica/')
 @login_required
 def mapas_riesgo_index():
-    mapas = MapaRegistro.query.order_by(MapaRegistro.creado_en.desc()).all()
+    mapas = MapaRiesgo.query.order_by(MapaRiesgo.creado_en.desc()).all()
     return render_template('geomatica/carga_ssbc.html', cargas=mapas, estados_flujo=ESTADOS_TRANSACCION)
 
 
@@ -35,7 +35,7 @@ def procesar_archivo():
         tipo_mapa = request.form.get('tipo_mapa', 'riesgo').strip()
         cobertura = request.form.get('cobertura', 'Regional').strip()
 
-        mapa = MapaRegistro(
+        mapa = MapaRiesgo(
             nombre=f'Mapa {tipo_mapa.capitalize()} {datetime.utcnow().strftime("%Y-%m-%d")}',
             tipo_mapa=tipo_mapa,
             archivo=nombre_archivo,
@@ -63,7 +63,7 @@ def procesar_archivo():
 @mapas_bp.route('/geomatica/<int:mapa_id>/estado', methods=['POST'])
 @login_required
 def cambiar_estado(mapa_id):
-    mapa = MapaRegistro.query.get_or_404(mapa_id)
+    mapa = MapaRiesgo.query.get_or_404(mapa_id)
     nuevo_estado = request.form.get('estado', '').strip()
     if nuevo_estado not in ESTADOS_TRANSACCION:
         flash('Estado de flujo invalido.', 'error')
