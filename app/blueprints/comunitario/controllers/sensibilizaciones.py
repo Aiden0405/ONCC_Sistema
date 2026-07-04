@@ -18,8 +18,55 @@ from app.models.esquema_activo import (
 # 1. LISTAR Y REGISTRAR (GET y POST)
 # ==========================================
 
+def _asegurar_territorio_base():
+    estado = EstadoActivo.query.filter_by(nombre_estado='Lara').first()
+    if not estado:
+        estado = EstadoActivo(nombre_estado='Lara')
+        db.session.add(estado)
+        db.session.flush()
+
+    municipio = MunicipioActivo.query.filter_by(nombre_municipio='Iribarren', id_estado=estado.id_estado).first()
+    if not municipio:
+        municipio = MunicipioActivo(id_estado=estado.id_estado, nombre_municipio='Iribarren')
+        db.session.add(municipio)
+        db.session.flush()
+
+    parroquia = ParroquiaActiva.query.filter_by(nombre_parroquia='Catedral', id_municipio=municipio.id_municipio).first()
+    if not parroquia:
+        parroquia = ParroquiaActiva(id_municipio=municipio.id_municipio, nombre_parroquia='Catedral')
+        db.session.add(parroquia)
+        db.session.flush()
+
+    comunidad = ComunidadActiva.query.filter_by(nombre_comunidad='Comunidad General', id_parroquia=parroquia.id_parroquia).first()
+    if not comunidad:
+        comunidad = ComunidadActiva(id_parroquia=parroquia.id_parroquia, nombre_comunidad='Comunidad General')
+        db.session.add(comunidad)
+        db.session.flush()
+
+    nivel = NivelActivo.query.filter_by(nombre_nivel='Base').first()
+    if not nivel:
+        nivel = NivelActivo(nombre_nivel='Base', descripcion='Nivel base para registros iniciales')
+        db.session.add(nivel)
+        db.session.flush()
+
+    institucion = InstitucionActiva.query.filter_by(nombre_institucion='Institución General', id_comunidad=comunidad.id_comunidad).first()
+    if not institucion:
+        institucion = InstitucionActiva(
+            id_comunidad=comunidad.id_comunidad,
+            nombre_institucion='Institución General',
+            tipo_institucion='Comunitaria',
+            direccion_exacta='Sin dirección registrada',
+            numero_contacto='Sin contacto',
+            correo_electronico='sin-correo@oncc.local',
+        )
+        db.session.add(institucion)
+        db.session.flush()
+
+    return comunidad, nivel, institucion
+
+
 @comunitario_bp.route('/sensibilizaciones', methods=['GET', 'POST'])
-@login_required  
+@login_required
 def sensibilizaciones_index():
     form = SensibilizacionForm()
 
@@ -48,7 +95,7 @@ def sensibilizaciones_index():
 
             # 2. Registrar en la tabla 'sensibilizacion' (Hijo)
             nueva_sensibilizacion = Sensibilizacion(
-                nombre_sensivilizacion=campana_consolidada,
+                nombre_sensibilizacion=campana_consolidada,
                 id_actividad=nueva_actividad.id_actividad
             )
             db.session.add(nueva_sensibilizacion)
@@ -64,7 +111,7 @@ def sensibilizaciones_index():
     # 4. CONSULTA CON JOINs - LISTAR HISTORIAL
     historial = db.session.query(
         Sensibilizacion.id_sensibilizacion,
-        Sensibilizacion.nombre_sensivilizacion,
+        Sensibilizacion.nombre_sensibilizacion,
         Comunidad.nombre_comunidad,
         Actividad.fecha_actividad,
         Sensibilizacion.id_actividad,
@@ -77,10 +124,10 @@ def sensibilizaciones_index():
     # Procesar la lista para separar la campaña del vocero de forma limpia
     sensibilizaciones_procesadas = []
     for item in historial:
-        if "||" in item.nombre_sensivilizacion:
-            campana, vocero = item.nombre_sensivilizacion.split("||", 1)
+        if "||" in item.nombre_sensibilizacion:
+            campana, vocero = item.nombre_sensibilizacion.split("||", 1)
         else:
-            campana = item.nombre_sensivilizacion
+            campana = item.nombre_sensibilizacion
             vocero = "No asignado"
         
         sensibilizaciones_procesadas.append({
@@ -127,7 +174,7 @@ def sensibilizacion_editar(id_sensibilizacion):
         if id_comunidad_nueva:
             actividad.id_comunidad = int(id_comunidad_nueva)
 
-        sensibilizacion.nombre_sensivilizacion = f"{campana_nueva}||{vocero_nuevo}"
+        sensibilizacion.nombre_sensibilizacion = f"{campana_nueva}||{vocero_nuevo}"
 
         db.session.commit()
         flash('Sensibilización actualizada correctamente.', 'success')

@@ -10,9 +10,14 @@
             <h1 class="text-2xl font-bold dark:text-white text-gray-800">Gestión de Inventario de Equipos</h1>
             <p class="text-sm dark:text-gray-400 text-gray-500">Expediente, custodia y estatus operativo de equipos tecnológicos (EMAs, Pluviómetros, GPS)</p>
         </div>
-        <button onclick="limpiarErrorModal('modal-inventario'); document.getElementById('modal-inventario').classList.remove('hidden')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center shadow-sm transition-colors">
-            <i data-lucide="plus" class="mr-2 w-4 h-4"></i> Nuevo Equipo
-        </button>
+        <div class="flex gap-2">
+            <button onclick="exportarReporte()" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center shadow-sm transition-colors">
+                <i data-lucide="file-text" class="mr-2 w-4 h-4"></i> Exportar Reporte
+            </button>
+            <button onclick="limpiarErrorModal('modal-inventario'); document.getElementById('modal-inventario').classList.remove('hidden')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center shadow-sm transition-colors">
+                <i data-lucide="plus" class="mr-2 w-4 h-4"></i> Nuevo Equipo
+            </button>
+        </div>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -34,7 +39,7 @@
             <div>
                 <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400">Detalles de equipos</h3>
             </div>
-            <span class="text-xs text-gray-500 dark:text-gray-400">{{ inventario|length }} registro(s)</span>
+            <span id="contador-registros" class="text-xs text-gray-500 dark:text-gray-400">{{ inventario|length }} registro(s)</span>
         </div>
 
         <div class="overflow-x-auto">
@@ -50,10 +55,44 @@
                         <th class="px-6 py-3 hidden md:table-cell">Estado</th>
                         <th class="px-6 py-3 text-center">Acciones</th>
                     </tr>
+                    <tr class="bg-gray-50/50 dark:bg-gray-700/20">
+                        <th class="px-6 py-2">
+                            <input type="text" data-col="0" class="filtro-tabla w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="ID..." oninput="filtrarTabla()">
+                        </th>
+                        <th class="px-6 py-2">
+                            <input type="text" data-col="1" class="filtro-tabla w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="Nombre..." oninput="filtrarTabla()">
+                        </th>
+                        <th class="px-6 py-2 hidden md:table-cell">
+                            <input type="text" data-col="2" class="filtro-tabla w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="Ubicación..." oninput="filtrarTabla()">
+                        </th>
+                        <th class="px-6 py-2 hidden lg:table-cell">
+                            <input type="text" data-col="3" class="filtro-tabla w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="Responsable..." oninput="filtrarTabla()">
+                        </th>
+                        <th class="px-6 py-2 hidden sm:table-cell">
+                            <input type="text" data-col="4" class="filtro-tabla w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="Fecha..." oninput="filtrarTabla()">
+                        </th>
+                        <th class="px-6 py-2 hidden sm:table-cell">
+                            <select data-col="5" class="filtro-tabla w-full text-xs border rounded px-1 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" onchange="filtrarTabla()">
+                                <option value="">Condición</option>
+                                <option>Operativo</option>
+                                <option>Requiere Mantenimiento</option>
+                                <option>Dañado / Inoperativo</option>
+                            </select>
+                        </th>
+                        <th class="px-6 py-2 hidden md:table-cell">
+                            <select data-col="6" class="filtro-tabla w-full text-xs border rounded px-1 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" onchange="filtrarTabla()">
+                                <option value="">Estado</option>
+                                <option>Disponible</option>
+                                <option>En Uso (Asignado)</option>
+                                <option>En Mantenimiento</option>
+                            </select>
+                        </th>
+                        <th class="px-6 py-2"></th>
+                    </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
                     {% for inv in inventario %}
-                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                    <tr data-id="{{ inv.id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
                         <td class="px-6 py-4 font-mono font-bold text-green-700 dark:text-green-400">{{ inv.codigo }}</td>
                         <td class="px-6 py-4 font-medium">
                             <div class="flex items-center">
@@ -104,6 +143,11 @@
                         </td>
                     </tr>
                     {% endfor %}
+                    <tr id="fila-sin-resultados" class="hidden">
+                        <td colspan="8" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
+                            No se encontraron equipos que coincidan con los filtros aplicados.
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -419,6 +463,69 @@ function abrirModalActa(id) {
 function abrirModalEliminar(id) {
     document.getElementById('form-eliminar-equipo').action = "{{ url_for('inventario.eliminar', equipo_id=0) }}".replace('/0', '/' + id);
     document.getElementById('modal-eliminar-inventario').classList.remove('hidden');
+}
+
+function filtrarTabla() {
+    const inputs = document.querySelectorAll('.filtro-tabla');
+    const filas = document.querySelectorAll('tbody tr');
+    let visibles = 0;
+
+    filas.forEach(function(fila) {
+        if (fila.id === 'fila-sin-resultados') return;
+        if (fila.querySelector('td[colspan]')) return;
+
+        let mostrar = true;
+        inputs.forEach(function(input) {
+            const valor = input.value.toLowerCase().trim();
+            if (!valor) return;
+
+            const col = parseInt(input.dataset.col);
+            const celdas = fila.querySelectorAll('td');
+            if (col < celdas.length) {
+                const texto = celdas[col].textContent.toLowerCase().trim();
+                if (!texto.includes(valor)) {
+                    mostrar = false;
+                }
+            }
+        });
+
+        fila.style.display = mostrar ? '' : 'none';
+        if (mostrar) visibles++;
+    });
+
+    const sinResultados = document.getElementById('fila-sin-resultados');
+    if (sinResultados) {
+        sinResultados.classList.toggle('hidden', visibles > 0);
+    }
+
+    const contador = document.getElementById('contador-registros');
+    if (contador) {
+        contador.textContent = visibles + ' registro(s)';
+    }
+}
+
+function limpiarFiltros() {
+    document.querySelectorAll('.filtro-tabla').forEach(function(el) {
+        if (el.tagName === 'SELECT') {
+            el.selectedIndex = 0;
+        } else {
+            el.value = '';
+        }
+    });
+    filtrarTabla();
+}
+
+function exportarReporte() {
+    const filas = document.querySelectorAll('tbody tr[data-id]');
+    const ids = [];
+    filas.forEach(function(fila) {
+        if (fila.style.display !== 'none') {
+            ids.push(fila.dataset.id);
+        }
+    });
+    const baseUrl = "{{ url_for('inventario.reporte_inventario') }}";
+    const url = ids.length > 0 ? baseUrl + '?ids=' + ids.join(',') : baseUrl;
+    window.open(url, '_blank');
 }
 </script>
 {% endblock %}

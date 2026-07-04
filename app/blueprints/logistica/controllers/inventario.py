@@ -1,6 +1,6 @@
-from datetime import datetime
-
-from flask import current_app, flash, jsonify, redirect, render_template, request, url_for
+from datetime import datetime, date
+ 
+from flask import current_app, flash, jsonify, redirect, render_template, request, url_for, Response
 from flask_login import current_user, login_required
 
 from app import db
@@ -155,11 +155,180 @@ def eliminar(equipo_id):
     return redirect(url_for('inventario.index'))
 
 
+@logistica_bp.route('/inventario/reporte', methods=['GET'])
+@login_required
+def reporte_inventario():
+    ids = request.args.get('ids')
+    query = InventarioEquipo.query.order_by(InventarioEquipo.creado_en.desc())
+    if ids:
+        id_list = [int(x) for x in ids.split(',') if x.strip().isdigit()]
+        if id_list:
+            query = query.filter(InventarioEquipo.id.in_(id_list))
+    equipos = query.all()
+    import io, os
+    from reportlab.lib.pagesizes import letter
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib import colors
+    from reportlab.lib.units import inch
+
+    buf = io.BytesIO()
+
+    def footer_pagina(canvas, doc):
+        canvas.saveState()
+        margen_x = 0.75 * inch
+        ancho_pag = letter[0]
+        footer_y = 0.4 * inch
+        canvas.setStrokeColor(colors.HexColor('#d1d5db'))
+        canvas.setLineWidth(0.3)
+        canvas.line(margen_x, footer_y + 0.15*inch, ancho_pag - margen_x, footer_y + 0.15*inch)
+        canvas.setFont('Helvetica', 7)
+        canvas.setFillColor(colors.HexColor('#9ca3af'))
+        canvas.drawString(margen_x, footer_y - 2, 'Código: REG-INV-042 | Versión 2.1')
+        canvas.drawRightString(ancho_pag - margen_x, footer_y - 2, f'Página {doc.page}')
+        canvas.restoreState()
+
+    doc = SimpleDocTemplate(buf, pagesize=letter,
+                            title='Reporte de Inventario',
+                            topMargin=0.7*inch, bottomMargin=0.65*inch,
+                            leftMargin=0.75*inch, rightMargin=0.75*inch)
+    doc.onFirstPage = footer_pagina
+    doc.onLaterPages = footer_pagina
+    styles = getSampleStyleSheet()
+    ancho = letter[0] - 1.5*inch
+
+    estilo_titulo = ParagraphStyle('TituloActa', parent=styles['Title'],
+                                    fontSize=18, leading=22, textColor=colors.HexColor('#15803d'),
+                                    spaceAfter=2, alignment=1)
+    estilo_subtitulo = ParagraphStyle('SubActa', parent=styles['Normal'],
+                                      fontSize=10, leading=13, textColor=colors.HexColor('#6b7280'),
+                                      alignment=1, spaceAfter=4)
+    estilo_linea_titulo = ParagraphStyle('LineaTit', parent=styles['Normal'],
+                                          fontSize=6, textColor=colors.HexColor('#16a34a'), alignment=1)
+    estilo_info_label = ParagraphStyle('InfoLabel', parent=styles['Normal'],
+                                       fontSize=8, leading=10, textColor=colors.HexColor('#4b5563'))
+    estilo_info_valor = ParagraphStyle('InfoValor', parent=styles['Normal'],
+                                       fontSize=9, leading=11, textColor=colors.HexColor('#111827'))
+    estilo_tabla_titulo = ParagraphStyle('TabTit', parent=styles['Normal'],
+                                         fontSize=7, leading=9, textColor=colors.white, alignment=1)
+    estilo_tabla_celda = ParagraphStyle('TabCel', parent=styles['Normal'],
+                                        fontSize=7, leading=9, alignment=1)
+
+    verde = colors.HexColor('#16a34a')
+    verde_claro = colors.HexColor('#f0fdf4')
+    gris_borde = colors.HexColor('#d1d5db')
+
+    elementos = []
+
+    # === ENCABEZADO ===
+    logo_path = os.path.join(current_app.root_path, 'static', 'img', 'oncc_logo.png')
+    logo_celda = []
+    if os.path.exists(logo_path):
+        img = Image(logo_path, width=1.3*inch, height=0.5*inch)
+        logo_celda.append(img)
+    logo_celda.append(Spacer(1, 6))
+    logo_celda.append(Paragraph("<b>ONCC</b> - Región Nororiental",
+                     ParagraphStyle('LogoTxt', parent=styles['Normal'], fontSize=7, textColor=colors.grey)))
+
+    titulo_celda = [
+        Paragraph("REPORTE DE INVENTARIO DE EQUIPOS", estilo_titulo),
+        Paragraph("──────────────────────────────────────", estilo_linea_titulo),
+    ]
+
+    tbl_enc = Table([[logo_celda, titulo_celda]], colWidths=[2.0*inch, ancho-2.0*inch])
+    tbl_enc.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+        ('ALIGN', (1, 0), (1, 0), 'CENTER'),
+        ('TOPPADDING', (0, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+    ]))
+    elementos.append(tbl_enc)
+    elementos.append(Spacer(1, 0.25*inch))
+
+    # === INFORMACIÓN DEL REPORTE ===
+    fecha_reporte = date.today().strftime('%d de %B, %Y')
+    meses_es = {'January': 'Enero', 'February': 'Febrero', 'March': 'Marzo', 'April': 'Abril',
+                'May': 'Mayo', 'June': 'Junio', 'July': 'Julio', 'August': 'Agosto',
+                'September': 'Septiembre', 'October': 'Octubre', 'November': 'Noviembre', 'December': 'Diciembre'}
+    for eng, esp in meses_es.items():
+        fecha_reporte = fecha_reporte.replace(eng, esp)
+
+    def info_fila(label, valor, label2, valor2):
+        return [
+            Paragraph(f'<font size=8 color="#4b5563"><b>{label}</b></font>', estilo_info_label),
+            Paragraph(f'<font size=9 color="#111827">{valor}</font>', estilo_info_valor),
+            Paragraph(f'<font size=8 color="#4b5563"><b>{label2}</b></font>', estilo_info_label),
+            Paragraph(f'<font size=9 color="#111827">{valor2}</font>', estilo_info_valor),
+        ]
+
+    datos_reporte = [
+        info_fila('Total Equipos', str(len(equipos)), 'Fecha Emisión', fecha_reporte),
+        info_fila('Departamento', 'Tecnología e Información', 'Tipo Reporte', 'Inventario General'),
+    ]
+    t_datos = Table(datos_reporte, colWidths=[1.2*inch, 2.0*inch, 1.2*inch, 2.0*inch])
+    t_datos.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), verde_claro),
+        ('BOX', (0, 0), (-1, -1), 0.5, gris_borde),
+        ('INNERGRID', (0, 0), (-1, -1), 0.3, gris_borde),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('LEFTPADDING', (0, 0), (-1, -1), 8),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+    ]))
+    elementos.append(t_datos)
+    elementos.append(Spacer(1, 0.25*inch))
+
+    # === TABLA DE EQUIPOS ===
+    detalle_data = [
+        [Paragraph('<b>ID EQUIPO</b>', estilo_tabla_titulo),
+         Paragraph('<b>NOMBRE DEL EQUIPO</b>', estilo_tabla_titulo),
+         Paragraph('<b>UBICACIÓN</b>', estilo_tabla_titulo),
+         Paragraph('<b>RESPONSABLE</b>', estilo_tabla_titulo),
+         Paragraph('<b>ÚLT. MODIFICACIÓN</b>', estilo_tabla_titulo),
+         Paragraph('<b>CONDICIÓN</b>', estilo_tabla_titulo),
+         Paragraph('<b>ESTADO</b>', estilo_tabla_titulo)],
+    ]
+    for e in equipos:
+        detalle_data.append([
+            Paragraph(e.codigo, estilo_tabla_celda),
+            Paragraph(e.tipo_equipo, estilo_tabla_celda),
+            Paragraph(e.ubicacion, estilo_tabla_celda),
+            Paragraph(e.responsable, estilo_tabla_celda),
+            Paragraph(e.ultimo_mantenimiento.strftime('%d/%m/%Y') if e.ultimo_mantenimiento else 'N/D', estilo_tabla_celda),
+            Paragraph(e.estado_operativo, estilo_tabla_celda),
+            Paragraph(e.estado_flujo, estilo_tabla_celda),
+        ])
+
+    cols_tabla = [0.75*inch, 1.15*inch, 1.0*inch, 1.0*inch, 0.85*inch, 0.85*inch, 0.85*inch]
+    t_det = Table(detalle_data, colWidths=cols_tabla, repeatRows=1)
+    t_det.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), verde),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 7),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('GRID', (0, 0), (-1, -1), 0.5, gris_borde),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, verde_claro]),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+    ]))
+    elementos.append(Paragraph('<b>DETALLE DE EQUIPOS</b>', estilo_info_label))
+    elementos.append(Spacer(1, 4))
+    elementos.append(t_det)
+
+    doc.build(elementos)
+    buf.seek(0)
+    return Response(buf, mimetype='application/pdf',
+                    headers={'Content-Disposition': 'inline; filename=reporte_inventario.pdf'})
+
+
 @logistica_bp.route('/inventario/<int:equipo_id>/acta', methods=['GET'])
 @login_required
 def acta_responsabilidad(equipo_id):
     equipo = InventarioEquipo.query.get_or_404(equipo_id)
-    from flask import Response
     import io, os
     from reportlab.lib.pagesizes import letter
     from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image, HRFlowable
