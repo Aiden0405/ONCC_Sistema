@@ -40,7 +40,6 @@ def create_app(config_class=Config):
 
     # ==============================================================
     # REGISTRO DE CONTROLADORES (Blueprints)
-    # ¡Aquí es donde debes agregar los que faltaban!
     # ==============================================================
     from app.blueprints.comunitario import comunitario_bp
     from app.blueprints.core import core_bp
@@ -57,25 +56,25 @@ def create_app(config_class=Config):
 
     # Importar modelos para que las migraciones/CLI los detecten
     with app.app_context():
-        from app.models.actividad import Actividad  # noqa: F401
-        from app.models.bitacora import BitacoraTransaccion  # noqa: F401
-        from app.models.esquema_activo import ActividadActiva  # noqa: F401
-        from app.models.esquema_activo import ComunidadActiva  # noqa: F401
-        from app.models.esquema_activo import EstadoActivo  # noqa: F401
-        from app.models.esquema_activo import FormacionActiva  # noqa: F401
-        from app.models.esquema_activo import InstitucionActiva  # noqa: F401
-        from app.models.esquema_activo import NivelActivo  # noqa: F401
-        from app.models.esquema_activo import MunicipioActivo  # noqa: F401
-        from app.models.esquema_activo import ParroquiaActiva  # noqa: F401
-        from app.models.esquema_activo import SensibilizacionActiva  # noqa: F401
-        from app.models.divulgacion import Publicacion  # noqa: F401
-        from app.models.geomatica import MapaRegistro  # noqa: F401
-        from app.models.inventario import InventarioEquipo  # noqa: F401
-        from app.models.reporte import ReporteTransaccional  # noqa: F401
-        from app.models.visita_portal import VisitaPortal  # noqa: F401
-        from app.models.password_reset import PasswordReset  # noqa: F401
-        from app.models.usuario import Usuario  # noqa: F401
-        from app.models.role import Role, Permission  # noqa: F401
+        from app.models.actividad import Actividad  
+        from app.models.bitacora import BitacoraTransaccion  
+        from app.models.esquema_activo import ActividadActiva  
+        from app.models.esquema_activo import ComunidadActiva  
+        from app.models.esquema_activo import EstadoActivo  
+        from app.models.formacion import FormacionActiva  
+        from app.models.esquema_activo import InstitucionActiva  
+        from app.models.esquema_activo import NivelActivo  
+        from app.models.esquema_activo import MunicipioActivo  
+        from app.models.esquema_activo import ParroquiaActiva  
+        from app.models.sensibilizacion import SensibilizacionActiva
+        from app.models.divulgacion import Publicacion  
+        from app.models.geomatica import MapaRegistro  
+        from app.models.inventario import InventarioEquipo  
+        from app.models.reporte import ReporteTransaccional  
+        from app.models.visita_portal import VisitaPortal  
+        from app.models.password_reset import PasswordReset  
+        from app.models.usuario import Usuario
+        from app.models.role import Role, Permission  
 
     from app.blueprints.core.controllers.auth import login as core_login
     from app.blueprints.core.controllers.auth import logout as core_logout
@@ -97,31 +96,34 @@ def create_app(config_class=Config):
     from app.blueprints.core.controllers.usuarios import usuario_index as core_usuario_index
     from app.blueprints.core.controllers.usuarios import usuario_nuevo as core_usuario_nuevo
     from app.blueprints.core.controllers.usuarios import usuario_perfil as core_usuario_perfil
-    from app.blueprints.logistica.controllers.inventario import acta_responsabilidad as logistica_inventario_acta
     from app.blueprints.logistica.controllers.inventario import editar as logistica_inventario_editar
     from app.blueprints.logistica.controllers.inventario import eliminar as logistica_inventario_eliminar
     from app.blueprints.logistica.controllers.inventario import inventario_index as logistica_inventario_index
     from app.blueprints.logistica.controllers.inventario import nuevo as logistica_inventario_nuevo
-    from app.blueprints.logistica.controllers.inventario import reporte_inventario as logistica_inventario_reporte
-    from app.blueprints.logistica.controllers.tecnicos_campo import tecnicos_nuevo as logistica_tecnicos_nuevo
-    from app.blueprints.logistica.controllers.tecnicos_campo import tecnicos_editar as logistica_tecnicos_editar
-    from app.blueprints.logistica.controllers.tecnicos_campo import tecnicos_eliminar as logistica_tecnicos_eliminar
-    from app.blueprints.mapas.controllers.riesgo import cambiar_estado as mapas_cambiar_estado
-    from app.blueprints.mapas.controllers.riesgo import mapas_riesgo_index as mapas_index
-    from app.blueprints.mapas.controllers.riesgo import procesar_archivo as mapas_procesar_archivo
+    from app.blueprints.comunitario.controllers.sensibilizaciones import (
+        sensibilizaciones_index as comunitario_sensibilizaciones_index,
+        sensibilizacion_editar,
+        sensibilizacion_eliminar,
+        sensibilizacion_cambiar_estado
+    )
+    from app.blueprints.mapas.controllers.riesgo import mapas_riesgo_index as mapas_index, procesar_archivo as mapas_procesar_archivo, cambiar_estado as mapas_cambiar_estado
     from app.blueprints.monitoreo.controllers.actividades import actividades_cambiar_estado as monitoreo_actividad_cambiar_estado
     from app.blueprints.monitoreo.controllers.actividades import actividades_index as monitoreo_actividad_index
     from app.blueprints.monitoreo.controllers.actividades import nueva as monitoreo_actividad_nueva
     from app.blueprints.monitoreo.controllers.comparacion_mapas_climaticos import reporte_cambiar_estado as monitoreo_reporte_cambiar_estado
     from app.blueprints.monitoreo.controllers.comparacion_mapas_climaticos import comparacion_index as monitoreo_reporte_index
     from app.blueprints.monitoreo.controllers.comparacion_mapas_climaticos import nuevo as monitoreo_reporte_nuevo
-    from app.blueprints.comunitario.controllers.formaciones import formacion_cambiar_estado
-    from app.blueprints.comunitario.controllers.formaciones import formacion_nuevo
-    from app.blueprints.comunitario.controllers.formaciones import formaciones_index as comunitario_formaciones_index
-    from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizacion_cambiar_estado
-    from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizacion_nuevo
-    from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizaciones_index as comunitario_sensibilizaciones_index
-
+    from app.blueprints.comunitario.controllers.formaciones import (
+        formaciones_index as comunitario_formaciones_index,
+        formacion_nuevo,
+        formacion_cambiar_estado
+    )
+    from app.blueprints.comunitario.controllers.sensibilizaciones import (
+        sensibilizaciones_index as comunitario_sensibilizaciones_index,
+        sensibilizacion_editar,
+        sensibilizacion_eliminar,
+        sensibilizacion_cambiar_estado)
+    
     app.add_url_rule('/', endpoint='public.home', view_func=core_home)
     app.add_url_rule('/acerca', endpoint='public.acerca', view_func=core_acerca)
     app.add_url_rule('/servicios', endpoint='public.servicios', view_func=core_servicios)
@@ -133,8 +135,9 @@ def create_app(config_class=Config):
     app.add_url_rule('/formaciones', endpoint='formacion.index', view_func=comunitario_formaciones_index)
     app.add_url_rule('/formaciones/nuevo', endpoint='formacion.nuevo', view_func=formacion_nuevo, methods=['POST'])
     app.add_url_rule('/formaciones/<int:formacion_id>/estado', endpoint='formacion.cambiar_estado', view_func=formacion_cambiar_estado, methods=['POST'])
-    app.add_url_rule('/sensibilizaciones', endpoint='sensibilizacion.index', view_func=comunitario_sensibilizaciones_index)
-    app.add_url_rule('/sensibilizaciones/nuevo', endpoint='sensibilizacion.nuevo', view_func=sensibilizacion_nuevo, methods=['POST'])
+    app.add_url_rule('/sensibilizaciones', endpoint='sensibilizacion.index', view_func=comunitario_sensibilizaciones_index, methods=['GET', 'POST'])
+    app.add_url_rule('/sensibilizaciones/editar/<int:id_sensibilizacion>', endpoint='sensibilizacion.editar', view_func=sensibilizacion_editar, methods=['POST'])
+    app.add_url_rule('/sensibilizaciones/eliminar/<int:id_sensibilizacion>', endpoint='sensibilizacion.eliminar', view_func=sensibilizacion_eliminar, methods=['POST'])
     app.add_url_rule('/sensibilizaciones/<int:sensibilizacion_id>/estado', endpoint='sensibilizacion.cambiar_estado', view_func=sensibilizacion_cambiar_estado, methods=['POST'])
 
     app.add_url_rule('/admin/usuarios/', endpoint='usuario.index', view_func=core_usuario_index)
@@ -158,12 +161,7 @@ def create_app(config_class=Config):
     app.add_url_rule('/inventario/', endpoint='inventario.index', view_func=logistica_inventario_index)
     app.add_url_rule('/inventario/nuevo', endpoint='inventario.nuevo', view_func=logistica_inventario_nuevo, methods=['POST'])
     app.add_url_rule('/inventario/<int:equipo_id>/editar', endpoint='inventario.editar', view_func=logistica_inventario_editar, methods=['POST'])
-    app.add_url_rule('/inventario/<int:equipo_id>/acta', endpoint='inventario.acta_responsabilidad', view_func=logistica_inventario_acta)
     app.add_url_rule('/inventario/<int:equipo_id>/eliminar', endpoint='inventario.eliminar', view_func=logistica_inventario_eliminar, methods=['POST'])
-    app.add_url_rule('/inventario/reporte', endpoint='inventario.reporte_inventario', view_func=logistica_inventario_reporte)
-    app.add_url_rule('/tecnicos-campo/nuevo', endpoint='logistica.tecnicos_nuevo', view_func=logistica_tecnicos_nuevo, methods=['POST'])
-    app.add_url_rule('/tecnicos-campo/<int:tecnico_id>/editar', endpoint='logistica.tecnicos_editar', view_func=logistica_tecnicos_editar, methods=['POST'])
-    app.add_url_rule('/tecnicos-campo/<int:tecnico_id>/eliminar', endpoint='logistica.tecnicos_eliminar', view_func=logistica_tecnicos_eliminar, methods=['POST'])
 
     app.add_url_rule('/geomatica/', endpoint='geomatica.index', view_func=mapas_index)
     app.add_url_rule('/geomatica/procesar', endpoint='geomatica.procesar_archivo', view_func=mapas_procesar_archivo, methods=['POST'])
