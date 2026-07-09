@@ -17,18 +17,9 @@
         </p>
     </div>
 
-    <div class="w-full h-64 rounded-2xl flex flex-col items-center justify-center space-y-2 shadow-inner border
-        {% if publicacion.prioridad and publicacion.prioridad >= 8 %} bg-red-950 text-red-200 border-red-900
-        {% elif publicacion.prioridad and publicacion.prioridad >= 5 %} bg-orange-900 text-orange-100 border-orange-800
-        {% else %} bg-emerald-50 text-emerald-700/40 border-emerald-100 {% endif %}">
-        
-        {% if publicacion.prioridad and publicacion.prioridad >= 8 %}
-            <i data-lucide="alert-octagon" class="w-16 h-16 text-red-500 animate-pulse"></i>
-            <span class="text-xs font-black uppercase tracking-[0.2em] text-red-400">ALERTA CLIMÁTICA ACTIVA EN EL TERRITORIO</span>
-        {% else %}
-            <i data-lucide="layers" class="w-16 h-16"></i>
-            <span class="text-xs font-medium uppercase tracking-[0.2em] {% if publicacion.prioridad and publicacion.prioridad >= 5 %} text-orange-300 {% else %} text-emerald-800/60 {% endif %}">Observatorio Nacional de la Crisis Climática</span>
-        {% endif %}
+    <div class="w-full h-64 rounded-2xl bg-emerald-50 border border-emerald-100 flex flex-col items-center justify-center text-emerald-700/40 space-y-2 shadow-inner">
+        <i data-lucide="layers" class="w-16 h-16"></i>
+        <span class="text-xs font-medium uppercase tracking-[0.2em] text-emerald-800/60">Observatorio Nacional de la Crisis Climática</span>
     </div>
 
     <div class="bg-white rounded-2xl border border-gray-200 p-6 md:p-8 shadow-sm space-y-6">
