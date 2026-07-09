@@ -35,17 +35,8 @@ class GestorSesion:
         pr = PasswordReset.query.filter_by(token=token).first()
         if not pr or not pr.is_valid():
             return False
-        
-        # CORRECCIÓN: Si pr.usuario actúa como una lista, agarramos el primer elemento [0]
-        # Si no es una lista sino un objeto directo, intentamos usarlo normal
-        try:
-            user = pr.usuario[0] if isinstance(pr.usuario, list) else pr.usuario
-        except TypeError:
-            user = pr.usuario
-
-        if user:
-            user.set_password(nueva_password)
-            pr.usado = True
-            db.session.commit()
-            return True
-        return False
+        user = pr.usuario
+        user.set_password(nueva_password)
+        pr.usado = True
+        db.session.commit()
+        return True

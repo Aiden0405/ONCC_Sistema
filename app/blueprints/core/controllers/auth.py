@@ -42,6 +42,7 @@ def login():
             return render_template('auth/login.html', form=form)
 
         if usuario.check_password(password):
+            # Use gestor to create session via Flask-Login
             gestor.iniciar_sesion(usuario)
             next_page = request.args.get('next') or form.next.data
             if next_page and is_safe_url(next_page):
@@ -68,17 +69,11 @@ def recuperar_contrasena():
     if form.validate_on_submit():
         correo = (form.correo.data or '').strip().lower()
         token = gestor.solicitar_recuperacion(correo)
-        
         if token:
-            # [MODO DEFENSIVO / DESARROLLADOR]
-            # Imprime el enlace seguro en tu PowerShell para la demostración en vivo.
-            print(f"\n" + "="*60)
-            print(f"[ONCC - SEGURIDAD] ENLACE DE RECUPERACIÓN GENERADO:")
-            print(f"http://127.0.0.1:5000/auth/restablecer/{token}")
-            print("="*60 + "\n")
-
-        # Mensaje seguro único para evitar enumeración de usuarios en la interfaz pública
-        flash('Si el correo institucional se encuentra registrado, recibirá un enlace de recuperación en breve.', 'info')
+            # En entorno real se enviaría por correo; aquí mostramos mensaje informativo
+            flash(f'Se ha generado un token de recuperación (temporal): {token}', 'info')
+        else:
+            flash('Si el correo existe, se ha enviado un enlace de recuperación.', 'info')
         return redirect(url_for('core.login'))
 
     return render_template('auth/recuperar.html', form=form)
@@ -90,7 +85,7 @@ def restablecer_contrasena(token):
     if form.validate_on_submit():
         pwd = form.password.data or ''
         if gestor.confirmar_restauracion(token, pwd):
-            flash('Contraseña restablecida correctamente. Ya puedes iniciar sesión.', 'success')
+            flash('Contraseña restablecida. Ya puedes iniciar sesión.', 'success')
             return redirect(url_for('core.login'))
-        flash('El enlace es inválido o ha expirado.', 'error')
+        flash('Token inválido o expirado.', 'error')
     return render_template('auth/reset_password.html', form=form)

@@ -32,16 +32,14 @@
                 </h3>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {# 🛡️ BLINDAJE: Nombre limitado a 80 caracteres max #}
                     <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Nombre de Usuario completo</label>
-                        <input type="text" name="nombre_usuario" autocomplete="new-username" maxlength="80" value="{{ usuario.nombre_usuario if usuario else '' }}" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: Alcides Rodríguez" required />
+                        <input type="text" name="nombre_usuario" autocomplete="new-username" value="{{ usuario.nombre_usuario if usuario else '' }}" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: Alcides Rodríguez" required />
                     </div>
 
-                    {# 🛡️ BLINDAJE: Correo limitado a 100 caracteres max #}
                     <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Correo Electrónico</label>
-                        <input type="email" name="correo" autocomplete="new-email" maxlength="100" value="{{ usuario.correo if usuario else '' }}" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none {% if usuario %}bg-gray-50 dark:bg-gray-700/50 cursor-not-allowed text-gray-400 dark:text-gray-500{% endif %}" {% if usuario %}readonly{% endif %} placeholder="usuario@oncc.gob.ve" required />
+                        <input type="email" name="correo" autocomplete="new-email" value="{{ usuario.correo if usuario else '' }}" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none {% if usuario %}bg-gray-50 dark:bg-gray-700/50 cursor-not-allowed text-gray-400 dark:text-gray-500{% endif %}" {% if usuario %}readonly{% endif %} placeholder="usuario@oncc.gob.ve" required />
                     </div>
 
                     <div class="space-y-1">
@@ -49,9 +47,7 @@
                         <select name="id_rol" {% if es_perfil %}disabled{% endif %} class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none {% if es_perfil %}bg-gray-50 dark:bg-gray-700/50 cursor-not-allowed text-gray-400 dark:text-gray-500{% endif %}">
                             <option value="" disabled {% if not usuario %}selected{% endif %}>Seleccione nivel de acceso...</option>
                             {% for r in roles %}
-                                {% if current_user.id_rol|int == 1 or r.id_rol|int >= current_user.id_rol|int %}
-                                    <option value="{{ r.id_rol }}" {% if usuario and usuario.id_rol == r.id_rol %}selected{% endif %}>{{ r.nombre_rol }}</option>
-                                {% endif %}
+                                <option value="{{ r.id_rol }}" {% if usuario and usuario.id_rol == r.id_rol %}selected{% endif %}>{{ r.nombre_rol }}</option>
                             {% endfor %}
                         </select>
                         {% if es_perfil and usuario %}
@@ -60,20 +56,8 @@
                     </div>
 
                     <div class="space-y-1">
-                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estado de la Cuenta</label>
-                        <select name="estatus" {% if es_perfil %}disabled{% endif %} class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none {% if es_perfil %}bg-gray-50 dark:bg-gray-700/50 cursor-not-allowed text-gray-400 dark:text-gray-500{% endif %}">
-                            <option value="1" {% if not usuario or usuario.estatus %}selected{% endif %}>Activo (Acceso Autorizado)</option>
-                            <option value="0" {% if usuario and not usuario.estatus %}selected{% endif %}>Inactivo (Acceso Suspendido)</option>
-                        </select>
-                        {% if es_perfil and usuario %}
-                            <input type="hidden" name="estatus" value="{{ '1' if usuario.estatus else '0' }}">
-                        {% endif %}
-                    </div>
-
-                    {# 🛡️ BLINDAJE: Contraseña limitada a 64 caracteres max en cliente #}
-                    <div class="space-y-1 md:col-span-2">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Contraseña de Autenticación</label>
-                        <input type="password" name="password" autocomplete="new-password" maxlength="64" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" {% if not usuario and not es_perfil %}required{% endif %} placeholder="••••••••" />
+                        <input type="password" name="password" autocomplete="new-password" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" {% if not usuario and not es_perfil %}required{% endif %} placeholder="••••••••" />
                         <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-1 italic">
                             {% if usuario or es_perfil %}Dejar este campo vacío si no desea modificar la contraseña actual.{% else %}Defina la contraseña inicial de resguardo militar o civil.{% endif %}
                         </p>

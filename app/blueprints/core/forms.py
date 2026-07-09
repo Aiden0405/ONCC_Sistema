@@ -1,6 +1,7 @@
 from flask_wtf import FlaskForm
-from wtforms import HiddenField, PasswordField, SelectField, StringField, TextAreaField, IntegerField
-from wtforms.validators import DataRequired, Email, Length, Optional, AnyOf, NumberRange
+from wtforms import HiddenField, PasswordField, SelectField, StringField, TextAreaField
+from wtforms.validators import DataRequired, Email, Length, Optional, AnyOf
+
 
 class LoginForm(FlaskForm):
     correo = StringField(
@@ -31,9 +32,8 @@ class PublicacionForm(FlaskForm):
             ('informe', 'Informe'),
             ('resumen', 'Resumen'),
             ('noticia', 'Noticia'),
-            ('alerta', 'Alerta Climática'),
         ],
-        validators=[DataRequired(), AnyOf(['boletin', 'informe', 'resumen', 'noticia', 'alerta'])],
+        validators=[DataRequired(), AnyOf(['boletin', 'informe', 'resumen', 'noticia'])],
         default='boletin',
     )
     titulo = StringField(
@@ -57,16 +57,4 @@ class PublicacionForm(FlaskForm):
         ],
         validators=[DataRequired(), AnyOf(['borrador', 'publicado', 'archivado'])],
         default='borrador',
-    )
-
-    # Campos transaccionales vinculados
-    id_divulgacion = SelectField(
-        'Monitoreo / Actividad de Origen',
-        coerce=int,
-        validators=[DataRequired(message='Debe seleccionar un monitoreo de origen.')]
-    )
-    prioridad = IntegerField(
-        'Prioridad de Alerta (1-10)',
-        validators=[DataRequired(), NumberRange(min=1, max=10)],
-        default=1
     )

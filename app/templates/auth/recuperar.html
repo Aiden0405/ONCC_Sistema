@@ -1,111 +1,48 @@
-<!DOCTYPE html>
-<html lang="es" class="light">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recuperar Contraseña - ONCC</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        green: { 500: '#22c55e', 600: '#16a34a', 700: '#15803d' }
-                    }
-                }
-            }
-        }
-    </script>
-    <script>
-        (function() {
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
-        })();
-    </script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-</head>
-<body class="bg-gray-100 dark:bg-gray-900 min-h-screen flex items-center justify-center font-sans transition-colors duration-300">
-    
-    <div class="fixed top-6 right-6">
-        <button id="theme-toggle" class="p-3 rounded-full bg-white dark:bg-gray-800 shadow-md border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-yellow-400 hover:scale-110 transition-all">
-            <i id="theme-icon" data-lucide="moon"></i>
-        </button>
-    </div>
+{% extends 'base.html' %}
 
-    <div class="max-w-md w-full mx-4 bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-100 dark:border-gray-700 transition-colors duration-300">
-        
-        <a href="{{ url_for('auth.login') }}" class="inline-flex items-center text-sm font-medium text-gray-500 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400 transition-colors mb-6">
-            <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i> Volver al Acceso
-        </a>
+{% block title %}Recuperar Contraseña - ONCC{% endblock %}
 
-        <div class="flex flex-col items-center mb-6">
-            <div class="w-16 h-16 rounded-2xl bg-green-600 flex items-center justify-center mb-4 shadow-lg shadow-green-500/20">
-                <i data-lucide="shield-question" class="text-white w-8 h-8"></i>
-            </div>
-            <h2 class="text-2xl font-bold text-gray-800 dark:text-white text-center">Recuperación de Acceso</h2>
-            <p class="text-sm text-gray-500 dark:text-gray-400 text-center mt-2 leading-relaxed">
-                Ingresa tu correo institucional. Si está registrado en el sistema, recibirás las instrucciones para restablecer tu contraseña.
-            </p>
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div class="flex items-center justify-between mb-2">
+        <div>
+            <h1 class="text-2xl font-bold dark:text-white text-gray-800">Recuperar Contraseña</h1>
+            <p class="text-sm dark:text-gray-400 text-gray-500">Pantalla informativa alineada con el estilo de los módulos del sistema</p>
         </div>
-        
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="mb-6 p-4 rounded-xl text-sm text-center font-medium {% if category == 'error' %}bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400{% else %}bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400{% endif %}">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        <form method="POST" class="space-y-5">
-            {{ form.hidden_tag() }}
-            <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2 ml-1">Correo Institucional</label>
-                <div class="relative">
-                    <i data-lucide="mail" class="absolute left-3 top-3 w-5 h-5 text-gray-400"></i>
-                    {{ form.correo(class_="block w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent dark:text-white transition-all outline-none", placeholder="ejemplo@oncc.gob.ve") }}
-                </div>
-                {% if form.correo.errors %}
-                    <p class="mt-2 text-xs text-red-500">{{ form.correo.errors[0] }}</p>
-                {% endif %}
-            </div>
-
-            <button type="submit" class="w-full flex items-center justify-center py-3 px-4 rounded-xl shadow-lg shadow-green-600/20 text-white bg-green-600 hover:bg-green-700 active:scale-[0.98] transition-all font-bold tracking-wide">
-                <span>Solicitar Recuperación</span>
-                <i data-lucide="send" class="ml-2 w-4 h-4"></i>
-            </button>
-        </form>
+        <a href="{{ url_for('auth.login') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white transition-colors flex items-center">
+            <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i> Volver
+        </a>
     </div>
 
-    <script>
-        const themeToggleBtn = document.getElementById('theme-toggle');
-        const themeIcon = document.getElementById('theme-icon');
-        const htmlElement = document.documentElement;
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+        <div class="p-8 space-y-6">
+            <div>
+                <h3 class="text-sm font-bold uppercase tracking-wide mb-1 text-green-700 dark:text-green-400">Recuperación de acceso</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Introduce tu correo institucional. Esta función es un placeholder y no enviará correo todavía.</p>
+            </div>
 
-        function syncThemeUI() {
-            if (htmlElement.classList.contains('dark')) {
-                themeIcon.setAttribute('data-lucide', 'sun');
-            } else {
-                themeIcon.setAttribute('data-lucide', 'moon');
-            }
-            if (window.lucide) lucide.createIcons();
-        }
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="p-4 rounded-lg text-sm font-medium border {% if category == 'error' %}bg-red-50 border-red-100 text-red-700 dark:bg-red-900/20 dark:border-red-900/30 dark:text-red-300{% else %}bg-green-50 border-green-100 text-green-700 dark:bg-green-900/20 dark:border-green-900/30 dark:text-green-300{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
 
-        syncThemeUI();
+            <form method="post" class="space-y-5">
+                {{ form.hidden_tag() }}
+                <div>
+                    <label class="block text-xs font-semibold uppercase mb-1 text-gray-600 dark:text-gray-400">Correo institucional</label>
+                    {{ form.correo(class_="w-full border rounded-md p-2 text-sm focus:border-green-500 bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white", placeholder="ejemplo@oncc.gob.ve") }}
+                </div>
 
-        themeToggleBtn.addEventListener('click', () => {
-            htmlElement.classList.toggle('dark');
-            localStorage.setItem('theme', htmlElement.classList.contains('dark') ? 'dark' : 'light');
-            syncThemeUI();
-        });
-
-        lucide.createIcons();
-    </script>
-</body>
-</html>
+                <div class="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-700">
+                    <button type="submit" class="px-6 py-2 bg-green-600 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-green-700 transition-colors">Solicitar recuperación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
