@@ -80,17 +80,14 @@
             </a>
             {% endif %}
 
-            {# BLOQUE OPERACIONES: Unificado con bypass numérico estricto para roles 1 y 2 #}
-            {% if 'crear_divulgaciones' in permisos_activos or 'aprobar_divulgaciones' in permisos_activos or current_user.id_rol|int in (1, 2) %}
-            <p class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">Operaciones</p>
+            <p class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">Comunitario</p>
 
+            {# Divulgación queda aquí porque comparte el flujo comunitario y de difusión pública #}
+            {% if 'crear_divulgaciones' in permisos_activos or 'aprobar_divulgaciones' in permisos_activos or current_user.id_rol|int in (1, 2) %}
             <a href="{{ url_for('core.divulgacion_admin_index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
                 <i data-lucide="newspaper" class="mr-3 w-5 h-5 flex-shrink-0"></i>
                 <span class="sidebar-text whitespace-nowrap">Divulgación</span>
             </a>
-            {% endif %}
-
-            <p class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">Comunitario</p>
 
             <a href="{{ url_for('formacion.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
                 <i data-lucide="graduation-cap" class="mr-3 w-5 h-5 flex-shrink-0"></i>
@@ -101,6 +98,7 @@
                 <i data-lucide="megaphone" class="mr-3 w-5 h-5 flex-shrink-0"></i>
                 <span class="sidebar-text whitespace-nowrap">Sensibilizaciones</span>
             </a>
+            {% endif %}
 
             <p class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">Mapas</p>
 
@@ -109,21 +107,11 @@
                 <span class="sidebar-text whitespace-nowrap">Mapas de Riesgo</span>
             </a>
 
-            <a href="{{ url_for('mapas.mapas_climaticos_index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
-                <i data-lucide="cloud" class="mr-3 w-5 h-5 flex-shrink-0"></i>
-                <span class="sidebar-text whitespace-nowrap">Mapas Climáticos</span>
-            </a>
-
             <p class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">Monitoreo</p>
 
             <a href="{{ url_for('actividad.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
                 <i data-lucide="clipboard-list" class="mr-3 w-5 h-5 flex-shrink-0"></i>
                 <span class="sidebar-text whitespace-nowrap">Tabla de Actividades</span>
-            </a>
-
-            <a href="{{ url_for('reporte.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
-                <i data-lucide="bar-chart-3" class="mr-3 w-5 h-5 flex-shrink-0"></i>
-                <span class="sidebar-text whitespace-nowrap">Comparación de Mapas Climáticos</span>
             </a>
 
             <p class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">Logística</p>

@@ -11,9 +11,11 @@ from sqlalchemy.exc import OperationalError
 
 from app import db
 from app.blueprints.core import core_bp
+from app.models.actividad import Actividad
 from app.models.divulgacion import Publicacion
 from app.models.geomatica import MapaRiesgo
 from app.models.visita_portal import VisitaPortal
+from app.utils.authorization import current_permission_names, current_role_id, has_permission, is_superuser
 
 
 # 🛠️ FUNCIÓN AUXILIAR DE SEGURIDAD DINÁMICA (RBAC) CON BYPASS JERÁRQUICO
@@ -24,17 +26,32 @@ def verificar_permiso_dinamico(nombre_permiso):
     """
     if not current_user.is_authenticated:
         abort(403)
-        
-    # Superusuario (1) y Administrador (2) tienen bypass por jerarquía
-    if int(current_user.id_rol) in (1, 2):
+
+    if is_superuser():
         return True
-        
-    # Mapeo dinámico exclusivo para el rol Técnico u otros roles operativos
-    permisos_del_rol = [p.nombre_modulo for p in current_user.role.permissions]
-    
-    if nombre_permiso not in permisos_del_rol:
+
+    if not has_permission(nombre_permiso):
         flash('No posee privilegios institucionales para ejecutar esta acción.', 'error')
         abort(403)
+
+
+def _construir_opciones_actividad():
+    actividades = Actividad.query.order_by(Actividad.id_actividad.desc()).limit(300).all()
+    return [(a.id_actividad, f"#{a.id_actividad} - {a.tipo_actividad}") for a in actividades]
+
+
+def _preparar_formulario_publicacion(form, seleccionado=None):
+    form.id_divulgacion.choices = _construir_opciones_actividad()
+
+    if not form.id_divulgacion.choices:
+        return False
+
+    if seleccionado is not None:
+        ids = {opcion_id for opcion_id, _ in form.id_divulgacion.choices}
+        if seleccionado not in ids:
+            form.id_divulgacion.choices.append((seleccionado, f"#{seleccionado} - Actividad existente"))
+
+    return True
 
 
 def _registrar_visita_mensual():
@@ -61,7 +78,7 @@ def home():
     if not current_user.is_authenticated:
         cant_publicados = Publicacion.query.filter_by(estado_publicacion='publicado').count()
     else:
-        rol_id_actual = int(current_user.id_rol)
+        rol_id_actual = current_role_id()
         usuario_id_actual = int(current_user.get_id())
 
         if rol_id_actual == 3:  # Técnico operativo
@@ -105,7 +122,8 @@ def home():
 def divulgacion_detalle(pub_id):
     # 🌟 CORREGIDO: Se ajustó a las columnas oficiales de la Base de Datos
     publicacion = Publicacion.query.filter_by(id_publicacion=pub_id, estado_publicacion='publicado').first_or_404()
-    return render_template('public/divulgacion_detalle.html', publicacion=publicacion)
+    actividad_vinculada = Actividad.query.get(publicacion.id_divulgacion) if publicacion.id_divulgacion else None
+    return render_template('public/divulgacion_detalle.html', publicacion=publicacion, actividad_vinculada=actividad_vinculada)
 
 
 @core_bp.route('/acerca')
@@ -131,12 +149,12 @@ def contacto():
 @login_required
 def divulgacion_admin_index():
     usuario_id_actual = int(current_user.get_id())
-    rol_id_actual = int(current_user.id_rol)
-    
-    permisos_del_rol = [p.nombre_modulo for p in current_user.role.permissions]
+    rol_id_actual = current_role_id()
+
+    permisos_del_rol = current_permission_names()
 
     # VALIDACIÓN JERÁRQUICA
-    if 'aprobar_divulgaciones' not in permisos_del_rol and rol_id_actual not in (1, 2):
+    if 'aprobar_divulgaciones' not in permisos_del_rol and not is_superuser():
         # 🌟 CORREGIDO: 'estado' por 'estado_publicacion'
         cant_borradores = Publicacion.query.filter_by(id_usuario=usuario_id_actual, estado_publicacion='borrador').count()
         cant_publicados = Publicacion.query.filter_by(id_usuario=usuario_id_actual, estado_publicacion='publicado').count()
@@ -170,9 +188,14 @@ def divulgacion_admin_nuevo():
     verificar_permiso_dinamico('crear_divulgaciones')
     
     form = PublicacionForm()
+    hay_origenes = _preparar_formulario_publicacion(form)
+    if not hay_origenes:
+        flash('No hay actividades disponibles para vincular una publicación. Registre primero una actividad.', 'error')
+        return redirect(url_for('core.divulgacion_admin_index'))
+
     if form.validate_on_submit():
         usuario_id_actual = int(current_user.get_id())
-        permisos_del_rol = [p.nombre_modulo for p in current_user.role.permissions]
+        permisos_del_rol = current_permission_names()
 
         pub = Publicacion(
             tipo=form.tipo.data,
@@ -185,7 +208,7 @@ def divulgacion_admin_nuevo():
             id_divulgacion=form.id_divulgacion.data
         )
         
-        if 'aprobar_divulgaciones' in permisos_del_rol or int(current_user.id_rol) in (1, 2):
+        if 'aprobar_divulgaciones' in permisos_del_rol or is_superuser():
             pub.estado_publicacion = form.estado.data
             if form.estado.data == 'publicado':
                 pub.publicado_en = datetime.utcnow()
@@ -208,8 +231,8 @@ def divulgacion_admin_editar(pub_id):
     verificar_permiso_dinamico('crear_divulgaciones')
     
     pub = Publicacion.query.get_or_404(pub_id)
-    permisos_del_rol = [p.nombre_modulo for p in current_user.role.permissions]
-    rol_id_actual = int(current_user.id_rol)
+    permisos_del_rol = current_permission_names()
+    rol_id_actual = current_role_id()
     usuario_id_actual = int(current_user.get_id())
     
     # 🛡️ ESCUDO DE PROPIEDAD INTER-OPERADOR: El Técnico solo edita lo SUYO
@@ -217,16 +240,17 @@ def divulgacion_admin_editar(pub_id):
         flash('Acceso denegado: No posee los privilegios para modificar esta publicación de otro operador.', 'error')
         return redirect(url_for('core.divulgacion_admin_index'))
     
-    if pub.estado_publicacion == 'publicado' and 'aprobar_divulgaciones' not in permisos_del_rol and rol_id_actual not in (1, 2):
+    if pub.estado_publicacion == 'publicado' and 'aprobar_divulgaciones' not in permisos_del_rol and not is_superuser():
         flash('No puedes modificar una publicación que ya está activa en la web.', 'error')
         return redirect(url_for('core.divulgacion_admin_index'))
 
     form = PublicacionForm(obj=pub)
+    _preparar_formulario_publicacion(form, seleccionado=pub.id_divulgacion)
     if form.validate_on_submit():
         form.populate_obj(pub)
         pub.actualizado_en = datetime.utcnow()
         
-        if 'aprobar_divulgaciones' not in permisos_del_rol and rol_id_actual not in (1, 2):
+        if 'aprobar_divulgaciones' not in permisos_del_rol and not is_superuser():
             pub.estado_publicacion = 'borrador'
 
         db.session.commit()
@@ -243,8 +267,8 @@ def divulgacion_admin_eliminar(pub_id):
     verificar_permiso_dinamico('crear_divulgaciones')
     
     pub = Publicacion.query.get_or_404(pub_id)
-    permisos_del_rol = [p.nombre_modulo for p in current_user.role.permissions]
-    rol_id_actual = int(current_user.id_rol)
+    permisos_del_rol = current_permission_names()
+    rol_id_actual = current_role_id()
     usuario_id_actual = int(current_user.get_id())
     
     # 🛡️ ESCUDO DE PROPIEDAD EN ELIMINACIÓN
@@ -252,7 +276,7 @@ def divulgacion_admin_eliminar(pub_id):
         flash('Acceso denegado: No posee la autoría para eliminar este expediente.', 'error')
         return redirect(url_for('core.divulgacion_admin_index'))
     
-    if pub.estado_publicacion == 'publicado' and 'aprobar_divulgaciones' not in permisos_del_rol and rol_id_actual not in (1, 2):
+    if pub.estado_publicacion == 'publicado' and 'aprobar_divulgaciones' not in permisos_del_rol and not is_superuser():
         flash('No se permite la eliminación de un contenido activo en el portal institucional.', 'error')
         return redirect(url_for('core.divulgacion_admin_index'))
 

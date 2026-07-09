@@ -5,6 +5,7 @@ from app import db
 from app.blueprints.core import core_bp
 from app.models.role import Permission, Role, Permiso
 from app.services.auditoria import registrar_accion
+from app.utils.authorization import current_role_id, has_permission, is_superuser
 
 
 def verificar_permiso_dinamico(nombre_permiso):
@@ -14,14 +15,11 @@ def verificar_permiso_dinamico(nombre_permiso):
     """
     if not current_user.is_authenticated:
         abort(403)
-        
-    # Superusuario (1) y Administrador (2) pasan directo sin validar la tabla pívot
-    if int(current_user.id_rol) in (1, 2):
+
+    if is_superuser():
         return True
-        
-    permisos_del_rol = [p.nombre_modulo for p in current_user.role.permissions]
-    
-    if nombre_permiso not in permisos_del_rol:
+
+    if not has_permission(nombre_permiso):
         flash('No tiene privilegios institucionales para acceder a este módulo.', 'error')
         abort(403)
 
@@ -73,7 +71,7 @@ def rol_nuevo():
 def rol_editar(rol_id):
     verificar_permiso_dinamico('gestionar_usuarios')
     
-    if int(rol_id) == 1 and int(current_user.id_rol) != 1:
+    if int(rol_id) == 1 and current_role_id() != 1:
         flash('No tiene jerarquía institucional para modificar el rol de Superusuario.', 'error')
         abort(403)
         
@@ -94,7 +92,7 @@ def rol_editar(rol_id):
 def rol_eliminar(rol_id):
     verificar_permiso_dinamico('gestionar_usuarios')
     
-    if int(rol_id) == 1 and int(current_user.id_rol) != 1:
+    if int(rol_id) == 1 and current_role_id() != 1:
         flash('Acceso denegado: El rol de Superusuario está blindado por el sistema.', 'error')
         abort(403)
         
@@ -115,7 +113,7 @@ def rol_eliminar(rol_id):
 def rol_gestionar_permisos(rol_id):
     verificar_permiso_dinamico('gestionar_usuarios')
     
-    if int(rol_id) == 1 and int(current_user.id_rol) != 1:
+    if int(rol_id) == 1 and current_role_id() != 1:
         flash('No tiene jerarquía para alterar la matriz de accesos del Superusuario.', 'error')
         abort(403)
         

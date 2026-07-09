@@ -34,6 +34,23 @@ class Usuario(UserMixin, db.Model):
             return False
         return self.role.nombre_rol in role_names
 
+    @property
+    def permission_names(self):
+        if not self.role:
+            return []
+
+        try:
+            return [permiso.nombre_modulo for permiso in self.role.permissions]
+        except Exception:
+            return []
+
+    def has_permission(self, *permission_names):
+        if not permission_names:
+            return False
+
+        permissions = set(self.permission_names)
+        return any(permission_name in permissions for permission_name in permission_names)
+
     def set_password(self, password):
         self.clave = generate_password_hash(password)
 

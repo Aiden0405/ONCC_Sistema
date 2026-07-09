@@ -4,78 +4,110 @@
 
 {% block content %}
 <div class="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
-    
+
     <div class="flex items-center justify-between mb-2">
         <div>
             <h1 class="text-2xl font-bold dark:text-white text-gray-800">
                 {% if es_perfil %}Mi Perfil{% elif usuario %}Editar Usuario{% else %}Nuevo Usuario{% endif %}
             </h1>
-            <p class="text-sm dark:text-gray-400 text-gray-500">Mantén los expedientes y credenciales de acceso alineados con la seguridad institucional</p>
+            <p class="text-sm dark:text-gray-400 text-gray-500">Mantén los expedientes y credenciales de acceso
+                alineados con la seguridad institucional</p>
         </div>
-        <a href="{{ url_for('usuario.index') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white transition-colors flex items-center text-sm font-medium {% if es_perfil %}invisible{% endif %}">
+        <a href="{{ url_for('usuario.index') }}"
+            class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white transition-colors flex items-center text-sm font-medium {% if es_perfil %}invisible{% endif %}">
             <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i> Volver
         </a>
     </div>
 
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+    <div
+        class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
         <form method="post" class="p-8 space-y-8" autocomplete="off">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            
+
             <div style="display: none;" aria-hidden="true">
                 <input type="text" name="fake_username_remembered" autocomplete="username" tabindex="-1" />
                 <input type="password" name="fake_password_remembered" autocomplete="current-password" tabindex="-1" />
             </div>
 
             <div class="space-y-4">
-                <h3 class="text-sm font-bold uppercase tracking-wide flex items-center text-green-700 dark:text-green-400 border-b border-gray-100 dark:border-gray-700 pb-2">
+                <h3
+                    class="text-sm font-bold uppercase tracking-wide flex items-center text-green-700 dark:text-green-400 border-b border-gray-100 dark:border-gray-700 pb-2">
                     <i data-lucide="user-round" class="mr-2 w-4 h-4"></i> Datos de la Cuenta de Acceso
                 </h3>
-                
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {# 🛡️ BLINDAJE: Nombre limitado a 80 caracteres max #}
                     <div class="space-y-1">
-                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Nombre de Usuario completo</label>
-                        <input type="text" name="nombre_usuario" autocomplete="new-username" maxlength="80" value="{{ usuario.nombre_usuario if usuario else '' }}" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: Alcides Rodríguez" required />
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Nombre de
+                            Usuario completo</label>
+                        <input type="text" name="nombre_usuario" autocomplete="new-username" maxlength="80"
+                            value="{{ usuario.nombre_usuario if usuario else '' }}"
+                            class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                            placeholder="Ej: Alcides Rodríguez" required />
                     </div>
 
                     {# 🛡️ BLINDAJE: Correo limitado a 100 caracteres max #}
                     <div class="space-y-1">
-                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Correo Electrónico</label>
-                        <input type="email" name="correo" autocomplete="new-email" maxlength="100" value="{{ usuario.correo if usuario else '' }}" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none {% if usuario %}bg-gray-50 dark:bg-gray-700/50 cursor-not-allowed text-gray-400 dark:text-gray-500{% endif %}" {% if usuario %}readonly{% endif %} placeholder="usuario@oncc.gob.ve" required />
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Correo
+                            Electrónico</label>
+                        <input type="email" name="correo" autocomplete="new-email" maxlength="100"
+                            value="{{ usuario.correo if usuario else '' }}"
+                            class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none {% if usuario %}bg-gray-50 dark:bg-gray-700/50 cursor-not-allowed text-gray-400 dark:text-gray-500{% endif %}"
+                            {% if usuario %}readonly{% endif %} placeholder="usuario@oncc.gob.ve" required />
                     </div>
 
                     <div class="space-y-1">
-                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Rol de Privilegios</label>
-                        <select name="id_rol" {% if es_perfil %}disabled{% endif %} class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none {% if es_perfil %}bg-gray-50 dark:bg-gray-700/50 cursor-not-allowed text-gray-400 dark:text-gray-500{% endif %}">
-                            <option value="" disabled {% if not usuario %}selected{% endif %}>Seleccione nivel de acceso...</option>
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Rol de
+                            Privilegios</label>
+                        <!-- 🛡️ BLINDAJE: Se deshabilita si es la vista perfil O si el ID del usuario coincide con el conectado -->
+                        <select name="id_rol" {% if es_perfil or (usuario and
+                            usuario.id_usuario|int==current_user.id_usuario|int) %}disabled{% endif %}
+                            class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none {% if es_perfil or (usuario and usuario.id_usuario|int == current_user.id_usuario|int) %}bg-gray-50 dark:bg-gray-700/50 cursor-not-allowed text-gray-400 dark:text-gray-500{% endif %}">
+                            <option value="" disabled {% if not usuario %}selected{% endif %}>Seleccione nivel de
+                                acceso...</option>
                             {% for r in roles %}
-                                {% if current_user.id_rol|int == 1 or r.id_rol|int >= current_user.id_rol|int %}
-                                    <option value="{{ r.id_rol }}" {% if usuario and usuario.id_rol == r.id_rol %}selected{% endif %}>{{ r.nombre_rol }}</option>
-                                {% endif %}
+                            {% if current_user.id_rol|int == 1 or r.id_rol|int >= current_user.id_rol|int %}
+                            <option value="{{ r.id_rol }}" {% if usuario and usuario.id_rol==r.id_rol %}selected{% endif
+                                %}>{{ r.nombre_rol }}</option>
+                            {% endif %}
                             {% endfor %}
                         </select>
-                        {% if es_perfil and usuario %}
-                            <input type="hidden" name="id_rol" value="{{ usuario.id_rol }}">
+                        <!-- Envia el ID oculto para que no se pierda el dato en el POST -->
+                        {% if (es_perfil or (usuario and usuario.id_usuario|int == current_user.id_usuario|int)) and
+                        usuario %}
+                        <input type="hidden" name="id_rol" value="{{ usuario.id_rol }}">
                         {% endif %}
                     </div>
 
                     <div class="space-y-1">
-                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estado de la Cuenta</label>
-                        <select name="estatus" {% if es_perfil %}disabled{% endif %} class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none {% if es_perfil %}bg-gray-50 dark:bg-gray-700/50 cursor-not-allowed text-gray-400 dark:text-gray-500{% endif %}">
-                            <option value="1" {% if not usuario or usuario.estatus %}selected{% endif %}>Activo (Acceso Autorizado)</option>
-                            <option value="0" {% if usuario and not usuario.estatus %}selected{% endif %}>Inactivo (Acceso Suspendido)</option>
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estado de
+                            la Cuenta</label>
+                        <!-- 🛡️ BLINDAJE: Se deshabilita si es la vista perfil O si el ID del usuario coincide con el conectado -->
+                        <select name="estatus" {% if es_perfil or (usuario and
+                            usuario.id_usuario|int==current_user.id_usuario|int) %}disabled{% endif %}
+                            class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none {% if es_perfil or (usuario and usuario.id_usuario|int == current_user.id_usuario|int) %}bg-gray-50 dark:bg-gray-700/50 cursor-not-allowed text-gray-400 dark:text-gray-500{% endif %}">
+                            <option value="1" {% if not usuario or usuario.estatus %}selected{% endif %}>Activo (Acceso
+                                Autorizado)</option>
+                            <option value="0" {% if usuario and not usuario.estatus %}selected{% endif %}>Inactivo
+                                (Acceso Suspendido)</option>
                         </select>
-                        {% if es_perfil and usuario %}
-                            <input type="hidden" name="estatus" value="{{ '1' if usuario.estatus else '0' }}">
+                        <!-- Envia el Estatus oculto para que no se pierda el dato en el POST -->
+                        {% if (es_perfil or (usuario and usuario.id_usuario|int == current_user.id_usuario|int)) and
+                        usuario %}
+                        <input type="hidden" name="estatus" value="{{ '1' if usuario.estatus else '0' }}">
                         {% endif %}
                     </div>
 
                     {# 🛡️ BLINDAJE: Contraseña limitada a 64 caracteres max en cliente #}
                     <div class="space-y-1 md:col-span-2">
-                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Contraseña de Autenticación</label>
-                        <input type="password" name="password" autocomplete="new-password" maxlength="64" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" {% if not usuario and not es_perfil %}required{% endif %} placeholder="••••••••" />
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Contraseña
+                            de Autenticación</label>
+                        <input type="password" name="password" autocomplete="new-password" maxlength="64"
+                            class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                            {% if not usuario and not es_perfil %}required{% endif %} placeholder="••••••••" />
                         <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-1 italic">
-                            {% if usuario or es_perfil %}Dejar este campo vacío si no desea modificar la contraseña actual.{% else %}Defina la contraseña inicial de resguardo militar o civil.{% endif %}
+                            {% if usuario or es_perfil %}Dejar este campo vacío si no desea modificar la contraseña
+                            actual.{% else %}Defina la contraseña inicial de resguardo militar o civil.{% endif %}
                         </p>
                     </div>
                 </div>
@@ -83,13 +115,15 @@
 
             <div class="flex justify-end pt-6 border-t border-gray-100 dark:border-gray-700">
                 {% if not es_perfil and not usuario %}
-                    <button type="submit" class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md text-sm shadow-sm transition-colors border border-transparent">
-                        Crear Cuenta de Usuario
-                    </button>
+                <button type="submit"
+                    class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md text-sm shadow-sm transition-colors border border-transparent">
+                    Crear Cuenta de Usuario
+                </button>
                 {% else %}
-                    <button type="submit" class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md text-sm shadow-sm transition-colors border border-transparent">
-                        Guardar Modificaciones
-                    </button>
+                <button type="submit"
+                    class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md text-sm shadow-sm transition-colors border border-transparent">
+                    Guardar Modificaciones
+                </button>
                 {% endif %}
             </div>
         </form>

@@ -71,7 +71,6 @@ def create_app(config_class=Config):
         from app.models.divulgacion import Publicacion  # noqa: F401
         from app.models.geomatica import MapaRiesgo  # noqa: F401
         from app.models.inventario import InventarioEquipo  # noqa: F401
-        from app.models.reporte import ReporteTransaccional  # noqa: F401
         from app.models.visita_portal import VisitaPortal  # noqa: F401
         from app.models.password_reset import PasswordReset  # noqa: F401
         from app.models.usuario import Usuario  # noqa: F401
@@ -110,9 +109,6 @@ def create_app(config_class=Config):
     from app.blueprints.monitoreo.controllers.actividades import actividades_cambiar_estado as monitoreo_actividad_cambiar_estado
     from app.blueprints.monitoreo.controllers.actividades import actividades_index as monitoreo_actividad_index
     from app.blueprints.monitoreo.controllers.actividades import nueva as monitoreo_actividad_nueva
-    from app.blueprints.monitoreo.controllers.comparacion_mapas_climaticos import reporte_cambiar_estado as monitoreo_reporte_cambiar_estado
-    from app.blueprints.monitoreo.controllers.comparacion_mapas_climaticos import comparacion_index as monitoreo_reporte_index
-    from app.blueprints.monitoreo.controllers.comparacion_mapas_climaticos import nuevo as monitoreo_reporte_nuevo
     from app.blueprints.comunitario.controllers.formaciones import formacion_cambiar_estado
     from app.blueprints.comunitario.controllers.formaciones import formacion_nuevo
     from app.blueprints.comunitario.controllers.formaciones import formaciones_index as comunitario_formaciones_index
@@ -165,10 +161,6 @@ def create_app(config_class=Config):
     app.add_url_rule('/geomatica/procesar', endpoint='geomatica.procesar_archivo', view_func=mapas_procesar_archivo, methods=['POST'])
     app.add_url_rule('/geomatica/<int:mapa_id>/estado', endpoint='geomatica.cambiar_estado', view_func=mapas_cambiar_estado, methods=['POST'])
 
-    app.add_url_rule('/reportes/', endpoint='reporte.index', view_func=monitoreo_reporte_index)
-    app.add_url_rule('/reportes/nuevo', endpoint='reporte.nuevo', view_func=monitoreo_reporte_nuevo, methods=['POST'])
-    app.add_url_rule('/reportes/<int:reporte_id>/estado', endpoint='reporte.cambiar_estado', view_func=monitoreo_reporte_cambiar_estado, methods=['POST'])
-
     # Registrar comandos CLI (seed, etc.)
     try:
         from app import cli as app_cli
@@ -188,7 +180,6 @@ def create_app(config_class=Config):
         from app.models.divulgacion import Publicacion
         from app.models.geomatica import MapaRiesgo
         from app.models.inventario import InventarioEquipo
-        from app.models.reporte import ReporteTransaccional
 
         actividades = Actividad.query.order_by(Actividad.creado_en.desc()).limit(5).all()
         total_actividades = Actividad.query.count()
@@ -202,7 +193,6 @@ def create_app(config_class=Config):
         modulos_operativos = {
             'inventario': InventarioEquipo.query.count(),
             'mapas': MapaRiesgo.query.count(),
-            'reportes': ReporteTransaccional.query.count(),
             'actividades': total_actividades,
             'divulgacion': Publicacion.query.count(),
             'divulgacion_publicadas': Publicacion.query.filter_by(estado_publicacion='publicado').count(),
@@ -215,7 +205,6 @@ def create_app(config_class=Config):
         resumen = {
             'inventario': modulos_operativos['inventario'],
             'mapas': modulos_operativos['mapas'],
-            'reportes': modulos_operativos['reportes'],
             'formaciones': modulos_operativos['formaciones'],
             'sensibilizaciones': modulos_operativos['sensibilizaciones'],
             'divulgacion': modulos_operativos['divulgacion'],

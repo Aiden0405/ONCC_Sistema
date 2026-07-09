@@ -6,6 +6,7 @@ from app.blueprints.core import core_bp
 from app.models.role import Role
 from app.models.usuario import Usuario
 from app.services.auditoria import registrar_accion
+from app.utils.authorization import current_role_id, has_permission, is_superuser
 
 
 def verificar_permiso_dinamico(nombre_permiso):
@@ -15,14 +16,11 @@ def verificar_permiso_dinamico(nombre_permiso):
     """
     if not current_user.is_authenticated:
         abort(403)
-        
-    # Superusuario (1) y Administrador (2) pasan directo sin validar la tabla pívot
-    if int(current_user.id_rol) in (1, 2):
+
+    if is_superuser():
         return True
-        
-    permisos_del_rol = [p.nombre_modulo for p in current_user.role.permissions]
-    
-    if nombre_permiso not in permisos_del_rol:
+
+    if not has_permission(nombre_permiso):
         flash('No tiene privilegios institucionales para acceder a este módulo.', 'error')
         abort(403)
 
@@ -53,7 +51,7 @@ def usuario_nuevo():
             return render_template('usuarios/formulario.html', roles=roles)
             
         # 🛡️ CONTROL DE JERARQUÍA ABSOLUTO EN CREACIÓN
-        rol_creador = int(current_user.id_rol)
+        rol_creador = current_role_id()
         rol_destino = int(id_rol_form)
         
         if rol_creador != 1 and rol_destino <= rol_creador:
@@ -97,12 +95,12 @@ def usuario_editar(usuario_id):
 
     # 🛡️ REGLA DE NO AUTO-EDICIÓN EN LA TABLA GENERAL (Segregación de funciones SoD)
     # El Superusuario (ID 1) sí tiene permitido auto-gestionarse en cualquier vista.
-    if int(current_user.id_rol) != 1 and usuario.id_usuario == current_user.id_usuario:
+    if current_role_id() != 1 and usuario.id_usuario == current_user.id_usuario:
         flash('Para modificar sus datos personales, utilice el módulo dedicado "Mi Perfil".', 'error')
         return redirect(url_for('usuario.index'))
 
     # 🛡️ BARRERA JERÁRQUICA DE EDICIÓN ESTÁNDAR
-    rol_operador = int(current_user.id_rol)
+    rol_operador = current_role_id()
     rol_objetivo = int(usuario.id_rol)
 
     if rol_operador != 1:
@@ -118,8 +116,8 @@ def usuario_editar(usuario_id):
         id_rol_form = request.form.get('id_rol')
         estatus_form = request.form.get('estatus')
 
-        # 🛡️ CONTROL DE ESCALADA: El operador no puede promover a nadie a un rol superior al suyo
-        if id_rol_form:
+        # 🛡️ CONTROL DE ESCALADA Y ANTI AUTO-DEGRADACIÓN
+        if id_rol_form and usuario.id_usuario != current_user.id_usuario:
             rol_destino = int(id_rol_form)
             if rol_operador != 1 and rol_destino < rol_operador:
                 flash('No puede asignar un nivel de privilegio superior al suyo.', 'error')
@@ -161,7 +159,7 @@ def usuario_eliminar(usuario_id):
         return redirect(url_for('usuario.index'))
 
     # 🛡️ RESTRICCIONES JERÁRQUICAS DE ELIMINACIÓN
-    rol_operador = int(current_user.id_rol)
+    rol_operador = current_role_id()
     rol_objetivo = int(usuario.id_rol)
 
     if rol_operador != 1:

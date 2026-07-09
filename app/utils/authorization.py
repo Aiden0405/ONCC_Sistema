@@ -3,6 +3,43 @@ from flask import redirect, url_for, flash, current_app
 from flask_login import current_user
 
 
+SUPERUSER_ROLE_IDS = (1, 2)
+
+
+def current_role_id(default=None):
+    try:
+        return int(getattr(current_user, 'id_rol', default))
+    except (TypeError, ValueError):
+        return default
+
+
+def is_superuser():
+    return current_role_id() in SUPERUSER_ROLE_IDS
+
+
+def current_permission_names():
+    if not current_user.is_authenticated:
+        return []
+
+    try:
+        return list(getattr(current_user, 'permission_names', []))
+    except Exception:
+        return []
+
+
+def has_permission(permission_name):
+    if not current_user.is_authenticated:
+        return False
+
+    if is_superuser():
+        return True
+
+    try:
+        return current_user.has_permission(permission_name)
+    except Exception:
+        return permission_name in current_permission_names()
+
+
 def role_required(*role_names):
     """Decorator: permite acceso solo si el usuario tiene alguno de los roles listados."""
     def decorator(f):
@@ -51,13 +88,9 @@ def permission_required(*permission_names):
             except Exception:
                 pass
 
-            # Permitir si tiene alguno de los permisos
             for pn in permission_names:
-                if current_user.has_permission(pn):
+                if has_permission(pn):
                     return f(*args, **kwargs)
-
-            # Sin permiso: redirigir sin flash para no mostrar mensajes confusos
-            return redirect(url_for('dashboard'))
 
             flash('No tiene permisos suficientes para acceder a esta sección.', 'error')
             return redirect(url_for('dashboard'))
