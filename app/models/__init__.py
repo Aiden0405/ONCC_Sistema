@@ -1,23 +1,20 @@
-# Priorizamos los modelos del esquema activo para evitar conflictos con el esquema legado
-from app.models.esquema_activo import (
-    FormacionActiva,
-    InstitucionActiva,
-    NivelActivo,
-    ActividadActiva,
-    ComunidadActiva,
-    EstadoActivo,
-    MunicipioActivo,
-    ParroquiaActiva,
-    SensibilizacionActiva,
-    Actividad as ActividadActivaAlias,
-    Institucion as InstitucionActivaAlias,
-    Sensibilizacion as SensibilizacionActivaAlias
-)
+# === SUBIMOS LA SEGURIDAD AL PRINCIPIO PARA EVITAR QUE FALLE LA TABLA INTERMEDIA ===
+from app.models.role import Role
+from app.models.usuario import Usuario
 
+# === EL RESTO DE TUS MODELOS TRANSACCIONALES ===
+from app.models.actividad import Actividad
 from app.models.bitacora import BitacoraTransaccion
 from app.models.divulgacion import Publicacion
-from app.models.geomatica import MapaRegistro, MapaRiesgo
+from app.models.geomatica import MapaRiesgo
 from app.models.inventario import InventarioEquipo
-
+from app.models.esquema_activo import ActividadActiva
+from app.models.esquema_activo import ComunidadActiva
+from app.models.esquema_activo import EstadoActivo
+from app.models.esquema_activo import FormacionActiva
+from app.models.esquema_activo import InstitucionActiva
+from app.models.esquema_activo import NivelActivo
+from app.models.esquema_activo import MunicipioActivo
+from app.models.esquema_activo import ParroquiaActiva
+from app.models.esquema_activo import SensibilizacionActiva
 from app.models.reporte import ReporteTransaccional
-from app.models.usuario import Usuario
