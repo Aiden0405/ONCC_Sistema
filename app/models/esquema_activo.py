@@ -31,13 +31,13 @@ class ParroquiaActiva(db.Model):
 
 
 class InstitucionActiva(db.Model):
-    __tablename__ = 'intitucion'
+    __tablename__ = 'institucion'
     __table_args__ = {'extend_existing': True}
 
     id_institucion = db.Column(db.Integer, primary_key=True)
     nombre_institucion = db.Column(db.String(50), nullable=False)
     id_comunidad = db.Column(db.Integer, db.ForeignKey('comunidad.id_comunidad'), nullable=False)
-    tipo_intitucion = db.Column(db.String(20), nullable=False)
+    tipo_institucion = db.Column(db.String(20), nullable=False)
     direccion_exacta = db.Column(db.String(100), nullable=False)
     numero_contacto = db.Column(db.String(25), nullable=False)
     correo_electronico = db.Column(db.String(40), nullable=False)
@@ -60,7 +60,7 @@ class NivelActivo(db.Model):
 
     id_nivel = db.Column(db.Integer, primary_key=True)
     nombre_nivel = db.Column(db.String(80), nullable=False)
-    descripcion = db.Column('descripción ', db.Text, nullable=False)
+    descripcion = db.Column(db.Text, nullable=False)
 
 
 class ActividadActiva(db.Model):
@@ -76,8 +76,89 @@ class ActividadActiva(db.Model):
     comunidad = db.relationship('ComunidadActiva', backref=db.backref('actividades', lazy='dynamic'))
     nivel = db.relationship('NivelActivo', backref=db.backref('actividades', lazy='dynamic'))
 
+
+class FormacionActiva(db.Model):
+    __tablename__ = 'formacion'
+    __table_args__ = {'extend_existing': True}
+
+    id_formacion = db.Column(db.Integer, primary_key=True)
+    nombre_formacion = db.Column(db.Text, nullable=False)
+    id_actividad = db.Column(db.Integer, db.ForeignKey('actividad.id_actividad'), nullable=False, unique=True)
+    id_institucion = db.Column(db.Integer, db.ForeignKey('institucion.id_institucion'), nullable=False)
+
+    # Se agrega foreign_keys explícito para evitar confusiones en SQLAlchemy
+    actividad = db.relationship('ActividadActiva', foreign_keys=[id_actividad], backref=db.backref('formacion', uselist=False))
+    institucion = db.relationship('InstitucionActiva', backref=db.backref('formaciones', lazy='dynamic'))
+
+    @property
+    def id(self):
+        return self.id_formacion
+
+    @property
+    def tema(self):
+        return self.nombre_formacion
+
+    @property
+    def comunidad(self):
+        return getattr(getattr(self.actividad, 'comunidad', None), 'nombre_comunidad', '') or ''
+
+    @property
+    def fecha(self):
+        return getattr(self.actividad, 'fecha_actividad', None)
+
+    @property
+    def asistentes(self):
+        return 0
+
+    @property
+    def estado(self):
+        return 'registrada'
+
+
+class SensibilizacionActiva(db.Model):
+    __tablename__ = 'sensibilizacion'
+    __table_args__ = {'extend_existing': True}
+
+    id_sensibilizacion = db.Column(db.Integer, primary_key=True)
+    nombre_sensibilizacion = db.Column(db.Text, nullable=False)
+    id_actividad = db.Column(db.Integer, db.ForeignKey('actividad.id_actividad'), nullable=False, unique=True)
+
+    # Se agrega foreign_keys explícito aquí también
+    actividad = db.relationship('ActividadActiva', foreign_keys=[id_actividad], backref=db.backref('sensibilizacion', uselist=False))
+
+    @property
+    def id(self):
+        return self.id_sensibilizacion
+
+    @property
+    def campana(self):
+        return self.nombre_sensibilizacion
+
+    @property
+    def territorio(self):
+        return getattr(getattr(self.actividad, 'comunidad', None), 'nombre_comunidad', '') or ''
+
+    @property
+    def fecha(self):
+        return getattr(self.actividad, 'fecha_actividad', None)
+
+    @property
+    def vocero(self):
+        return ''
+
+    @property
+    def alcance(self):
+        return 0
+
+    @property
+    def estado(self):
+        return 'registrada'
+
+
 # ==========================================
 # ALIAS Y PARCHADO DE COMPATIBILIDAD
 # ==========================================
 Actividad = ActividadActiva
 Institucion = InstitucionActiva
+Sensibilizacion = SensibilizacionActiva
+Formacion = FormacionActiva

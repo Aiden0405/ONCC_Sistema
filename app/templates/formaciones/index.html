@@ -187,14 +187,17 @@ block content %}
               {{ item.nombre_institucion }}
             </td>
 
-            <td class="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-400">
-              {{ item.fecha_formateada }}
+            <td
+              class="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-400"
+            >
+              {{ item.fecha_actividad.strftime('%d/%m/%Y') if
+              item.fecha_actividad else 'N/D' }}
             </td>
 
             <td class="px-6 py-4 text-center space-x-3">
               {% if current_user.id_rol in [1, 2] %}
               <button
-                onclick="abrirModalEdicion('{{ item.id_formacion }}', '{{ item.tema }}', '{{ item.tecnico }}', '{{ item.fecha_actividad_cruda }}', '{{ item.id_institucion }}', '{{ item.id_nivel }}')"
+                onclick="abrirModalEdicion('{{ item.id_formacion }}', '{{ item.tema }}', '{{ item.tecnico }}', '{{ item.fecha_actividad }}', '{{ item.id_institucion }}', '{{ item.id_nivel }}')"
                 class="text-blue-600 hover:text-blue-800 transition-colors"
                 title="Editar"
               >
@@ -390,7 +393,7 @@ block content %}
     // Mostramos el modal quitando la clase hidden
     document.getElementById("modalEdicion").classList.remove("hidden");
   }
-  
+
   function cerrarModalEdicion() {
     // Ocultamos el modal añadiendo la clase hidden
     document.getElementById("modalEdicion").classList.add("hidden");
