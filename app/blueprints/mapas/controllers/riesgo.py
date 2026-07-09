@@ -7,13 +7,13 @@ from app import db
 from app.blueprints.mapas import mapas_bp
 from app.constants import ESTADOS_TRANSACCION
 from app.models.bitacora import BitacoraTransaccion
-from app.models.geomatica import MapaRegistro
+from app.models.geomatica import MapaRiesgo
 
 
 @mapas_bp.route('/geomatica/')
 @login_required
 def mapas_riesgo_index():
-    mapas = MapaRegistro.query.order_by(MapaRegistro.creado_en.desc()).all()
+    mapas = MapaRiesgo.query.order_by(MapaRiesgo.creado_en.desc()).all()
     return render_template('geomatica/carga_ssbc.html', cargas=mapas, estados_flujo=ESTADOS_TRANSACCION)
 
 
@@ -32,14 +32,17 @@ def procesar_archivo():
 
     if archivo:
         nombre_archivo = archivo.filename.strip()
-        tipo_mapa = request.form.get('tipo_mapa', 'riesgo').strip()
+        nombre = request.form.get('nombre', '').strip()
+        version = request.form.get('version', 'v1.0').strip()
         cobertura = request.form.get('cobertura', 'Regional').strip()
+        descripcion = request.form.get('descripcion', '').strip()
 
-        mapa = MapaRegistro(
-            nombre=f'Mapa {tipo_mapa.capitalize()} {datetime.utcnow().strftime("%Y-%m-%d")}',
-            tipo_mapa=tipo_mapa,
+        mapa = MapaRiesgo(
+            nombre=nombre or f'Mapa de Riesgo {datetime.utcnow().strftime("%Y-%m-%d")}',
+            descripcion=descripcion or None,
             archivo=nombre_archivo,
             cobertura=cobertura,
+            version=version,
             responsable=current_user.nombre,
         )
         db.session.add(mapa)
@@ -51,11 +54,11 @@ def procesar_archivo():
             accion='carga_archivo',
             estado_nuevo=mapa.estado,
             usuario=current_user.nombre,
-            detalle=f'Archivo {nombre_archivo} cargado para {tipo_mapa}',
+            detalle=f'Archivo {nombre_archivo} cargado para mapa de riesgo',
         ))
         db.session.commit()
 
-        flash(f'Archivo "{nombre_archivo}" registrado para procesamiento de mapas.', 'success')
+        flash(f'Archivo "{nombre_archivo}" registrado para procesamiento de mapas de riesgo.', 'success')
 
     return redirect(url_for('geomatica.index'))
 
@@ -63,7 +66,7 @@ def procesar_archivo():
 @mapas_bp.route('/geomatica/<int:mapa_id>/estado', methods=['POST'])
 @login_required
 def cambiar_estado(mapa_id):
-    mapa = MapaRegistro.query.get_or_404(mapa_id)
+    mapa = MapaRiesgo.query.get_or_404(mapa_id)
     nuevo_estado = request.form.get('estado', '').strip()
     if nuevo_estado not in ESTADOS_TRANSACCION:
         flash('Estado de flujo invalido.', 'error')
@@ -76,9 +79,9 @@ def cambiar_estado(mapa_id):
         accion='cambio_estado',
         estado_nuevo=nuevo_estado,
         usuario=current_user.nombre,
-        detalle=f'Mapa {mapa.nombre} actualizado',
+        detalle=f'Mapa de riesgo {mapa.nombre} actualizado',
     ))
     db.session.commit()
 
-    flash('Estado del mapa actualizado.', 'success')
+    flash('Estado del mapa de riesgo actualizado.', 'success')
     return redirect(url_for('geomatica.index'))

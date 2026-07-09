@@ -9,7 +9,7 @@ class Usuario(UserMixin, db.Model):
     id_usuario = db.Column(db.Integer, primary_key=True)
     nombre_usuario = db.Column(db.String(30), nullable=False)
     clave_usuario = db.Column('clave usuario', db.String(255), nullable=False)
-    id_rol = db.Column(db.Integer, db.ForeignKey('roles.id_rol'), nullable=False)
+    id_rol = db.Column(db.Integer, nullable=False)
     correo = db.Column(db.String(100), nullable=True)
     cedula = db.Column(db.String(15), nullable=True, unique=True)
     especialidad = db.Column(db.String(120), nullable=True)
@@ -18,7 +18,12 @@ class Usuario(UserMixin, db.Model):
     id = synonym('id_usuario')
     nombre = synonym('nombre_usuario')
 
-    role = db.relationship('Role', back_populates='usuarios')
+    role = db.relationship(
+        'Role', 
+        back_populates='usuarios',
+        primaryjoin="Role.id_rol == foreign(Usuario.id_rol)",
+        uselist=False
+    )
 
     @property
     def rol(self):

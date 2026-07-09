@@ -18,7 +18,7 @@ class Role(db.Model):
     id = synonym('id_rol')
     nombre = synonym('nombre_rol')
 
-    usuarios = db.relationship('Usuario', back_populates='role')
+    usuarios = db.relationship('Usuario', back_populates='role', primaryjoin="Role.id_rol == foreign(Usuario.id_rol)")
     permissions = db.relationship('Permission', secondary=role_permissions, back_populates='roles')
 
     def __init__(self, **kwargs):

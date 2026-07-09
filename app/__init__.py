@@ -69,13 +69,13 @@ def create_app(config_class=Config):
         from app.models.esquema_activo import ParroquiaActiva  # noqa: F401
         from app.models.esquema_activo import SensibilizacionActiva  # noqa: F401
         from app.models.divulgacion import Publicacion  # noqa: F401
-        from app.models.geomatica import MapaRegistro  # noqa: F401
+        from app.models.geomatica import MapaRegistro, MapaRiesgo  # noqa: F401
         from app.models.inventario import InventarioEquipo  # noqa: F401
         from app.models.reporte import ReporteTransaccional  # noqa: F401
         from app.models.visita_portal import VisitaPortal  # noqa: F401
         from app.models.password_reset import PasswordReset  # noqa: F401
-        from app.models.usuario import Usuario  # noqa: F401
         from app.models.role import Role, Permission  # noqa: F401
+        from app.models.usuario import Usuario  # noqa: F401
 
     from app.blueprints.core.controllers.auth import login as core_login
     from app.blueprints.core.controllers.auth import logout as core_logout
@@ -118,9 +118,12 @@ def create_app(config_class=Config):
     from app.blueprints.comunitario.controllers.formaciones import formacion_cambiar_estado
     from app.blueprints.comunitario.controllers.formaciones import formacion_nuevo
     from app.blueprints.comunitario.controllers.formaciones import formaciones_index as comunitario_formaciones_index
-    from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizacion_cambiar_estado
-    from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizacion_nuevo
-    from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizaciones_index as comunitario_sensibilizaciones_index
+    from app.blueprints.comunitario.controllers.sensibilizaciones import (
+        sensibilizaciones_index as comunitario_sensibilizaciones_index,
+        sensibilizacion_editar,
+        sensibilizacion_eliminar,
+        sensibilizacion_cambiar_estado
+    )
 
     app.add_url_rule('/', endpoint='public.home', view_func=core_home)
     app.add_url_rule('/acerca', endpoint='public.acerca', view_func=core_acerca)
@@ -133,8 +136,9 @@ def create_app(config_class=Config):
     app.add_url_rule('/formaciones', endpoint='formacion.index', view_func=comunitario_formaciones_index)
     app.add_url_rule('/formaciones/nuevo', endpoint='formacion.nuevo', view_func=formacion_nuevo, methods=['POST'])
     app.add_url_rule('/formaciones/<int:formacion_id>/estado', endpoint='formacion.cambiar_estado', view_func=formacion_cambiar_estado, methods=['POST'])
-    app.add_url_rule('/sensibilizaciones', endpoint='sensibilizacion.index', view_func=comunitario_sensibilizaciones_index)
-    app.add_url_rule('/sensibilizaciones/nuevo', endpoint='sensibilizacion.nuevo', view_func=sensibilizacion_nuevo, methods=['POST'])
+    app.add_url_rule('/sensibilizaciones', endpoint='sensibilizacion.index', view_func=comunitario_sensibilizaciones_index, methods=['GET', 'POST'])
+    app.add_url_rule('/sensibilizaciones/editar/<int:id_sensibilizacion>', endpoint='sensibilizacion.editar', view_func=sensibilizacion_editar, methods=['POST'])
+    app.add_url_rule('/sensibilizaciones/eliminar/<int:id_sensibilizacion>', endpoint='sensibilizacion.eliminar', view_func=sensibilizacion_eliminar, methods=['POST'])
     app.add_url_rule('/sensibilizaciones/<int:sensibilizacion_id>/estado', endpoint='sensibilizacion.cambiar_estado', view_func=sensibilizacion_cambiar_estado, methods=['POST'])
 
     app.add_url_rule('/admin/usuarios/', endpoint='usuario.index', view_func=core_usuario_index)

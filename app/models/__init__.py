@@ -16,7 +16,7 @@ from app.models.esquema_activo import (
 
 from app.models.bitacora import BitacoraTransaccion
 from app.models.divulgacion import Publicacion
-from app.models.geomatica import MapaRegistro
+from app.models.geomatica import MapaRegistro, MapaRiesgo
 from app.models.inventario import InventarioEquipo
 
 from app.models.reporte import ReporteTransaccional
