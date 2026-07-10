@@ -51,7 +51,7 @@
 {% block scripts %}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.min.js"></script>
-<script src="https://unpkg.com/@tmcw/togeojson@5.8.1/dist/togeojson.umd.js"></script>
+<script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
@@ -95,24 +95,30 @@
 
         // 3. Renderizar KML base si existe
         if (rutaKml !== "" && rutaKml !== "None") {
-            fetch(`/static/${rutaKml}`)
-                .then(res => res.text())
-                .then(kmlText => {
-                    const parser = new DOMParser();
-                    const kmlDom = parser.parseFromString(kmlText, 'text/xml');
-                    const geojsonData = toGeoJSON.kml(kmlDom);
-                    
-                    const kmlLayer = L.geoJSON(geojsonData, {
-                        style: { color: '#facc15', weight: 4, fillOpacity: 0.1, dashArray: '5, 10' }
-                    }).addTo(map);
-                    
+            const urlKmlFinal = `/static/${rutaKml}`;
+            
+            const kmlLayer = omnivore.kml(urlKmlFinal)
+                .on('ready', function() {
+                    // Centra el mapa en el archivo cargado
                     map.fitBounds(kmlLayer.getBounds(), { padding: [30, 30] });
+                    // Aplica estilo al perímetro cargado
+                    kmlLayer.setStyle({ 
+                        color: '#facc15', 
+                        weight: 4, 
+                        fillOpacity: 0.1, 
+                        dashArray: '5, 10' 
+                    });
                 })
-                .catch(err => {
-                    console.error("No se pudo parsear el KML", err);
-                });
+                .on('error', function(e) {
+                    console.error("Error al leer el archivo KML:", e);
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Error de Lectura KML',
+                        text: 'El archivo subido no tiene un formato geométrico válido o está dañado.'
+                    });
+                })
+                .addTo(map);
         }
-
         // ==========================================
         // NUEVO: CARGAR DIBUJOS DESDE LA BASE DE DATOS
         // ==========================================
@@ -129,6 +135,7 @@
                             if (cat === 'Vulnerabilidad') return { color: '#f97316', fillColor: '#f97316' };
                             return { color: '#3b82f6', fillColor: '#3b82f6' };
                         },
+                   
                         // Insertar la ventana flotante de información
                         onEachFeature: function (feature, layer) {
                             const props = feature.properties;

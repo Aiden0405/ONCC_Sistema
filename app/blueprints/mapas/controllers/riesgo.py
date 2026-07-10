@@ -2,7 +2,7 @@ import os
 import json
 from datetime import datetime
 
-from flask import flash, redirect, jsonify, render_template, request, url_for, current_app
+from flask import flash, redirect, jsonify, render_template, request, url_for, current_app, abort
 from flask_login import current_user, login_required
 from werkzeug.utils import secure_filename
 from geoalchemy2.functions import ST_AsGeoJSON, ST_GeomFromGeoJSON
@@ -10,7 +10,7 @@ from geoalchemy2.functions import ST_AsGeoJSON, ST_GeomFromGeoJSON
 from app import db
 from app.models.geomatica import MapaRiesgo, ElementoMapaRiesgo
 from app.models.actividad import Actividad
-from app.models.esquema_activo import ComunidadActiva 
+from app.models.esquema_activo import ComunidadActiva, ParroquiaActiva, MunicipioActivo, EstadoActivo
 
 @login_required
 def mapas_riesgo_index():
@@ -32,13 +32,14 @@ def vista_carga_ssbc():
 
 @login_required
 def vista_dibujar_mapa(mapa_id):
-    """ Renderiza la herramienta de dibujo Leaflet sobre el KML cargado o lienzo en blanco """
+    """ Renderiza la herramienta de dibujo Leaflet """
+    # SEGURIDAD: get_or_404 bloquea la URL si el ID no existe o fue alterado manualmente
     mapa = MapaRiesgo.query.get_or_404(mapa_id)
     return render_template('geomatica/dibujar_mapa.html', mapa=mapa)
 
 @login_required
 def procesar_archivo():
-    # 1. Recibir datos del formulario
+    """ Procesa el formulario de carga inicial del mapa base """
     nombre = request.form.get('nombre')
     descripcion = request.form.get('descripcion')
     id_act_dinamico = request.form.get('id_actividad') 
@@ -48,7 +49,6 @@ def procesar_archivo():
         flash('Debe seleccionar una actividad válida de la lista.', 'error')
         return redirect(url_for('geomatica.carga_ssbc'))
 
-    # 2. Bloque Transaccional Atómico
     try:
         nuevo_mapa = MapaRiesgo(
             nombre=nombre,
@@ -60,7 +60,6 @@ def procesar_archivo():
             ruta_imagen_mapa=None 
         )
 
-        # 3. Validar archivo físico
         if archivo and archivo.filename != '':
             filename = secure_filename(archivo.filename)
             extension = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
@@ -90,23 +89,22 @@ def procesar_archivo():
                 archivo.save(ruta_guardado)
                 
                 nuevo_mapa.ruta_imagen_mapa = f'uploads/mapas/imagenes/{filename}'
-                
                 db.session.add(nuevo_mapa)
                 db.session.commit()
                 
-                flash('Imagen del mapa de riesgo guardada exitosamente de forma directa.', 'success')
-                return redirect(url_for('geomatica.carga_ssbc'))
+                flash('Imagen del mapa de riesgo guardada exitosamente.', 'success')
+                return redirect(url_for('geomatica.index')) 
         else:
             db.session.add(nuevo_mapa)
             db.session.commit()
-            flash('Información base registrada. Se ha abierto el lienzo interactivo para digitalizar los riesgos.', 'success')
+            flash('Información base registrada. Se ha abierto el lienzo interactivo.', 'success')
             return redirect(url_for('geomatica.dibujar_mapa', mapa_id=nuevo_mapa.id_mapa_riesgo))
 
     except Exception as e:
         db.session.rollback()
         error_msg = str(e)
         if 'validar_previa_sensibilizacion' in error_msg or 'Restricción de ONCC' in error_msg:
-            flash('La comunidad asociada debe contar con una actividad de sensibilización previa.', 'error')
+            flash('La comunidad asociada debe contar con una actividad previa.', 'error')
         elif 'UniqueViolation' in error_msg or 'llave duplicada' in error_msg.lower():
             flash('Error: Ya existe un mapa asignado a esta actividad.', 'error')
         else:
@@ -114,31 +112,8 @@ def procesar_archivo():
         return redirect(url_for('geomatica.carga_ssbc'))
 
 @login_required
-def obtener_todos_mapas():
-    query = db.session.query(MapaRiesgo, Actividad, ComunidadActiva).join(
-        Actividad, (MapaRiesgo.id_actividad == Actividad.id_actividad) & 
-                   (MapaRiesgo.tipo_actividad == Actividad.tipo_actividad)
-    ).join(
-        ComunidadActiva, Actividad.id_comunidad == ComunidadActiva.id_comunidad
-    )
-
-    resultados = query.order_by(MapaRiesgo.fecha_registro.desc()).all()
-    
-    mapas_json = []
-    for mapa, actividad, comunidad in resultados:
-        mapas_json.append({
-            'id': mapa.id_mapa_riesgo,
-            'nombre': mapa.nombre,
-            'descripcion': mapa.descripcion,
-            'comunidad': comunidad.nombre_comunidad,
-            'fecha_registro': mapa.fecha_registro.isoformat() if mapa.fecha_registro else None,
-            'tipo_archivo': 'KML' if mapa.ruta_kml else ('Imagen' if mapa.ruta_imagen_mapa else 'Digitalizado')
-        })
-
-    return jsonify(mapas_json), 200
-
-@login_required
 def obtener_mapa(mapa_id):
+    """ API para enviar los datos guardados en PostGIS hacia el frontend (Leaflet) """
     mapa = MapaRiesgo.query.get(mapa_id)
     if not mapa:
         return jsonify({'message': 'Mapa no encontrado'}), 404
@@ -168,32 +143,66 @@ def obtener_mapa(mapa_id):
 
 @login_required
 def crear_mapa():
-    """ Guarda el dibujo individual recibido desde leaflet """
+    """ Guarda un dibujo individual recibido desde leaflet en PostGIS """
     datos = request.get_json()
+    if not datos:
+        return jsonify({'status': 'error', 'message': 'No se recibieron datos.'}), 400
+
     id_mapa = datos.get('id_mapa_riesgo') 
     geojson_geom = json.dumps(datos.get('geometria')) 
 
     nuevo_elemento = ElementoMapaRiesgo(
         id_mapa_riesgo=id_mapa,
-        categoria=datos.get('categoria', 'General'),
-        subcategoria=datos.get('subcategoria', 'General'),
+        categoria=datos.get('categoria', 'General')[:50],
+        subcategoria=datos.get('subcategoria', 'General')[:100],
         descripcion=datos.get('descripcion', ''),
         geometria=ST_GeomFromGeoJSON(geojson_geom)
     )
     db.session.add(nuevo_elemento)
     
-    # NUEVO: Actualizar la fecha del mapa principal al agregar un dibujo
     mapa_padre = MapaRiesgo.query.get(id_mapa)
     if mapa_padre:
         mapa_padre.fecha_registro = datetime.now()
 
     db.session.commit()
     return jsonify({'status': 'success', 'message': 'Elemento geográfico registrado con éxito'}), 201
+
 @login_required
-def eliminar_mapa(mapa_id):
+def actualizar_mapa(mapa_id):
+    """ Modifica el nombre y descripción del mapa desde el panel (Seguridad Backend Aplicada) """
     mapa = MapaRiesgo.query.get(mapa_id)
     if not mapa:
-        return jsonify({'status': 'error', 'message': 'Mapa no encontrado'}), 404
+        return jsonify({'status': 'error', 'message': 'Operación rechazada: El mapa no existe o el ID fue alterado.'}), 404
+
+    datos = request.get_json()
+    if not datos:
+        return jsonify({'status': 'error', 'message': 'Datos inválidos.'}), 400
+    
+    # SEGURIDAD: Limpieza de espacios en blanco inyectados y validación de existencia
+    nuevo_nombre = datos.get('nombre', '').strip()
+    nueva_desc = datos.get('descripcion', '').strip()
+
+    if not nuevo_nombre or not nueva_desc:
+        return jsonify({'status': 'error', 'message': 'El nombre y la descripción no pueden estar vacíos.'}), 400
+
+    # SEGURIDAD: Límite estricto de caracteres en el servidor
+    mapa.nombre = nuevo_nombre[:100]
+    mapa.descripcion = nueva_desc[:1000]
+    mapa.fecha_registro = datetime.now()
+    
+    if 'geometria' in datos:
+        geojson_geom = json.dumps(datos.get('geometria'))
+        mapa.geometria = ST_GeomFromGeoJSON(geojson_geom)
+
+    db.session.commit()
+    return jsonify({'status': 'success', 'message': 'Datos actualizados correctamente'}), 200
+
+@login_required
+def eliminar_mapa(mapa_id):
+    """ Elimina el mapa base y todos sus polígonos asociados """
+    mapa = MapaRiesgo.query.get(mapa_id)
+    if not mapa:
+        return jsonify({'status': 'error', 'message': 'Operación rechazada: El mapa no existe.'}), 404
     try:
         db.session.delete(mapa)
         db.session.commit()
@@ -203,54 +212,32 @@ def eliminar_mapa(mapa_id):
         return jsonify({'status': 'error', 'message': 'Dependencias en la base de datos impiden su eliminación.'}), 500
 
 @login_required
-def actualizar_mapa(mapa_id):
-    """ Modifica el nombre y descripción del mapa desde el panel """
-    mapa = MapaRiesgo.query.get(mapa_id)
-    if not mapa:
-        return jsonify({'status': 'error', 'message': 'Mapa no encontrado'}), 404
-
-    datos = request.get_json()
-    
-    # NUEVO: Permitir editar el nombre y actualizar la fecha
-    mapa.nombre = datos.get('nombre', mapa.nombre)
-    mapa.descripcion = datos.get('descripcion', mapa.descripcion)
-    mapa.fecha_registro = datetime.now()
-    
-    # Esta parte se mantiene por si en el futuro envías la geometría completa por aquí
-    if 'geometria' in datos:
-        geojson_geom = json.dumps(datos.get('geometria'))
-        mapa.geometria = ST_GeomFromGeoJSON(geojson_geom)
-
-    db.session.commit()
-    return jsonify({'status': 'success', 'message': 'Datos actualizados correctamente'}), 200
-@mapas_bp.route('/obtener_mapas', methods=['GET'])
-@login_required
-
-def obtener_mapas_filtrados():
-    # Obtener parámetros de la URL (?estado=1&municipio=2...)
-    estado_id = request.args.get('estado')
-    municipio_id = request.args.get('municipio')
-    parroquia_id = request.args.get('parroquia')
-    comunidad_id = request.args.get('comunidad')
-
-    # Consulta base
-    query = db.session.query(MapaRiesgo, Actividad, ComunidadActiva).join(...)
-
-    # Filtros condicionales
-    if estado_id: query = query.filter(ComunidadActiva.id_estado == estado_id)
-    if municipio_id: query = query.filter(ComunidadActiva.id_municipio == municipio_id)
-    # ... (repetir para los demás)
-
-    resultados = query.all()
-    # ... (convertir a JSON y retornar)
 def obtener_todos_mapas():
-    # Join con Actividad y Comunidad para poder filtrar
+    """ Obtiene la lista de mapas para la tabla interactiva aplicando los filtros de ubicación """
+    estado_id = request.args.get('estado', type=int)
+    municipio_id = request.args.get('municipio', type=int)
+    parroquia_id = request.args.get('parroquia', type=int)
+    comunidad_id = request.args.get('comunidad', type=int)
+
     query = db.session.query(MapaRiesgo, Actividad, ComunidadActiva).join(
         Actividad, (MapaRiesgo.id_actividad == Actividad.id_actividad) & 
                    (MapaRiesgo.tipo_actividad == Actividad.tipo_actividad)
     ).join(
         ComunidadActiva, Actividad.id_comunidad == ComunidadActiva.id_comunidad
+    ).join(
+        ParroquiaActiva, ComunidadActiva.id_parroquia == ParroquiaActiva.id_parroquia
+    ).join(
+        MunicipioActivo, ParroquiaActiva.id_municipio == MunicipioActivo.id_municipio
     )
+
+    if comunidad_id:
+        query = query.filter(ComunidadActiva.id_comunidad == comunidad_id)
+    elif parroquia_id:
+        query = query.filter(ParroquiaActiva.id_parroquia == parroquia_id)
+    elif municipio_id:
+        query = query.filter(MunicipioActivo.id_municipio == municipio_id)
+    elif estado_id:
+        query = query.filter(MunicipioActivo.id_estado == estado_id)
 
     resultados = query.order_by(MapaRiesgo.fecha_registro.desc()).all()
     

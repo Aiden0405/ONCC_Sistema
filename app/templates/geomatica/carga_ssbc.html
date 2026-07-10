@@ -101,84 +101,161 @@
 
 {% block scripts %}
 <script>
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-    }
-
-    // El bloque de scripts AJAX de las regiones geográficas se mantiene exactamente igual...
-    document.addEventListener('DOMContentLoaded', function() {
-        fetch('/api/geografia/estados')
-            .then(res => res.json())
-            .then(estados => {
-                const selectEstado = document.getElementById('estado');
-                estados.forEach(e => {
-                    let option = document.createElement('option');
-                    option.value = e.id_estado || e.id;          
-                    option.textContent = e.nombre_estado || e.nombre; 
-                    selectEstado.appendChild(option);
-                });
-            }).catch(error => console.error('Error al cargar los estados:', error));
-    });
-
-    function alCambiarEstado(idEstado) {
-        const selectMunicipio = document.getElementById('municipio');
-        const selectParroquia = document.getElementById('parroquia');
-        const selectComunidad = document.getElementById('comunidad');
-        selectMunicipio.innerHTML = '<option value="">Seleccione Municipio</option>';
-        selectParroquia.innerHTML = '<option value="">Seleccione Parroquia</option>';
-        selectComunidad.innerHTML = '<option value="">Seleccione Comunidad</option>';
+    function escapeHTML(str) {
+    if (!str) return '';
+    const p = document.createElement('p');
+    p.textContent = str;
+    return p.innerHTML;
+}
+    document.addEventListener('DOMContentLoaded', () => {
+        const formulario = document.querySelector('form');
         
-        if (!idEstado) { selectMunicipio.disabled = true; selectParroquia.disabled = true; selectComunidad.disabled = true; return; }
-
-        fetch(`/api/geografia/municipios/${idEstado}`)
-            .then(res => res.json())
-            .then(municipios => {
-                municipios.forEach(m => {
-                    let option = document.createElement('option');
-                    option.value = m.id_municipio || m.id;
-                    option.textContent = m.nombre_municipio || m.nombre;
-                    selectMunicipio.appendChild(option);
-                });
-                selectMunicipio.disabled = false;
+        if (formulario) {
+            formulario.addEventListener('submit', function(e) {
+                const btn = this.querySelector('button[type="submit"]');
+                if (btn) {
+                    // Deshabilitar botón para bloquear clicks extra
+                    btn.disabled = true;
+                    btn.classList.add('opacity-70', 'cursor-not-allowed');
+                    
+                    // Feedback visual de carga
+                    btn.innerHTML = `
+                        <i data-lucide="loader" class="animate-spin w-4 h-4 mr-2 inline-block alignment-middle"></i>
+                        <span>Subiendo archivo...</span>
+                    `;
+                    
+                    // Renderizar el icono de carga de Lucide
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                }
             });
+        }
+    });
+function cargarEstados() {
+    fetch('/api/geografia/estados')
+        .then(res => res.json())
+        .then(data => {
+            // Abre la consola del navegador (F12) para ver esta línea:
+            console.log("Backend Estados:", data); 
+            
+            const selectEstado = document.getElementById('estado');
+            selectEstado.innerHTML = '<option value="">Todos los Estados</option>';
+            
+            data.forEach(est => {
+                // Autodetecta si la llave es 'id' o 'id_estado', 'nombre' o 'nombre_estado'
+                const id = est.id || est.id_estado || est.idEstado;
+                const nombre = est.nombre || est.nombre_estado || est.nombreEstado;
+                
+                selectEstado.innerHTML += `<option value="${id}">${escapeHTML(nombre || 'Error: Sin nombre')}</option>`;
+            });
+        })
+        .catch(err => console.error("Error cargando estados:", err));
+}
+
+function alCambiarEstado(estadoId) {
+    const selectMunicipio = document.getElementById('municipio');
+    const selectParroquia = document.getElementById('parroquia');
+    const selectComunidad = document.getElementById('comunidad');
+
+    selectMunicipio.innerHTML = '<option value="">Todos los Municipios</option>';
+    selectParroquia.innerHTML = '<option value="">Todas las Parroquias</option>';
+    selectComunidad.innerHTML = '<option value="">Todas las Comunidades</option>';
+    
+    selectMunicipio.disabled = true;
+    selectParroquia.disabled = true;
+    selectComunidad.disabled = true;
+
+    if (!estadoId) return;
+
+    fetch(`/api/geografia/municipios/${estadoId}`)
+        .then(res => res.json())
+        .then(data => {
+            console.log("Backend Municipios:", data);
+            
+            data.forEach(mun => {
+                const id = mun.id || mun.id_municipio || mun.idMunicipio;
+                const nombre = mun.nombre || mun.nombre_municipio || mun.nombreMunicipio;
+                
+                selectMunicipio.innerHTML += `<option value="${id}">${escapeHTML(nombre || 'Error: Sin nombre')}</option>`;
+            });
+            selectMunicipio.disabled = false;
+        })
+        .catch(err => console.error("Error cargando municipios:", err));
+}
+
+function alCambiarMunicipio(municipioId) {
+    const selectParroquia = document.getElementById('parroquia');
+    const selectComunidad = document.getElementById('comunidad');
+
+    selectParroquia.innerHTML = '<option value="">Todas las Parroquias</option>';
+    selectComunidad.innerHTML = '<option value="">Todas las Comunidades</option>';
+    
+    selectParroquia.disabled = true;
+    selectComunidad.disabled = true;
+
+    if (!municipioId) return;
+
+    fetch(`/api/geografia/parroquias/${municipioId}`)
+        .then(res => res.json())
+        .then(data => {
+            console.log("Backend Parroquias:", data);
+            
+            data.forEach(par => {
+                const id = par.id || par.id_parroquia || par.idParroquia;
+                const nombre = par.nombre || par.nombre_parroquia || par.nombreParroquia;
+                
+                selectParroquia.innerHTML += `<option value="${id}">${escapeHTML(nombre || 'Error: Sin nombre')}</option>`;
+            });
+            selectParroquia.disabled = false;
+        })
+        .catch(err => console.error("Error cargando parroquias:", err));
+}
+
+function alCambiarParroquia(parroquiaId) {
+    const selectComunidad = document.getElementById('comunidad');
+    
+    selectComunidad.innerHTML = '<option value="">Todas las Comunidades</option>';
+    selectComunidad.disabled = true;
+
+    if (!parroquiaId) return;
+
+    fetch(`/api/geografia/comunidades/${parroquiaId}`)
+        .then(res => res.json())
+        .then(data => {
+            console.log("Backend Comunidades:", data);
+            
+            data.forEach(com => {
+                const id = com.id || com.id_comunidad || com.idComunidad;
+                const nombre = com.nombre || com.nombre_comunidad || com.nombreComunidad;
+                
+                selectComunidad.innerHTML += `<option value="${id}">${escapeHTML(nombre || 'Error: Sin nombre')}</option>`;
+            });
+            selectComunidad.disabled = false;
+        })
+        .catch(err => console.error("Error cargando comunidades:", err));
+}
+document.addEventListener('DOMContentLoaded', () => {
+    
+    // 1. Ejecutamos la lógica de mapas dentro de una cápsula (try-catch)
+    try {
+        // Usamos la función que mencionas haber modificado
+        if (typeof obtener_mapas_filtrados === 'function') {
+            obtener_mapas_filtrados();
+        } else if (typeof cargarTablaMapas === 'function') {
+            cargarTablaMapas();
+        } else {
+            console.warn("No se encontró la función para cargar los mapas.");
+        }
+    } catch (error) {
+        // Si hay un error aquí, se reporta, pero NO detiene la página
+        console.error("🔥 Error detectado en obtener_mapas_filtrados:", error);
     }
 
-    function alCambiarMunicipio(idMunicipio) {
-        const selectParroquia = document.getElementById('parroquia');
-        const selectComunidad = document.getElementById('comunidad');
-        selectParroquia.innerHTML = '<option value="">Seleccione Parroquia</option>';
-        selectComunidad.innerHTML = '<option value="">Seleccione Comunidad</option>';
-        if (!idMunicipio) { selectParroquia.disabled = true; selectComunidad.disabled = true; return; }
-
-        fetch(`/api/geografia/parroquias/${idMunicipio}`)
-            .then(res => res.json())
-            .then(parroquias => {
-                parroquias.forEach(p => {
-                    let option = document.createElement('option');
-                    option.value = p.id_parroquia || p.id;
-                    option.textContent = p.nombre_parroquia || p.nombre;
-                    selectParroquia.appendChild(option);
-                });
-                selectParroquia.disabled = false;
-            });
+    // 2. Ejecutamos la carga de estados independientemente
+    try {
+        cargarEstados(); // ¡Ahora esta función se ejecutará sí o sí!
+    } catch (error) {
+        console.error("🔥 Error al ejecutar cargarEstados:", error);
     }
-
-    function alCambiarParroquia(idParroquia) {
-        const selectComunidad = document.getElementById('comunidad');
-        selectComunidad.innerHTML = '<option value="">Seleccione Comunidad</option>';
-        if (!idParroquia) { selectComunidad.disabled = true; return; }
-
-        fetch(`/api/geografia/comunidades/${idParroquia}`)
-            .then(res => res.json())
-            .then(comunidades => {
-                comunidades.forEach(c => {
-                    let option = document.createElement('option');
-                    option.value = c.id_comunidad || c.id;
-                    option.textContent = c.nombre_comunidad || c.nombre;
-                    selectComunidad.appendChild(option);
-                });
-                selectComunidad.disabled = false;
-            });
-    }
+});
 </script>
 {% endblock %}

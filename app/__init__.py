@@ -196,5 +196,9 @@ def create_app(config_class=Config):
             mapa_estados=mapa_estados,
             modulos_operativos=modulos_operativos,
         )
+# Manejador global de errores URL (404)
+    @app.errorhandler(404)
+    def pagina_no_encontrada(e):
+        return render_template('404.html'), 404
 
     return app

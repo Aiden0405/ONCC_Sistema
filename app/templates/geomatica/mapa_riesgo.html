@@ -16,70 +16,81 @@
         </a>
     </div>
     
+    <!-- Filtros Geográficos (Sin botón de Submit) -->
     <div class="max-w-64rem mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
         <div class="flex items-center space-x-3 border-b border-gray-100 dark:border-gray-700 pb-4 mb-6">
             <i data-lucide="filter" class="text-blue-600 dark:text-blue-400 w-5 h-5"></i>
             <h3 class="text-lg font-bold text-gray-800 dark:text-white">Filtrar Ubicación Geográfica</h3>
         </div>
 
-        <form id="form-ubicacion" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+        <div id="form-ubicacion" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
             <div class="flex flex-col space-y-2">
                 <label for="estado" class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Estado</label>
-                <select id="estado" onchange="aplicarFiltros(); alCambiarEstado(this.value)" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 block p-2.5">
-                    <option value="">Seleccione un Estado</option>
+                <select id="estado" onchange="alCambiarEstado(this.value); aplicarFiltros()" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 block p-2.5">
+                    <option value="">Todos los Estados</option>
                 </select>
             </div>
             <div class="flex flex-col space-y-2">
                 <label for="municipio" class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Municipio</label>
-                <select id="municipio" onchange="aplicarFiltros();alCambiarMunicipio(this.value)" disabled class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 block p-2.5 disabled:opacity-50">
-                    <option value="">Seleccione un Municipio</option>
+                <select id="municipio" onchange="alCambiarMunicipio(this.value); aplicarFiltros()" disabled class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 block p-2.5 disabled:opacity-50">
+                    <option value="">Todos los Municipios</option>
                 </select>
             </div>
             <div class="flex flex-col space-y-2">
                 <label for="parroquia" class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Parroquia</label>
-                <select id="parroquia" onchange="aplicarFiltros(); alCambiarParroquia(this.value)" disabled class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 block p-2.5 disabled:opacity-50">
-                    <option value="">Seleccione una Parroquia</option>
+                <select id="parroquia" onchange="alCambiarParroquia(this.value); aplicarFiltros()" disabled class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 block p-2.5 disabled:opacity-50">
+                    <option value="">Todas las Parroquias</option>
                 </select>
             </div>
             <div class="flex flex-col space-y-2">
                 <label for="comunidad" class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Comunidad</label>
                 <select id="comunidad" onchange="aplicarFiltros()" disabled class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 block p-2.5 disabled:opacity-50">
-                    <option value="">Seleccione una Comunidad</option>
+                    <option value="">Todas las Comunidades</option>
                 </select>
             </div>
-            <div class="lg:col-span-4 flex justify-end space-x-3 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-                <button type="button" onclick="limpiarFiltros()" class="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg flex items-center">
+            <div class="lg:col-span-4 flex justify-end mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                <button type="button" onclick="limpiarFiltros()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg flex items-center hover:bg-gray-50">
                     <i data-lucide="refresh-cw" class="w-4 h-4 mr-2"></i> Limpiar Filtros
                 </button>
-                <button type="submit" class="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm flex items-center">
-                    <i data-lucide="search" class="w-4 h-4 mr-2"></i> Aplicar Filtro
-                </button>
             </div>
-        </form>
+        </div>
     </div>
 
+    <!-- Tabla de Resultados con Búsqueda Integrada -->
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden relative">
-        <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+        <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
                 <h3 class="text-sm font-bold uppercase tracking-wide text-blue-700 dark:text-blue-400">Directorio de Capas</h3>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Haga clic en Editar para añadir zonas al mapa.</p>
+                <span id="contadorRegistros" class="text-xs text-gray-500 dark:text-gray-400 mt-1">0 registro(s)</span>
             </div>
-            <span id="contadorRegistros" class="text-xs text-gray-500 dark:text-gray-400 font-mono">0 registro(s)</span>
+            <div class="relative w-full sm:w-72">
+                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <i data-lucide="search" class="w-4 h-4 text-gray-400"></i>
+                </div>
+                <input type="text" id="buscadorLocal" onkeyup="renderizarTablaLocal()" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" placeholder="Buscar mapa, comunidad o fecha...">
+            </div>
         </div>
 
         <div class="overflow-x-auto">
             <table class="w-full text-sm text-left border-collapse" id="tablaMapas">
                 <thead>
                     <tr class="text-xs uppercase tracking-wider bg-gray-50 text-gray-500 dark:bg-gray-700/40 dark:text-gray-400">
-                        <th class="px-6 py-3 font-semibold">Nombre de Capa</th>
-                        <th class="px-6 py-3 font-semibold">Comunidad</th>
+                        <!-- Cabeceras Clickables para ordenar -->
+                        <th class="px-6 py-3 font-semibold cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" onclick="cambiarOrden('nombre')">
+                            Nombre de Capa <i data-lucide="arrow-up-down" class="w-3 h-3 inline ml-1"></i>
+                        </th>
+                        <th class="px-6 py-3 font-semibold cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" onclick="cambiarOrden('comunidad')">
+                            Comunidad <i data-lucide="arrow-up-down" class="w-3 h-3 inline ml-1"></i>
+                        </th>
                         <th class="px-6 py-3 font-semibold">Tipo de Archivo</th>
-                        <th class="px-6 py-3 font-semibold">Fecha Registro</th>
+                        <th class="px-6 py-3 font-semibold cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" onclick="cambiarOrden('fecha_registro')">
+                            Fecha Registro <i data-lucide="arrow-up-down" class="w-3 h-3 inline ml-1"></i>
+                        </th>
                         <th class="px-6 py-3 text-right">Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="cuerpoTablaMapas" class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
-                    </tbody>
+                </tbody>
             </table>
         </div>
     </div>
@@ -89,71 +100,205 @@
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    if (typeof lucide !== 'undefined') { lucide.createIcons(); }
-
+    // Variables de estado
+    let mapasData = []; 
+    let columnaOrden = 'fecha_registro';
+    let ordenAscendente = false; 
+    
+    // IMPORTANTE: Definir el token CSRF para que los botones de editar y eliminar funcionen
     const csrfToken = "{{ csrf_token() }}";
 
-    document.addEventListener('DOMContentLoaded', function() {
-        cargarFiltrosEstados();
-        cargarTablaMapas();
-    });
+    // 1. Prevención XSS
+    const escapeHTML = str => {
+        if (!str) return '';
+        return str.toString().replace(/[&<>'"]/g, 
+            tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+        );
+    };
 
-    // ============================================
-    // CARGAR TABLA PRINCIPAL (CRUD READ)
-    // ============================================
+    // 2. Filtrado desde el Backend
+    function aplicarFiltros() {
+        const filtros = {
+            estado: document.getElementById('estado')?.value || '',
+            municipio: document.getElementById('municipio')?.value || '',
+            parroquia: document.getElementById('parroquia')?.value || '',
+            comunidad: document.getElementById('comunidad')?.value || ''
+        };
+
+        const params = new URLSearchParams();
+        for (const key in filtros) {
+            if (filtros[key]) params.append(key, filtros[key]);
+        }
+        
+        fetch(`/geomatica/mapas?${params.toString()}`)
+            .then(res => res.json())
+            .then(data => { 
+                mapasData = data; 
+                renderizarTablaLocal(); 
+            })
+            .catch(err => console.error("Error al filtrar mapas:", err));
+    }
+
+    // 3. Carga Inicial
     function cargarTablaMapas() {
         fetch('/geomatica/mapas')
             .then(res => res.json())
-            .then(data => {
-                const tbody = document.getElementById('cuerpoTablaMapas');
-                document.getElementById('contadorRegistros').innerText = `${data.length} registro(s)`;
-                tbody.innerHTML = '';
-
-                if (data.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">No hay mapas registrados.</td></tr>`;
-                    return;
-                }
-
-                data.forEach(mapa => {
-                    // Formatear la fecha para que incluya la hora local y se vea la actualización
-                    const fecha = mapa.fecha_registro ? new Date(mapa.fecha_registro).toLocaleString() : 'N/A';
-                    
-                    // Escapamos comillas simples en el texto para que no rompan el HTML del botón
-                    const nombreSafe = mapa.nombre.replace(/'/g, "\\'");
-                    const descSafe = mapa.descripcion.replace(/'/g, "\\'");
-
-                    let tr = document.createElement('tr');
-                    tr.className = "hover:bg-gray-50 dark:hover:bg-gray-700/50";
-                    tr.innerHTML = `
-                        <td class="px-6 py-4 font-medium text-gray-900 dark:text-white flex flex-col">
-                            <span>${mapa.nombre}</span>
-                            <span class="text-[10px] text-gray-400 font-normal truncate w-48">${mapa.descripcion}</span>
-                        </td>
-                        <td class="px-6 py-4">${mapa.comunidad}</td>
-                        <td class="px-6 py-4"><span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">${mapa.tipo_archivo}</span></td>
-                        <td class="px-6 py-4 text-xs">${fecha}</td>
-                        <td class="px-6 py-4 text-right space-x-2">
-                            <button onclick="editarMetadatosMapa(${mapa.id}, '${nombreSafe}', '${descSafe}')" class="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300" title="Editar Información">
-                                <i data-lucide="edit" class="w-4 h-4 inline"></i>
-                            </button>
-                            
-                            <a href="/geomatica/dibujar/${mapa.id}" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300" title="Dibujar/Ver Lienzo">
-                                <i data-lucide="map" class="w-4 h-4 inline"></i>
-                            </a>
-                            
-                            <button onclick="eliminarMapa(${mapa.id})" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300" title="Eliminar Mapa">
-                                <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
-                            </button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-                if (typeof lucide !== 'undefined') lucide.createIcons();
+            .then(data => { 
+                mapasData = data;
+                renderizarTablaLocal(); 
             })
-            .catch(error => console.error('Error al cargar la tabla de mapas:', error));
+            .catch(err => console.error("Error al cargar la tabla:", err));
     }
+
+    // 4. Limpiar Filtros
+    function limpiarFiltros() {
+        document.getElementById('estado').value = '';
+        document.getElementById('municipio').value = '';
+        document.getElementById('parroquia').value = '';
+        document.getElementById('comunidad').value = '';
+        document.getElementById('buscadorLocal').value = '';
+        
+        document.getElementById('municipio').disabled = true;
+        document.getElementById('parroquia').disabled = true;
+        document.getElementById('comunidad').disabled = true;
+        
+        cargarTablaMapas(); 
+    }
+
+    // 5. Ordenamiento de la tabla
+    function cambiarOrden(columna) {
+        if (columnaOrden === columna) {
+            ordenAscendente = !ordenAscendente; 
+        } else {
+            columnaOrden = columna;
+            ordenAscendente = true; 
+        }
+        renderizarTablaLocal();
+    }
+
+    // 6. DIBUJAR LA TABLA Y GESTIONAR BOTONES
+    function renderizarTablaLocal() {
+        const terminoBusqueda = document.getElementById('buscadorLocal').value.toLowerCase();
+        
+        let datosFiltrados = mapasData.filter(mapa => {
+            const nombre = (mapa.nombre || '').toLowerCase();
+            const comunidad = (mapa.comunidad || '').toLowerCase();
+            const fecha = mapa.fecha_registro ? new Date(mapa.fecha_registro).toLocaleDateString() : '';
+            return nombre.includes(terminoBusqueda) || comunidad.includes(terminoBusqueda) || fecha.includes(terminoBusqueda);
+        });
+
+        datosFiltrados.sort((a, b) => {
+            let valA = a[columnaOrden];
+            let valB = b[columnaOrden];
+            if (columnaOrden === 'fecha_registro') {
+                valA = valA ? new Date(valA).getTime() : 0;
+                valB = valB ? new Date(valB).getTime() : 0;
+            } else {
+                valA = (valA || '').toString().toLowerCase();
+                valB = (valB || '').toString().toLowerCase();
+            }
+            if (valA < valB) return ordenAscendente ? -1 : 1;
+            if (valA > valB) return ordenAscendente ? 1 : -1;
+            return 0;
+        });
+
+        const tbody = document.getElementById('cuerpoTablaMapas');
+        document.getElementById('contadorRegistros').innerText = `${datosFiltrados.length} registro(s)`;
+        tbody.innerHTML = '';
+
+        if (datosFiltrados.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-8 text-center text-gray-500">No se encontraron resultados para la búsqueda.</td></tr>`;
+            return;
+        }
+
+        datosFiltrados.forEach(mapa => {
+            const fecha = mapa.fecha_registro ? new Date(mapa.fecha_registro).toLocaleString() : 'N/A';
+            const nombreSeguro = escapeHTML(mapa.nombre);
+            const descSeguro = escapeHTML(mapa.descripcion);
+            
+            // Reemplazo de comillas para evitar que se rompa el HTML en los onclick
+            const nombreParam = mapa.nombre ? mapa.nombre.replace(/'/g, "\\'") : '';
+            const descParam = mapa.descripcion ? mapa.descripcion.replace(/'/g, "\\'") : '';
+
+            // LÓGICA INTELIGENTE DEL BOTÓN CENTRAL (Mapa Interactivo vs Visor de Imagen)
+            let btnAccionCentral = '';
+            if (mapa.tipo_archivo === 'Imagen') {
+                btnAccionCentral = `
+                    <button onclick="verImagenMapa(${mapa.id}, '${nombreParam}')" class="text-blue-600 hover:text-blue-900 dark:text-blue-400" title="Ver Fotografía/Imagen">
+                        <i data-lucide="image" class="w-4 h-4 inline"></i>
+                    </button>
+                `;
+            } else {
+                btnAccionCentral = `
+                    <a href="/geomatica/dibujar/${mapa.id}" class="text-blue-600 hover:text-blue-900 dark:text-blue-400" title="Ver/Editar Lienzo">
+                        <i data-lucide="map" class="w-4 h-4 inline"></i>
+                    </a>
+                `;
+            }
+
+            let tr = document.createElement('tr');
+            tr.className = "hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors";
+            tr.innerHTML = `
+                <td class="px-6 py-4 font-medium text-gray-900 dark:text-white flex flex-col">
+                    <span>${nombreSeguro}</span>
+                    <span class="text-[10px] text-gray-400 font-normal truncate w-48">${descSeguro}</span>
+                </td>
+                <td class="px-6 py-4">${escapeHTML(mapa.comunidad)}</td>
+                <td class="px-6 py-4"><span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">${mapa.tipo_archivo}</span></td>
+                <td class="px-6 py-4 text-xs">${fecha}</td>
+                <td class="px-6 py-4 text-right space-x-2">
+                    <button onclick="editarMetadatosMapa(${mapa.id}, '${nombreParam}', '${descParam}')" class="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400" title="Editar Información">
+                        <i data-lucide="edit" class="w-4 h-4 inline"></i>
+                    </button>
+                    
+                    ${btnAccionCentral}
+                    
+                    <button onclick="eliminarMapa(${mapa.id})" class="text-red-600 hover:text-red-900 dark:text-red-400" title="Eliminar Capa">
+                        <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
     // ============================================
-    // CRUD DELETE (ELIMINAR MAPA VIA API JSON)
+    // VISUALIZADOR DE IMÁGENES (NUEVA FUNCIÓN)
+    // ============================================
+    function verImagenMapa(idMapa, nombreMapa) {
+        // Mostramos un loader mientras se trae la URL de la base de datos
+        Swal.fire({
+            title: 'Cargando imagen...',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
+
+        fetch(`/geomatica/mapas/${idMapa}`)
+            .then(res => res.json())
+            .then(data => {
+                if(data.ruta_imagen_mapa) {
+                    Swal.fire({
+                        title: nombreMapa,
+                        imageUrl: `/static/${data.ruta_imagen_mapa}`,
+                        imageAlt: 'Fotografía del Mapa de Riesgo',
+                        width: 'auto',
+                        imageWidth: '100%',
+                        imageHeight: 'auto',
+                        confirmButtonText: 'Cerrar',
+                        confirmButtonColor: '#3085d6',
+                        customClass: { image: 'rounded-lg shadow-md' }
+                    });
+                } else {
+                    Swal.fire('Error', 'La imagen solicitada no se encontró en el servidor.', 'error');
+                }
+            })
+            .catch(() => Swal.fire('Error', 'Fallo de conexión al cargar la imagen.', 'error'));
+    }
+
+    // ============================================
+    // CRUD UPDATE: EDITAR DATOS (FUNCIÓN RESTAURADA)
     // ============================================
     async function editarMetadatosMapa(idMapa, nombreActual, descActual) {
         const { value: formValues } = await Swal.fire({
@@ -190,7 +335,7 @@
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken
+                    'X-CSRFToken': csrfToken // Usamos el token definido arriba
                 },
                 body: JSON.stringify(formValues)
             })
@@ -198,8 +343,8 @@
             .then(data => {
                 if (data.status === 'success') {
                     Swal.mixin({toast: true, position: 'bottom-end', showConfirmButton: false, timer: 3000})
-                        .fire({ icon: 'success', title: 'Datos y fecha actualizados.' });
-                    cargarTablaMapas(); // Recarga la tabla para ver la nueva fecha y nombre
+                        .fire({ icon: 'success', title: 'Datos actualizados correctamente.' });
+                    cargarTablaMapas(); 
                 } else {
                     Swal.fire('Error', data.message, 'error');
                 }
@@ -207,121 +352,139 @@
             .catch(err => Swal.fire('Error', 'Fallo de conexión.', 'error'));
         }
     }
+
     // ============================================
-    // LÓGICA DE FILTROS GEOGRÁFICOS
+    // CRUD DELETE: ELIMINAR MAPA (FUNCIÓN RESTAURADA)
     // ============================================
-    function cargarFiltrosEstados() {
+    function eliminarMapa(idMapa) {
+        Swal.fire({
+            title: '¿Está seguro?',
+            text: "Se eliminarán el mapa y todas las geometrías asociadas irreversiblemente.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(`/geomatica/mapas/${idMapa}`, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRFToken': csrfToken }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        Swal.fire('Eliminado', data.message, 'success');
+                        cargarTablaMapas(); 
+                    } else {
+                        Swal.fire('Error', data.message, 'error');
+                    }
+                })
+                .catch(error => Swal.fire('Error', 'Fallo de conexión al eliminar', 'error'));
+            }
+        })
+    }
+
+    // Inicializar todo al cargar la página
+    document.addEventListener('DOMContentLoaded', () => {
+        cargarTablaMapas();
+        cargarEstados();
+    });
+
+    // ----------------------------------------------------
+    // LÓGICA DE GEOGRAFÍA PARA LOS FILTROS
+    // ----------------------------------------------------
+    function cargarEstados() {
         fetch('/api/geografia/estados')
             .then(res => res.json())
-            .then(estados => {
+            .then(data => {
                 const selectEstado = document.getElementById('estado');
-                estados.forEach(e => {
-                    let option = document.createElement('option');
-                    option.value = e.id_estado || e.id;          
-                    option.textContent = e.nombre_estado || e.nombre; 
-                    selectEstado.appendChild(option);
+                if(!selectEstado) return;
+                selectEstado.innerHTML = '<option value="">Todos los Estados</option>';
+                data.forEach(est => {
+                    const id = est.id || est.id_estado;
+                    const nombre = est.nombre || est.nombre_estado;
+                    selectEstado.innerHTML += `<option value="${id}">${escapeHTML(nombre)}</option>`;
                 });
-            });
+            })
+            .catch(err => console.error(err));
     }
 
-    function alCambiarEstado(idEstado) {
+    function alCambiarEstado(estadoId) {
         const selectMunicipio = document.getElementById('municipio');
         const selectParroquia = document.getElementById('parroquia');
         const selectComunidad = document.getElementById('comunidad');
-        selectMunicipio.innerHTML = '<option value="">Seleccione un Municipio</option>';
-        selectParroquia.innerHTML = '<option value="">Seleccione una Parroquia</option>';
-        selectComunidad.innerHTML = '<option value="">Seleccione una Comunidad</option>';
-        if (!idEstado) { selectMunicipio.disabled = true; selectParroquia.disabled = true; selectComunidad.disabled = true; return; }
 
-        fetch(`/api/geografia/municipios/${idEstado}`)
+        if(!selectMunicipio) return;
+
+        selectMunicipio.innerHTML = '<option value="">Todos los Municipios</option>';
+        selectParroquia.innerHTML = '<option value="">Todas las Parroquias</option>';
+        selectComunidad.innerHTML = '<option value="">Todas las Comunidades</option>';
+        selectMunicipio.disabled = true;
+        selectParroquia.disabled = true;
+        selectComunidad.disabled = true;
+
+        if (!estadoId) return;
+
+        fetch(`/api/geografia/municipios/${estadoId}`)
             .then(res => res.json())
-            .then(municipios => {
-                municipios.forEach(m => {
-                    let option = document.createElement('option');
-                    option.value = m.id_municipio || m.id;
-                    option.textContent = m.nombre_municipio || m.nombre;
-                    selectMunicipio.appendChild(option);
+            .then(data => {
+                data.forEach(mun => {
+                    const id = mun.id || mun.id_municipio;
+                    const nombre = mun.nombre || mun.nombre_municipio;
+                    selectMunicipio.innerHTML += `<option value="${id}">${escapeHTML(nombre)}</option>`;
                 });
                 selectMunicipio.disabled = false;
-            });
+            })
+            .catch(err => console.error(err));
     }
 
-    function alCambiarMunicipio(idMunicipio) {
+    function alCambiarMunicipio(municipioId) {
         const selectParroquia = document.getElementById('parroquia');
         const selectComunidad = document.getElementById('comunidad');
-        selectParroquia.innerHTML = '<option value="">Seleccione una Parroquia</option>';
-        selectComunidad.innerHTML = '<option value="">Seleccione una Comunidad</option>';
-        if (!idMunicipio) { selectParroquia.disabled = true; selectComunidad.disabled = true; return; }
+        if(!selectParroquia) return;
 
-        fetch(`/api/geografia/parroquias/${idMunicipio}`)
+        selectParroquia.innerHTML = '<option value="">Todas las Parroquias</option>';
+        selectComunidad.innerHTML = '<option value="">Todas las Comunidades</option>';
+        selectParroquia.disabled = true;
+        selectComunidad.disabled = true;
+
+        if (!municipioId) return;
+
+        fetch(`/api/geografia/parroquias/${municipioId}`)
             .then(res => res.json())
-            .then(parroquias => {
-                parroquias.forEach(p => {
-                    let option = document.createElement('option');
-                    option.value = p.id_parroquia || p.id;
-                    option.textContent = p.nombre_parroquia || p.nombre;
-                    selectParroquia.appendChild(option);
+            .then(data => {
+                data.forEach(par => {
+                    const id = par.id || par.id_parroquia;
+                    const nombre = par.nombre || par.nombre_parroquia;
+                    selectParroquia.innerHTML += `<option value="${id}">${escapeHTML(nombre)}</option>`;
                 });
                 selectParroquia.disabled = false;
-            });
+            })
+            .catch(err => console.error(err));
     }
 
-    function alCambiarParroquia(idParroquia) {
+    function alCambiarParroquia(parroquiaId) {
         const selectComunidad = document.getElementById('comunidad');
-        selectComunidad.innerHTML = '<option value="">Seleccione una Comunidad</option>';
-        if (!idParroquia) { selectComunidad.disabled = true; return; }
+        if(!selectComunidad) return;
+        
+        selectComunidad.innerHTML = '<option value="">Todas las Comunidades</option>';
+        selectComunidad.disabled = true;
 
-        fetch(`/api/geografia/comunidades/${idParroquia}`)
+        if (!parroquiaId) return;
+
+        fetch(`/api/geografia/comunidades/${parroquiaId}`)
             .then(res => res.json())
-            .then(comunidades => {
-                comunidades.forEach(c => {
-                    let option = document.createElement('option');
-                    option.value = c.id_comunidad || c.id;
-                    option.textContent = c.nombre_comunidad || c.nombre;
-                    selectComunidad.appendChild(option);
+            .then(data => {
+                data.forEach(com => {
+                    const id = com.id || com.id_comunidad;
+                    const nombre = com.nombre || com.nombre_comunidad;
+                    selectComunidad.innerHTML += `<option value="${id}">${escapeHTML(nombre)}</option>`;
                 });
                 selectComunidad.disabled = false;
-            });
+            })
+            .catch(err => console.error(err));
     }
-
-    function limpiarFiltros() {
-        document.getElementById('estado').value = "";
-        const selectMunicipio = document.getElementById('municipio');
-        selectMunicipio.innerHTML = '<option value="">Seleccione un Municipio</option>';
-        selectMunicipio.disabled = true;
-        const selectParroquia = document.getElementById('parroquia');
-        selectParroquia.innerHTML = '<option value="">Seleccione una Parroquia</option>';
-        selectParroquia.disabled = true;
-        const selectComunidad = document.getElementById('comunidad');
-        selectComunidad.innerHTML = '<option value="">Seleccione una Comunidad</option>';
-        selectComunidad.disabled = true;
-    }
-    function aplicarFiltros() {
-    // 1. Recolectar valores actuales de todos los selects
-    const filtros = {
-        estado: document.getElementById('estado').value,
-        municipio: document.getElementById('municipio').value,
-        parroquia: document.getElementById('parroquia').value,
-        comunidad: document.getElementById('comunidad').value
-    };
-
-    // 2. Crear los parámetros de la URL
-    const params = new URLSearchParams();
-    for (const key in filtros) {
-        if (filtros[key]) { // Solo añadir si tiene valor
-            params.append(key, filtros[key]);
-        }
-    }
-
-    // 3. Hacer la petición al servidor
-    console.log("Filtrando con:", params.toString()); // Útil para depurar
-    
-    fetch(`/geomatica/obtener_mapas?${params.toString()}`)
-        .then(res => res.json())
-        .then(data => {
-            // 4. Actualizar la tabla
-            renderizarTabla(data); 
-        })
-        .catch(err => console.error("Error al filtrar:", err));
-}</script>
-{%endblock %}
+</script>
+{% endblock %}
