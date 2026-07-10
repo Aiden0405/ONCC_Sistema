@@ -102,6 +102,9 @@ def create_app(config_class=Config):
     from app.blueprints.logistica.controllers.inventario import eliminar as logistica_inventario_eliminar
     from app.blueprints.logistica.controllers.inventario import inventario_index as logistica_inventario_index
     from app.blueprints.logistica.controllers.inventario import nuevo as logistica_inventario_nuevo
+    from app.blueprints.logistica.controllers.inventario import nuevo_movimiento as logistica_inventario_nuevo_movimiento
+    from app.blueprints.logistica.controllers.inventario import editar_movimiento as logistica_inventario_editar_movimiento
+    from app.blueprints.logistica.controllers.inventario import eliminar_movimiento as logistica_inventario_eliminar_movimiento
     from app.blueprints.logistica.controllers.inventario import reporte_inventario as logistica_inventario_reporte
     from app.blueprints.logistica.controllers.inventario import reporte_movimientos as logistica_inventario_reporte_movimientos
     from app.blueprints.logistica.controllers.tecnicos_campo import tecnicos_nuevo as logistica_tecnicos_nuevo
@@ -162,6 +165,9 @@ def create_app(config_class=Config):
 
     app.add_url_rule('/inventario/', endpoint='inventario.index', view_func=logistica_inventario_index)
     app.add_url_rule('/inventario/nuevo', endpoint='inventario.nuevo', view_func=logistica_inventario_nuevo, methods=['POST'])
+    app.add_url_rule('/inventario/nuevo-movimiento', endpoint='inventario.nuevo_movimiento', view_func=logistica_inventario_nuevo_movimiento, methods=['POST'])
+    app.add_url_rule('/inventario/movimiento/<int:movimiento_id>/editar', endpoint='inventario.editar_movimiento', view_func=logistica_inventario_editar_movimiento, methods=['POST'])
+    app.add_url_rule('/inventario/movimiento/<int:movimiento_id>/eliminar', endpoint='inventario.eliminar_movimiento', view_func=logistica_inventario_eliminar_movimiento, methods=['POST'])
     app.add_url_rule('/inventario/<int:equipo_id>/editar', endpoint='inventario.editar', view_func=logistica_inventario_editar, methods=['POST'])
     app.add_url_rule('/inventario/<int:equipo_id>/acta', endpoint='inventario.acta_responsabilidad', view_func=logistica_inventario_acta)
     app.add_url_rule('/inventario/<int:equipo_id>/eliminar', endpoint='inventario.eliminar', view_func=logistica_inventario_eliminar, methods=['POST'])

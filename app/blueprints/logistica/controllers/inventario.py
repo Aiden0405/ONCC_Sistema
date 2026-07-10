@@ -64,6 +64,46 @@ def reporte_inventario():
                     headers={'Content-Disposition': 'inline; filename=reporte_inventario.pdf'})
 
 
+@logistica_bp.route('/inventario/nuevo-movimiento', methods=['POST'])
+@login_required
+def nuevo_movimiento():
+    resultado = InventarioService.crear_movimiento(request.form, current_user)
+    if not resultado['ok']:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'ok': False, 'error': resultado['error']})
+        flash(resultado['error'], 'error')
+        return redirect(url_for('inventario.index'))
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'ok': True, 'redirect': url_for('inventario.index'), 'mensaje': resultado['mensaje']})
+    flash(resultado['mensaje'], 'success')
+    return redirect(url_for('inventario.index'))
+
+
+@logistica_bp.route('/inventario/movimiento/<int:movimiento_id>/editar', methods=['POST'])
+@login_required
+def editar_movimiento(movimiento_id):
+    resultado = InventarioService.actualizar_movimiento(movimiento_id, request.form, current_user)
+    if not resultado['ok']:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'ok': False, 'error': resultado['error']})
+        flash(resultado['error'], 'error')
+        return redirect(url_for('inventario.index'))
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'ok': True, 'redirect': url_for('inventario.index'), 'mensaje': resultado['mensaje']})
+    flash(resultado['mensaje'], 'success')
+    return redirect(url_for('inventario.index'))
+
+
+@logistica_bp.route('/inventario/movimiento/<int:movimiento_id>/eliminar', methods=['POST'])
+@login_required
+def eliminar_movimiento(movimiento_id):
+    resultado = InventarioService.eliminar_movimiento(movimiento_id, current_user)
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'ok': True, 'redirect': url_for('inventario.index'), 'mensaje': resultado['mensaje']})
+    flash(resultado['mensaje'], 'success')
+    return redirect(url_for('inventario.index'))
+
+
 @logistica_bp.route('/inventario/reporte-movimientos', methods=['GET'])
 @login_required
 def reporte_movimientos():

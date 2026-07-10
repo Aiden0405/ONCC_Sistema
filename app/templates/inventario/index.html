@@ -174,10 +174,11 @@
                     <tr class="text-xs uppercase tracking-wider bg-gray-50 text-gray-500 dark:bg-gray-700/40 dark:text-gray-400">
                         <th class="px-6 py-3 font-semibold">Movimiento ID</th>
                         <th class="px-6 py-3 font-semibold">Equipo</th>
-                        <th class="px-6 py-3 font-semibold hidden sm:table-cell">Fecha y Hora</th>
+                        <th class="px-6 py-3 font-semibold hidden sm:table-cell">Fecha</th>
                         <th class="px-6 py-3 font-semibold hidden lg:table-cell">Ubicación Origen</th>
                         <th class="px-6 py-3 font-semibold hidden lg:table-cell">Ubicación Destino</th>
                         <th class="px-6 py-3 font-semibold">Motivo / Responsable</th>
+                        <th class="px-6 py-3 text-center">Acciones</th>
                     </tr>
                     <tr class="bg-gray-50/50 dark:bg-gray-700/20 hidden sm:table-row">
                         <th class="px-6 py-2">
@@ -198,6 +199,7 @@
                         <th class="px-6 py-2">
                             <input type="text" data-col="5" class="filtro-movimientos w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="Motivo..." oninput="filtrarMovimientos()">
                         </th>
+                        <th class="px-6 py-2"></th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
@@ -209,10 +211,20 @@
                                 12345690
                             </div>
                         </td>
-                        <td class="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-400 hidden sm:table-cell" data-label="Fecha y Hora">2026-05-10 09:00</td>
+                        <td class="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-400 hidden sm:table-cell" data-label="Fecha">2026-05-10</td>
                         <td class="px-6 py-4 text-gray-600 dark:text-gray-400 hidden lg:table-cell" data-label="Ubicación Origen">Almacén Central</td>
                         <td class="px-6 py-4 text-gray-600 dark:text-gray-400 hidden lg:table-cell" data-label="Ubicación Destino">La hacienda</td>
                         <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-200" data-label="Motivo / Responsable">Despliegue inicial / J. Pérez</td>
+                        <td class="px-6 py-4" data-label="Acciones">
+                            <div class="flex items-center justify-center gap-2">
+                                <button onclick="abrirModalEditarMovimiento(1)" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors" title="Editar movimiento">
+                                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="abrirModalEliminarMovimiento(1)" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors" title="Eliminar movimiento">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </td>
                     </tr>
                     <tr data-id="2" class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
                         <td class="px-6 py-4 font-mono font-bold text-green-700 dark:text-green-400" data-label="Movimiento ID">#MOV-002</td>
@@ -222,10 +234,20 @@
                                 1234567
                             </div>
                         </td>
-                        <td class="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-400 hidden sm:table-cell" data-label="Fecha y Hora">2026-05-15 14:20</td>
+                        <td class="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-400 hidden sm:table-cell" data-label="Fecha">2026-05-15</td>
                         <td class="px-6 py-4 text-gray-600 dark:text-gray-400 hidden lg:table-cell" data-label="Ubicación Origen">Almacén Central</td>
                         <td class="px-6 py-4 text-gray-600 dark:text-gray-400 hidden lg:table-cell" data-label="Ubicación Destino">Bella Vista</td>
                         <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-200" data-label="Motivo / Responsable">Asignación / M. Reyes</td>
+                        <td class="px-6 py-4" data-label="Acciones">
+                            <div class="flex items-center justify-center gap-2">
+                                <button onclick="abrirModalEditarMovimiento(2)" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors" title="Editar movimiento">
+                                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="abrirModalEliminarMovimiento(2)" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors" title="Eliminar movimiento">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </td>
                     </tr>
                     <tr data-id="3" class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
                         <td class="px-6 py-4 font-mono font-bold text-green-700 dark:text-green-400" data-label="Movimiento ID">#MOV-003</td>
@@ -235,13 +257,23 @@
                                 12345690
                             </div>
                         </td>
-                        <td class="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-400 hidden sm:table-cell" data-label="Fecha y Hora">2026-07-06 11:00</td>
+                        <td class="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-400 hidden sm:table-cell" data-label="Fecha">2026-07-06</td>
                         <td class="px-6 py-4 text-gray-600 dark:text-gray-400 hidden lg:table-cell" data-label="Ubicación Origen">La hacienda</td>
                         <td class="px-6 py-4 text-gray-600 dark:text-gray-400 hidden lg:table-cell" data-label="Ubicación Destino">Bella Vista</td>
                         <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-200" data-label="Motivo / Responsable">Traslado por Falla / Director Reg.</td>
+                        <td class="px-6 py-4" data-label="Acciones">
+                            <div class="flex items-center justify-center gap-2">
+                                <button onclick="abrirModalEditarMovimiento(3)" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors" title="Editar movimiento">
+                                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="abrirModalEliminarMovimiento(3)" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors" title="Eliminar movimiento">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </td>
                     </tr>
                     <tr id="fila-sin-resultados-mov" class="hidden">
-                        <td colspan="6" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
+                        <td colspan="7" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
                             No se encontraron movimientos que coincidan con los filtros aplicados.
                         </td>
                     </tr>
@@ -450,12 +482,158 @@
     </div>
 </div>
 
+<!-- Modal Registrar Movimiento -->
+<div id="modal-movimiento" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+        <div class="flex justify-between items-center p-6 border-b sticky top-0 z-10 border-gray-100 bg-white dark:border-gray-700 dark:bg-gray-800">
+            <div>
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white">Registrar Movimiento</h2>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Registre el movimiento del equipo en el inventario</p>
+            </div>
+            <button onclick="document.getElementById('modal-movimiento').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        
+        <form method="POST" action="{{ url_for('inventario.nuevo_movimiento') }}" class="p-6 space-y-5" onsubmit="enviarFormulario(event, this, 'modal-movimiento')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Movimiento ID</label>
+                    <input type="text" name="movimiento_id" value="#MOV-004" readonly class="w-full border rounded-md p-2 text-sm bg-gray-50 border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none" />
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Equipo</label>
+                    <select name="equipo" required oninvalid="this.setCustomValidity('Seleccione un equipo')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                        <option value="">Seleccione...</option>
+                        {% for inv in inventario %}
+                        <option value="{{ inv.codigo }}">{{ inv.codigo }} - {{ inv.tipo_equipo }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="space-y-1">
+                <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Fecha</label>
+                <div class="relative">
+                    <i data-lucide="calendar" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
+                    <input type="date" name="fecha_hora" id="fecha-hora-movimiento" class="w-full border rounded-md pl-9 p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Seleccione una fecha')" oninput="this.setCustomValidity('')" />
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación Origen</label>
+                    <input type="text" name="ubicacion_origen" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ubicación actual" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación Destino</label>
+                    <input type="text" name="ubicacion_destino" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Nueva ubicación" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                </div>
+            </div>
+
+            <div class="space-y-1">
+                <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Motivo / Responsable</label>
+                <input type="text" name="motivo_responsable" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: Despliegue inicial / J. Pérez" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+            </div>
+
+            <div class="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-700">
+                <button type="button" onclick="document.getElementById('modal-movimiento').classList.add('hidden')" class="mr-3 px-4 py-2 border rounded-md text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Cancelar</button>
+                <button type="submit" class="px-4 py-2 bg-green-600 rounded-md text-sm font-medium text-white hover:bg-green-700 transition-colors shadow-sm">Registrar Movimiento</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Editar Movimiento -->
+<div id="modal-editar-movimiento" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+        <div class="flex justify-between items-center p-6 border-b sticky top-0 z-10 border-gray-100 bg-white dark:border-gray-700 dark:bg-gray-800">
+            <div>
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white">Editar Movimiento</h2>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Actualice los datos del movimiento seleccionado</p>
+            </div>
+            <button onclick="document.getElementById('modal-editar-movimiento').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        
+        <form id="form-editar-movimiento" method="POST" action="{{ url_for('inventario.editar_movimiento', movimiento_id=0) }}" class="p-6 space-y-5" onsubmit="enviarFormulario(event, this, 'modal-editar-movimiento')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" id="edit-mov-id" name="movimiento_id_hidden" value="0">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Movimiento ID</label>
+                    <input type="text" id="edit-mov-codigo" name="movimiento_id" readonly class="w-full border rounded-md p-2 text-sm bg-gray-50 border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none" />
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Equipo</label>
+                    <select id="edit-mov-equipo" name="equipo" required oninvalid="this.setCustomValidity('Seleccione un equipo')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                        <option value="">Seleccione...</option>
+                        {% for inv in inventario %}
+                        <option value="{{ inv.codigo }}">{{ inv.codigo }} - {{ inv.tipo_equipo }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="space-y-1">
+                <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Fecha</label>
+                <div class="relative">
+                    <i data-lucide="calendar" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
+                    <input type="date" id="edit-mov-fecha" name="fecha_hora" class="w-full border rounded-md pl-9 p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Seleccione una fecha')" oninput="this.setCustomValidity('')" />
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación Origen</label>
+                    <input type="text" id="edit-mov-origen" name="ubicacion_origen" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación Destino</label>
+                    <input type="text" id="edit-mov-destino" name="ubicacion_destino" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                </div>
+            </div>
+
+            <div class="space-y-1">
+                <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Motivo / Responsable</label>
+                <input type="text" id="edit-mov-motivo" name="motivo_responsable" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+            </div>
+
+            <div class="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-700">
+                <button type="button" onclick="document.getElementById('modal-editar-movimiento').classList.add('hidden')" class="mr-3 px-4 py-2 border rounded-md text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Cancelar</button>
+                <button type="submit" class="px-4 py-2 bg-blue-600 rounded-md text-sm font-medium text-white hover:bg-blue-700 transition-colors shadow-sm">Guardar Cambios</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Eliminar Movimiento -->
+<div id="modal-eliminar-movimiento" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="rounded-xl shadow-xl w-full max-w-md bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-6 text-center">
+        <div class="w-14 h-14 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
+            <i data-lucide="alert-triangle" class="w-7 h-7 text-red-600 dark:text-red-400"></i>
+        </div>
+        <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-2">¿Estás seguro de eliminar este movimiento?</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Esta acción no se puede deshacer. El registro será eliminado permanentemente.</p>
+        <form id="form-eliminar-movimiento" method="POST" action="{{ url_for('inventario.eliminar_movimiento', movimiento_id=0) }}" class="flex justify-center gap-3">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="button" onclick="document.getElementById('modal-eliminar-movimiento').classList.add('hidden')" class="px-5 py-2.5 border rounded-lg text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Cancelar</button>
+            <button type="submit" class="px-5 py-2.5 bg-red-600 rounded-lg text-sm font-medium text-white hover:bg-red-700 transition-colors shadow-sm">Eliminar</button>
+        </form>
+    </div>
+</div>
+
 <script>
 const equiposData = {{ inventario_json | tojson | safe }};
 
 (function() {
     const hoy = new Date().toISOString().split('T')[0];
     document.querySelectorAll('input[type="date"]').forEach(el => el.setAttribute('max', hoy));
+
 })();
 
 function limpiarErrorModal(modalId) {
@@ -648,6 +826,34 @@ function filtrarMovimientos() {
     if (sinResultados) {
         sinResultados.classList.toggle('hidden', visibles > 0);
     }
+}
+
+const movimientosData = [
+    { id: 1, codigo: '#MOV-001', equipo: '12345690', fecha: '2026-05-10', origen: 'Almacén Central', destino: 'La hacienda', motivo: 'Despliegue inicial / J. Pérez' },
+    { id: 2, codigo: '#MOV-002', equipo: '1234567', fecha: '2026-05-15', origen: 'Almacén Central', destino: 'Bella Vista', motivo: 'Asignación / M. Reyes' },
+    { id: 3, codigo: '#MOV-003', equipo: '12345690', fecha: '2026-07-06', origen: 'La hacienda', destino: 'Bella Vista', motivo: 'Traslado por Falla / Director Reg.' },
+];
+
+function abrirModalEditarMovimiento(id) {
+    const mov = movimientosData.find(m => m.id === id);
+    if (!mov) return;
+    limpiarErrorModal('modal-editar-movimiento');
+    document.getElementById('edit-mov-id').value = id;
+    document.getElementById('edit-mov-codigo').value = mov.codigo;
+    document.getElementById('edit-mov-equipo').value = mov.equipo;
+    document.getElementById('edit-mov-fecha').value = mov.fecha;
+    document.getElementById('edit-mov-origen').value = mov.origen;
+    document.getElementById('edit-mov-destino').value = mov.destino;
+    document.getElementById('edit-mov-motivo').value = mov.motivo;
+    document.getElementById('form-editar-movimiento').action = "{{ url_for('inventario.editar_movimiento', movimiento_id=0) }}".replace('/0', '/' + id);
+    document.getElementById('modal-editar-movimiento').classList.remove('hidden');
+}
+
+function abrirModalEliminarMovimiento(id) {
+    const mov = movimientosData.find(m => m.id === id);
+    if (!mov) return;
+    document.getElementById('form-eliminar-movimiento').action = "{{ url_for('inventario.eliminar_movimiento', movimiento_id=0) }}".replace('/0', '/' + id);
+    document.getElementById('modal-eliminar-movimiento').classList.remove('hidden');
 }
 
 function exportarReporteMovimientos() {

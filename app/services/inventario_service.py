@@ -72,6 +72,89 @@ class InventarioService:
         return {'ok': True, 'equipo': equipo, 'mensaje': 'Equipo registrado exitosamente en el inventario.'}
 
     @staticmethod
+    def crear_movimiento(datos, usuario):
+        movimiento_id = datos.get('movimiento_id', '#MOV-000').strip()
+        equipo = datos.get('equipo', '').strip()
+        fecha_hora = datos.get('fecha_hora', '').strip()
+        ubicacion_origen = datos.get('ubicacion_origen', '').strip()
+        ubicacion_destino = datos.get('ubicacion_destino', '').strip()
+        motivo = datos.get('motivo_responsable', '').strip()
+
+        if not equipo:
+            return {'ok': False, 'error': 'Debe seleccionar un equipo.'}
+        if not fecha_hora:
+            return {'ok': False, 'error': 'Debe indicar la fecha y hora.'}
+        try:
+            fecha_dt = datetime.strptime(fecha_hora, '%Y-%m-%d').date()
+            if fecha_dt > datetime.utcnow().date():
+                return {'ok': False, 'error': 'La fecha no puede ser posterior a hoy.'}
+        except ValueError:
+            return {'ok': False, 'error': 'Formato de fecha inválido.'}
+        if not ubicacion_origen:
+            return {'ok': False, 'error': 'Debe indicar la ubicación de origen.'}
+        if not ubicacion_destino:
+            return {'ok': False, 'error': 'Debe indicar la ubicación de destino.'}
+        if not motivo:
+            return {'ok': False, 'error': 'Debe indicar el motivo y responsable.'}
+
+        db.session.add(BitacoraTransaccion(
+            modulo='inventario',
+            registro_id=0,
+            accion='movimiento',
+            estado_nuevo='Transferencia',
+            usuario=usuario.nombre,
+            detalle=f'{movimiento_id} | {equipo}: {ubicacion_origen} -> {ubicacion_destino} | {motivo}',
+        ))
+        db.session.commit()
+
+        return {'ok': True, 'mensaje': 'Movimiento registrado exitosamente.'}
+
+    @staticmethod
+    def actualizar_movimiento(movimiento_id, datos, usuario):
+        equipo = datos.get('equipo', '').strip()
+        fecha_hora = datos.get('fecha_hora', '').strip()
+        ubicacion_origen = datos.get('ubicacion_origen', '').strip()
+        ubicacion_destino = datos.get('ubicacion_destino', '').strip()
+        motivo = datos.get('motivo_responsable', '').strip()
+
+        if not equipo:
+            return {'ok': False, 'error': 'Debe seleccionar un equipo.'}
+        if not fecha_hora:
+            return {'ok': False, 'error': 'Debe indicar la fecha.'}
+        if not ubicacion_origen:
+            return {'ok': False, 'error': 'Debe indicar la ubicación de origen.'}
+        if not ubicacion_destino:
+            return {'ok': False, 'error': 'Debe indicar la ubicación de destino.'}
+        if not motivo:
+            return {'ok': False, 'error': 'Debe indicar el motivo y responsable.'}
+
+        db.session.add(BitacoraTransaccion(
+            modulo='inventario',
+            registro_id=movimiento_id,
+            accion='movimiento_editado',
+            estado_nuevo='Transferencia',
+            usuario=usuario.nombre,
+            detalle=f'Movimiento #{movimiento_id} actualizado: {equipo} | {ubicacion_origen} -> {ubicacion_destino}',
+        ))
+        db.session.commit()
+
+        return {'ok': True, 'mensaje': 'Movimiento actualizado exitosamente.'}
+
+    @staticmethod
+    def eliminar_movimiento(movimiento_id, usuario):
+        db.session.add(BitacoraTransaccion(
+            modulo='inventario',
+            registro_id=movimiento_id,
+            accion='movimiento_eliminado',
+            estado_nuevo='Eliminado',
+            usuario=usuario.nombre,
+            detalle=f'Movimiento #{movimiento_id} eliminado del historial.',
+        ))
+        db.session.commit()
+
+        return {'ok': True, 'mensaje': 'Movimiento eliminado del historial.'}
+
+    @staticmethod
     def actualizar_equipo(equipo_id, datos, usuario):
         equipo = InventarioEquipo.query.get_or_404(equipo_id)
         codigo = datos.get('codigo', '').strip()
@@ -569,9 +652,9 @@ class InventarioService:
             ]
 
         movimientos = [
-            ['#MOV-001', '12345690', '2026-05-10 09:00', 'Almacén Central', 'La hacienda', 'Despliegue inicial / J. Pérez'],
-            ['#MOV-002', '1234567', '2026-05-15 14:20', 'Almacén Central', 'Bella Vista', 'Asignación / M. Reyes'],
-            ['#MOV-003', '12345690', '2026-07-06 11:00', 'La hacienda', 'Bella Vista', 'Traslado por Falla / Director Reg.'],
+            ['#MOV-001', '12345690', '2026-05-10', 'Almacén Central', 'La hacienda', 'Despliegue inicial / J. Pérez'],
+            ['#MOV-002', '1234567', '2026-05-15', 'Almacén Central', 'Bella Vista', 'Asignación / M. Reyes'],
+            ['#MOV-003', '12345690', '2026-07-06', 'La hacienda', 'Bella Vista', 'Traslado por Falla / Director Reg.'],
         ]
 
         if ids:
@@ -600,7 +683,7 @@ class InventarioService:
         detalle_data = [
             [Paragraph('<b>MOVIMIENTO ID</b>', estilo_tabla_titulo),
              Paragraph('<b>EQUIPO</b>', estilo_tabla_titulo),
-             Paragraph('<b>FECHA Y HORA</b>', estilo_tabla_titulo),
+             Paragraph('<b>FECHA</b>', estilo_tabla_titulo),
              Paragraph('<b>UBICACIÓN ORIGEN</b>', estilo_tabla_titulo),
              Paragraph('<b>UBICACIÓN DESTINO</b>', estilo_tabla_titulo),
              Paragraph('<b>MOTIVO / RESPONSABLE</b>', estilo_tabla_titulo)],
