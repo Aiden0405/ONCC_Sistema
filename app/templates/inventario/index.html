@@ -12,7 +12,7 @@
         </div>
         <div class="flex gap-2">
             <button onclick="exportarReporte()" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center shadow-sm transition-colors">
-                <i data-lucide="file-text" class="mr-2 w-4 h-4"></i> Exportar Reporte
+                <i data-lucide="file-text" class="mr-2 w-4 h-4"></i> Generar reporte
             </button>
             <button onclick="limpiarErrorModal('modal-inventario'); document.getElementById('modal-inventario').classList.remove('hidden')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center shadow-sm transition-colors">
                 <i data-lucide="plus" class="mr-2 w-4 h-4"></i> Nuevo Equipo
@@ -150,6 +150,106 @@
                     </tr>
                 </tbody>
             </table>
+        </div>
+    </div>
+
+    <div class="rounded-xl shadow-sm border bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700">
+        <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+            <div>
+                <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400">Historial de movimientos</h3>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="exportarReporteMovimientos()" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center shadow-sm transition-colors">
+                    <i data-lucide="file-text" class="mr-2 w-4 h-4"></i> Generar reporte
+                </button>
+                <button onclick="document.getElementById('modal-movimiento').classList.remove('hidden')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center shadow-sm transition-colors">
+                    <i data-lucide="plus" class="mr-2 w-4 h-4"></i> Registrar Movimiento
+                </button>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto scrollbar-hide">
+            <table class="w-full text-left border-collapse text-sm">
+                <thead>
+                    <tr class="text-xs uppercase tracking-wider bg-gray-50 text-gray-500 dark:bg-gray-700/40 dark:text-gray-400">
+                        <th class="px-6 py-3 font-semibold">Movimiento ID</th>
+                        <th class="px-6 py-3 font-semibold">Equipo</th>
+                        <th class="px-6 py-3 font-semibold hidden sm:table-cell">Fecha y Hora</th>
+                        <th class="px-6 py-3 font-semibold hidden lg:table-cell">Ubicación Origen</th>
+                        <th class="px-6 py-3 font-semibold hidden lg:table-cell">Ubicación Destino</th>
+                        <th class="px-6 py-3 font-semibold">Motivo / Responsable</th>
+                    </tr>
+                    <tr class="bg-gray-50/50 dark:bg-gray-700/20 hidden sm:table-row">
+                        <th class="px-6 py-2">
+                            <input type="text" data-col="0" class="filtro-movimientos w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="ID..." oninput="filtrarMovimientos()">
+                        </th>
+                        <th class="px-6 py-2">
+                            <input type="text" data-col="1" class="filtro-movimientos w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="Equipo..." oninput="filtrarMovimientos()">
+                        </th>
+                        <th class="px-6 py-2 hidden sm:table-cell">
+                            <input type="text" data-col="2" class="filtro-movimientos w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="Fecha..." oninput="filtrarMovimientos()">
+                        </th>
+                        <th class="px-6 py-2 hidden lg:table-cell">
+                            <input type="text" data-col="3" class="filtro-movimientos w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="Origen..." oninput="filtrarMovimientos()">
+                        </th>
+                        <th class="px-6 py-2 hidden lg:table-cell">
+                            <input type="text" data-col="4" class="filtro-movimientos w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="Destino..." oninput="filtrarMovimientos()">
+                        </th>
+                        <th class="px-6 py-2">
+                            <input type="text" data-col="5" class="filtro-movimientos w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="Motivo..." oninput="filtrarMovimientos()">
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
+                    <tr data-id="1" class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                        <td class="px-6 py-4 font-mono font-bold text-green-700 dark:text-green-400" data-label="Movimiento ID">#MOV-001</td>
+                        <td class="px-6 py-4 font-medium" data-label="Equipo">
+                            <div class="flex items-center">
+                                <i data-lucide="layers" class="mr-2 w-4 h-4 text-gray-400 dark:text-gray-500"></i>
+                                12345690
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-400 hidden sm:table-cell" data-label="Fecha y Hora">2026-05-10 09:00</td>
+                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400 hidden lg:table-cell" data-label="Ubicación Origen">Almacén Central</td>
+                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400 hidden lg:table-cell" data-label="Ubicación Destino">La hacienda</td>
+                        <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-200" data-label="Motivo / Responsable">Despliegue inicial / J. Pérez</td>
+                    </tr>
+                    <tr data-id="2" class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                        <td class="px-6 py-4 font-mono font-bold text-green-700 dark:text-green-400" data-label="Movimiento ID">#MOV-002</td>
+                        <td class="px-6 py-4 font-medium" data-label="Equipo">
+                            <div class="flex items-center">
+                                <i data-lucide="layers" class="mr-2 w-4 h-4 text-gray-400 dark:text-gray-500"></i>
+                                1234567
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-400 hidden sm:table-cell" data-label="Fecha y Hora">2026-05-15 14:20</td>
+                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400 hidden lg:table-cell" data-label="Ubicación Origen">Almacén Central</td>
+                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400 hidden lg:table-cell" data-label="Ubicación Destino">Bella Vista</td>
+                        <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-200" data-label="Motivo / Responsable">Asignación / M. Reyes</td>
+                    </tr>
+                    <tr data-id="3" class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                        <td class="px-6 py-4 font-mono font-bold text-green-700 dark:text-green-400" data-label="Movimiento ID">#MOV-003</td>
+                        <td class="px-6 py-4 font-medium" data-label="Equipo">
+                            <div class="flex items-center">
+                                <i data-lucide="layers" class="mr-2 w-4 h-4 text-gray-400 dark:text-gray-500"></i>
+                                12345690
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-400 hidden sm:table-cell" data-label="Fecha y Hora">2026-07-06 11:00</td>
+                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400 hidden lg:table-cell" data-label="Ubicación Origen">La hacienda</td>
+                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400 hidden lg:table-cell" data-label="Ubicación Destino">Bella Vista</td>
+                        <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-200" data-label="Motivo / Responsable">Traslado por Falla / Director Reg.</td>
+                    </tr>
+                    <tr id="fila-sin-resultados-mov" class="hidden">
+                        <td colspan="6" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
+                            No se encontraron movimientos que coincidan con los filtros aplicados.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="px-6 py-3 border-t border-gray-100 dark:border-gray-700 flex justify-end">
+            <span class="text-xs text-gray-500 dark:text-gray-400">3 registro(s)</span>
         </div>
     </div>
 </div>
@@ -468,7 +568,7 @@ function abrirModalEliminar(id) {
 
 function filtrarTabla() {
     const inputs = document.querySelectorAll('.filtro-tabla');
-    const filas = document.querySelectorAll('tbody tr');
+    const filas = document.querySelectorAll('table:has(.filtro-tabla) tbody tr');
     let visibles = 0;
 
     filas.forEach(function(fila) {
@@ -516,8 +616,55 @@ function limpiarFiltros() {
     filtrarTabla();
 }
 
+function filtrarMovimientos() {
+    const inputs = document.querySelectorAll('.filtro-movimientos');
+    const filas = document.querySelectorAll('table:has(.filtro-movimientos) tbody tr');
+    let visibles = 0;
+
+    filas.forEach(function(fila) {
+        if (fila.id === 'fila-sin-resultados-mov') return;
+        if (fila.querySelector('td[colspan]')) return;
+
+        let mostrar = true;
+        inputs.forEach(function(input) {
+            const valor = input.value.toLowerCase().trim();
+            if (!valor) return;
+
+            const col = parseInt(input.dataset.col);
+            const celdas = fila.querySelectorAll('td');
+            if (col < celdas.length) {
+                const texto = celdas[col].textContent.toLowerCase().trim();
+                if (!texto.includes(valor)) {
+                    mostrar = false;
+                }
+            }
+        });
+
+        fila.style.display = mostrar ? '' : 'none';
+        if (mostrar) visibles++;
+    });
+
+    const sinResultados = document.getElementById('fila-sin-resultados-mov');
+    if (sinResultados) {
+        sinResultados.classList.toggle('hidden', visibles > 0);
+    }
+}
+
+function exportarReporteMovimientos() {
+    const filas = document.querySelectorAll('table:has(.filtro-movimientos) tbody tr[data-id]');
+    const ids = [];
+    filas.forEach(function(fila) {
+        if (fila.style.display !== 'none') {
+            ids.push(fila.dataset.id);
+        }
+    });
+    const baseUrl = "{{ url_for('inventario.reporte_movimientos') }}";
+    const url = ids.length > 0 ? baseUrl + '?ids=' + ids.join(',') : baseUrl;
+    window.open(url, '_blank');
+}
+
 function exportarReporte() {
-    const filas = document.querySelectorAll('tbody tr[data-id]');
+    const filas = document.querySelectorAll('table:has(.filtro-tabla) tbody tr[data-id]');
     const ids = [];
     filas.forEach(function(fila) {
         if (fila.style.display !== 'none') {
@@ -546,7 +693,8 @@ function exportarReporte() {
     thead tr:first-child {
         display: none;
     }
-    .filtro-tabla {
+    .filtro-tabla,
+    .filtro-movimientos {
         display: none;
     }
     tr[data-id] {
@@ -590,8 +738,13 @@ function exportarReporte() {
     td[data-label="Acciones"] {
         justify-content: space-between;
     }
-    td[data-label="Nombre del Equipo"] div {
+    td[data-label="Nombre del Equipo"] div,
+    td[data-label="Equipo"] div {
         margin-left: auto;
+    }
+    td[data-label="Movimiento ID"],
+    td[data-label="Motivo / Responsable"] {
+        text-align: right;
     }
     tbody > tr:not([data-id]) td[colspan] {
         padding: 2rem 1rem;

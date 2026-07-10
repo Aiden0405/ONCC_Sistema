@@ -64,6 +64,15 @@ def reporte_inventario():
                     headers={'Content-Disposition': 'inline; filename=reporte_inventario.pdf'})
 
 
+@logistica_bp.route('/inventario/reporte-movimientos', methods=['GET'])
+@login_required
+def reporte_movimientos():
+    ids = request.args.get('ids')
+    buf = InventarioService.generar_reporte_movimientos_pdf(ids)
+    return Response(buf, mimetype='application/pdf',
+                    headers={'Content-Disposition': 'inline; filename=reporte_movimientos.pdf'})
+
+
 @logistica_bp.route('/inventario/<int:equipo_id>/acta', methods=['GET'])
 @login_required
 def acta_responsabilidad(equipo_id):
