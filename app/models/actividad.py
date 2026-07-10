@@ -11,7 +11,12 @@ class Actividad(db.Model):
     fecha_actividad = db.Column(db.Date, nullable=False)
     tipo_actividad = db.Column(db.String(50), nullable=False)
     id_comunidad = db.Column(db.Integer, db.ForeignKey('comunidad.id_comunidad'), nullable=False)
-
+    divulgacion = db.relationship(
+        'Divulgacion', 
+        back_populates='actividad_obj', 
+        uselist=False,
+        viewonly=True 
+        )
     # 2. Sinónimos reales para soporte de consultas antiguas
     id = synonym('id_actividad')
     fecha = synonym('fecha_actividad')

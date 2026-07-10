@@ -1,5 +1,5 @@
 from app import db
-
+from app.models.actividad import Actividad
 class EstadoActivo(db.Model):
     __tablename__ = 'estado'
     __table_args__ = {'extend_existing': True}
@@ -65,20 +65,6 @@ class InstitucionActiva(db.Model):
     comunidad = db.relationship('ComunidadActiva', backref=db.backref('instituciones', lazy='dynamic'))
 
 
-class ActividadActiva(db.Model):
-    __tablename__ = 'actividad'
-    __table_args__ = {'extend_existing': True}  # SOLUCIÓN AL ERROR: Permite redefinición limpia
-
-    id_actividad = db.Column(db.Integer, primary_key=True)
-    fecha_actividad = db.Column(db.Date, nullable=False)
-    tipo_actividad = db.Column(db.String(50), nullable=False) # Adaptado al String no-array compatible
-    id_comunidad = db.Column(db.Integer, db.ForeignKey('comunidad.id_comunidad'), nullable=False)
-    id_nivel = db.Column(db.Integer, db.ForeignKey('nivel.id_nivel'), nullable=False)
-    id_usuario = db.Column(db.Integer, db.ForeignKey('usuario.id_usuario'), nullable=True) # El campo de login que añadimos
-
-    comunidad = db.relationship('ComunidadActiva', backref=db.backref('actividades', lazy='dynamic'))
-    nivel = db.relationship('NivelActivo', backref=db.backref('actividades', lazy='dynamic'))
-
 
 class FormacionActiva(db.Model):
     __tablename__ = 'formacion'
@@ -89,7 +75,7 @@ class FormacionActiva(db.Model):
     id_actividad = db.Column(db.Integer, db.ForeignKey('actividad.id_actividad'), nullable=False, unique=True)
     id_institucion = db.Column(db.Integer, db.ForeignKey('institucion.id_institucion'), nullable=False)
 
-    actividad = db.relationship('ActividadActiva', backref=db.backref('formacion', uselist=False))
+    actividad = db.relationship('Actividad', backref=db.backref('formacion', uselist=False))
     institucion = db.relationship('InstitucionActiva', backref=db.backref('formaciones', lazy='dynamic'))
 
     @property
@@ -125,7 +111,7 @@ class SensibilizacionActiva(db.Model):
     nombre_sensivilizacion = db.Column(db.Text, nullable=False)
     id_actividad = db.Column(db.Integer, db.ForeignKey('actividad.id_actividad'), nullable=False, unique=True)
 
-    actividad = db.relationship('ActividadActiva', backref=db.backref('sensibilizacion', uselist=False))
+    actividad = db.relationship('Actividad', backref=db.backref('sensibilizacion', uselist=False))
 
     @property
     def id(self):

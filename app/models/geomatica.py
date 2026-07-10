@@ -1,35 +1,34 @@
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
-from geoalchemy2 import Geometry
 from app import db
+from geoalchemy2 import Geometry
 
-# 1. TABLA PRINCIPAL: Metadatos del Mapa (Vinculada a Actividades)
 class MapaRiesgo(db.Model):
     __tablename__ = 'mapa_riesgo'
 
     id_mapa_riesgo = db.Column(db.Integer, primary_key=True)
     id_actividad = db.Column(db.Integer, nullable=False)
-    
-    # Restricción CHECK de la base de datos exige que esto sea siempre 'MAPA_RIESGO'
     tipo_actividad = db.Column(db.String(50), nullable=False, default='MAPA_RIESGO')
     
     ruta_kml = db.Column(db.String(250), nullable=True)
     ruta_imagen_mapa = db.Column(db.String(250), nullable=True)
     fecha_registro = db.Column(db.DateTime, default=db.func.current_timestamp(), nullable=False)
     descripcion = db.Column(db.Text, nullable=False)
+    nombre = db.Column(db.String, nullable=True)
 
-    # Relación para acceder a los polígonos asociados a este mapa fácilmente
+    # Restricción explícita de llave foránea compuesta hacia actividad
+    __table_args__ = (
+        db.ForeignKeyConstraint(
+            ['id_actividad', 'tipo_actividad'],
+            ['actividad.id_actividad', 'actividad.tipo_actividad'],
+            name='mapa_riesgo_actividad_compuesta_fkey',
+            onupdate='CASCADE', ondelete='RESTRICT'
+        ),
+    )
+
+    # Relación con elementos espacializados (PostGIS)
     elementos = db.relationship('ElementoMapaRiesgo', backref='mapa_asociado', cascade='all, delete-orphan')
 
-    def __init__(self, id_actividad, descripcion, ruta_kml=None, ruta_imagen_mapa=None, tipo_actividad='MAPA_RIESGO'):
-        self.id_actividad = id_actividad
-        self.descripcion = descripcion
-        self.ruta_kml = ruta_kml
-        self.ruta_imagen_mapa = ruta_imagen_mapa
-        self.tipo_actividad = tipo_actividad
-
-
-# 2. TABLA SECUNDARIA: Datos Espaciales (PostGIS)
 class ElementoMapaRiesgo(db.Model):
     __tablename__ = 'elemento_mapa_riesgo'
 
@@ -39,12 +38,5 @@ class ElementoMapaRiesgo(db.Model):
     subcategoria = db.Column(db.String(100), nullable=False)
     descripcion = db.Column(db.Text, nullable=True)
     
-    # Aquí es donde realmente se almacena el GeoJSON/Geometría
+    # Campo geométrico
     geometria = db.Column(Geometry(geometry_type='GEOMETRY', srid=4326), nullable=False)
-
-    def __init__(self, id_mapa_riesgo, categoria, subcategoria, geometria, descripcion=None):
-        self.id_mapa_riesgo = id_mapa_riesgo
-        self.categoria = categoria
-        self.subcategoria = subcategoria
-        self.geometria = geometria
-        self.descripcion = descripcion

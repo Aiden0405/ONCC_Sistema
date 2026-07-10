@@ -22,8 +22,13 @@ class Divulgacion(db.Model):
     # RELACIONES (Navegación del ORM)
     # =========================================================================
     # Relación 1 a 1 con la Actividad base (uselist=False garantiza objeto directo)
-    actividad = db.relationship('Actividad', backref=db.backref('divulgacion', uselist=False))
-
+    id_actividad = db.Column(db.Integer, db.ForeignKey('actividad.id_actividad'), nullable=False)
+    
+    # Cambia la relación a back_populates y especifica la foreign_key
+    actividad_obj = db.relationship(
+    'Actividad', 
+    back_populates='divulgacion', # Apunta a la propiedad 'divulgacion' de la clase Actividad
+    foreign_keys=[id_actividad])
     # =========================================================================
     # SINÓNIMOS (Para compatibilidad con controladores y consultas existentes)
     # =========================================================================
@@ -71,6 +76,7 @@ class Publicacion(db.Model):
     id_publicacion = synonym('id')
     titulo_publicidad = synonym('titulo')
     estatus_revision = synonym('estado')
+    estado_publicacion = synonym('estado')
     created_at = synonym('creado_en')
     updated_at = synonym('actualizado_en')
 

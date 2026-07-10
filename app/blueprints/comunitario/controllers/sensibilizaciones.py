@@ -4,8 +4,8 @@ from flask import flash, redirect, render_template, request, url_for
 
 from app import db
 from app.blueprints.comunitario import comunitario_bp
+from app.models.actividad import Actividad as ActividadActiva
 from app.models.esquema_activo import (
-    ActividadActiva,
     ComunidadActiva,
     EstadoActivo,
     InstitucionActiva,

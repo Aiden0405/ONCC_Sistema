@@ -1,0 +1,267 @@
+{% extends 'base.html' %}
+
+{% block title %}Digitalizar Mapa - ONCC{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.css" />
+<style>
+    /* Altura más compacta y control de desbordamiento */
+    #map { 
+        height: 500px; 
+        width: 100%; 
+        border-radius: 0.5rem; 
+        z-index: 10; 
+    }
+    .swal2-container { z-index: 9999 !important; }
+    
+    /* Reparación extra por si Tailwind choca con los botones del mapa */
+    .leaflet-bar a { text-decoration: none !important; }
+</style>
+
+<div class="max-w-7xl mx-auto space-y-6">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
+        <div>
+            <h1 class="text-2xl font-bold dark:text-white text-gray-800">Digitalización Interactiva de Riesgos</h1>
+            <p class="text-sm dark:text-gray-400 text-gray-500">
+                Mapa Base: <span class="font-semibold text-red-600 dark:text-red-400">{{ mapa.nombre }}</span>
+            </p>
+        </div>
+        
+        <a href="{{ url_for('geomatica.index') }}" 
+           class="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-200 rounded-md text-sm font-medium px-4 py-2 shadow-sm flex items-center space-x-2">
+            <i data-lucide="check-circle" class="w-4 h-4 text-green-500"></i>
+            <span>Finalizar Edición</span>
+        </a>
+    </div>
+
+    <div class="p-4 rounded-xl shadow-sm border bg-white dark:bg-gray-800 dark:border-gray-700 space-y-4">
+        <div class="flex items-center space-x-3 pb-2 border-b border-gray-100 dark:border-gray-700">
+            <i data-lucide="map" class="w-5 h-5 text-gray-500 dark:text-gray-400"></i>
+            <p class="text-sm text-gray-600 dark:text-gray-300">
+                Utilice la <b>barra de herramientas a la izquierda</b> para crear <span class="text-red-500 font-bold">Riesgos</span>, <span class="text-green-600 font-bold">Recursos</span> o <span class="text-orange-500 font-bold">Vulnerabilidades</span>.
+            </p>
+        </div>
+
+        <div id="map" class="border border-gray-300 dark:border-gray-600 shadow-inner"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.min.js"></script>
+<script src="https://unpkg.com/@tmcw/togeojson@5.8.1/dist/togeojson.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        // 1. Inicializar Mapa centrado en Venezuela
+        const map = L.map('map').setView([10.4806, -66.9036], 6);
+
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles &copy; Esri',
+            maxZoom: 18
+        }).addTo(map);
+
+        // Forzar recálculo del tamaño al iniciar
+        setTimeout(() => { map.invalidateSize(); }, 300);
+
+        // 2. Configuración de herramientas de dibujo
+        map.pm.setLang('es'); 
+        map.pm.addControls({
+            position: 'topleft',
+            drawMarker: true,
+            drawCircleMarker: true,
+            drawPolyline: true,
+            drawRectangle: true,
+            drawPolygon: true,
+            drawCircle: true,
+            drawText: true,
+            editMode: true,
+            dragMode: true,
+            cutPolygon: true,
+            removalMode: true,
+            rotateMode: true
+        });
+
+        const rutaKml = "{{ mapa.ruta_kml or '' }}";
+        const idMapaRiesgo = parseInt("{{ mapa.id_mapa_riesgo }}");
+
+        // 3. Renderizar KML base si existe
+        if (rutaKml !== "" && rutaKml !== "None") {
+            fetch(`/static/${rutaKml}`)
+                .then(res => res.text())
+                .then(kmlText => {
+                    const parser = new DOMParser();
+                    const kmlDom = parser.parseFromString(kmlText, 'text/xml');
+                    const geojsonData = toGeoJSON.kml(kmlDom);
+                    
+                    const kmlLayer = L.geoJSON(geojsonData, {
+                        style: { color: '#facc15', weight: 4, fillOpacity: 0.1, dashArray: '5, 10' }
+                    }).addTo(map);
+                    
+                    map.fitBounds(kmlLayer.getBounds(), { padding: [30, 30] });
+                })
+                .catch(err => {
+                    console.error("No se pudo parsear el KML", err);
+                });
+        }
+
+        // ==========================================
+        // NUEVO: CARGAR DIBUJOS DESDE LA BASE DE DATOS
+        // ==========================================
+        fetch(`/geomatica/mapas/${idMapaRiesgo}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.geometria && data.geometria.features && data.geometria.features.length > 0) {
+                    const capaPostGIS = L.geoJSON(data.geometria, {
+                        // Pintar los polígonos según la categoría guardada
+                        style: function (feature) {
+                            const cat = feature.properties.categoria;
+                            if (cat === 'Riesgo') return { color: '#ef4444', fillColor: '#ef4444' };
+                            if (cat === 'Recurso') return { color: '#22c55e', fillColor: '#22c55e' };
+                            if (cat === 'Vulnerabilidad') return { color: '#f97316', fillColor: '#f97316' };
+                            return { color: '#3b82f6', fillColor: '#3b82f6' };
+                        },
+                        // Insertar la ventana flotante de información
+                        onEachFeature: function (feature, layer) {
+                            const props = feature.properties;
+                            let colorText = 'text-blue-600';
+                            if (props.categoria === 'Riesgo') colorText = 'text-red-600';
+                            if (props.categoria === 'Recurso') colorText = 'text-green-600';
+                            if (props.categoria === 'Vulnerabilidad') colorText = 'text-orange-500';
+
+                            layer.bindPopup(`
+                                <div class="text-sm">
+                                    <strong class="block uppercase mb-1 ${colorText}">${props.categoria}</strong>
+                                    <b>${props.subcategoria}</b><br>
+                                    <span class="text-gray-600">${props.descripcion}</span>
+                                </div>
+                            `);
+                        }
+                    }).addTo(map);
+
+                    // Centrar la cámara en los dibujos si no se cargó un KML base
+                    if (rutaKml === "" || rutaKml === "None") {
+                        map.fitBounds(capaPostGIS.getBounds(), { padding: [30, 30] });
+                    }
+                }
+            })
+            .catch(error => console.error("Error al cargar las geometrías de la base de datos:", error));
+
+
+        // 4. Lógica de dibujo y guardado
+        map.on('pm:create', async (e) => {
+            const layer = e.layer;
+            const geometry = layer.toGeoJSON().geometry;
+
+            const { value: formValues } = await Swal.fire({
+                title: 'Clasificar Nuevo Elemento',
+                html: `
+                    <div class="space-y-4 text-left">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 uppercase">Categoría</label>
+                            <select id="swal-cat" class="w-full mt-1 p-2 border rounded-md text-sm outline-none cursor-pointer">
+                                <option value="Riesgo">Riesgo / Peligro (Rojo)</option>
+                                <option value="Recurso">Recurso / Capacidad (Verde)</option>
+                                <option value="Vulnerabilidad">Vulnerabilidad (Naranja)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 uppercase">Nombre / Título</label>
+                            <input id="swal-subcat" class="w-full mt-1 p-2 border rounded-md text-sm outline-none" placeholder="Ej: Zona inundable Sector Alto">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 uppercase">Descripción detallada</label>
+                            <textarea id="swal-desc" rows="3" class="w-full mt-1 p-2 border rounded-md text-sm outline-none" placeholder="Detalles o medidas a tomar..."></textarea>
+                        </div>
+                    </div>
+                `,
+                focusConfirm: false,
+                showCancelButton: true,
+                confirmButtonText: '<i class="fa fa-save"></i> Guardar',
+                cancelButtonText: 'Descartar',
+                confirmButtonColor: '#2563eb',
+                cancelButtonColor: '#dc2626',
+                preConfirm: () => {
+                    const subcat = document.getElementById('swal-subcat').value;
+                    if (!subcat) {
+                        Swal.showValidationMessage('Debe ingresar un nombre o título');
+                        return false;
+                    }
+                    return {
+                        categoria: document.getElementById('swal-cat').value,
+                        subcategoria: subcat,
+                        descripcion: document.getElementById('swal-desc').value
+                    }
+                }
+            });
+
+            if (formValues) {
+                if (layer.setStyle) {
+                    if (formValues.categoria === 'Riesgo') layer.setStyle({color: '#ef4444', fillColor: '#ef4444'});
+                    if (formValues.categoria === 'Recurso') layer.setStyle({color: '#22c55e', fillColor: '#22c55e'});
+                    if (formValues.categoria === 'Vulnerabilidad') layer.setStyle({color: '#f97316', fillColor: '#f97316'});
+                }
+
+                layer.bindPopup(`
+                    <div class="text-sm p-1">
+                        <strong class="block uppercase mb-1 ${
+                            formValues.categoria === 'Riesgo' ? 'text-red-600' : 
+                            formValues.categoria === 'Recurso' ? 'text-green-600' : 'text-orange-500'
+                        }">${formValues.categoria}</strong>
+                        <b class="text-gray-800">${formValues.subcategoria}</b><br>
+                        <span class="text-gray-600 block mt-1">${formValues.descripcion}</span>
+                    </div>
+                `);
+
+                const payload = {
+                    id_mapa_riesgo: idMapaRiesgo,
+                    categoria: formValues.categoria,
+                    subcategoria: formValues.subcategoria,
+                    descripcion: formValues.descripcion,
+                    geometria: geometry
+                };
+
+                fetch("{{ url_for('geomatica.crear_mapa') }}", { 
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify(payload)
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // NUEVO: Redirección forzada tras mostrar alerta de éxito
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Geometría Guardada!',
+                            text: 'El elemento geográfico se ha actualizado correctamente.',
+                            confirmButtonColor: '#2563eb',
+                            confirmButtonText: 'Ir al Panel de Mapas'
+                        }).then(() => {
+                            window.location.href = "{{ url_for('geomatica.index') }}";
+                        });
+                    } else {
+                        throw new Error(data.message);
+                    }
+                })
+                .catch(err => {
+                    Swal.fire('Error', 'No se pudo guardar la geometría.', 'error');
+                    map.removeLayer(layer);
+                });
+            } else {
+                map.removeLayer(layer);
+            }
+        });
+    });
+</script>
+{% endblock %}
