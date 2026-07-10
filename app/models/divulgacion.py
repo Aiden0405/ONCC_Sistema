@@ -2,6 +2,44 @@ from datetime import datetime
 from app import db
 from sqlalchemy.orm import synonym
 
+class Divulgacion(db.Model):
+
+    __tablename__ = 'divulgacion'
+
+    # Clave primaria mapeada al campo físico de Postgres
+    id = db.Column('id_divulgacion', db.Integer, primary_key=True)
+    
+    # Llave foránea hacia la tabla actividad del mismo módulo local
+    id_actividad = db.Column(db.Integer, db.ForeignKey('actividad.id_actividad'), nullable=False)
+    
+    # Campos específicos físicos mapeados a nombres limpios de Python
+    nombre = db.Column('nombre_divulgacion', db.String(100), nullable=False)
+    descripcion = db.Column('descripcion_divulgacion', db.Text, nullable=False)
+    permiso = db.Column('permiso_divulgacion', db.String(50), nullable=False)
+
+    # =========================================================================
+    # RELACIONES (Navegación del ORM)
+    # =========================================================================
+    # Relación 1 a 1 con la Actividad base (uselist=False garantiza objeto directo)
+    id_actividad = db.Column(db.Integer, db.ForeignKey('actividad.id_actividad'), nullable=False)
+    
+    # Cambia la relación a back_populates y especifica la foreign_key
+    actividad_obj = db.relationship(
+    'Actividad', 
+    back_populates='divulgacion', # Apunta a la propiedad 'divulgacion' de la clase Actividad
+    foreign_keys=[id_actividad])
+    # =========================================================================
+    # SINÓNIMOS (Para compatibilidad con controladores y consultas existentes)
+    # =========================================================================
+    id_divulgacion = synonym('id')
+    nombre_divulgacion = synonym('nombre')
+    descripcion_divulgacion = synonym('descripcion')
+    permiso_divulgacion = synonym('permiso')
+
+    def __repr__(self):
+        return f"<Divulgacion {self.nombre}>"
+
+
 class Publicacion(db.Model):
     __tablename__ = 'publicaciones'
 
@@ -24,6 +62,7 @@ class Publicacion(db.Model):
     id_divulgacion = synonym('id')
     titulo_publicidad = synonym('titulo')
     estatus_revision = synonym('estado')
+    estado_publicacion = synonym('estado')
     created_at = synonym('creado_en')
     updated_at = synonym('actualizado_en')
 

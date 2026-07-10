@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Perímetro ONCC Optimizado</name>
+    <Style id="poligonoEstilo">
+      <LineStyle>
+        <color>ffff0000</color>
+        <width>2</width>
+      </LineStyle>
+      <PolyStyle>
+        <color>7f0000ff</color>
+      </PolyStyle>
+    </Style>
+    <Placemark>
+      <name>Comunidad de Prueba</name>
+      <description>Polígono de prueba para el sistema ONCC.</description>
+      <styleUrl>#poligonoEstilo</styleUrl>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>-69.3300,10.0600,0 -69.3100,10.0600,0 -69.3100,10.0800,0 -69.3300,10.0800,0 -69.3300,10.0600,0</coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+  </Document>
+</kml>

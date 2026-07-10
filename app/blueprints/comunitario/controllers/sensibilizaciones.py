@@ -7,11 +7,15 @@ from flask_login import login_required, current_user
 from app import db
 from app.blueprints.comunitario import comunitario_bp
 from app.blueprints.comunitario.forms import SensibilizacionForm
+from app.models.actividad import Actividad
 from app.models.esquema_activo import (
-    ActividadActiva as Actividad,
+    ComunidadActiva as Comunidad,
+    EstadoActivo,
+    InstitucionActiva,
     NivelActivo as Nivel,
+    ParroquiaActiva,
     SensibilizacionActiva as Sensibilizacion,
-    ComunidadActiva as Comunidad
+    MunicipioActivo,
 )
 
 # ==========================================

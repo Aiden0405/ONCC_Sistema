@@ -6,12 +6,15 @@ from flask_login import login_required, current_user
 from app import db
 from app.blueprints.comunitario import comunitario_bp
 from app.blueprints.comunitario.forms import FormacionForm
+from app.models.actividad import Actividad
 from app.models.esquema_activo import (
-    ActividadActiva as Actividad,
-    NivelActivo as Nivel,
+    ComunidadActiva,
+    EstadoActivo,
     FormacionActiva as Formacion,
     InstitucionActiva as Institucion,
-    ComunidadActiva as Comunidad
+    MunicipioActivo,
+    NivelActivo as Nivel,
+    ParroquiaActiva,
 )
 
 

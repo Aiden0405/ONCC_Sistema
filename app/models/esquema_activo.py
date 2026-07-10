@@ -1,5 +1,5 @@
 from app import db
-
+from app.models.actividad import Actividad
 class EstadoActivo(db.Model):
     __tablename__ = 'estado'
     __table_args__ = {'extend_existing': True}
@@ -63,20 +63,6 @@ class NivelActivo(db.Model):
     descripcion = db.Column(db.Text, nullable=False)
 
 
-class ActividadActiva(db.Model):
-    __tablename__ = 'actividad'
-    __table_args__ = {'extend_existing': True}
-
-    id_actividad = db.Column(db.Integer, primary_key=True)
-    fecha_actividad = db.Column(db.Date, nullable=False)
-    tipo_actividad = db.Column(db.ARRAY(db.String(20)), nullable=False)
-    id_comunidad = db.Column(db.Integer, db.ForeignKey('comunidad.id_comunidad'), nullable=False)
-    id_nivel = db.Column(db.Integer, db.ForeignKey('nivel.id_nivel'), nullable=False)
-
-    comunidad = db.relationship('ComunidadActiva', backref=db.backref('actividades', lazy='dynamic'))
-    nivel = db.relationship('NivelActivo', backref=db.backref('actividades', lazy='dynamic'))
-
-
 class FormacionActiva(db.Model):
     __tablename__ = 'formacion'
     __table_args__ = {'extend_existing': True}
@@ -86,8 +72,7 @@ class FormacionActiva(db.Model):
     id_actividad = db.Column(db.Integer, db.ForeignKey('actividad.id_actividad'), nullable=False, unique=True)
     id_institucion = db.Column(db.Integer, db.ForeignKey('institucion.id_institucion'), nullable=False)
 
-    # Se agrega foreign_keys explícito para evitar confusiones en SQLAlchemy
-    actividad = db.relationship('ActividadActiva', foreign_keys=[id_actividad], backref=db.backref('formacion', uselist=False))
+    actividad = db.relationship('Actividad', backref=db.backref('formacion', uselist=False))
     institucion = db.relationship('InstitucionActiva', backref=db.backref('formaciones', lazy='dynamic'))
 
     @property
@@ -123,8 +108,7 @@ class SensibilizacionActiva(db.Model):
     nombre_sensibilizacion = db.Column(db.Text, nullable=False)
     id_actividad = db.Column(db.Integer, db.ForeignKey('actividad.id_actividad'), nullable=False, unique=True)
 
-    # Se agrega foreign_keys explícito aquí también
-    actividad = db.relationship('ActividadActiva', foreign_keys=[id_actividad], backref=db.backref('sensibilizacion', uselist=False))
+    actividad = db.relationship('Actividad', backref=db.backref('sensibilizacion', uselist=False))
 
     @property
     def id(self):
@@ -158,7 +142,6 @@ class SensibilizacionActiva(db.Model):
 # ==========================================
 # ALIAS Y PARCHADO DE COMPATIBILIDAD
 # ==========================================
-Actividad = ActividadActiva
 Institucion = InstitucionActiva
 Sensibilizacion = SensibilizacionActiva
 Formacion = FormacionActiva
