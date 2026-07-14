@@ -70,7 +70,7 @@ class Permission(db.Model):
     nombre = synonym('nombre_modulo')
     descripcion = synonym('descripcion_modulo')
 
-    # 🌟 CORRECCIÓN AQUÍ: Añadimos foreign(remote(...)) para quitar la ambigüedad del JOIN
+    # Relación con la tabla pívot
     roles_rel = db.relationship(
         'Permiso',
         primaryjoin="Permission.id_modulo == foreign(remote(Permiso.id_modulo))",
@@ -85,10 +85,15 @@ class Permission(db.Model):
             return []
         return Role.query.filter(Role.id_rol.in_(roles_ids)).all()
 
+    # 🌟 AQUÍ QUEDÓ ACTUALIZADO EL CONSTRUCTOR PARA CAPTURAR EL ID DINÁMICO
     def __init__(self, **kwargs):
+        id_modulo = kwargs.pop('id_modulo', None)
         nombre = kwargs.pop('nombre', None)
         descripcion = kwargs.pop('descripcion', None)
         super().__init__(**kwargs)
+        
+        if id_modulo is not None:
+            self.id_modulo = id_modulo
         if nombre is not None:
             self.nombre_modulo = nombre
         if descripcion is not None:

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body style="font-family: sans-serif; background-color: #f3f4f6; padding: 20px; color: #374151;">
+    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; padding: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #e5e7eb;">
+        <h2 style="color: #16a34a; font-size: 24px; margin-bottom: 20px;">Restablecer Contraseña - ONCC</h2>
+        <p>Hola, <strong>{{ usuario.nombre_usuario }}</strong>.</p>
+        <p>Has solicitado restablecer tus credenciales de acceso para el sistema de gestión del Observatorio Nacional de la Crisis Climática (ONCC).</p>
+        <p>Para proceder con el cambio, presiona el siguiente botón:</p>
+        
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{{ enlace }}" style="background-color: #16a34a; color: #ffffff; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 6px; display: inline-block;">
+                Restablecer mi Contraseña
+            </a>
+        </div>
+        
+        <p style="font-size: 12px; color: #6b7280;">Este enlace es de uso único y tiene una validez de 10 minutos. Si no solicitaste este cambio, puedes ignorar este correo de forma segura.</p>
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
+        <p style="font-size: 11px; color: #9ca3af; text-align: center; text-transform: uppercase; letter-spacing: 1px;">Observatorio Nacional de la Crisis Climática</p>
+    </div>
+</body>
+</html>

@@ -5,6 +5,7 @@ from app.models.usuario import Usuario
 # === EL RESTO DE TUS MODELOS TRANSACCIONALES ===
 from app.models.actividad import Actividad
 from app.models.bitacora import BitacoraTransaccion
+from app.models.notificacion import Notificacion
 from app.models.divulgacion import Publicacion
 from app.models.geomatica import MapaRiesgo
 from app.models.inventario import InventarioEquipo

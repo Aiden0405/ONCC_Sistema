@@ -10,9 +10,14 @@
             <h1 class="text-2xl font-bold dark:text-white text-gray-800">Roles y Estructura de Seguridad</h1>
             <p class="text-sm dark:text-gray-400 text-gray-500">Administración de perfiles estructurales, cargos institucionales y control de acceso (RBAC)</p>
         </div>
-        <a href="{{ url_for('core.rol_nuevo') }}" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md shadow-sm hover:bg-green-700 transition-colors text-sm font-medium">
-            <i data-lucide="shield-plus" class="w-4 h-4 mr-2"></i> Nuevo Rol
-        </a>
+        <div class="flex items-center space-x-3">
+            <a href="{{ url_for('core.permiso_index') }}" class="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-white rounded-md shadow-sm transition-colors text-sm font-medium border border-gray-200 dark:border-gray-600">
+                <i data-lucide="key" class="w-4 h-4 mr-2 text-green-600 dark:text-green-400"></i> Catálogo de Permisos
+            </a>
+            <a href="{{ url_for('core.rol_nuevo') }}" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md shadow-sm hover:bg-green-700 transition-colors text-sm font-medium">
+                <i data-lucide="shield-plus" class="w-4 h-4 mr-2"></i> Nuevo Rol
+            </a>
+        </div>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}

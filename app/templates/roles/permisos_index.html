@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}Catálogo de Permisos - ONCC{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
+    
+    <div class="flex items-center justify-between mb-2">
+        <div>
+            <h1 class="text-2xl font-bold dark:text-white text-gray-800">Catálogo Global de Privilegios</h1>
+            <p class="text-sm dark:text-gray-400 text-gray-500">Gestión de capacidades atómicas y acciones del sistema (CRUD de Permisos)</p>
+        </div>
+        <div class="flex items-center space-x-3">
+            <a href="{{ url_for('core.rol_index') }}" class="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-white rounded-md shadow-sm transition-colors text-sm font-medium border border-gray-200 dark:border-gray-600">
+                <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i> Volver a Roles
+            </a>
+            <a href="{{ url_for('core.permiso_nuevo') }}" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md shadow-sm hover:bg-green-700 transition-colors text-sm font-medium">
+                <i data-lucide="key-round" class="w-4 h-4 mr-2"></i> Nuevo Permiso
+            </a>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="p-4 rounded-md shadow-sm border text-sm font-medium flex items-center {% if category == 'error' %}bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800{% else %}bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800{% endif %}">
+                    <i data-lucide="{% if category == 'error' %}alert-triangle{% else %}check-circle{% endif %}" class="mr-2 w-5 h-5"></i> 
+                    <span>{{ message }}</span>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+            <div>
+                <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400">Permisos del Sistema</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Lista de privilegios evaluados dinámicamente en los controladores</p>
+            </div>
+            <span class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ permisos|length }} registro(s)</span>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left border-collapse">
+                <thead>
+                    <tr class="text-xs uppercase tracking-wider bg-gray-50 text-gray-500 dark:bg-gray-700/40 dark:text-gray-400">
+                        <th class="px-6 py-3 font-semibold">Identificador</th>
+                        <th class="px-6 py-3 font-semibold">Slug / Nombre del Permiso</th>
+                        <th class="px-6 py-3 font-semibold">Descripción del Acceso</th>
+                        <th class="px-6 py-3 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
+                    {% for p in permisos %}
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                        <td class="px-6 py-4 font-mono text-xs text-gray-500">
+                            #0{{ p.id }}
+                        </td>
+                        
+                        <td class="px-6 py-4 font-mono text-xs text-purple-700 dark:text-purple-400 font-bold whitespace-nowrap">
+                            {{ p.nombre }}
+                        </td>
+
+                        <td class="px-6 py-4 text-gray-600 dark:text-gray-300 text-xs">
+                            {{ p.descripcion }}
+                        </td>
+                        
+                        <td class="px-6 py-4 text-right whitespace-nowrap">
+                            <!-- Botón de Editar -->
+                            <a href="{{ url_for('core.permiso_editar', permiso_id=p.id) }}" class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 dark:text-blue-300 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 transition-colors mr-2">
+                                <i data-lucide="edit" class="w-3.5 h-3.5 mr-1"></i> Editar
+                            </a>
+
+                            <!-- Botón de Eliminar -->
+                            <form action="{{ url_for('core.permiso_eliminar', permiso_id=p.id) }}" method="post" class="inline" onsubmit="return confirm('¿Seguro que desea remover este privilegio del catálogo global?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 dark:text-red-300 dark:bg-red-900/20 dark:hover:bg-red-900/30 transition-colors">
+                                    <i data-lucide="trash-2" class="w-3.5 h-3.5 mr-1"></i> Quitar
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
+                            No hay permisos cargados en el catálogo global del ecosistema.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

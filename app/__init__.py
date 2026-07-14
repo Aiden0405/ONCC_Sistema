@@ -1,16 +1,18 @@
 from collections import Counter
 
-from flask import Flask, render_template
+from flask import Flask, render_template, session 
 from flask_login import LoginManager, login_required
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import CSRFProtect
+from flask_mail import Mail 
 
 from config import Config
 
 # Inicializar extensiones que se conectarán en create_app
 migrate = Migrate()
 csrf = CSRFProtect()
+mail = Mail() 
 
 # 1. Herramientas
 db = SQLAlchemy()
@@ -23,11 +25,24 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
-    # Conectar BD y Login a la app
+    # 🌟 CONFIGURACIÓN CON MAILTRAP PARA DESARROLLO (SIN BLOQUEOS)
+    app.config['MAIL_SERVER'] = 'sandbox.smtp.mailtrap.io'
+    app.config['MAIL_PORT'] = 2525
+    app.config['MAIL_USE_TLS'] = True
+    app.config['MAIL_USE_SSL'] = False
+    
+    # 🔑 Credenciales de desarrollo de tu Inbox virtual en Mailtrap
+    app.config['MAIL_USERNAME'] = 'e4f11f28a9ae86'
+    app.config['MAIL_PASSWORD'] = '7b85444a15b2a5'
+    
+    app.config['MAIL_DEFAULT_SENDER'] = ('ONCC Sistema', 'soporte@oncc.gob.ve')
+
+    # Conectar BD, Login y el servicio de correos a la app
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
     csrf.init_app(app)
+    mail.init_app(app) 
 
     # ==============================================================
     # Cargador de Usuarios para Flask-Login
@@ -40,7 +55,6 @@ def create_app(config_class=Config):
 
     # ==============================================================
     # REGISTRO DE CONTROLADORES (Blueprints)
-    # ¡Aquí es donde debes agregar los que faltaban!
     # ==============================================================
     from app.blueprints.comunitario import comunitario_bp
     from app.blueprints.core import core_bp
@@ -48,7 +62,6 @@ def create_app(config_class=Config):
     from app.blueprints.mapas import mapas_bp
     from app.blueprints.monitoreo import monitoreo_bp
 
-    # Registramos los cinco dominios principales
     app.register_blueprint(core_bp)
     app.register_blueprint(comunitario_bp)
     app.register_blueprint(mapas_bp)
@@ -75,6 +88,7 @@ def create_app(config_class=Config):
         from app.models.password_reset import PasswordReset  # noqa: F401
         from app.models.usuario import Usuario  # noqa: F401
         from app.models.role import Role, Permission  # noqa: F401
+        from app.models.notificacion import Notificacion  # noqa: F401
 
     from app.blueprints.core.controllers.auth import login as core_login
     from app.blueprints.core.controllers.auth import logout as core_logout
@@ -89,11 +103,6 @@ def create_app(config_class=Config):
     from app.blueprints.core.controllers.roles import rol_gestionar_permisos as core_rol_gestionar_permisos
     from app.blueprints.core.controllers.roles import rol_index as core_rol_index
     from app.blueprints.core.controllers.roles import rol_nuevo as core_rol_nuevo
-    # Comenta la línea 93
-# from app.blueprints.core.controllers.roles import rol_permiso_nuevo as core_permiso_nuevo
-
-# Comenta la línea 94
-# from app.blueprints.core.controllers.roles import rol_permisos_index as core_permisos_index
     from app.blueprints.core.controllers.usuarios import usuario_editar as core_usuario_editar
     from app.blueprints.core.controllers.usuarios import usuario_eliminar as core_usuario_eliminar
     from app.blueprints.core.controllers.usuarios import usuario_index as core_usuario_index
@@ -124,6 +133,10 @@ def create_app(config_class=Config):
     app.add_url_rule('/auth/logout', endpoint='auth.logout', view_func=core_logout)
     app.add_url_rule('/auth/recuperar', endpoint='auth.recuperar_contrasena', view_func=core_recuperar, methods=['GET', 'POST'])
 
+    # Enlazar la nueva ruta dinámica de restablecer que procesará los tokens reales
+    from app.blueprints.core.controllers.auth import restablecer_contrasena as core_restablecer
+    app.add_url_rule('/auth/restablecer/<token>', endpoint='core.restablecer_contrasena', view_func=core_restablecer, methods=['GET', 'POST'])
+
     app.add_url_rule('/formaciones', endpoint='formacion.index', view_func=comunitario_formaciones_index)
     app.add_url_rule('/formaciones/nuevo', endpoint='formacion.nuevo', view_func=formacion_nuevo, methods=['POST'])
     app.add_url_rule('/formaciones/<int:formacion_id>/estado', endpoint='formacion.cambiar_estado', view_func=formacion_cambiar_estado, methods=['POST'])
@@ -141,11 +154,6 @@ def create_app(config_class=Config):
     app.add_url_rule('/admin/roles/nuevo', endpoint='rol.nuevo', view_func=core_rol_nuevo, methods=['GET', 'POST'])
     app.add_url_rule('/admin/roles/<int:rol_id>/editar', endpoint='rol.editar', view_func=core_rol_editar, methods=['GET', 'POST'])
     app.add_url_rule('/admin/roles/<int:rol_id>/eliminar', endpoint='rol.eliminar', view_func=core_rol_eliminar, methods=['POST'])
-    # Comenta la línea 148 que causó el error
-# app.add_url_rule('/admin/roles/permisos', endpoint='rol.permisos_index', view_func=core_permisos_index)
-
-# Si hay más líneas similares de 'add_url_rule' para los permisos viejos abajo, coméntalas también:
-# app.add_url_rule('/admin/roles/permisos/nuevo', endpoint='rol.permiso_nuevo', view_func=core_permiso_nuevo)
     app.add_url_rule('/admin/roles/<int:rol_id>/permisos', endpoint='rol.gestionar_permisos', view_func=core_rol_gestionar_permisos, methods=['GET', 'POST'])
 
     app.add_url_rule('/actividades/', endpoint='actividad.index', view_func=monitoreo_actividad_index)
@@ -161,7 +169,6 @@ def create_app(config_class=Config):
     app.add_url_rule('/geomatica/procesar', endpoint='geomatica.procesar_archivo', view_func=mapas_procesar_archivo, methods=['POST'])
     app.add_url_rule('/geomatica/<int:mapa_id>/estado', endpoint='geomatica.cambiar_estado', view_func=mapas_cambiar_estado, methods=['POST'])
 
-    # Registrar comandos CLI (seed, etc.)
     try:
         from app import cli as app_cli
         app_cli.register_cli_commands(app)
@@ -219,4 +226,57 @@ def create_app(config_class=Config):
             modulos_operativos=modulos_operativos,
         )
 
+
+        # ==============================================================
+    # ⏱️ FILTRO PERSONALIZADO PARA CALCULAR EL TIEMPO TRANSCURRIDO
+    # ==============================================================
+    @app.template_filter('tiempo_atras')
+    def tiempo_atras_filter(fecha):
+        if not fecha:
+            return "Ahora"
+            
+        from datetime import datetime
+        ahora = datetime.utcnow()
+        diferencia = ahora - fecha
+
+        segundos = int(diferencia.total_seconds())
+        
+        if segundos < 60:
+            return "Hace un momento"
+        
+        minutos = segundos // 60
+        if minutos < 60:
+            return f"Hace {minutos} min"
+            
+        horas = minutos // 60
+        if horas < 24:
+            return f"Hace {horas} {"hora" if horas == 1 else "horas"}"
+            
+        dias = horas // 24
+        if dias == 1:
+            return "Ayer"
+        if dias < 7:
+            return f"Hace {dias} días"
+            
+        return fecha.strftime('%d/%m/%Y')
+
+    @app.context_processor
+    def inject_notifications():
+        from app.models.notificacion import Notificacion
+        from flask_login import current_user
+
+        if current_user.is_authenticated:
+            alertas = Notificacion.query.filter(
+                (Notificacion.usuario_id == current_user.id_usuario) | (Notificacion.usuario_id.is_(None))
+            ).order_by(Notificacion.fecha_creacion.desc()).limit(5).all()
+            
+            conteo_alertas = Notificacion.query.filter(
+                (Notificacion.usuario_id == current_user.id_usuario) | (Notificacion.usuario_id.is_(None)),
+                Notificacion.leido == False
+            ).count()
+            
+            return dict(alertas_sistema=alertas, conteo_alertas=conteo_alertas)
+        
+        return dict(alertas_sistema=[], conteo_alertas=0)
+    
     return app
