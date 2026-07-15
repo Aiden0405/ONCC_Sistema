@@ -7,12 +7,17 @@
 
     <div class="flex justify-between items-center mb-2">
         <div>
-            <h1 class="text-2xl font-bold dark:text-white text-gray-800">Control de Inventario Físico</h1>
+            <h1 class="text-2xl font-bold dark:text-white text-gray-800">Gestión de Inventario de Equipos</h1>
             <p class="text-sm dark:text-gray-400 text-gray-500">Expediente, custodia y estatus operativo de equipos tecnológicos (EMAs, Pluviómetros, GPS)</p>
         </div>
-        <button onclick="document.getElementById('modal-inventario').classList.remove('hidden')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center shadow-sm transition-colors">
-            <i data-lucide="plus" class="mr-2 w-4 h-4"></i> Nuevo Equipo
-        </button>
+        <div class="flex gap-2">
+            <button onclick="exportarReporte()" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center shadow-sm transition-colors">
+                <i data-lucide="file-text" class="mr-2 w-4 h-4"></i> Generar reporte
+            </button>
+            <button onclick="limpiarErrorModal('modal-inventario'); document.getElementById('modal-inventario').classList.remove('hidden')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center shadow-sm transition-colors">
+                <i data-lucide="plus" class="mr-2 w-4 h-4"></i> Nuevo Equipo
+            </button>
+        </div>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -32,42 +37,75 @@
     <div class="rounded-xl shadow-sm border bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
         <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
             <div>
-                <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400">Listado Maestro de Equipos</h3>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Filtro global de activos y flujos operativos vigentes</p>
+                <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400">Detalles de equipos</h3>
             </div>
-            <span class="text-xs text-gray-500 dark:text-gray-400">{{ inventario|length }} registro(s)</span>
+            <span id="contador-registros" class="text-xs text-gray-500 dark:text-gray-400">{{ inventario|length }} registro(s)</span>
         </div>
 
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto scrollbar-hide">
             <table class="w-full text-left border-collapse text-sm">
                 <thead>
                     <tr class="text-xs uppercase tracking-wider bg-gray-50 text-gray-500 dark:bg-gray-700/40 dark:text-gray-400">
-                        <th class="px-6 py-3 font-semibold">Código</th>
+                        <th class="px-6 py-3 font-semibold">ID Equipo</th>
                         <th class="px-6 py-3 font-semibold">Nombre del Equipo</th>
-                        <th class="px-6 py-3 font-semibold">Ubicación Actual</th>
-                        <th class="px-6 py-3 font-semibold">Custodio / Responsable</th>
-                        <th class="px-6 py-3 font-semibold">Últ. Mantenimiento</th>
-                        <th class="px-6 py-3 font-semibold">Condición</th>
-                        <th class="px-6 py-3">Estado</th>
+                        <th class="px-6 py-3 font-semibold hidden md:table-cell">Ubicación Actual</th>
+                        <th class="px-6 py-3 font-semibold hidden lg:table-cell">Responsable</th>
+                        <th class="px-6 py-3 font-semibold hidden sm:table-cell">Últ. Modificación</th>
+                        <th class="px-6 py-3 font-semibold hidden sm:table-cell">Condición</th>
+                        <th class="px-6 py-3 hidden md:table-cell">Estado</th>
                         <th class="px-6 py-3 text-center">Acciones</th>
+                    </tr>
+                    <tr class="bg-gray-50/50 dark:bg-gray-700/20 hidden sm:table-row">
+                        <th class="px-6 py-2">
+                            <input type="text" data-col="0" class="filtro-tabla w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="ID..." oninput="filtrarTabla()">
+                        </th>
+                        <th class="px-6 py-2">
+                            <input type="text" data-col="1" class="filtro-tabla w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="Nombre..." oninput="filtrarTabla()">
+                        </th>
+                        <th class="px-6 py-2 hidden md:table-cell">
+                            <input type="text" data-col="2" class="filtro-tabla w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="Ubicación..." oninput="filtrarTabla()">
+                        </th>
+                        <th class="px-6 py-2 hidden lg:table-cell">
+                            <input type="text" data-col="3" class="filtro-tabla w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="Responsable..." oninput="filtrarTabla()">
+                        </th>
+                        <th class="px-6 py-2 hidden sm:table-cell">
+                            <input type="text" data-col="4" class="filtro-tabla w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="Fecha..." oninput="filtrarTabla()">
+                        </th>
+                        <th class="px-6 py-2 hidden sm:table-cell">
+                            <select data-col="5" class="filtro-tabla w-full text-xs border rounded px-1 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" onchange="filtrarTabla()">
+                                <option value="" disabled selected hidden>Condición</option>
+                                <option>Operativo</option>
+                                <option>Requiere Mantenimiento</option>
+                                <option>Dañado / Inoperativo</option>
+                            </select>
+                        </th>
+                        <th class="px-6 py-2 hidden md:table-cell">
+                            <select data-col="6" class="filtro-tabla w-full text-xs border rounded px-1 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" onchange="filtrarTabla()">
+                                <option value="" disabled selected hidden>Estado</option>
+                                <option>Disponible</option>
+                                <option>En Uso (Asignado)</option>
+                                <option>En Mantenimiento</option>
+                            </select>
+                        </th>
+                        <th class="px-6 py-2"></th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
                     {% for inv in inventario %}
-                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
-                        <td class="px-6 py-4 font-mono font-bold text-green-700 dark:text-green-400">{{ inv.codigo }}</td>
-                        <td class="px-6 py-4 font-medium">
+                    <tr data-id="{{ inv.id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                        <td class="px-6 py-4 font-mono font-bold text-green-700 dark:text-green-400" data-label="ID Equipo">{{ inv.codigo }}</td>
+                        <td class="px-6 py-4 font-medium" data-label="Nombre del Equipo">
                             <div class="flex items-center">
                                 <i data-lucide="layers" class="mr-2 w-4 h-4 text-gray-400 dark:text-gray-500"></i>
                                 {{ inv.tipo_equipo }}
                             </div>
                         </td>
-                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400">{{ inv.ubicacion }}</td>
-                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400 font-medium">{{ inv.responsable }}</td>
-                        <td class="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-400">
+                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400 hidden md:table-cell" data-label="Ubicación">{{ inv.ubicacion }}</td>
+                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400 font-medium hidden lg:table-cell" data-label="Responsable">{{ inv.responsable }}</td>
+                        <td class="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-400 hidden sm:table-cell" data-label="Últ. Modificación">
                             {{ inv.ultimo_mantenimiento.strftime('%Y-%m-%d') if inv.ultimo_mantenimiento else 'N/D' }}
                         </td>
-                        <td class="px-6 py-4">
+                        <td class="px-6 py-4 hidden sm:table-cell" data-label="Condición">
                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider 
                             {% if inv.estado_operativo == 'Operativo' %} bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300
                             {% elif inv.estado_operativo == 'Requierre Mantenimiento' or inv.estado_operativo == 'Requiere Mantenimiento' %} bg-yellow-50 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300
@@ -75,7 +113,7 @@
                                 {{ inv.estado_operativo }}
                             </span>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
+                        <td class="px-6 py-4 hidden md:table-cell" data-label="Estado">
                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider
                             {% if inv.estado_flujo == 'Disponible' %} bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300
                             {% elif inv.estado_flujo == 'En Uso (Asignado)' %} bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300
@@ -84,13 +122,18 @@
                                 {{ inv.estado_flujo }}
                             </span>
                         </td>
-                        <td class="px-6 py-4 text-center">
-                            <button onclick="abrirModalEditar({{ inv.id }})" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors mr-2" title="Editar equipo">
-                                <i data-lucide="pencil" class="w-4 h-4"></i>
-                            </button>
-                            <button onclick="abrirModalEliminar({{ inv.id }})" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors" title="Eliminar equipo">
-                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                            </button>
+                        <td class="px-6 py-4" data-label="Acciones">
+                            <div class="flex items-center justify-center gap-2">
+                                <button onclick="abrirModalEditar({{ inv.id }})" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors" title="Editar equipo">
+                                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="abrirModalEliminar({{ inv.id }})" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors" title="Eliminar equipo">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="abrirModalActa({{ inv.id }})" class="text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 transition-colors" title="Generar acta de responsabilidad">
+                                    <i data-lucide="file-text" class="w-4 h-4"></i>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                     {% else %}
@@ -100,8 +143,145 @@
                         </td>
                     </tr>
                     {% endfor %}
+                    <tr id="fila-sin-resultados" class="hidden">
+                        <td colspan="8" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
+                            No se encontraron equipos que coincidan con los filtros aplicados.
+                        </td>
+                    </tr>
                 </tbody>
             </table>
+        </div>
+    </div>
+
+    <div class="rounded-xl shadow-sm border bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700">
+        <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+            <div>
+                <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400">Historial de movimientos</h3>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="exportarReporteMovimientos()" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center shadow-sm transition-colors">
+                    <i data-lucide="file-text" class="mr-2 w-4 h-4"></i> Generar reporte
+                </button>
+                <button onclick="document.getElementById('modal-movimiento').classList.remove('hidden')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center shadow-sm transition-colors">
+                    <i data-lucide="plus" class="mr-2 w-4 h-4"></i> Registrar Movimiento
+                </button>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto scrollbar-hide">
+            <table class="w-full text-left border-collapse text-sm">
+                <thead>
+                    <tr class="text-xs uppercase tracking-wider bg-gray-50 text-gray-500 dark:bg-gray-700/40 dark:text-gray-400">
+                        <th class="px-6 py-3 font-semibold">Movimiento ID</th>
+                        <th class="px-6 py-3 font-semibold">Equipo</th>
+                        <th class="px-6 py-3 font-semibold hidden sm:table-cell">Fecha</th>
+                        <th class="px-6 py-3 font-semibold hidden lg:table-cell">Ubicación Origen</th>
+                        <th class="px-6 py-3 font-semibold hidden lg:table-cell">Ubicación Destino</th>
+                        <th class="px-6 py-3 font-semibold">Motivo / Responsable</th>
+                        <th class="px-6 py-3 text-center">Acciones</th>
+                    </tr>
+                    <tr class="bg-gray-50/50 dark:bg-gray-700/20 hidden sm:table-row">
+                        <th class="px-6 py-2">
+                            <input type="text" data-col="0" class="filtro-movimientos w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="ID..." oninput="filtrarMovimientos()">
+                        </th>
+                        <th class="px-6 py-2">
+                            <input type="text" data-col="1" class="filtro-movimientos w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="Equipo..." oninput="filtrarMovimientos()">
+                        </th>
+                        <th class="px-6 py-2 hidden sm:table-cell">
+                            <input type="text" data-col="2" class="filtro-movimientos w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="Fecha..." oninput="filtrarMovimientos()">
+                        </th>
+                        <th class="px-6 py-2 hidden lg:table-cell">
+                            <input type="text" data-col="3" class="filtro-movimientos w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="Origen..." oninput="filtrarMovimientos()">
+                        </th>
+                        <th class="px-6 py-2 hidden lg:table-cell">
+                            <input type="text" data-col="4" class="filtro-movimientos w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="Destino..." oninput="filtrarMovimientos()">
+                        </th>
+                        <th class="px-6 py-2">
+                            <input type="text" data-col="5" class="filtro-movimientos w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="Motivo..." oninput="filtrarMovimientos()">
+                        </th>
+                        <th class="px-6 py-2"></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
+                    <tr data-id="1" class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                        <td class="px-6 py-4 font-mono font-bold text-green-700 dark:text-green-400" data-label="Movimiento ID">#MOV-001</td>
+                        <td class="px-6 py-4 font-medium" data-label="Equipo">
+                            <div class="flex items-center">
+                                <i data-lucide="layers" class="mr-2 w-4 h-4 text-gray-400 dark:text-gray-500"></i>
+                                12345690
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-400 hidden sm:table-cell" data-label="Fecha">2026-05-10</td>
+                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400 hidden lg:table-cell" data-label="Ubicación Origen">Almacén Central</td>
+                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400 hidden lg:table-cell" data-label="Ubicación Destino">La hacienda</td>
+                        <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-200" data-label="Motivo / Responsable">Despliegue inicial / J. Pérez</td>
+                        <td class="px-6 py-4" data-label="Acciones">
+                            <div class="flex items-center justify-center gap-2">
+                                <button onclick="abrirModalEditarMovimiento(1)" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors" title="Editar movimiento">
+                                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="abrirModalEliminarMovimiento(1)" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors" title="Eliminar movimiento">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr data-id="2" class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                        <td class="px-6 py-4 font-mono font-bold text-green-700 dark:text-green-400" data-label="Movimiento ID">#MOV-002</td>
+                        <td class="px-6 py-4 font-medium" data-label="Equipo">
+                            <div class="flex items-center">
+                                <i data-lucide="layers" class="mr-2 w-4 h-4 text-gray-400 dark:text-gray-500"></i>
+                                1234567
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-400 hidden sm:table-cell" data-label="Fecha">2026-05-15</td>
+                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400 hidden lg:table-cell" data-label="Ubicación Origen">Almacén Central</td>
+                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400 hidden lg:table-cell" data-label="Ubicación Destino">Bella Vista</td>
+                        <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-200" data-label="Motivo / Responsable">Asignación / M. Reyes</td>
+                        <td class="px-6 py-4" data-label="Acciones">
+                            <div class="flex items-center justify-center gap-2">
+                                <button onclick="abrirModalEditarMovimiento(2)" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors" title="Editar movimiento">
+                                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="abrirModalEliminarMovimiento(2)" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors" title="Eliminar movimiento">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr data-id="3" class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                        <td class="px-6 py-4 font-mono font-bold text-green-700 dark:text-green-400" data-label="Movimiento ID">#MOV-003</td>
+                        <td class="px-6 py-4 font-medium" data-label="Equipo">
+                            <div class="flex items-center">
+                                <i data-lucide="layers" class="mr-2 w-4 h-4 text-gray-400 dark:text-gray-500"></i>
+                                12345690
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-400 hidden sm:table-cell" data-label="Fecha">2026-07-06</td>
+                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400 hidden lg:table-cell" data-label="Ubicación Origen">La hacienda</td>
+                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400 hidden lg:table-cell" data-label="Ubicación Destino">Bella Vista</td>
+                        <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-200" data-label="Motivo / Responsable">Traslado por Falla / Director Reg.</td>
+                        <td class="px-6 py-4" data-label="Acciones">
+                            <div class="flex items-center justify-center gap-2">
+                                <button onclick="abrirModalEditarMovimiento(3)" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors" title="Editar movimiento">
+                                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="abrirModalEliminarMovimiento(3)" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors" title="Eliminar movimiento">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr id="fila-sin-resultados-mov" class="hidden">
+                        <td colspan="7" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
+                            No se encontraron movimientos que coincidan con los filtros aplicados.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="px-6 py-3 border-t border-gray-100 dark:border-gray-700 flex justify-end">
+            <span class="text-xs text-gray-500 dark:text-gray-400">3 registro(s)</span>
         </div>
     </div>
 </div>
@@ -119,48 +299,51 @@
             </button>
         </div>
         
-        <form method="POST" action="{{ url_for('inventario.nuevo') }}" class="p-6 space-y-5">
+        <form method="POST" action="{{ url_for('inventario.nuevo') }}" class="p-6 space-y-5" onsubmit="enviarFormulario(event, this, 'modal-inventario')">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Tipo de Equipo</label>
-                    <select name="tipo_equipo" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
-                        <option>Estación Meteorológica (EMA)</option>
-                        <option>Pluviómetro de Campo</option>
-                        <option>Aparato Transmisor Data (SSBC)</option>
-                        <option>Equipo Tecnológico (GPS/Drone)</option>
-                    </select>
-                </div>
-                <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Código Patrimonial / Serial</label>
-                    <input type="text" name="codigo" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: EMA-005" required />
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Nombre del Equipo</label>
+                        <select name="tipo_equipo" required oninvalid="this.setCustomValidity('Seleccione un tipo de equipo')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                            <option value="">Seleccione...</option>
+                            <option>Estación Meteorológica (EMA)</option>
+                            <option>Pluviómetro de Campo</option>
+                            <option>Aparato Transmisor Data (SSBC)</option>
+                            <option>Equipo Tecnológico (GPS/Drone)</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">ID Equipo</label>
+                        <input type="text" name="codigo" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: EMA-005" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
                 </div>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación / Asignación Territorial</label>
-                    <input type="text" name="ubicacion" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Lugar o comunidad de instalación" required />
-                </div>
-                <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Responsable / Custodio</label>
-                    <input type="text" name="responsable" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Nombre del funcionario a cargo" required />
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación Actual</label>
+                        <input type="text" name="ubicacion" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Lugar o comunidad de instalación" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                    </div>
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Responsable</label>
+                    <input type="text" name="responsable" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Nombre del funcionario a cargo" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
                 </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estado Operativo</label>
-                    <select name="estado_operativo" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
-                        <option>Operativo</option>
-                        <option>Requiere Mantenimiento</option>
-                        <option>Dañado / Inoperativo</option>
-                    </select>
-                </div>
-                <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estado</label>
-                    <select name="estado" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Condición</label>
+                        <select name="estado_operativo" required oninvalid="this.setCustomValidity('Seleccione una condición')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                            <option value="">Seleccione...</option>
+                            <option>Operativo</option>
+                            <option>Requiere Mantenimiento</option>
+                            <option>Dañado / Inoperativo</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estado</label>
+                    <select name="estado" required oninvalid="this.setCustomValidity('Seleccione un estado')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                        <option value="">Seleccione...</option>
                         <option value="Disponible">Disponible</option>
                         <option value="En Uso (Asignado)">En Uso (Asignado)</option>
                         <option value="En Mantenimiento">En Mantenimiento</option>
@@ -169,10 +352,10 @@
             </div>
 
             <div class="space-y-1">
-                <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Fecha Última Calibración / Mantenimiento</label>
+                <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Últ. Modificación</label>
                 <div class="relative">
                     <i data-lucide="calendar" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
-                    <input type="date" name="ultimo_mantenimiento" class="w-full border rounded-md pl-9 p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required />
+                    <input type="date" name="ultimo_mantenimiento" id="fecha-mantenimiento" class="w-full border rounded-md pl-9 p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Seleccione una fecha')" oninput="this.setCustomValidity('')" />
                 </div>
                 <p class="text-[10px] text-gray-500 dark:text-gray-400 italic">El sistema auditará la vigencia en base a este registro cronológico.</p>
             </div>
@@ -198,55 +381,58 @@
             </button>
         </div>
         
-        <form id="form-editar-equipo" method="POST" class="p-6 space-y-5">
+        <form id="form-editar-equipo" method="POST" class="p-6 space-y-5" onsubmit="enviarFormulario(event, this, 'modal-editar-inventario')">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Tipo de Equipo</label>
-                    <select id="edit-tipo_equipo" name="tipo_equipo" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
-                        <option>Estación Meteorológica (EMA)</option>
-                        <option>Pluviómetro de Campo</option>
-                        <option>Aparato Transmisor Data (SSBC)</option>
-                        <option>Equipo Tecnológico (GPS/Drone)</option>
-                    </select>
-                </div>
-                <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Código Patrimonial / Serial</label>
-                    <input type="text" id="edit-codigo" name="codigo" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: EMA-005" required />
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Nombre del Equipo</label>
+                        <select id="edit-tipo_equipo" name="tipo_equipo" required oninvalid="this.setCustomValidity('Seleccione un tipo de equipo')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                            <option value="">Seleccione...</option>
+                            <option>Estación Meteorológica (EMA)</option>
+                            <option>Pluviómetro de Campo</option>
+                            <option>Aparato Transmisor Data (SSBC)</option>
+                            <option>Equipo Tecnológico (GPS/Drone)</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">ID Equipo</label>
+                    <input type="text" id="edit-codigo" name="codigo" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: EMA-005" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
                 </div>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación / Asignación Territorial</label>
-                    <input type="text" id="edit-ubicacion" name="ubicacion" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Lugar o comunidad de instalación" required />
-                </div>
-                <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Responsable / Custodio</label>
-                    <input type="text" id="edit-responsable" name="responsable" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Nombre del funcionario a cargo" required />
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación Actual</label>
+                        <input type="text" id="edit-ubicacion" name="ubicacion" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Lugar o comunidad de instalación" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                    </div>
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Responsable</label>
+                    <input type="text" id="edit-responsable" name="responsable" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Nombre del funcionario a cargo" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
                 </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estado Operativo</label>
-                    <select id="edit-estado_operativo" name="estado_operativo" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
-                        <option>Operativo</option>
-                        <option>Requiere Mantenimiento</option>
-                        <option>Dañado / Inoperativo</option>
-                    </select>
-                </div>
-                <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estado</label>
-                    <select id="edit-estado" name="estado" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Condición</label>
+                        <select id="edit-estado_operativo" name="estado_operativo" required oninvalid="this.setCustomValidity('Seleccione una condición')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                            <option value="">Seleccione...</option>
+                            <option>Operativo</option>
+                            <option>Requiere Mantenimiento</option>
+                            <option>Dañado / Inoperativo</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estado</label>
+                    <select id="edit-estado" name="estado" required oninvalid="this.setCustomValidity('Seleccione un estado')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                        <option value="">Seleccione...</option>
                         <option value="Disponible">Disponible</option>
                         <option value="En Uso (Asignado)">En Uso (Asignado)</option>
                         <option value="En Mantenimiento">En Mantenimiento</option>
                     </select>
                 </div>
                 <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Última Calibración / Mantenimiento</label>
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Últ. Modificación</label>
                     <div class="relative">
                         <i data-lucide="calendar" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
                         <input type="date" id="edit-ultimo_mantenimiento" name="ultimo_mantenimiento" class="w-full border rounded-md pl-9 p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" />
@@ -278,100 +464,263 @@
     </div>
 </div>
 
+<!-- Modal Acta de Responsabilidad -->
+<div id="modal-acta-inventario" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="rounded-xl shadow-xl w-full max-w-md bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-6 text-center relative">
+        <button onclick="document.getElementById('modal-acta-inventario').classList.add('hidden')" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+            <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+        <div class="w-14 h-14 mx-auto mb-4 rounded-full bg-amber-100 dark:bg-amber-900/20 flex items-center justify-center">
+            <i data-lucide="file-text" class="w-7 h-7 text-amber-600 dark:text-amber-400"></i>
+        </div>
+        <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-2">Generar Acta de Responsabilidad</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">¿Desea exportar el acta de responsabilidad del equipo seleccionado?</p>
+        <form id="form-acta-equipo" method="GET" target="_blank" class="flex justify-center gap-3">
+            <button type="button" onclick="document.getElementById('modal-acta-inventario').classList.add('hidden')" class="px-5 py-2.5 border rounded-lg text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Volver</button>
+            <button type="submit" class="px-5 py-2.5 bg-amber-600 rounded-lg text-sm font-medium text-white hover:bg-amber-700 transition-colors shadow-sm">Continuar</button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Registrar Movimiento -->
+<div id="modal-movimiento" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+        <div class="flex justify-between items-center p-6 border-b sticky top-0 z-10 border-gray-100 bg-white dark:border-gray-700 dark:bg-gray-800">
+            <div>
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white">Registrar Movimiento</h2>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Registre el movimiento del equipo en el inventario</p>
+            </div>
+            <button onclick="document.getElementById('modal-movimiento').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        
+        <form method="POST" action="{{ url_for('inventario.nuevo_movimiento') }}" class="p-6 space-y-5" onsubmit="enviarFormulario(event, this, 'modal-movimiento')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Movimiento ID</label>
+                    <input type="text" name="movimiento_id" value="#MOV-004" readonly class="w-full border rounded-md p-2 text-sm bg-gray-50 border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none" />
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Equipo</label>
+                    <select name="equipo" required oninvalid="this.setCustomValidity('Seleccione un equipo')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                        <option value="">Seleccione...</option>
+                        {% for inv in inventario %}
+                        <option value="{{ inv.codigo }}">{{ inv.codigo }} - {{ inv.tipo_equipo }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="space-y-1">
+                <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Fecha</label>
+                <div class="relative">
+                    <i data-lucide="calendar" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
+                    <input type="date" name="fecha_hora" id="fecha-hora-movimiento" class="w-full border rounded-md pl-9 p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Seleccione una fecha')" oninput="this.setCustomValidity('')" />
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación Origen</label>
+                    <input type="text" name="ubicacion_origen" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ubicación actual" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación Destino</label>
+                    <input type="text" name="ubicacion_destino" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Nueva ubicación" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                </div>
+            </div>
+
+            <div class="space-y-1">
+                <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Motivo / Responsable</label>
+                <input type="text" name="motivo_responsable" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: Despliegue inicial / J. Pérez" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+            </div>
+
+            <div class="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-700">
+                <button type="button" onclick="document.getElementById('modal-movimiento').classList.add('hidden')" class="mr-3 px-4 py-2 border rounded-md text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Cancelar</button>
+                <button type="submit" class="px-4 py-2 bg-green-600 rounded-md text-sm font-medium text-white hover:bg-green-700 transition-colors shadow-sm">Registrar Movimiento</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Editar Movimiento -->
+<div id="modal-editar-movimiento" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+        <div class="flex justify-between items-center p-6 border-b sticky top-0 z-10 border-gray-100 bg-white dark:border-gray-700 dark:bg-gray-800">
+            <div>
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white">Editar Movimiento</h2>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Actualice los datos del movimiento seleccionado</p>
+            </div>
+            <button onclick="document.getElementById('modal-editar-movimiento').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        
+        <form id="form-editar-movimiento" method="POST" action="{{ url_for('inventario.editar_movimiento', movimiento_id=0) }}" class="p-6 space-y-5" onsubmit="enviarFormulario(event, this, 'modal-editar-movimiento')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" id="edit-mov-id" name="movimiento_id_hidden" value="0">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Movimiento ID</label>
+                    <input type="text" id="edit-mov-codigo" name="movimiento_id" readonly class="w-full border rounded-md p-2 text-sm bg-gray-50 border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none" />
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Equipo</label>
+                    <select id="edit-mov-equipo" name="equipo" required oninvalid="this.setCustomValidity('Seleccione un equipo')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                        <option value="">Seleccione...</option>
+                        {% for inv in inventario %}
+                        <option value="{{ inv.codigo }}">{{ inv.codigo }} - {{ inv.tipo_equipo }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="space-y-1">
+                <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Fecha</label>
+                <div class="relative">
+                    <i data-lucide="calendar" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
+                    <input type="date" id="edit-mov-fecha" name="fecha_hora" class="w-full border rounded-md pl-9 p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Seleccione una fecha')" oninput="this.setCustomValidity('')" />
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación Origen</label>
+                    <input type="text" id="edit-mov-origen" name="ubicacion_origen" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación Destino</label>
+                    <input type="text" id="edit-mov-destino" name="ubicacion_destino" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                </div>
+            </div>
+
+            <div class="space-y-1">
+                <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Motivo / Responsable</label>
+                <input type="text" id="edit-mov-motivo" name="motivo_responsable" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+            </div>
+
+            <div class="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-700">
+                <button type="button" onclick="document.getElementById('modal-editar-movimiento').classList.add('hidden')" class="mr-3 px-4 py-2 border rounded-md text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Cancelar</button>
+                <button type="submit" class="px-4 py-2 bg-blue-600 rounded-md text-sm font-medium text-white hover:bg-blue-700 transition-colors shadow-sm">Guardar Cambios</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Eliminar Movimiento -->
+<div id="modal-eliminar-movimiento" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="rounded-xl shadow-xl w-full max-w-md bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-6 text-center">
+        <div class="w-14 h-14 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
+            <i data-lucide="alert-triangle" class="w-7 h-7 text-red-600 dark:text-red-400"></i>
+        </div>
+        <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-2">¿Estás seguro de eliminar este movimiento?</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Esta acción no se puede deshacer. El registro será eliminado permanentemente.</p>
+        <form id="form-eliminar-movimiento" method="POST" action="{{ url_for('inventario.eliminar_movimiento', movimiento_id=0) }}" class="flex justify-center gap-3">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="button" onclick="document.getElementById('modal-eliminar-movimiento').classList.add('hidden')" class="px-5 py-2.5 border rounded-lg text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Cancelar</button>
+            <button type="submit" class="px-5 py-2.5 bg-red-600 rounded-lg text-sm font-medium text-white hover:bg-red-700 transition-colors shadow-sm">Eliminar</button>
+        </form>
+    </div>
+</div>
+
 <script>
 const equiposData = {{ inventario_json | tojson | safe }};
 
-console.log('[DEBUG] Inventario - datos cargados:', equiposData.length, 'registros');
+(function() {
+    const hoy = new Date().toISOString().split('T')[0];
+    document.querySelectorAll('input[type="date"]').forEach(el => el.setAttribute('max', hoy));
 
-document.addEventListener('DOMContentLoaded', function() {
-    const table = document.querySelector('table');
-    const tbody = document.querySelector('tbody');
-    const rows = tbody ? tbody.querySelectorAll('tr') : [];
-    const container = document.querySelector('.rounded-xl.shadow-sm.border.overflow-hidden');
-    
-    console.log('[DEBUG] Tabla existe:', !!table);
-    console.log('[DEBUG] Tbody existe:', !!tbody);
-    console.log('[DEBUG] Filas en tbody:', rows.length);
-    console.log('[DEBUG] Container existe:', !!container);
-    
-    if (table) {
-        const style = getComputedStyle(table);
-        console.log('[DEBUG] Table display:', style.display);
-        console.log('[DEBUG] Table visibility:', style.visibility);
-        console.log('[DEBUG] Table opacity:', style.opacity);
-        console.log('[DEBUG] Table height:', style.height);
+})();
+
+function limpiarErrorModal(modalId) {
+    const error = document.getElementById(modalId).querySelector('.modal-error');
+    if (error) error.remove();
+}
+
+function mostrarErrorModal(modalId, mensaje) {
+    const modal = document.getElementById(modalId);
+    let existing = modal.querySelector('.modal-error');
+    if (!existing) {
+        existing = document.createElement('div');
+        existing.className = 'modal-error p-3 rounded-md bg-red-600 text-white text-sm font-semibold flex items-center shadow-lg';
+        existing.innerHTML = '<i data-lucide="alert-triangle" class="mr-2 w-4 h-4"></i> <span></span>';
+        modal.querySelector('.p-6.space-y-5').prepend(existing);
     }
-    
-    if (container) {
-        const cstyle = getComputedStyle(container);
-        console.log('[DEBUG] Container display:', cstyle.display);
-        console.log('[DEBUG] Container overflow:', cstyle.overflow);
-        console.log('[DEBUG] Container max-height:', cstyle.maxHeight);
-        console.log('[DEBUG] Container height:', cstyle.height);
+    existing.querySelector('span').textContent = mensaje;
+    if (window.lucide) lucide.createIcons();
+}
+
+function mostrarLoading(btn, activo) {
+    if (activo) {
+        btn._originalHTML = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Guardando...';
+    } else {
+        btn.disabled = false;
+        btn.innerHTML = btn._originalHTML || 'Guardar';
     }
-    
-    // Log all rows
-    rows.forEach((row, i) => {
-        console.log('[DEBUG] Fila', i, 'HTML:', row.innerHTML.substring(0, 100));
+}
+
+function mostrarExitoModal(modalId, mensaje) {
+    limpiarErrorModal(modalId);
+    const modal = document.getElementById(modalId);
+    const exito = document.createElement('div');
+    exito.className = 'modal-exito p-3 rounded-md bg-emerald-600 text-white text-sm font-semibold flex items-center shadow-lg';
+    exito.innerHTML = '<i data-lucide="check-circle" class="mr-2 w-4 h-4"></i> <span>' + mensaje + '</span>';
+    modal.querySelector('.p-6.space-y-5').prepend(exito);
+    if (window.lucide) lucide.createIcons();
+}
+
+function enviarFormulario(event, form, modalId) {
+    event.preventDefault();
+
+    const errorDiv = form.querySelector('.modal-error');
+    if (errorDiv) errorDiv.remove();
+    const exitoDiv = form.querySelector('.modal-exito');
+    if (exitoDiv) exitoDiv.remove();
+
+    if (!form.reportValidity()) {
+        return;
+    }
+
+    const btn = form.querySelector('button[type="submit"]');
+    mostrarLoading(btn, true);
+
+    const formData = new FormData(form);
+    formData.append('csrf_token', form.querySelector('[name=csrf_token]').value);
+
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        mostrarLoading(btn, false);
+        if (data.ok) {
+            mostrarExitoModal(modalId, data.mensaje || 'Registro guardado exitosamente.');
+            setTimeout(function() {
+                window.location.href = data.redirect;
+            }, 1500);
+        } else {
+            mostrarErrorModal(modalId, data.error);
+        }
+    })
+    .catch(function() {
+        mostrarLoading(btn, false);
+        form.submit();
     });
-    
-    console.log('[DEBUG] Document height:', document.documentElement.scrollHeight, 'Viewport:', window.innerHeight);
-    
-    // Check if there's a parent clipping
-    let el = table;
-    while (el && el !== document.body) {
-        const st = getComputedStyle(el);
-        if (st.overflow === 'hidden' || st.overflowX === 'hidden' || st.overflowY === 'hidden') {
-            console.log('[DEBUG] Elemento con overflow hidden:', el.tagName, el.className);
-        }
-        if (st.maxHeight !== 'none' && st.maxHeight !== '') {
-            console.log('[DEBUG] Elemento con maxHeight:', el.tagName, st.maxHeight);
-        }
-        if (st.display === 'none') {
-            console.log('[DEBUG] Elemento oculto:', el.tagName, el.className);
-        }
-        el = el.parentElement;
-    }
-    
-    // Check position
-    if (table) {
-        const rect = table.getBoundingClientRect();
-        console.log('[DEBUG] Tabla pos - top:', rect.top, 'bottom:', rect.bottom, 'width:', rect.width, 'height:', rect.height);
-        console.log('[DEBUG] Tabla visible en viewport:', rect.top < window.innerHeight && rect.bottom > 0);
-        
-        const tbodyRect = tbody.getBoundingClientRect();
-        console.log('[DEBUG] Tbody pos - top:', tbodyRect.top, 'bottom:', tbodyRect.bottom, 'height:', tbodyRect.height);
-        
-        const firstRow = rows[0];
-        if (firstRow) {
-            const rowRect = firstRow.getBoundingClientRect();
-            console.log('[DEBUG] Primera fila - top:', rowRect.top, 'bottom:', rowRect.bottom, 'height:', rowRect.height);
-            const cells = firstRow.querySelectorAll('td, th');
-            cells.forEach((cell, ci) => {
-                const cRect = cell.getBoundingClientRect();
-                console.log('[DEBUG] Celda', ci, 'ancho:', cRect.width, 'alto:', cRect.height);
-            });
-        }
-        
-        // Check if the header text is visible
-        const header = document.querySelector('h3');
-        if (header) {
-            const hRect = header.getBoundingClientRect();
-            console.log('[DEBUG] Header "Listado Maestro" pos - top:', hRect.top, 'bottom:', hRect.bottom, 'height:', hRect.height);
-        }
-        
-        // Check the content div (flex-1 overflow-auto)
-        const contentDiv = document.querySelector('.flex-1.overflow-auto');
-        if (contentDiv) {
-            const cRect = contentDiv.getBoundingClientRect();
-            console.log('[DEBUG] Content div (flex-1) - top:', cRect.top, 'bottom:', cRect.bottom, 'height:', cRect.height);
-        }
-    }
-});
+}
 
 function abrirModalEditar(id) {
     const equipo = equiposData.find(e => e.id === id);
     if (!equipo) return;
+
+    limpiarErrorModal('modal-editar-inventario');
 
     document.getElementById('edit-tipo_equipo').value = equipo.tipo_equipo || '';
     document.getElementById('edit-codigo').value = equipo.codigo || '';
@@ -385,9 +734,227 @@ function abrirModalEditar(id) {
     document.getElementById('modal-editar-inventario').classList.remove('hidden');
 }
 
+function abrirModalActa(id) {
+    document.getElementById('form-acta-equipo').action = "{{ url_for('inventario.acta_responsabilidad', equipo_id=0) }}".replace('/0', '/' + id);
+    document.getElementById('modal-acta-inventario').classList.remove('hidden');
+}
+
 function abrirModalEliminar(id) {
     document.getElementById('form-eliminar-equipo').action = "{{ url_for('inventario.eliminar', equipo_id=0) }}".replace('/0', '/' + id);
     document.getElementById('modal-eliminar-inventario').classList.remove('hidden');
 }
+
+function filtrarTabla() {
+    const inputs = document.querySelectorAll('.filtro-tabla');
+    const filas = document.querySelectorAll('table:has(.filtro-tabla) tbody tr');
+    let visibles = 0;
+
+    filas.forEach(function(fila) {
+        if (fila.id === 'fila-sin-resultados') return;
+        if (fila.querySelector('td[colspan]')) return;
+
+        let mostrar = true;
+        inputs.forEach(function(input) {
+            const valor = input.value.toLowerCase().trim();
+            if (!valor) return;
+
+            const col = parseInt(input.dataset.col);
+            const celdas = fila.querySelectorAll('td');
+            if (col < celdas.length) {
+                const texto = celdas[col].textContent.toLowerCase().trim();
+                if (!texto.includes(valor)) {
+                    mostrar = false;
+                }
+            }
+        });
+
+        fila.style.display = mostrar ? '' : 'none';
+        if (mostrar) visibles++;
+    });
+
+    const sinResultados = document.getElementById('fila-sin-resultados');
+    if (sinResultados) {
+        sinResultados.classList.toggle('hidden', visibles > 0);
+    }
+
+    const contador = document.getElementById('contador-registros');
+    if (contador) {
+        contador.textContent = visibles + ' registro(s)';
+    }
+}
+
+function limpiarFiltros() {
+    document.querySelectorAll('.filtro-tabla').forEach(function(el) {
+        if (el.tagName === 'SELECT') {
+            el.selectedIndex = 0;
+        } else {
+            el.value = '';
+        }
+    });
+    filtrarTabla();
+}
+
+function filtrarMovimientos() {
+    const inputs = document.querySelectorAll('.filtro-movimientos');
+    const filas = document.querySelectorAll('table:has(.filtro-movimientos) tbody tr');
+    let visibles = 0;
+
+    filas.forEach(function(fila) {
+        if (fila.id === 'fila-sin-resultados-mov') return;
+        if (fila.querySelector('td[colspan]')) return;
+
+        let mostrar = true;
+        inputs.forEach(function(input) {
+            const valor = input.value.toLowerCase().trim();
+            if (!valor) return;
+
+            const col = parseInt(input.dataset.col);
+            const celdas = fila.querySelectorAll('td');
+            if (col < celdas.length) {
+                const texto = celdas[col].textContent.toLowerCase().trim();
+                if (!texto.includes(valor)) {
+                    mostrar = false;
+                }
+            }
+        });
+
+        fila.style.display = mostrar ? '' : 'none';
+        if (mostrar) visibles++;
+    });
+
+    const sinResultados = document.getElementById('fila-sin-resultados-mov');
+    if (sinResultados) {
+        sinResultados.classList.toggle('hidden', visibles > 0);
+    }
+}
+
+const movimientosData = [
+    { id: 1, codigo: '#MOV-001', equipo: '12345690', fecha: '2026-05-10', origen: 'Almacén Central', destino: 'La hacienda', motivo: 'Despliegue inicial / J. Pérez' },
+    { id: 2, codigo: '#MOV-002', equipo: '1234567', fecha: '2026-05-15', origen: 'Almacén Central', destino: 'Bella Vista', motivo: 'Asignación / M. Reyes' },
+    { id: 3, codigo: '#MOV-003', equipo: '12345690', fecha: '2026-07-06', origen: 'La hacienda', destino: 'Bella Vista', motivo: 'Traslado por Falla / Director Reg.' },
+];
+
+function abrirModalEditarMovimiento(id) {
+    const mov = movimientosData.find(m => m.id === id);
+    if (!mov) return;
+    limpiarErrorModal('modal-editar-movimiento');
+    document.getElementById('edit-mov-id').value = id;
+    document.getElementById('edit-mov-codigo').value = mov.codigo;
+    document.getElementById('edit-mov-equipo').value = mov.equipo;
+    document.getElementById('edit-mov-fecha').value = mov.fecha;
+    document.getElementById('edit-mov-origen').value = mov.origen;
+    document.getElementById('edit-mov-destino').value = mov.destino;
+    document.getElementById('edit-mov-motivo').value = mov.motivo;
+    document.getElementById('form-editar-movimiento').action = "{{ url_for('inventario.editar_movimiento', movimiento_id=0) }}".replace('/0', '/' + id);
+    document.getElementById('modal-editar-movimiento').classList.remove('hidden');
+}
+
+function abrirModalEliminarMovimiento(id) {
+    const mov = movimientosData.find(m => m.id === id);
+    if (!mov) return;
+    document.getElementById('form-eliminar-movimiento').action = "{{ url_for('inventario.eliminar_movimiento', movimiento_id=0) }}".replace('/0', '/' + id);
+    document.getElementById('modal-eliminar-movimiento').classList.remove('hidden');
+}
+
+function exportarReporteMovimientos() {
+    const filas = document.querySelectorAll('table:has(.filtro-movimientos) tbody tr[data-id]');
+    const ids = [];
+    filas.forEach(function(fila) {
+        if (fila.style.display !== 'none') {
+            ids.push(fila.dataset.id);
+        }
+    });
+    const baseUrl = "{{ url_for('inventario.reporte_movimientos') }}";
+    const url = ids.length > 0 ? baseUrl + '?ids=' + ids.join(',') : baseUrl;
+    window.open(url, '_blank');
+}
+
+function exportarReporte() {
+    const filas = document.querySelectorAll('table:has(.filtro-tabla) tbody tr[data-id]');
+    const ids = [];
+    filas.forEach(function(fila) {
+        if (fila.style.display !== 'none') {
+            ids.push(fila.dataset.id);
+        }
+    });
+    const baseUrl = "{{ url_for('inventario.reporte_inventario') }}";
+    const url = ids.length > 0 ? baseUrl + '?ids=' + ids.join(',') : baseUrl;
+    window.open(url, '_blank');
+}
 </script>
+
+<style>
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+@media (max-width: 639px) {
+    table, thead, tbody, tr, td, th {
+        display: block;
+    }
+    thead tr:first-child {
+        display: none;
+    }
+    .filtro-tabla,
+    .filtro-movimientos {
+        display: none;
+    }
+    tr[data-id] {
+        border: 1px solid #e5e7eb;
+        border-radius: 0.75rem;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        background: white;
+    }
+    .dark tr[data-id] {
+        border-color: #374151;
+        background: #1f2937;
+    }
+    tr[data-id] td {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border: none;
+    }
+    tr[data-id] td:not(:last-child) {
+        border-bottom: 1px dashed #e5e7eb;
+    }
+    .dark tr[data-id] td:not(:last-child) {
+        border-bottom-color: #374151;
+    }
+    td[data-label]::before {
+        content: attr(data-label);
+        font-weight: 600;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #6b7280;
+    }
+    .dark td[data-label]::before {
+        color: #9ca3af;
+    }
+    td[data-label="Acciones"]::before {
+        content: attr(data-label);
+    }
+    td[data-label="Acciones"] {
+        justify-content: space-between;
+    }
+    td[data-label="Nombre del Equipo"] div,
+    td[data-label="Equipo"] div {
+        margin-left: auto;
+    }
+    td[data-label="Movimiento ID"],
+    td[data-label="Motivo / Responsable"] {
+        text-align: right;
+    }
+    tbody > tr:not([data-id]) td[colspan] {
+        padding: 2rem 1rem;
+    }
+}
+</style>
 {% endblock %}

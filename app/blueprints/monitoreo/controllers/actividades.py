@@ -10,6 +10,8 @@ from app.blueprints.monitoreo import monitoreo_bp
 from app.constants import ESTADOS_ACTIVIDAD
 from app.models.actividad import Actividad
 from app.models.bitacora import BitacoraTransaccion
+# 🌟 Importamos tu validador dinámico de roles y permisos
+from app.blueprints.core.controllers.roles import verificar_permiso_dinamico
 
 
 def _guardar_archivo(archivo, carpeta):
@@ -27,6 +29,9 @@ def _guardar_archivo(archivo, carpeta):
 @monitoreo_bp.route('/actividades/')
 @login_required
 def actividades_index():
+    # 🛡️ Blindaje de Seguridad Dinámico
+    verificar_permiso_dinamico('gestionar_monitoreo')
+    
     actividades = Actividad.query.order_by(Actividad.fecha.desc(), Actividad.creado_en.desc()).all()
     return render_template('actividades/index.html', actividades=actividades, estados_actividad=ESTADOS_ACTIVIDAD)
 
@@ -34,6 +39,9 @@ def actividades_index():
 @monitoreo_bp.route('/actividades/nueva', methods=['GET', 'POST'])
 @login_required
 def nueva():
+    # 🛡️ Blindaje de Seguridad Dinámico
+    verificar_permiso_dinamico('gestionar_monitoreo')
+    
     if request.method == 'POST':
         fecha = request.form.get('fecha', '').strip()
         actividad = request.form.get('actividad', '').strip()
@@ -87,6 +95,9 @@ def nueva():
 @monitoreo_bp.route('/actividades/<int:actividad_id>/estado', methods=['POST'])
 @login_required
 def actividades_cambiar_estado(actividad_id):
+    # 🛡️ Blindaje de Seguridad Dinámico
+    verificar_permiso_dinamico('gestionar_monitoreo')
+    
     actividad = Actividad.query.get_or_404(actividad_id)
     nuevo_estado = request.form.get('estado', '').strip()
 

@@ -3,19 +3,19 @@
 {% block title %}Técnicos de Campo - ONCC{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
-    
+<div class="max-w-6xl mx-auto space-y-6">
+
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
         <div>
-            <h1 class="text-2xl font-bold dark:text-white text-gray-800">Supervisión de Técnicos de Campo</h1>
-            <p class="text-sm dark:text-gray-400 text-gray-500">Monitoreo de la fuerza de trabajo en territorio, asignación de equipos y auditoría de minutas</p>
+            <h1 class="text-2xl font-bold dark:text-white text-gray-800">Gestión de Técnicos</h1>
+            <p class="text-sm dark:text-gray-400 text-gray-500">Módulo maestro para el registro de los operarios, ingenieros, geólogos y analistas de campo de la ONCC.</p>
         </div>
         <div class="flex items-center gap-2">
+            <button onclick="abrirModalCrearTecnico()" class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-medium transition-colors shadow-sm">
+                <i data-lucide="plus" class="w-4 h-4 mr-2"></i> Nuevo Técnico
+            </button>
             <a href="{{ url_for('inventario.index') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md text-sm font-medium transition-colors border border-gray-200 dark:border-gray-700 shadow-xs">
                 <i data-lucide="package" class="w-4 h-4 mr-2 text-gray-400"></i> Ver Inventario
-            </a>
-            <a href="{{ url_for('usuario.index') }}" class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-medium transition-colors shadow-sm">
-                <i data-lucide="shield" class="w-4 h-4 mr-2"></i> Administrar Cuentas
             </a>
         </div>
     </div>
@@ -23,17 +23,10 @@
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
-                {% if category == 'error' %}
-                    <div class="p-4 rounded-md bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800 flex items-center shadow-sm">
-                        <i data-lucide="alert-triangle" class="mr-2 w-5 h-5"></i> 
-                        <span class="text-sm font-medium">{{ message }}</span>
-                    </div>
-                {% else %}
-                    <div class="p-4 rounded-md bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800 flex items-center shadow-sm">
-                        <i data-lucide="check-circle" class="mr-2 w-5 h-5"></i> 
-                        <span class="text-sm font-medium">{{ message }}</span>
-                    </div>
-                {% endif %}
+                <div class="p-4 rounded-md {% if category == 'error' %}bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800{% else %}bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800{% endif %} border flex items-center shadow-sm">
+                    <i data-lucide="{% if category == 'error' %}alert-triangle{% else %}check-circle{% endif %}" class="mr-2 w-5 h-5"></i> 
+                    <span class="text-sm font-medium">{{ message }}</span>
+                </div>
             {% endfor %}
         {% endif %}
     {% endwith %}
@@ -41,7 +34,7 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center justify-between">
             <div class="space-y-1">
-                <p class="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 font-bold">Fuerza Técnica Disponible</p>
+                <p class="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 font-bold">Técnicos Activos</p>
                 <p class="text-2xl font-bold text-gray-800 dark:text-white">{{ tecnicos|length }} Analista(s)</p>
                 <p class="text-xs text-green-600 dark:text-green-400 font-medium flex items-center">
                     <span class="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5 animate-pulse"></span> Desplegados en Región Lara
@@ -51,8 +44,7 @@
                 <i data-lucide="users" class="w-6 h-6"></i>
             </div>
         </div>
-
-        <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center justify-between">
+        <a href="{{ url_for('inventario.index') }}" class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center justify-between hover:border-blue-300 dark:hover:border-blue-600 transition-colors cursor-pointer">
             <div class="space-y-1">
                 <p class="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 font-bold">Equipos Asignados</p>
                 <p class="text-2xl font-bold text-gray-800 dark:text-white">Custodia Activa</p>
@@ -61,87 +53,77 @@
             <div class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-blue-600 dark:text-blue-400">
                 <i data-lucide="wrench" class="w-6 h-6"></i>
             </div>
-        </div>
-
-        <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center justify-between">
+        </a>
+        <a href="{{ url_for('core.usuario_index') }}" class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center justify-between hover:border-purple-300 dark:hover:border-purple-600 transition-colors cursor-pointer">
             <div class="space-y-1">
                 <p class="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 font-bold">Permisología del Módulo</p>
-                <p class="text-2xl font-bold text-gray-800 dark:text-white">Rol Técnico (ID 3)</p>
+                <p class="text-2xl font-bold text-gray-800 dark:text-white">Rol Técnico</p>
                 <p class="text-xs text-gray-500 dark:text-gray-400">Carga restringida de minutas y mapas</p>
             </div>
             <div class="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg text-purple-600 dark:text-purple-400">
                 <i data-lucide="user-check" class="w-6 h-6"></i>
             </div>
-        </div>
+        </a>
     </div>
 
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
             <div>
-                <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400">Fichas de Carga de Trabajo Técnico</h3>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Supervisión de responsabilidades físicas e institucionales asignadas</p>
+                <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400">Ficha de trabajo: Técnicos</h3>
             </div>
-            <span class="text-xs font-mono text-gray-400 dark:text-gray-500">Fuerza Operativa ONCC</span>
+            <span class="text-xs font-mono text-gray-400 dark:text-gray-500">{{ tecnicos|length }} registro(s)</span>
         </div>
 
         <div class="overflow-x-auto">
             <table class="w-full text-sm text-left border-collapse">
                 <thead>
                     <tr class="text-xs uppercase tracking-wider bg-gray-50 text-gray-500 dark:bg-gray-700/40 dark:text-gray-400">
-                        <th class="px-6 py-3 font-semibold">Técnico de Campo</th>
-                        <th class="px-6 py-3 font-semibold">Contacto Digital</th>
-                        <th class="px-6 py-3 font-semibold text-center">Equipos en Custodia</th>
-                        <th class="px-6 py-3 font-semibold text-center">Despliegues Reportados</th>
-                        <th class="px-6 py-3 font-semibold">Estatus Operativo</th>
-                        <th class="px-6 py-3 text-right">Acción</th>
+                        <th class="px-6 py-3 font-semibold">Cédula</th>
+                        <th class="px-6 py-3 font-semibold">Nombre Completo</th>
+                        <th class="px-6 py-3 font-semibold">Especialidad Científica</th>
+                        <th class="px-6 py-3">Estatus de Disponibilidad</th>
+                        <th class="px-6 py-3 text-center">Acciones</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
                     {% for t in tecnicos %}
                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
-                        <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-100 flex items-center whitespace-nowrap">
-                            <div class="w-9 h-9 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 flex items-center justify-center font-bold text-xs mr-3 border border-green-200/50 dark:border-green-800/50">
-                                {{ t.nombre_usuario[:2]|upper }}
+                        <td class="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-400">{{ t.cedula or '—' }}</td>
+                        <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-100 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="w-9 h-9 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 flex items-center justify-center font-bold text-xs mr-3 border border-green-200/50 dark:border-green-800/50">
+                                    {{ t.nombre_usuario[:2]|upper }}
+                                </div>
+                                <span>{{ t.nombre_usuario }}</span>
                             </div>
-                            <div>
-                                <span class="block text-sm font-semibold">{{ t.nombre_usuario }}</span>
-                                <span class="block text-[11px] text-gray-400 uppercase tracking-tight">Analista de Campo</span>
-                            </div>
                         </td>
-                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400 font-mono text-xs">{{ t.correo }}</td>
-                        <td class="px-6 py-4 text-center">
-                            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
-                                <i data-lucide="cpu" class="w-3.5 h-3.5 mr-1"></i> Auditar Activos
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 text-center">
-                            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300">
-                                <i data-lucide="clipboard-list" class="w-3.5 h-3.5 mr-1"></i> Ver Minutas
-                            </span>
-                        </td>
+                        <td class="px-6 py-4 text-gray-500 dark:text-gray-400 text-xs">{{ t.especialidad or '—' }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             {% if t.estatus %}
                                 <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5"></span> Activo
+                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5"></span> Disponible
                                 </span>
                             {% else %}
                                 <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-gray-400 mr-1.5"></span> En Descanso
+                                    <span class="w-1.5 h-1.5 rounded-full bg-gray-400 mr-1.5"></span> No Disponible
                                 </span>
                             {% endif %}
                         </td>
-                        <td class="px-6 py-4 text-right whitespace-nowrap">
-                            <button class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-bold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
-                                <i data-lucide="eye" class="w-3.5 h-3.5 mr-1 text-gray-400"></i> Ficha Logística
+                        <td class="px-6 py-4 text-center whitespace-nowrap">
+                            <button onclick="abrirModalEditarTecnico({{ t.id_usuario }})" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors mr-2" title="Editar técnico">
+                                <i data-lucide="pencil" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="abrirModalEliminarTecnico({{ t.id_usuario }})" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors" title="Eliminar técnico">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
                             </button>
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="6" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                        <td colspan="5" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                             <div class="flex flex-col items-center justify-center space-y-2">
-                                <i data-lucide="users-round" class="w-8 h-8 text-gray-300 dark:text-gray-600 animate-pulse"></i>
-                                <p class="text-sm font-medium">No se han identificado perfiles de técnicos (Rol 3) asignados en el sistema.</p>
+                                <i data-lucide="users-round" class="w-8 h-8 text-gray-300 dark:text-gray-600"></i>
+                                <p class="text-sm font-medium">No se han identificado perfiles de técnicos asignados en el sistema.</p>
                             </div>
                         </td>
                     </tr>
@@ -151,4 +133,207 @@
         </div>
     </div>
 </div>
+
+<!-- Modal Crear Técnico -->
+<div id="modal-crear-tecnico" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="rounded-xl shadow-xl w-full max-w-lg bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+        <div class="flex justify-between items-center p-6 border-b border-gray-100 dark:border-gray-700">
+            <h2 class="text-xl font-bold text-gray-800 dark:text-white">Registrar Técnico</h2>
+            <button onclick="document.getElementById('modal-crear-tecnico').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <form method="POST" action="{{ url_for('logistica.tecnicos_nuevo') }}" class="p-6 space-y-4" onsubmit="enviarFormTecnico(event, this, 'modal-crear-tecnico')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Nombre Completo</label>
+                    <input type="text" name="nombre" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Cédula</label>
+                    <input type="text" name="cedula" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                </div>
+            </div>
+            <div class="space-y-1">
+                <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Correo Electrónico</label>
+                <input type="email" name="correo" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+            </div>
+            <div class="space-y-1">
+                <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Especialidad Científica</label>
+                <input type="text" name="especialidad" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+            </div>
+            <div class="space-y-1">
+                <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estatus de Disponibilidad</label>
+                <select name="estatus" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Seleccione un estatus')" oninput="this.setCustomValidity('')">
+                    <option value="1">Disponible</option>
+                    <option value="0">No Disponible</option>
+                </select>
+            </div>
+            <div class="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-700">
+                <button type="button" onclick="document.getElementById('modal-crear-tecnico').classList.add('hidden')" class="mr-3 px-4 py-2 border rounded-md text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Cancelar</button>
+                <button type="submit" class="px-4 py-2 bg-green-600 rounded-md text-sm font-medium text-white hover:bg-green-700 transition-colors shadow-sm">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Editar Técnico -->
+<div id="modal-editar-tecnico" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="rounded-xl shadow-xl w-full max-w-lg bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+        <div class="flex justify-between items-center p-6 border-b border-gray-100 dark:border-gray-700">
+            <h2 class="text-xl font-bold text-gray-800 dark:text-white">Editar Técnico</h2>
+            <button onclick="document.getElementById('modal-editar-tecnico').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <form id="form-editar-tecnico" method="POST" class="p-6 space-y-4" onsubmit="enviarFormTecnico(event, this, 'modal-editar-tecnico')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Nombre Completo</label>
+                    <input type="text" id="edit-tec-nombre" name="nombre" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Cédula</label>
+                    <input type="text" id="edit-tec-cedula" name="cedula" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                </div>
+            </div>
+            <div class="space-y-1">
+                <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Correo Electrónico</label>
+                <input type="email" id="edit-tec-correo" name="correo" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+            </div>
+            <div class="space-y-1">
+                <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Especialidad Científica</label>
+                <input type="text" id="edit-tec-especialidad" name="especialidad" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+            </div>
+            <div class="space-y-1">
+                <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estatus de Disponibilidad</label>
+                <select id="edit-tec-estatus" name="estatus" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Seleccione un estatus')" oninput="this.setCustomValidity('')">
+                    <option value="1">Disponible</option>
+                    <option value="0">No Disponible</option>
+                </select>
+            </div>
+            <div class="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-700">
+                <button type="button" onclick="document.getElementById('modal-editar-tecnico').classList.add('hidden')" class="mr-3 px-4 py-2 border rounded-md text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Cancelar</button>
+                <button type="submit" class="px-4 py-2 bg-blue-600 rounded-md text-sm font-medium text-white hover:bg-blue-700 transition-colors shadow-sm">Guardar Cambios</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Confirmar Eliminación -->
+<div id="modal-eliminar-tecnico" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="rounded-xl shadow-xl w-full max-w-md bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-6 text-center relative">
+        <button onclick="document.getElementById('modal-eliminar-tecnico').classList.add('hidden')" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+            <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+        <div class="w-14 h-14 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
+            <i data-lucide="alert-triangle" class="w-7 h-7 text-red-600 dark:text-red-400"></i>
+        </div>
+        <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-2">¿Estás seguro de eliminar este técnico?</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Esta acción no se puede deshacer. El usuario será eliminado permanentemente.</p>
+        <form id="form-eliminar-tecnico" method="POST" class="flex justify-center gap-3">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="button" onclick="document.getElementById('modal-eliminar-tecnico').classList.add('hidden')" class="px-5 py-2.5 border rounded-lg text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Cancelar</button>
+            <button type="submit" class="px-5 py-2.5 bg-red-600 rounded-lg text-sm font-medium text-white hover:bg-red-700 transition-colors shadow-sm">Eliminar</button>
+        </form>
+    </div>
+</div>
+
+<script>
+function mostrarErrorTecnico(modalId, mensaje) {
+    const modal = document.getElementById(modalId);
+    let err = modal.querySelector('.tec-error');
+    if (!err) {
+        err = document.createElement('div');
+        err.className = 'tec-error p-3 rounded-md bg-red-600 text-white text-sm font-semibold flex items-center shadow-lg';
+        err.innerHTML = '<i data-lucide="alert-triangle" class="mr-2 w-4 h-4"></i> <span></span>';
+        modal.querySelector('form').prepend(err);
+    }
+    err.querySelector('span').textContent = mensaje;
+    if (window.lucide) lucide.createIcons();
+}
+
+function mostrarExitoTecnico(modalId, mensaje) {
+    limpiarErrorTecnico(modalId);
+    const modal = document.getElementById(modalId);
+    const exito = document.createElement('div');
+    exito.className = 'tec-exito p-3 rounded-md bg-emerald-600 text-white text-sm font-semibold flex items-center shadow-lg';
+    exito.innerHTML = '<i data-lucide="check-circle" class="mr-2 w-4 h-4"></i> <span>' + mensaje + '</span>';
+    modal.querySelector('form').prepend(exito);
+    if (window.lucide) lucide.createIcons();
+}
+
+function limpiarErrorTecnico(modalId) {
+    const err = document.getElementById(modalId).querySelector('.tec-error');
+    if (err) err.remove();
+    const exito = document.getElementById(modalId).querySelector('.tec-exito');
+    if (exito) exito.remove();
+}
+
+function enviarFormTecnico(event, form, modalId) {
+    event.preventDefault();
+    limpiarErrorTecnico(modalId);
+    if (!form.reportValidity()) {
+        return;
+    }
+    const btn = form.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    const htmlOrig = btn.innerHTML;
+    btn.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Guardando...';
+
+    const formData = new FormData(form);
+    formData.append('csrf_token', form.querySelector('[name=csrf_token]').value);
+
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = htmlOrig;
+        if (data.ok) {
+            mostrarExitoTecnico(modalId, data.mensaje || 'Registro guardado exitosamente.');
+            setTimeout(function() {
+                window.location.href = data.redirect;
+            }, 1500);
+        } else {
+            mostrarErrorTecnico(modalId, data.error);
+        }
+    })
+    .catch(function() {
+        btn.disabled = false;
+        btn.innerHTML = htmlOrig;
+        form.submit();
+    });
+}
+
+const tecnicosData = {{ tecnicos_json | tojson | safe }};
+
+function abrirModalCrearTecnico() {
+    limpiarErrorTecnico('modal-crear-tecnico');
+    document.getElementById('modal-crear-tecnico').classList.remove('hidden');
+}
+
+function abrirModalEditarTecnico(id) {
+    limpiarErrorTecnico('modal-editar-tecnico');
+    const t = tecnicosData.find(e => e.id_usuario === id);
+    if (!t) return;
+    document.getElementById('edit-tec-nombre').value = t.nombre_usuario || '';
+    document.getElementById('edit-tec-cedula').value = t.cedula || '';
+    document.getElementById('edit-tec-correo').value = t.correo || '';
+    document.getElementById('edit-tec-especialidad').value = t.especialidad || '';
+    document.getElementById('edit-tec-estatus').value = t.estatus ? '1' : '0';
+    document.getElementById('form-editar-tecnico').action = "{{ url_for('logistica.tecnicos_editar', tecnico_id=0) }}".replace('/0', '/' + id);
+    document.getElementById('modal-editar-tecnico').classList.remove('hidden');
+}
+
+function abrirModalEliminarTecnico(id) {
+    document.getElementById('form-eliminar-tecnico').action = "{{ url_for('logistica.tecnicos_eliminar', tecnico_id=0) }}".replace('/0', '/' + id);
+    document.getElementById('modal-eliminar-tecnico').classList.remove('hidden');
+}
+</script>
 {% endblock %}

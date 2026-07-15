@@ -1,4 +1,4 @@
-from flask import flash, redirect, render_template, request, url_for, abort
+from flask import flash, redirect, render_template, request, url_for, abort, current_app
 from flask_login import current_user, login_required
 
 from app import db
@@ -197,7 +197,7 @@ def rol_gestionar_permisos(rol_id):
                 alerta = Notificacion(
                     categoria='Seguridad',
                     mensaje=f"🔒 SEGURIDAD: La matriz de accesos y capacidades para el rol '{rol.nombre_rol}' fue reconfigurada por {current_user.nombre_usuario}.",
-                    usuario_id=None,  # 🌟 Forzado para la correcta consulta de PostgreSQL
+                    usuario_id=None,
                     leido=False 
                 )
                 db.session.add(alerta)
@@ -207,18 +207,22 @@ def rol_gestionar_permisos(rol_id):
 
             registrar_accion('Roles', rol.id_rol, 'ActualizarPermisos', current_user.nombre_usuario, detalle=f'Permisos actualizados para {rol.nombre_rol}: {seleccion}')
             flash('Matriz de accesos actualizada con éxito.', 'success')
-            return redirect(url_for('usuario.index'))
+            
+            # 🌟 CORRECCIÓN AQUÍ: Te mantiene en la lista de roles en lugar de mandarte a usuarios
+            return redirect(url_for('core.rol_index'))
             
         except Exception as e:
             db.session.rollback()
             flash('Error crítico al guardar la matriz de accesos.', 'error')
-            return redirect(url_for('usuario.index'))
+            
+            # 🌟 CORRECCIÓN AQUÍ: En caso de error también te regresa de forma segura a roles
+            return redirect(url_for('core.rol_index'))
 
     return render_template('roles/permisos.html', rol=rol, permisos=permisos)
 
 
 # =============================================================================
-#  RUTAS DEL CATÁLOGO DE PERMISOS ATÓMICOS (CRUD COMPLETO)
+#  RUTAS DEL CATÁLOGO DE PERMISOS ATÓMICOS (CRUD COMPLETO CON VALIDACIÓN REAL)
 # =============================================================================
 
 @core_bp.route('/admin/permisos/')
@@ -238,13 +242,61 @@ def permiso_nuevo():
         nombre = (request.form.get('nombre') or '').strip().lower().replace(' ', '_')
         descripcion = (request.form.get('descripcion') or '').strip()
         
+        # =====================================================================
+        # 🔍 INSPECCIÓN DINÁMICA DE ENDPOINTS (MÁXIMA FLEXIBILIDAD)
+        # =====================================================================
+        # 1. Recuperamos los nombres de todos los endpoints registrados en Flask en este momento
+        endpoints_reales = list(current_app.view_functions.keys())
+        
+        # 2. Extraemos los nombres de los módulos y blueprints activos (prefijos o nombres clave)
+        modulos_activos = set()
+        for ep in endpoints_reales:
+            if '.' in ep:
+                modulos_activos.add(ep.split('.')[0])
+            else:
+                modulos_activos.add(ep)
+        
+        # 3. Validamos si el slug ingresado tiene que ver con algún módulo o función real en el código
+        es_valido = False
+        modulo_detectado = None
+        
+        # Primero buscamos coincidencia con los nombres de los blueprints/módulos
+        for modulo in modulos_activos:
+            if modulo in nombre:
+                es_valido = True
+                modulo_detectado = modulo
+                break
+                
+        # Si no coincidió, buscamos si la palabra clave está dentro de algún endpoint completo (ej: "tecnicos" en "logistica.tecnicos_campo_index")
+        if not es_valido:
+            for ep in endpoints_reales:
+                # Limpiamos el endpoint para buscar palabras clave (ej: "tecnicos_campo_index" -> ["tecnicos", "campo", "index"])
+                partes_endpoint = ep.replace('.', '_').split('_')
+                for parte in partes_endpoint:
+                    if parte in nombre and len(parte) > 3: # Evitamos coincidencias con palabras muy cortas
+                        es_valido = True
+                        modulo_detectado = ep.split('.')[0] # Asocia el permiso al blueprint padre
+                        break
+                if es_valido:
+                    break
+        
+        # 🛡️ REDIRECCIÓN DIRECTA AL CATÁLOGO CON EL MENSAJE DE ERROR
+        if not es_valido:
+            flash(
+                f'¡Hey! El permiso técnico "{nombre}" no coincide con ningún módulo real cargado en el servidor. '
+                f'Asegúrate de que el módulo exista en el código antes de registrar su permiso en el catálogo.', 
+                'error'
+            )
+            return redirect(url_for('core.permiso_index'))
+        # =====================================================================
+
         if not nombre:
             flash('El nombre técnico del permiso es obligatorio.', 'error')
-            return render_template('roles/permiso_formulario.html', permiso=None)
+            return redirect(url_for('core.permiso_index'))
 
         if Permission.query.filter_by(nombre_modulo=nombre).first():
             flash(f'El privilegio técnico "{nombre}" ya existe en el sistema.', 'error')
-            return render_template('roles/permiso_formulario.html', permiso=None)
+            return redirect(url_for('core.permiso_index'))
 
         ultimo_permiso = Permission.query.order_by(Permission.id_modulo.desc()).first()
         siguiente_id = (ultimo_permiso.id_modulo + 1) if ultimo_permiso else 1
@@ -261,7 +313,7 @@ def permiso_nuevo():
                 alerta = Notificacion(
                     categoria='Seguridad',
                     mensaje=f"Ecosistema: Se registró una nueva capacidad atómica en el catálogo global: '{nuevo_p.nombre_modulo}'.",
-                    usuario_id=None,  # 🌟 Forzado para la correcta consulta de PostgreSQL
+                    usuario_id=None,
                     leido=False 
                 )
                 db.session.add(alerta)
@@ -270,13 +322,13 @@ def permiso_nuevo():
                 db.session.rollback()
 
             registrar_accion('Permisos', nuevo_p.id_modulo, 'Crear', current_user.nombre_usuario, detalle=f'Creado el privilegio atómico: {nuevo_p.nombre_modulo}')
-            flash('Capacidad atómica registrada con éxito en el catálogo.', 'success')
+            flash(f'Capacidad atómica registrada con éxito para el módulo "{modulo_detectado}".', 'success')
             return redirect(url_for('core.permiso_index'))
             
         except Exception as e:
             db.session.rollback()
             flash(f'Error de consistencia en BD: {str(e)}', 'error')
-            return render_template('roles/permiso_formulario.html', permiso=None)
+            return redirect(url_for('core.permiso_index'))
         
     return render_template('roles/permiso_formulario.html', permiso=None)
 
@@ -313,7 +365,7 @@ def permiso_editar(permiso_id):
                 alerta = Notificacion(
                     categoria='Seguridad',
                     mensaje=f"Ecosistema: El privilegio técnico '{permiso.nombre_modulo}' fue actualizado en el catálogo por {current_user.nombre_usuario}.",
-                    usuario_id=None,  # 🌟 Forzado para la correcta consulta de PostgreSQL
+                    usuario_id=None,
                     leido=False 
                 )
                 db.session.add(alerta)
@@ -352,9 +404,9 @@ def permiso_eliminar(permiso_id):
             alerta = Notificacion(
                 categoria='Seguridad',
                 mensaje=f"⚠️ ATENCIÓN: El privilegio atómico '{nombre_temp}' fue revocado y removido permanentemente del catálogo global.",
-                usuario_id=None,  # 🌟 Forzado para la correcta consulta de PostgreSQL
+                usuario_id=None,
                 leido=False 
-            )
+                )
             db.session.add(alerta)
             db.session.commit()
         except Exception:

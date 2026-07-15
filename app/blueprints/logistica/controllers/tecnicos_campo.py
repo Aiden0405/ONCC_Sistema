@@ -1,10 +1,50 @@
-from flask import render_template
+from flask import flash, jsonify, redirect, render_template, request, url_for
 from flask_login import login_required
 
 from app.blueprints.logistica import logistica_bp
+from app.services.tecnico_service import TecnicoService
 
 
 @logistica_bp.route('/tecnicos-campo')
 @login_required
 def tecnicos_campo_index():
-    return render_template('logistica/tecnicos_campo.html')
+    tecnicos = TecnicoService.listar_tecnicos()
+    return render_template('logistica/tecnicos_campo.html', tecnicos=tecnicos, tecnicos_json=TecnicoService.serializar(tecnicos))
+
+
+@logistica_bp.route('/tecnicos-campo/nuevo', methods=['POST'])
+@login_required
+def tecnicos_nuevo():
+    resultado = TecnicoService.crear_tecnico(request.form)
+    if not resultado['ok']:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'ok': False, 'error': resultado['error']})
+        flash(resultado['error'], 'error')
+        return redirect(url_for('logistica.tecnicos_campo_index'))
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'ok': True, 'redirect': url_for('logistica.tecnicos_campo_index'), 'mensaje': resultado['mensaje']})
+    flash(resultado['mensaje'], 'success')
+    return redirect(url_for('logistica.tecnicos_campo_index'))
+
+
+@logistica_bp.route('/tecnicos-campo/<int:tecnico_id>/editar', methods=['POST'])
+@login_required
+def tecnicos_editar(tecnico_id):
+    resultado = TecnicoService.actualizar_tecnico(tecnico_id, request.form)
+    if not resultado['ok']:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'ok': False, 'error': resultado['error']})
+        flash(resultado['error'], 'error')
+        return redirect(url_for('logistica.tecnicos_campo_index'))
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'ok': True, 'redirect': url_for('logistica.tecnicos_campo_index'), 'mensaje': resultado['mensaje']})
+    flash(resultado['mensaje'], 'success')
+    return redirect(url_for('logistica.tecnicos_campo_index'))
+
+
+@logistica_bp.route('/tecnicos-campo/<int:tecnico_id>/eliminar', methods=['POST'])
+@login_required
+def tecnicos_eliminar(tecnico_id):
+    TecnicoService.eliminar_tecnico(tecnico_id)
+    flash('Técnico eliminado del sistema.', 'success')
+    return redirect(url_for('logistica.tecnicos_campo_index'))

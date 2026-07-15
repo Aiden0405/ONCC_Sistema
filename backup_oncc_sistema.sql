@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict xVLOjulw3reXq9N8V8nUHByHQ45fhao7x24dX0OgdG9k87QUNNQHsAsQ3PBawvP
+\restrict T6zWGEHuG6Du30SX3GSOjBjAND9gcKtApUW8ZST1uMu2eiD1u8TZx5HDIF777e7
 
 -- Dumped from database version 17.10
 -- Dumped by pg_dump version 17.10
@@ -97,7 +97,9 @@ CREATE TABLE public.actividad (
     id_actividad integer NOT NULL,
     fecha_actividad date NOT NULL,
     tipo_actividad character varying(50) NOT NULL,
-    id_comunidad integer NOT NULL
+    id_comunidad integer NOT NULL,
+    id_nivel integer,
+    id_usuario integer
 );
 
 
@@ -161,6 +163,54 @@ ALTER SEQUENCE public.actividad_tecnico_id_actividad_tecnico_seq OWNED BY public
 
 
 --
+-- Name: actividades; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.actividades (
+    id integer NOT NULL,
+    area character varying(120) NOT NULL,
+    actividad character varying(180) NOT NULL,
+    responsable character varying(120) NOT NULL,
+    fecha date NOT NULL,
+    estado character varying(20) NOT NULL,
+    estado_geo character varying(80) NOT NULL,
+    municipio character varying(120) NOT NULL,
+    parroquia character varying(120),
+    descripcion text,
+    poblacion integer NOT NULL,
+    acuerdos text,
+    minuta_archivo character varying(255),
+    fotos_archivos text,
+    creado_en timestamp without time zone NOT NULL,
+    actualizado_en timestamp without time zone NOT NULL
+);
+
+
+ALTER TABLE public.actividades OWNER TO postgres;
+
+--
+-- Name: actividades_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.actividades_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.actividades_id_seq OWNER TO postgres;
+
+--
+-- Name: actividades_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.actividades_id_seq OWNED BY public.actividades.id;
+
+
+--
 -- Name: alembic_version; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -170,6 +220,46 @@ CREATE TABLE public.alembic_version (
 
 
 ALTER TABLE public.alembic_version OWNER TO postgres;
+
+--
+-- Name: bitacora_transacciones; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.bitacora_transacciones (
+    id integer NOT NULL,
+    modulo character varying(40) NOT NULL,
+    registro_id integer NOT NULL,
+    accion character varying(60) NOT NULL,
+    estado_nuevo character varying(20),
+    usuario character varying(120) NOT NULL,
+    detalle character varying(255),
+    creado_en timestamp without time zone NOT NULL
+);
+
+
+ALTER TABLE public.bitacora_transacciones OWNER TO postgres;
+
+--
+-- Name: bitacora_transacciones_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.bitacora_transacciones_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.bitacora_transacciones_id_seq OWNER TO postgres;
+
+--
+-- Name: bitacora_transacciones_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.bitacora_transacciones_id_seq OWNED BY public.bitacora_transacciones.id;
+
 
 --
 -- Name: categoria; Type: TABLE; Schema: public; Owner: postgres
@@ -609,6 +699,48 @@ ALTER SEQUENCE public.institucion_id_institucion_seq OWNED BY public.institucion
 
 
 --
+-- Name: inventario_equipos; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.inventario_equipos (
+    id integer NOT NULL,
+    tipo_equipo character varying(120) NOT NULL,
+    codigo character varying(50) NOT NULL,
+    ubicacion character varying(150) NOT NULL,
+    estado_operativo character varying(60) NOT NULL,
+    estado_flujo character varying(20) NOT NULL,
+    ultimo_mantenimiento date,
+    responsable character varying(120) NOT NULL,
+    creado_en timestamp without time zone NOT NULL,
+    actualizado_en timestamp without time zone NOT NULL
+);
+
+
+ALTER TABLE public.inventario_equipos OWNER TO postgres;
+
+--
+-- Name: inventario_equipos_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.inventario_equipos_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.inventario_equipos_id_seq OWNER TO postgres;
+
+--
+-- Name: inventario_equipos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.inventario_equipos_id_seq OWNED BY public.inventario_equipos.id;
+
+
+--
 -- Name: mapa_climatico; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -656,6 +788,8 @@ CREATE TABLE public.mapa_riesgo (
     ruta_kml character varying(250),
     ruta_imagen_mapa character varying(250),
     fecha_registro timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    nombre character varying(100),
+    descripcion text,
     CONSTRAINT chk_solo_mapa_riesgo CHECK (((tipo_actividad)::text = 'MAPA_RIESGO'::text))
 );
 
@@ -682,6 +816,48 @@ ALTER SEQUENCE public.mapa_riesgo_id_mapa_riesgo_seq OWNER TO postgres;
 --
 
 ALTER SEQUENCE public.mapa_riesgo_id_mapa_riesgo_seq OWNED BY public.mapa_riesgo.id_mapa_riesgo;
+
+
+--
+-- Name: mapas_registro; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.mapas_registro (
+    id integer NOT NULL,
+    nombre character varying(150) NOT NULL,
+    tipo_mapa character varying(40) NOT NULL,
+    archivo character varying(255),
+    estado character varying(20) NOT NULL,
+    version character varying(30) NOT NULL,
+    cobertura character varying(120) NOT NULL,
+    responsable character varying(120) NOT NULL,
+    creado_en timestamp without time zone NOT NULL,
+    actualizado_en timestamp without time zone NOT NULL
+);
+
+
+ALTER TABLE public.mapas_registro OWNER TO postgres;
+
+--
+-- Name: mapas_registro_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.mapas_registro_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.mapas_registro_id_seq OWNER TO postgres;
+
+--
+-- Name: mapas_registro_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.mapas_registro_id_seq OWNED BY public.mapas_registro.id;
 
 
 --
@@ -755,6 +931,41 @@ ALTER SEQUENCE public.modelos_equipo_id_modelos_equipo_seq OWNER TO postgres;
 --
 
 ALTER SEQUENCE public.modelos_equipo_id_modelos_equipo_seq OWNED BY public.modelos_equipo.id_modelos_equipo;
+
+
+--
+-- Name: modulos; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.modulos (
+    id_modulo integer NOT NULL,
+    nombre_modulo character varying(80) NOT NULL,
+    descripcion_modulo text NOT NULL
+);
+
+
+ALTER TABLE public.modulos OWNER TO postgres;
+
+--
+-- Name: modulos_id_modulo_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.modulos_id_modulo_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.modulos_id_modulo_seq OWNER TO postgres;
+
+--
+-- Name: modulos_id_modulo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.modulos_id_modulo_seq OWNED BY public.modulos.id_modulo;
 
 
 --
@@ -903,6 +1114,44 @@ ALTER SEQUENCE public.nivel_id_nivel_seq OWNED BY public.nivel.id_nivel;
 
 
 --
+-- Name: notificaciones; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.notificaciones (
+    id integer NOT NULL,
+    usuario_id integer,
+    categoria character varying(50) DEFAULT 'Sistema'::character varying NOT NULL,
+    mensaje text NOT NULL,
+    leido boolean DEFAULT false,
+    fecha_creacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.notificaciones OWNER TO postgres;
+
+--
+-- Name: notificaciones_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.notificaciones_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.notificaciones_id_seq OWNER TO postgres;
+
+--
+-- Name: notificaciones_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.notificaciones_id_seq OWNED BY public.notificaciones.id;
+
+
+--
 -- Name: parroquia; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -936,6 +1185,56 @@ ALTER SEQUENCE public.parroquia_id_parroquia_seq OWNER TO postgres;
 
 ALTER SEQUENCE public.parroquia_id_parroquia_seq OWNED BY public.parroquia.id_parroquia;
 
+
+--
+-- Name: password_resets; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.password_resets (
+    id integer NOT NULL,
+    user_id integer NOT NULL,
+    token character varying(128) NOT NULL,
+    creado_en timestamp without time zone NOT NULL,
+    expiracion timestamp without time zone NOT NULL,
+    usado boolean NOT NULL
+);
+
+
+ALTER TABLE public.password_resets OWNER TO postgres;
+
+--
+-- Name: password_resets_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.password_resets_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.password_resets_id_seq OWNER TO postgres;
+
+--
+-- Name: password_resets_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.password_resets_id_seq OWNED BY public.password_resets.id;
+
+
+--
+-- Name: permiso; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.permiso (
+    id_modulo integer,
+    id_rol integer
+);
+
+
+ALTER TABLE public.permiso OWNER TO postgres;
 
 --
 -- Name: publicaciones; Type: TABLE; Schema: public; Owner: postgres
@@ -1062,6 +1361,40 @@ ALTER SEQUENCE public.reportes_transaccionales_id_seq OWNER TO postgres;
 --
 
 ALTER SEQUENCE public.reportes_transaccionales_id_seq OWNED BY public.reportes_transaccionales.id;
+
+
+--
+-- Name: roles; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.roles (
+    id_rol integer NOT NULL,
+    nombre_rol character varying(80) NOT NULL
+);
+
+
+ALTER TABLE public.roles OWNER TO postgres;
+
+--
+-- Name: roles_id_rol_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.roles_id_rol_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.roles_id_rol_seq OWNER TO postgres;
+
+--
+-- Name: roles_id_rol_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.roles_id_rol_seq OWNED BY public.roles.id_rol;
 
 
 --
@@ -1209,6 +1542,46 @@ ALTER SEQUENCE public.ubicacion_id_ubicacion_seq OWNED BY public.ubicacion.id_ub
 
 
 --
+-- Name: usuario; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.usuario (
+    id_usuario integer NOT NULL,
+    nombre_usuario character varying(30) NOT NULL,
+    "clave usuario" character varying(255) NOT NULL,
+    id_rol integer NOT NULL,
+    correo character varying(100),
+    cedula character varying(15),
+    especialidad character varying(120),
+    estatus boolean
+);
+
+
+ALTER TABLE public.usuario OWNER TO postgres;
+
+--
+-- Name: usuario_id_usuario_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.usuario_id_usuario_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.usuario_id_usuario_seq OWNER TO postgres;
+
+--
+-- Name: usuario_id_usuario_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.usuario_id_usuario_seq OWNED BY public.usuario.id_usuario;
+
+
+--
 -- Name: visitas_portal; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -1255,6 +1628,20 @@ ALTER TABLE ONLY public.actividad ALTER COLUMN id_actividad SET DEFAULT nextval(
 --
 
 ALTER TABLE ONLY public.actividad_tecnico ALTER COLUMN id_actividad_tecnico SET DEFAULT nextval('public.actividad_tecnico_id_actividad_tecnico_seq'::regclass);
+
+
+--
+-- Name: actividades id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.actividades ALTER COLUMN id SET DEFAULT nextval('public.actividades_id_seq'::regclass);
+
+
+--
+-- Name: bitacora_transacciones id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.bitacora_transacciones ALTER COLUMN id SET DEFAULT nextval('public.bitacora_transacciones_id_seq'::regclass);
 
 
 --
@@ -1342,6 +1729,13 @@ ALTER TABLE ONLY public.institucion ALTER COLUMN id_institucion SET DEFAULT next
 
 
 --
+-- Name: inventario_equipos id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.inventario_equipos ALTER COLUMN id SET DEFAULT nextval('public.inventario_equipos_id_seq'::regclass);
+
+
+--
 -- Name: mapa_climatico id_mapa_climatico; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -1356,6 +1750,13 @@ ALTER TABLE ONLY public.mapa_riesgo ALTER COLUMN id_mapa_riesgo SET DEFAULT next
 
 
 --
+-- Name: mapas_registro id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.mapas_registro ALTER COLUMN id SET DEFAULT nextval('public.mapas_registro_id_seq'::regclass);
+
+
+--
 -- Name: material id_material; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -1367,6 +1768,13 @@ ALTER TABLE ONLY public.material ALTER COLUMN id_material SET DEFAULT nextval('p
 --
 
 ALTER TABLE ONLY public.modelos_equipo ALTER COLUMN id_modelos_equipo SET DEFAULT nextval('public.modelos_equipo_id_modelos_equipo_seq'::regclass);
+
+
+--
+-- Name: modulos id_modulo; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.modulos ALTER COLUMN id_modulo SET DEFAULT nextval('public.modulos_id_modulo_seq'::regclass);
 
 
 --
@@ -1398,10 +1806,24 @@ ALTER TABLE ONLY public.nivel ALTER COLUMN id_nivel SET DEFAULT nextval('public.
 
 
 --
+-- Name: notificaciones id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.notificaciones ALTER COLUMN id SET DEFAULT nextval('public.notificaciones_id_seq'::regclass);
+
+
+--
 -- Name: parroquia id_parroquia; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.parroquia ALTER COLUMN id_parroquia SET DEFAULT nextval('public.parroquia_id_parroquia_seq'::regclass);
+
+
+--
+-- Name: password_resets id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.password_resets ALTER COLUMN id SET DEFAULT nextval('public.password_resets_id_seq'::regclass);
 
 
 --
@@ -1423,6 +1845,13 @@ ALTER TABLE ONLY public.registros_climaticos ALTER COLUMN id_registro SET DEFAUL
 --
 
 ALTER TABLE ONLY public.reportes_transaccionales ALTER COLUMN id SET DEFAULT nextval('public.reportes_transaccionales_id_seq'::regclass);
+
+
+--
+-- Name: roles id_rol; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.roles ALTER COLUMN id_rol SET DEFAULT nextval('public.roles_id_rol_seq'::regclass);
 
 
 --
@@ -1454,6 +1883,13 @@ ALTER TABLE ONLY public.ubicacion ALTER COLUMN id_ubicacion SET DEFAULT nextval(
 
 
 --
+-- Name: usuario id_usuario; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.usuario ALTER COLUMN id_usuario SET DEFAULT nextval('public.usuario_id_usuario_seq'::regclass);
+
+
+--
 -- Name: visitas_portal id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -1464,7 +1900,7 @@ ALTER TABLE ONLY public.visitas_portal ALTER COLUMN id SET DEFAULT nextval('publ
 -- Data for Name: actividad; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.actividad (id_actividad, fecha_actividad, tipo_actividad, id_comunidad) FROM stdin;
+COPY public.actividad (id_actividad, fecha_actividad, tipo_actividad, id_comunidad, id_nivel, id_usuario) FROM stdin;
 \.
 
 
@@ -1477,10 +1913,92 @@ COPY public.actividad_tecnico (id_actividad_tecnico, id_actividad, id_tecnico) F
 
 
 --
+-- Data for Name: actividades; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.actividades (id, area, actividad, responsable, fecha, estado, estado_geo, municipio, parroquia, descripcion, poblacion, acuerdos, minuta_archivo, fotos_archivos, creado_en, actualizado_en) FROM stdin;
+\.
+
+
+--
 -- Data for Name: alembic_version; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.alembic_version (version_num) FROM stdin;
+7653e1663a01
+\.
+
+
+--
+-- Data for Name: bitacora_transacciones; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.bitacora_transacciones (id, modulo, registro_id, accion, estado_nuevo, usuario, detalle, creado_en) FROM stdin;
+1	Usuarios	17	Eliminar	\N	Aileen Moyeja	Eliminado usuario pytest_auth_1783573339@oncc.gob.ve	2026-07-09 20:10:17.281072
+2	Usuarios	16	Eliminar	\N	Aileen Moyeja	Eliminado usuario pytest_auth_1783572065@oncc.gob.ve	2026-07-09 20:10:23.239532
+3	Usuarios	15	Eliminar	\N	Aileen Moyeja	Eliminado usuario pytest_auth_1783536797@oncc.gob.ve	2026-07-10 12:50:17.361982
+4	Usuarios	14	Eliminar	\N	Aileen Moyeja	Eliminado usuario pytest_auth_1783551159@oncc.gob.ve	2026-07-10 12:50:21.718605
+5	Roles	3	Modificar	\N	Aileen Moyeja	Actualizado rol Tecnico	2026-07-10 21:16:41.336911
+6	Roles	2	Modificar	\N	Aileen Moyeja	Actualizado rol Administrador	2026-07-10 21:17:12.521653
+7	Roles	2	ActualizarPermisos	\N	Aileen Moyeja	Permisos actualizados para Administrador: []	2026-07-10 21:17:32.266669
+8	Roles	3	ActualizarPermisos	\N	Aileen Moyeja	Permisos actualizados para Tecnico: ['3', '2', '1']	2026-07-10 21:19:29.673485
+9	Roles	6	Crear	\N	Aileen Moyeja	Creado rol secretaria	2026-07-10 21:21:45.84747
+10	Roles	3	ActualizarPermisos	\N	Aileen Moyeja	Permisos actualizados para Tecnico: []	2026-07-10 21:25:36.626154
+11	Roles	7	Crear	\N	Aileen Moyeja	Creado rol test	2026-07-11 16:25:47.117091
+12	Roles	7	ActualizarPermisos	\N	Aileen Moyeja	Permisos actualizados para test: ['3']	2026-07-11 16:26:12.114484
+13	Roles	7	Modificar	\N	Aileen Moyeja	Actualizado rol Divulgador	2026-07-11 16:26:32.626705
+14	Roles	7	ActualizarPermisos	\N	Aileen Moyeja	Permisos actualizados para Divulgador: ['3', '2']	2026-07-11 16:26:49.551408
+15	Roles	6	Modificar	\N	Aileen Moyeja	Actualizado rol Secretaria	2026-07-13 15:44:27.676466
+16	Permisos	4	Crear	\N	Aileen Moyeja	Creado el privilegio atómico: ver_formaciones	2026-07-13 21:33:31.799996
+17	Permisos	4	Modificar	\N	Aileen Moyeja	Actualizado el privilegio técnico a: ver_formaciones	2026-07-13 21:34:54.358126
+18	Permisos	4	Eliminar	\N	Aileen Moyeja	Eliminado el privilegio atómico: ver_formaciones	2026-07-13 21:34:59.027845
+19	Permisos	4	Crear	\N	Aileen Moyeja	Creado el privilegio atómico: ver_formaciones	2026-07-13 21:36:47.843572
+20	Usuarios	18	Crear	Tecnico	Aileen Moyeja	Creado usuario luis@gmail.com	2026-07-13 23:14:36.959622
+21	Usuarios	18	Eliminar	\N	Aileen Moyeja	Eliminado usuario luis@gmail.com	2026-07-13 23:15:02.387037
+22	Usuarios	19	Crear	Tecnico	Aileen Moyeja	Creado usuario nirkules@fosil.pro	2026-07-13 23:15:22.470101
+23	Usuarios	20	Crear	Secretaria	Aileen Moyeja	Creado usuario roman@gmail.com	2026-07-14 02:23:37.837528
+24	Usuarios	20	Modificar	Secretaria	Genghis Khan	Editado usuario roman@gmail.com	2026-07-14 02:32:28.604685
+25	Usuarios	20	Modificar	Secretaria	Aileen Moyeja	Editado usuario roman@gmail.com	2026-07-14 02:35:01.991268
+26	Usuarios	20	Eliminar	\N	Aileen Moyeja	Eliminado usuario roman@gmail.com	2026-07-14 02:35:45.208876
+27	Usuarios	21	Crear	Divulgador	Aileen Moyeja	Creado usuario andres@gmail.com	2026-07-14 03:04:18.024489
+28	Roles	6	Modificar	\N	Aileen Moyeja	Actualizado rol Secretarias	2026-07-14 08:56:31.530629
+29	Roles	6	Modificar	\N	Aileen Moyeja	Actualizado rol Secretaria	2026-07-14 09:00:00.137141
+30	Usuarios	19	Modificar	Tecnico	Aileen Moyeja	Editado usuario nirkules@fosil.pro	2026-07-14 09:10:13.560826
+31	Roles	8	Crear	\N	Aileen Moyeja	Creado rol Analista	2026-07-14 09:11:46.781069
+32	Roles	8	Modificar	\N	Aileen Moyeja	Actualizado rol Analistas	2026-07-14 09:20:07.597016
+33	Roles	8	Modificar	\N	Aileen Moyeja	Actualizado rol Analista	2026-07-14 09:22:56.872875
+34	Roles	8	ActualizarPermisos	\N	Aileen Moyeja	Permisos actualizados para Analista: ['2']	2026-07-14 09:23:06.815171
+35	Permisos	4	Modificar	\N	Aileen Moyeja	Actualizado el privilegio técnico a: ver_formaciones	2026-07-14 09:23:46.401613
+36	Usuarios	11	Eliminar	\N	Aileen Moyeja	Eliminado usuario perez@gmail.com	2026-07-14 09:24:16.081031
+37	Usuarios	22	Crear	Analista	Aileen Moyeja	Creado usuario angelo@gmail.com	2026-07-14 09:29:09.719831
+38	Permisos	2	Modificar	\N	Aileen Moyeja	Actualizado el privilegio técnico a: crear_divulgaciones	2026-07-14 21:45:52.638262
+39	Permisos	3	Modificar	\N	Genghis Khan	Actualizado el privilegio técnico a: aprobar_divulgaciones	2026-07-14 21:46:59.399046
+40	Permisos	5	Crear	\N	Aileen Moyeja	Creado el privilegio atómico: gestionar_formaciones	2026-07-15 08:28:34.34559
+41	Permisos	6	Crear	\N	Aileen Moyeja	Creado el privilegio atómico: gestionar_sensibilizaciones	2026-07-15 08:29:01.196206
+42	Permisos	7	Crear	\N	Aileen Moyeja	Creado el privilegio atómico: registro_zenka	2026-07-15 08:31:02.238767
+43	Permisos	7	Eliminar	\N	Aileen Moyeja	Eliminado el privilegio atómico: registro_zenka	2026-07-15 08:31:09.565008
+44	Permisos	6	Eliminar	\N	Aileen Moyeja	Eliminado el privilegio atómico: gestionar_sensibilizaciones	2026-07-15 08:35:42.828684
+45	Permisos	5	Eliminar	\N	Aileen Moyeja	Eliminado el privilegio atómico: gestionar_formaciones	2026-07-15 08:35:47.483427
+46	Permisos	4	Eliminar	\N	Aileen Moyeja	Eliminado el privilegio atómico: ver_formaciones	2026-07-15 08:37:20.235862
+47	Permisos	4	Crear	\N	Aileen Moyeja	Creado el privilegio atómico: gestionar_inventario	2026-07-15 08:44:43.786472
+48	Permisos	4	Eliminar	\N	Aileen Moyeja	Eliminado el privilegio atómico: gestionar_inventario	2026-07-15 08:51:27.887866
+49	Permisos	4	Crear	\N	Aileen Moyeja	Creado el privilegio atómico: gestionar_formaciones	2026-07-15 08:51:44.218961
+50	Permisos	5	Crear	\N	Aileen Moyeja	Creado el privilegio atómico: gestionar_sensibilizaciones	2026-07-15 08:52:09.424817
+51	Permisos	6	Crear	\N	Aileen Moyeja	Creado el privilegio atómico: gestionar_geomatica	2026-07-15 08:53:43.97628
+52	Permisos	7	Crear	\N	Aileen Moyeja	Creado el privilegio atómico: ver_mapas	2026-07-15 08:54:08.333126
+53	Permisos	8	Crear	\N	Aileen Moyeja	Creado el privilegio atómico: gestionar_inventario	2026-07-15 08:54:52.856838
+54	Permisos	9	Crear	\N	Aileen Moyeja	Creado el privilegio atómico: gestionar_tecnicos	2026-07-15 08:57:59.176223
+55	Roles	3	ActualizarPermisos	\N	Aileen Moyeja	Permisos actualizados para Tecnico: ['4', '8', '9', '7']	2026-07-15 08:58:50.589765
+56	Roles	3	ActualizarPermisos	\N	Aileen Moyeja	Permisos actualizados para Tecnico: []	2026-07-15 08:59:06.153428
+57	Roles	3	ActualizarPermisos	\N	Aileen Moyeja	Permisos actualizados para Tecnico: ['4', '5']	2026-07-15 09:03:07.289669
+58	Roles	3	ActualizarPermisos	\N	Aileen Moyeja	Permisos actualizados para Tecnico: ['3', '2', '4', '6', '8', '5', '9', '1', '7']	2026-07-15 09:08:27.464345
+59	Roles	3	ActualizarPermisos	\N	Aileen Moyeja	Permisos actualizados para Tecnico: ['4', '5']	2026-07-15 09:14:42.086581
+60	Roles	3	ActualizarPermisos	\N	Aileen Moyeja	Permisos actualizados para Tecnico: ['4', '5']	2026-07-15 09:17:13.141527
+61	Roles	3	ActualizarPermisos	\N	Aileen Moyeja	Permisos actualizados para Tecnico: ['3', '2', '4', '6', '8', '5', '9', '1', '7']	2026-07-15 09:19:55.103563
+62	Roles	8	ActualizarPermisos	\N	Aileen Moyeja	Permisos actualizados para Analista: ['2']	2026-07-15 09:20:20.113991
+63	Permisos	10	Crear	\N	Aileen Moyeja	Creado el privilegio atómico: gestionar_actividades	2026-07-15 09:23:29.040349
+64	Roles	3	ActualizarPermisos	\N	Aileen Moyeja	Permisos actualizados para Tecnico: []	2026-07-15 09:25:38.584089
+65	Roles	3	ActualizarPermisos	\N	Aileen Moyeja	Permisos actualizados para Tecnico: ['6']	2026-07-15 09:29:17.416401
 \.
 
 
@@ -1581,6 +2099,14 @@ COPY public.institucion (id_institucion, id_comunidad, nombre_institucion, tipo_
 
 
 --
+-- Data for Name: inventario_equipos; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.inventario_equipos (id, tipo_equipo, codigo, ubicacion, estado_operativo, estado_flujo, ultimo_mantenimiento, responsable, creado_en, actualizado_en) FROM stdin;
+\.
+
+
+--
 -- Data for Name: mapa_climatico; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -1592,7 +2118,15 @@ COPY public.mapa_climatico (id_mapa_climatico, id_municipio, tipo_de_mapa, url_m
 -- Data for Name: mapa_riesgo; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.mapa_riesgo (id_mapa_riesgo, id_actividad, tipo_actividad, ruta_kml, ruta_imagen_mapa, fecha_registro) FROM stdin;
+COPY public.mapa_riesgo (id_mapa_riesgo, id_actividad, tipo_actividad, ruta_kml, ruta_imagen_mapa, fecha_registro, nombre, descripcion) FROM stdin;
+\.
+
+
+--
+-- Data for Name: mapas_registro; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.mapas_registro (id, nombre, tipo_mapa, archivo, estado, version, cobertura, responsable, creado_en, actualizado_en) FROM stdin;
 \.
 
 
@@ -1609,6 +2143,14 @@ COPY public.material (id_material, id_nivel, id_tema, url) FROM stdin;
 --
 
 COPY public.modelos_equipo (id_modelos_equipo, id_categoria, nombre_modelos_equipo, modelo, marca) FROM stdin;
+\.
+
+
+--
+-- Data for Name: modulos; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.modulos (id_modulo, nombre_modulo, descripcion_modulo) FROM stdin;
 \.
 
 
@@ -1645,10 +2187,93 @@ COPY public.nivel (id_nivel, nombre_nivel, descripcion) FROM stdin;
 
 
 --
+-- Data for Name: notificaciones; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.notificaciones (id, usuario_id, categoria, mensaje, leido, fecha_creacion) FROM stdin;
+7	\N	Seguridad	Estructura RBAC: Rol institucional 'Analista' renombrado a 'Analistas' por Aileen Moyeja.	t	2026-07-14 09:20:07.576725
+8	\N	Seguridad	Estructura RBAC: Rol institucional 'Analistas' renombrado a 'Analista' por Aileen Moyeja.	t	2026-07-14 09:22:56.85689
+9	\N	Seguridad	🔒 SEGURIDAD: La matriz de accesos y capacidades para el rol 'Analista' fue reconfigurada por Aileen Moyeja.	t	2026-07-14 09:23:06.815171
+10	\N	Seguridad	Ecosistema: El privilegio técnico 'ver_formaciones' fue actualizado en el catálogo por Aileen Moyeja.	t	2026-07-14 09:23:46.401613
+11	\N	Seguridad	¡CRÍTICO!: La cuenta de Perez Jimenes fue removida del sistema por el operador Aileen Moyeja.	t	2026-07-14 09:24:16.064339
+12	\N	Usuarios	El operador Aileen Moyeja registró al nuevo usuario Angelo Martinez en la plataforma.	t	2026-07-14 09:29:09.711834
+13	\N	Seguridad	Ecosistema: El privilegio técnico 'crear_divulgaciones' fue actualizado en el catálogo por Aileen Moyeja.	t	2026-07-14 21:45:52.529253
+14	\N	Seguridad	Ecosistema: El privilegio técnico 'aprobar_divulgaciones' fue actualizado en el catálogo por Genghis Khan.	t	2026-07-14 21:46:59.391051
+15	\N	Seguridad	Ecosistema: Se registró una nueva capacidad atómica en el catálogo global: 'gestionar_formaciones'.	t	2026-07-15 08:28:34.328233
+16	\N	Seguridad	Ecosistema: Se registró una nueva capacidad atómica en el catálogo global: 'gestionar_sensibilizaciones'.	t	2026-07-15 08:29:01.196206
+17	\N	Seguridad	Ecosistema: Se registró una nueva capacidad atómica en el catálogo global: 'registro_zenka'.	t	2026-07-15 08:31:02.223447
+18	\N	Seguridad	⚠️ ATENCIÓN: El privilegio atómico 'registro_zenka' fue revocado y removido permanentemente del catálogo global.	t	2026-07-15 08:31:09.565008
+19	\N	Seguridad	⚠️ ATENCIÓN: El privilegio atómico 'gestionar_sensibilizaciones' fue revocado y removido permanentemente del catálogo global.	t	2026-07-15 08:35:42.828684
+20	\N	Seguridad	⚠️ ATENCIÓN: El privilegio atómico 'gestionar_formaciones' fue revocado y removido permanentemente del catálogo global.	t	2026-07-15 08:35:47.483427
+21	\N	Seguridad	⚠️ ATENCIÓN: El privilegio atómico 'ver_formaciones' fue revocado y removido permanentemente del catálogo global.	t	2026-07-15 08:37:20.235862
+22	\N	Seguridad	Ecosistema: Se registró una nueva capacidad atómica en el catálogo global: 'gestionar_inventario'.	t	2026-07-15 08:44:43.769958
+23	\N	Seguridad	⚠️ ATENCIÓN: El privilegio atómico 'gestionar_inventario' fue revocado y removido permanentemente del catálogo global.	t	2026-07-15 08:51:27.872516
+24	\N	Seguridad	Ecosistema: Se registró una nueva capacidad atómica en el catálogo global: 'gestionar_formaciones'.	t	2026-07-15 08:51:44.218961
+25	\N	Seguridad	Ecosistema: Se registró una nueva capacidad atómica en el catálogo global: 'gestionar_sensibilizaciones'.	t	2026-07-15 08:52:09.424817
+26	\N	Seguridad	Ecosistema: Se registró una nueva capacidad atómica en el catálogo global: 'gestionar_geomatica'.	t	2026-07-15 08:53:43.97628
+27	\N	Seguridad	Ecosistema: Se registró una nueva capacidad atómica en el catálogo global: 'ver_mapas'.	t	2026-07-15 08:54:08.316476
+28	\N	Seguridad	Ecosistema: Se registró una nueva capacidad atómica en el catálogo global: 'gestionar_inventario'.	t	2026-07-15 08:54:52.842323
+29	\N	Seguridad	Ecosistema: Se registró una nueva capacidad atómica en el catálogo global: 'gestionar_tecnicos'.	t	2026-07-15 08:57:59.176223
+30	\N	Seguridad	🔒 SEGURIDAD: La matriz de accesos y capacidades para el rol 'Tecnico' fue reconfigurada por Aileen Moyeja.	t	2026-07-15 08:58:50.573133
+31	\N	Seguridad	🔒 SEGURIDAD: La matriz de accesos y capacidades para el rol 'Tecnico' fue reconfigurada por Aileen Moyeja.	t	2026-07-15 08:59:06.153428
+32	\N	Seguridad	🔒 SEGURIDAD: La matriz de accesos y capacidades para el rol 'Tecnico' fue reconfigurada por Aileen Moyeja.	t	2026-07-15 09:03:07.273989
+33	\N	Seguridad	🔒 SEGURIDAD: La matriz de accesos y capacidades para el rol 'Tecnico' fue reconfigurada por Aileen Moyeja.	t	2026-07-15 09:08:27.446813
+34	\N	Seguridad	🔒 SEGURIDAD: La matriz de accesos y capacidades para el rol 'Tecnico' fue reconfigurada por Aileen Moyeja.	t	2026-07-15 09:14:42.086581
+35	\N	Seguridad	🔒 SEGURIDAD: La matriz de accesos y capacidades para el rol 'Tecnico' fue reconfigurada por Aileen Moyeja.	t	2026-07-15 09:17:13.12807
+36	\N	Seguridad	🔒 SEGURIDAD: La matriz de accesos y capacidades para el rol 'Tecnico' fue reconfigurada por Aileen Moyeja.	t	2026-07-15 09:19:55.070783
+37	\N	Seguridad	🔒 SEGURIDAD: La matriz de accesos y capacidades para el rol 'Analista' fue reconfigurada por Aileen Moyeja.	t	2026-07-15 09:20:20.095663
+38	\N	Seguridad	Ecosistema: Se registró una nueva capacidad atómica en el catálogo global: 'gestionar_actividades'.	t	2026-07-15 09:23:29.040349
+39	\N	Seguridad	🔒 SEGURIDAD: La matriz de accesos y capacidades para el rol 'Tecnico' fue reconfigurada por Aileen Moyeja.	t	2026-07-15 09:25:38.551201
+40	\N	Seguridad	🔒 SEGURIDAD: La matriz de accesos y capacidades para el rol 'Tecnico' fue reconfigurada por Aileen Moyeja.	t	2026-07-15 09:29:17.399739
+\.
+
+
+--
 -- Data for Name: parroquia; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.parroquia (id_parroquia, id_municipio, nombre_parroquia) FROM stdin;
+\.
+
+
+--
+-- Data for Name: password_resets; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.password_resets (id, user_id, token, creado_en, expiracion, usado) FROM stdin;
+1	13	wMjbVWGTgA4SrHRNEwCR67ncPO7XOZRE	2026-07-13 22:04:24.273241	2026-07-14 00:04:24.28342	t
+2	19	GMf4ULcHWVmMxACDdAXgRByRUgBYSpjF	2026-07-13 23:15:42.461267	2026-07-14 01:15:42.461267	f
+3	19	B-K9JIBlMTw7bHTBRXy2xUwAO7A7ExS2	2026-07-13 23:18:11.907581	2026-07-14 01:18:11.907581	f
+4	19	CYkd1bwnB8tO3qXQEtiG2jfYEhqk-Olp	2026-07-13 23:19:30.027503	2026-07-14 01:19:30.178696	f
+5	19	_TUSBTWPTlcHgFJwXPyzLYjedIZvsDOB	2026-07-13 23:20:16.126282	2026-07-14 01:20:16.128561	f
+6	19	DtT3H3bOfegzrBMXzy0l-ssJloX79_Qx	2026-07-13 23:21:38.68525	2026-07-14 01:21:38.896452	f
+7	19	pM5v2CqmWP_iX-OU2nj0IMj5GcabSiao	2026-07-13 23:24:31.835572	2026-07-14 01:24:32.027239	f
+8	19	5CQwt4iYqZeAqqneI12DcaV9xhfk8nB1	2026-07-13 23:25:40.521727	2026-07-14 01:25:40.747612	f
+9	19	Thmy-QA11Gf6FYBtyitNpqyJOTbkUW3T	2026-07-13 23:30:37.210828	2026-07-14 01:30:37.322095	f
+10	19	jOZ2eeTkRiabzpudu_DKjRQVQ2SWjBq3	2026-07-13 23:39:49.105176	2026-07-14 01:39:49.202406	f
+11	19	5Ca_JeYFElWZtEJ8W8T8mm5zG8tqB_sh	2026-07-14 00:03:33.030945	2026-07-14 02:03:33.147232	f
+12	19	HIZ3YeaWJARclOQMVpIWm0aJHEmu7r4q	2026-07-14 00:09:54.2079	2026-07-14 02:09:54.391207	f
+13	19	wL4eOKh974ogEajRru-lZnXFxgDpb0ms	2026-07-14 00:12:18.839225	2026-07-14 02:12:18.974208	f
+14	19	9oyHoHhwk8AtpP5XQbUa6N7A5tm5Gpp8	2026-07-14 00:14:50.678757	2026-07-14 02:14:50.895287	f
+15	19	TLo7BGkns8u1XDzsAhAzm_IugqwHvYRF	2026-07-14 00:15:03.89092	2026-07-14 02:15:03.89092	f
+16	19	Vzd5PEpreKrLGhQMCMr8BoATLtfSB_RD	2026-07-14 00:15:22.007057	2026-07-14 02:15:22.106092	f
+17	19	CP_bnGE9iP5b_eHRDC3CIymNYYg7u2uj	2026-07-14 00:17:16.251805	2026-07-14 02:17:16.389395	f
+18	19	w8GwNau0ldjWEbc3LNVWreSzvEIxq4Qb	2026-07-14 00:18:31.963398	2026-07-14 02:18:31.963398	f
+19	19	AuykwiZON2WxqLFsSPseZ36lTDXAyBOC	2026-07-14 00:20:40.61114	2026-07-14 02:20:41.322376	f
+20	19	U-6rFHiCfUZc2Z3BILJZWbijaR0Dny1b	2026-07-14 00:21:01.699465	2026-07-14 02:21:01.703248	f
+21	19	eoL1OOngKHx5Pj28g9MR5V5iKZ7r9bZG	2026-07-14 00:23:28.604287	2026-07-14 02:23:28.604287	f
+22	19	vzmasL9XXesxO6qOZ10stD4c1D2XPq-_	2026-07-14 00:24:02.466876	2026-07-14 02:24:02.563972	f
+23	19	Ctvrud361dYOOlVgm94emaQKWhUkrFDX	2026-07-14 00:24:30.306553	2026-07-14 02:24:30.405304	f
+24	19	UDiSBPAV6h3HbX8536S30WJnPL7niCdd	2026-07-14 00:25:00.502052	2026-07-14 02:25:00.607467	f
+25	19	h734tXQfGKPGUopWZrR1zzpMF6YEE8LV	2026-07-14 00:36:42.956242	2026-07-14 02:36:43.056179	f
+\.
+
+
+--
+-- Data for Name: permiso; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.permiso (id_modulo, id_rol) FROM stdin;
 \.
 
 
@@ -1675,6 +2300,14 @@ COPY public.registros_climaticos (id_registro, fecha_registro, id_equipo, id_map
 --
 
 COPY public.reportes_transaccionales (id, titulo, modulo_origen, rango_desde, rango_hasta, formato, estado, responsable, creado_en, actualizado_en) FROM stdin;
+\.
+
+
+--
+-- Data for Name: roles; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.roles (id_rol, nombre_rol) FROM stdin;
 \.
 
 
@@ -1719,6 +2352,14 @@ COPY public.ubicacion (id_ubicacion, id_parroquia, nombre_ubicacion) FROM stdin;
 
 
 --
+-- Data for Name: usuario; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.usuario (id_usuario, nombre_usuario, "clave usuario", id_rol, correo, cedula, especialidad, estatus) FROM stdin;
+\.
+
+
+--
 -- Data for Name: visitas_portal; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -1737,6 +2378,28 @@ COPY public.visitas_portal (id, mes, creado_en) FROM stdin;
 12	2026-06	2026-06-24 00:20:50.807676
 13	2026-06	2026-06-24 00:22:11.372916
 14	2026-06	2026-06-25 00:29:26.092837
+15	2026-06	2026-06-27 12:34:54.46264
+16	2026-07	2026-07-08 00:10:09.302532
+17	2026-07	2026-07-08 18:20:38.528376
+18	2026-07	2026-07-09 04:43:03.361844
+19	2026-07	2026-07-09 09:04:59.181115
+20	2026-07	2026-07-09 15:02:10.086495
+21	2026-07	2026-07-09 19:00:36.136803
+22	2026-07	2026-07-10 11:34:46.040326
+23	2026-07	2026-07-10 11:36:43.465493
+24	2026-07	2026-07-10 13:12:14.039994
+25	2026-07	2026-07-10 13:40:54.603891
+26	2026-07	2026-07-10 18:53:58.475641
+27	2026-07	2026-07-11 14:43:40.719943
+28	2026-07	2026-07-13 15:18:31.278161
+29	2026-07	2026-07-13 21:20:20.664766
+30	2026-07	2026-07-14 02:01:10.593216
+31	2026-07	2026-07-14 08:55:18.997032
+32	2026-07	2026-07-14 15:16:45.688034
+33	2026-07	2026-07-14 21:37:08.903488
+34	2026-07	2026-07-15 01:05:05.38247
+35	2026-07	2026-07-15 08:20:13.756911
+36	2026-07	2026-07-15 14:21:05.387515
 \.
 
 
@@ -1755,6 +2418,20 @@ SELECT pg_catalog.setval('public.actividad_tecnico_id_actividad_tecnico_seq', 1,
 
 
 --
+-- Name: actividades_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.actividades_id_seq', 1, false);
+
+
+--
+-- Name: bitacora_transacciones_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.bitacora_transacciones_id_seq', 65, true);
+
+
+--
 -- Name: categoria_id_categoria_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -1765,7 +2442,7 @@ SELECT pg_catalog.setval('public.categoria_id_categoria_seq', 1, false);
 -- Name: comunidad_id_comunidad_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.comunidad_id_comunidad_seq', 3, true);
+SELECT pg_catalog.setval('public.comunidad_id_comunidad_seq', 10, true);
 
 
 --
@@ -1800,7 +2477,7 @@ SELECT pg_catalog.setval('public.equipo_monitoreo_id_monitoreo_equipo_seq', 1, f
 -- Name: estado_id_estado_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.estado_id_estado_seq', 3, true);
+SELECT pg_catalog.setval('public.estado_id_estado_seq', 10, true);
 
 
 --
@@ -1839,6 +2516,13 @@ SELECT pg_catalog.setval('public.institucion_id_institucion_seq', 1, false);
 
 
 --
+-- Name: inventario_equipos_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.inventario_equipos_id_seq', 1, false);
+
+
+--
 -- Name: mapa_climatico_id_mapa_climatico_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -1853,6 +2537,13 @@ SELECT pg_catalog.setval('public.mapa_riesgo_id_mapa_riesgo_seq', 1, false);
 
 
 --
+-- Name: mapas_registro_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.mapas_registro_id_seq', 1, false);
+
+
+--
 -- Name: material_id_material_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -1864,6 +2555,13 @@ SELECT pg_catalog.setval('public.material_id_material_seq', 1, false);
 --
 
 SELECT pg_catalog.setval('public.modelos_equipo_id_modelos_equipo_seq', 1, false);
+
+
+--
+-- Name: modulos_id_modulo_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.modulos_id_modulo_seq', 1, false);
 
 
 --
@@ -1884,7 +2582,7 @@ SELECT pg_catalog.setval('public.movimientos_id_movimientos_seq', 1, false);
 -- Name: municipio_id_municipio_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.municipio_id_municipio_seq', 3, true);
+SELECT pg_catalog.setval('public.municipio_id_municipio_seq', 10, true);
 
 
 --
@@ -1895,10 +2593,24 @@ SELECT pg_catalog.setval('public.nivel_id_nivel_seq', 1, false);
 
 
 --
+-- Name: notificaciones_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.notificaciones_id_seq', 40, true);
+
+
+--
 -- Name: parroquia_id_parroquia_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.parroquia_id_parroquia_seq', 3, true);
+SELECT pg_catalog.setval('public.parroquia_id_parroquia_seq', 10, true);
+
+
+--
+-- Name: password_resets_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.password_resets_id_seq', 25, true);
 
 
 --
@@ -1920,6 +2632,13 @@ SELECT pg_catalog.setval('public.registros_climaticos_id_registro_seq', 1, false
 --
 
 SELECT pg_catalog.setval('public.reportes_transaccionales_id_seq', 1, false);
+
+
+--
+-- Name: roles_id_rol_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.roles_id_rol_seq', 1, false);
 
 
 --
@@ -1951,10 +2670,17 @@ SELECT pg_catalog.setval('public.ubicacion_id_ubicacion_seq', 1, false);
 
 
 --
+-- Name: usuario_id_usuario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.usuario_id_usuario_seq', 1, false);
+
+
+--
 -- Name: visitas_portal_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.visitas_portal_id_seq', 14, true);
+SELECT pg_catalog.setval('public.visitas_portal_id_seq', 36, true);
 
 
 --
@@ -1990,11 +2716,27 @@ ALTER TABLE ONLY public.actividad_tecnico
 
 
 --
+-- Name: actividades actividades_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.actividades
+    ADD CONSTRAINT actividades_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: alembic_version alembic_version_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.alembic_version
     ADD CONSTRAINT alembic_version_pkey PRIMARY KEY (version_num);
+
+
+--
+-- Name: bitacora_transacciones bitacora_transacciones_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.bitacora_transacciones
+    ADD CONSTRAINT bitacora_transacciones_pkey PRIMARY KEY (id);
 
 
 --
@@ -2126,6 +2868,22 @@ ALTER TABLE ONLY public.institucion
 
 
 --
+-- Name: inventario_equipos inventario_equipos_codigo_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.inventario_equipos
+    ADD CONSTRAINT inventario_equipos_codigo_key UNIQUE (codigo);
+
+
+--
+-- Name: inventario_equipos inventario_equipos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.inventario_equipos
+    ADD CONSTRAINT inventario_equipos_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: mapa_climatico mapa_climatico_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2142,6 +2900,14 @@ ALTER TABLE ONLY public.mapa_riesgo
 
 
 --
+-- Name: mapas_registro mapas_registro_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.mapas_registro
+    ADD CONSTRAINT mapas_registro_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: material material_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2155,6 +2921,22 @@ ALTER TABLE ONLY public.material
 
 ALTER TABLE ONLY public.modelos_equipo
     ADD CONSTRAINT modelos_equipo_pkey PRIMARY KEY (id_modelos_equipo);
+
+
+--
+-- Name: modulos modulos_nombre_modulo_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.modulos
+    ADD CONSTRAINT modulos_nombre_modulo_key UNIQUE (nombre_modulo);
+
+
+--
+-- Name: modulos modulos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.modulos
+    ADD CONSTRAINT modulos_pkey PRIMARY KEY (id_modulo);
 
 
 --
@@ -2206,11 +2988,35 @@ ALTER TABLE ONLY public.nivel
 
 
 --
+-- Name: notificaciones notificaciones_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.notificaciones
+    ADD CONSTRAINT notificaciones_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: parroquia parroquia_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.parroquia
     ADD CONSTRAINT parroquia_pkey PRIMARY KEY (id_parroquia);
+
+
+--
+-- Name: password_resets password_resets_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.password_resets
+    ADD CONSTRAINT password_resets_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: password_resets password_resets_token_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.password_resets
+    ADD CONSTRAINT password_resets_token_key UNIQUE (token);
 
 
 --
@@ -2243,6 +3049,22 @@ ALTER TABLE ONLY public.registros_climaticos
 
 ALTER TABLE ONLY public.reportes_transaccionales
     ADD CONSTRAINT reportes_transaccionales_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: roles roles_nombre_rol_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.roles
+    ADD CONSTRAINT roles_nombre_rol_key UNIQUE (nombre_rol);
+
+
+--
+-- Name: roles roles_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.roles
+    ADD CONSTRAINT roles_pkey PRIMARY KEY (id_rol);
 
 
 --
@@ -2291,6 +3113,22 @@ ALTER TABLE ONLY public.tema
 
 ALTER TABLE ONLY public.ubicacion
     ADD CONSTRAINT ubicacion_pkey PRIMARY KEY (id_ubicacion);
+
+
+--
+-- Name: usuario usuario_cedula_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.usuario
+    ADD CONSTRAINT usuario_cedula_key UNIQUE (cedula);
+
+
+--
+-- Name: usuario usuario_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.usuario
+    ADD CONSTRAINT usuario_pkey PRIMARY KEY (id_usuario);
 
 
 --
@@ -2592,6 +3430,22 @@ ALTER TABLE ONLY public.equipo_monitoreo
 
 
 --
+-- Name: actividad fk_actividad_nivel; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.actividad
+    ADD CONSTRAINT fk_actividad_nivel FOREIGN KEY (id_nivel) REFERENCES public.nivel(id_nivel);
+
+
+--
+-- Name: actividad fk_actividad_usuario; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.actividad
+    ADD CONSTRAINT fk_actividad_usuario FOREIGN KEY (id_usuario) REFERENCES public.usuario(id_usuario);
+
+
+--
 -- Name: formacion formacion_actividad_compuesta_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2744,6 +3598,22 @@ ALTER TABLE ONLY public.parroquia
 
 
 --
+-- Name: permiso permiso_id_modulo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.permiso
+    ADD CONSTRAINT permiso_id_modulo_fkey FOREIGN KEY (id_modulo) REFERENCES public.modulos(id_modulo);
+
+
+--
+-- Name: permiso permiso_id_rol_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.permiso
+    ADD CONSTRAINT permiso_id_rol_fkey FOREIGN KEY (id_rol) REFERENCES public.roles(id_rol);
+
+
+--
 -- Name: publicaciones publicaciones_id_divulgacion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2795,5 +3665,5 @@ ALTER TABLE ONLY public.ubicacion
 -- PostgreSQL database dump complete
 --
 
-\unrestrict xVLOjulw3reXq9N8V8nUHByHQ45fhao7x24dX0OgdG9k87QUNNQHsAsQ3PBawvP
+\unrestrict T6zWGEHuG6Du30SX3GSOjBjAND9gcKtApUW8ZST1uMu2eiD1u8TZx5HDIF777e7
 

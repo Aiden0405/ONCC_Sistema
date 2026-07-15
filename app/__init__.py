@@ -108,13 +108,30 @@ def create_app(config_class=Config):
     from app.blueprints.core.controllers.usuarios import usuario_index as core_usuario_index
     from app.blueprints.core.controllers.usuarios import usuario_nuevo as core_usuario_nuevo
     from app.blueprints.core.controllers.usuarios import usuario_perfil as core_usuario_perfil
+    
+    # 📦 CONTROLADORES DE LOGÍSTICA (AILEEN)
     from app.blueprints.logistica.controllers.inventario import editar as logistica_inventario_editar
     from app.blueprints.logistica.controllers.inventario import eliminar as logistica_inventario_eliminar
     from app.blueprints.logistica.controllers.inventario import inventario_index as logistica_inventario_index
     from app.blueprints.logistica.controllers.inventario import nuevo as logistica_inventario_nuevo
-    from app.blueprints.mapas.controllers.riesgo import cambiar_estado as mapas_cambiar_estado
+    from app.blueprints.logistica.controllers.inventario import nuevo_movimiento as logistica_nuevo_movimiento
+    from app.blueprints.logistica.controllers.inventario import editar_movimiento as logistica_editar_movimiento
+    from app.blueprints.logistica.controllers.inventario import eliminar_movimiento as logistica_eliminar_movimiento
+    from app.blueprints.logistica.controllers.inventario import acta_responsabilidad as logistica_acta_responsabilidad
+    from app.blueprints.logistica.controllers.inventario import reporte_inventario as logistica_reporte_inventario
+    from app.blueprints.logistica.controllers.inventario import reporte_movimientos as logistica_reporte_movimientos
+    
+    from app.blueprints.logistica.controllers.tecnicos_campo import tecnicos_campo_index as logistica_tecnicos_index
+    from app.blueprints.logistica.controllers.tecnicos_campo import tecnicos_nuevo as logistica_tecnicos_nuevo
+    from app.blueprints.logistica.controllers.tecnicos_campo import tecnicos_editar as logistica_tecnicos_editar
+    from app.blueprints.logistica.controllers.tecnicos_campo import tecnicos_eliminar as logistica_tecnicos_eliminar
+    
+    # 🗺️ CONTROLADORES DE MAPAS ACTUALIZADOS DESDE RAMA GABRIEL
+    from app.blueprints.mapas.controllers.riesgo import eliminar_mapa as mapas_cambiar_estado
     from app.blueprints.mapas.controllers.riesgo import mapas_riesgo_index as mapas_index
-    from app.blueprints.mapas.controllers.riesgo import procesar_archivo as mapas_procesar_archivo
+    from app.blueprints.mapas.controllers.riesgo import vista_carga_ssbc as mapas_procesar_archivo
+    from app.blueprints.mapas.controllers.climaticos import mapas_climaticos_index as mapas_climaticos_index
+    
     from app.blueprints.monitoreo.controllers.actividades import actividades_cambiar_estado as monitoreo_actividad_cambiar_estado
     from app.blueprints.monitoreo.controllers.actividades import actividades_index as monitoreo_actividad_index
     from app.blueprints.monitoreo.controllers.actividades import nueva as monitoreo_actividad_nueva
@@ -122,7 +139,7 @@ def create_app(config_class=Config):
     from app.blueprints.comunitario.controllers.formaciones import formacion_nuevo
     from app.blueprints.comunitario.controllers.formaciones import formaciones_index as comunitario_formaciones_index
     from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizacion_cambiar_estado
-    from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizacion_nuevo
+    from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizacion_editar as sensibilizacion_nuevo
     from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizaciones_index as comunitario_sensibilizaciones_index
 
     app.add_url_rule('/', endpoint='public.home', view_func=core_home)
@@ -160,14 +177,33 @@ def create_app(config_class=Config):
     app.add_url_rule('/actividades/nueva', endpoint='actividad.nueva', view_func=monitoreo_actividad_nueva, methods=['GET', 'POST'])
     app.add_url_rule('/actividades/<int:actividad_id>/estado', endpoint='actividad.cambiar_estado', view_func=monitoreo_actividad_cambiar_estado, methods=['POST'])
 
+    # 📦 REGLAS DE ENRUTAMIENTO DE LOGÍSTICA (INVENTARIO)
     app.add_url_rule('/inventario/', endpoint='inventario.index', view_func=logistica_inventario_index)
     app.add_url_rule('/inventario/nuevo', endpoint='inventario.nuevo', view_func=logistica_inventario_nuevo, methods=['POST'])
     app.add_url_rule('/inventario/<int:equipo_id>/editar', endpoint='inventario.editar', view_func=logistica_inventario_editar, methods=['POST'])
     app.add_url_rule('/inventario/<int:equipo_id>/eliminar', endpoint='inventario.eliminar', view_func=logistica_inventario_eliminar, methods=['POST'])
+    
+    # 🔄 RUTAS INTERNAS PARA MOVIMIENTOS DE INVENTARIO
+    app.add_url_rule('/inventario/nuevo-movimiento', endpoint='inventario.nuevo_movimiento', view_func=logistica_nuevo_movimiento, methods=['POST'])
+    app.add_url_rule('/inventario/movimiento/<int:movimiento_id>/editar', endpoint='inventario.editar_movimiento', view_func=logistica_editar_movimiento, methods=['POST'])
+    app.add_url_rule('/inventario/movimiento/<int:movimiento_id>/eliminar', endpoint='inventario.eliminar_movimiento', view_func=logistica_eliminar_movimiento, methods=['POST'])
+    
+    # 📄 RUTAS PARA REPORTES Y ACTAS EN PDF
+    app.add_url_rule('/inventario/reporte', endpoint='inventario.reporte_inventario', view_func=logistica_reporte_inventario, methods=['GET'])
+    app.add_url_rule('/inventario/reporte-movimientos', endpoint='inventario.reporte_movimientos', view_func=logistica_reporte_movimientos, methods=['GET'])
+    app.add_url_rule('/inventario/<int:equipo_id>/acta', endpoint='inventario.acta_responsabilidad', view_func=logistica_acta_responsabilidad, methods=['GET'])
+    
+    # 👷 REGLAS PARA TÉCNICOS DE CAMPO
+    app.add_url_rule('/tecnicos-campo', endpoint='logistica.tecnicos_campo_index', view_func=logistica_tecnicos_index)
+    app.add_url_rule('/tecnicos-campo/nuevo', endpoint='logistica.tecnicos_nuevo', view_func=logistica_tecnicos_nuevo, methods=['POST'])
+    app.add_url_rule('/tecnicos-campo/<int:tecnico_id>/editar', endpoint='logistica.tecnicos_editar', view_func=logistica_tecnicos_editar, methods=['POST'])
+    app.add_url_rule('/tecnicos-campo/<int:tecnico_id>/eliminar', endpoint='logistica.tecnicos_eliminar', view_func=logistica_tecnicos_eliminar, methods=['POST'])
 
+    # 🗺️ REGLAS DE ENRUTAMIENTO CORREGIDAS PARA EVITAR EL BUILDERROR
     app.add_url_rule('/geomatica/', endpoint='geomatica.index', view_func=mapas_index)
-    app.add_url_rule('/geomatica/procesar', endpoint='geomatica.procesar_archivo', view_func=mapas_procesar_archivo, methods=['POST'])
+    app.add_url_rule('/geomatica/procesar', endpoint='geomatica.carga_ssbc', view_func=mapas_procesar_archivo, methods=['GET', 'POST'])
     app.add_url_rule('/geomatica/<int:mapa_id>/estado', endpoint='geomatica.cambiar_estado', view_func=mapas_cambiar_estado, methods=['POST'])
+    app.add_url_rule('/geomatica/climaticos', endpoint='geomatica.climaticos', view_func=mapas_climaticos_index)
 
     try:
         from app import cli as app_cli
@@ -227,7 +263,7 @@ def create_app(config_class=Config):
         )
 
 
-        # ==============================================================
+    # ==============================================================
     # ⏱️ FILTRO PERSONALIZADO PARA CALCULAR EL TIEMPO TRANSCURRIDO
     # ==============================================================
     @app.template_filter('tiempo_atras')
@@ -250,7 +286,7 @@ def create_app(config_class=Config):
             
         horas = minutos // 60
         if horas < 24:
-            return f"Hace {horas} {"hora" if horas == 1 else "horas"}"
+            return f"Hace {horas} {'hora' if horas == 1 else 'horas'}"
             
         dias = horas // 24
         if dias == 1:

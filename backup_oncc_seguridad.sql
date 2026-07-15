@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict OlsextvpDQW1Q5T7k7JtboEJgkM9TqK6OE0LZvKSlfXboSMC1G5mnF5hKCI6eQa
+\restrict hRjtMAfpDmR8j8T1Ul2lbGLaIG3WGQm0GISvTbObDr1dElrpTlvPibUxghU3biA
 
 -- Dumped from database version 17.10
 -- Dumped by pg_dump version 17.10
@@ -171,8 +171,15 @@ COPY public.backup  FROM stdin;
 
 COPY public.modulos (id_modulo, nombre_modulo, descripcion_modulo) FROM stdin;
 1	gestionar_usuarios	Permite registrar, editar y dar de baja cuentas de usuario.
-2	crear_divulgaciones	Autoriza la redacci¢n de alertas informativas clim ticas.
-3	aprobar_divulgaciones	Opciones de moderaci¢n editorial para publicar en la cartelera.
+2	crear_divulgaciones	Autoriza la redaccion de alertas informativas climaticas.
+3	aprobar_divulgaciones	Opciones de moderacion editorial para publicar en la cartelera.
+4	gestionar_formaciones	Permite planificar, registrar y cambiar el estado de las capacitaciones y formaciones comunitarias de la ONCC.
+5	gestionar_sensibilizaciones	Permite el registro, edición de fichas y control de estado de las jornadas de sensibilización climática en campo.
+6	gestionar_geomatica	Permite subir, procesar archivos climáticos (SSBC) de georreferenciación y registrar o dar de baja mapas de riesgo.
+7	ver_mapas	Habilita el acceso y consulta al visor interactivo de mapas climáticos generales del país.
+8	gestionar_inventario	Permite controlar el inventario de equipos tecnológicos (crear, editar, trasladar y dar de baja).
+9	gestionar_tecnicos	Permite administrar las fichas de los técnicos de campo que realizan despliegues de logística.
+10	gestionar_actividades	Permite registrar actividades generales, cambiar el estado de monitoreo de las mismas y cargar minutas o fotos de campo en la ONCC.
 \.
 
 
@@ -181,6 +188,10 @@ COPY public.modulos (id_modulo, nombre_modulo, descripcion_modulo) FROM stdin;
 --
 
 COPY public.permisos (id_modulo, id_rol) FROM stdin;
+3	7
+2	7
+2	8
+6	3
 \.
 
 
@@ -192,6 +203,9 @@ COPY public.rol (id_rol, nombre_rol) FROM stdin;
 1	Superusuario
 2	Administrador
 3	Tecnico
+7	Divulgador
+6	Secretaria
+8	Analista
 \.
 
 
@@ -208,15 +222,17 @@ COPY public."sesiones "  FROM stdin;
 --
 
 COPY public.usuario (id_usuario, nombre_usuario, correo, clave, id_rol, estatus) FROM stdin;
+21	Andres Romero	andres@gmail.com	scrypt:32768:8:1$vydSDIHt7hxP9qoh$e967a80241f8950c8b55ba6b3402766971b2cbdc3e50cfd70a5cd39fd1d8de022f38926913508594235ecb21f7cf9c1d5afc4f50d29797a9e2fc8381faaea402	7	t
+19	Luis Ramirez	nirkules@fosil.pro	scrypt:32768:8:1$iEEWHK8yb3wwki3t$abebf4c098565f9d71a72093ffaa8e7fc277a8c2166816ef4dab5f83758a17b0a864f347994badbdaf1da15c22537f0148fd5fa2932323f296403fe92ede1602	3	t
+22	Angelo Martinez	angelo@gmail.com	scrypt:32768:8:1$z9RriXxxz83acnO2$0c3cfa3f6fa2a88840ebcba1186e58abcd25e37e078a9214c3f40167aa137e6b5e307b8ccc98c5fc016a6645d13568d0fcdd1f00a5c25b6f4c79ebff829df5cf	8	t
 4	Aileen Moyeja	moyejada@gmail.com	scrypt:32768:8:1$gWzZ18QlcvRuH56c$0a7fe348ceafa52a0326fd19965ba51e22b36c541b562b7dd3031337e73c6f4e03d9d8b1a79600a329f4328c0d9e904da6609ddf7307f91fe48a436142c9614b	1	t
 2	Mariangel Reyes	maruchan@gmail.com	scrypt:32768:8:1$dUzD64KmnHWQHxFJ$990ae5e50f714411534cd9b6b09a46d2c4329528f9c0f1f740c73b62ad0a4cf31aed48225dde644d0186386a250fc52a576494b196014e544d0eb25fe7b1ba6b	3	t
 5	Gabriel Castaneda	gabrilucho@gmail.com	scrypt:32768:8:1$Uq0ne8CIh6hnPwDG$fff57d087028d0fc1ddfdbf97da69e7e1988a10a1f75afec178f2771bfcd3a5193c0ba251404ccab560ef0ad253dd16c4b945e48a6c7534cfefe3e33508e1dc0	2	t
 6	Angel Ferrer	ferrari@gmai.com	scrypt:32768:8:1$phGcRoyNCk7gJBic$d913b62d15b95641502453909939d9866252401b276628cd328a5f1f746fcfc6e973c08d3f79fde566645c36ff2684641e7afd204f280405d71c185484e76744	3	t
 7	Maria Perozo	negehip873@preparmy.com	scrypt:32768:8:1$DHQSJerYsEeL4mUJ$501b403056aa23b56c2427ea3514b01bc482b57c3ca4bb6a49b31d63eb4bec69cf6e4087b47d097f7c393d28ec28e7f42fd33adae06f8af19a3d8d681e952628	3	t
 10	John Five	john@gmail.com	scrypt:32768:8:1$rggNN94L6bvC7q8P$514ac3d0bd14e48066ed414cb4c402b54acac97a69f38b93d4f83472e29f1be9a4c6d983cfbdb6dd7080002d55c5f2b7f2b2ea0cafbaf716bece9f361cef866e	2	t
-11	Perez Jimenes	perez@gmail.com	scrypt:32768:8:1$HVytz31ePTHSTHmL$9abb7825be79244b56d1b7ab0066a166a606e0955ea00ed2f9f844e7c98716c230a0d3696fffe61ef69c8d68c9e7b555d96b23e0516263c9af877b386cee02c0	2	t
 12	Genghis Khan	khan@gmail.com	scrypt:32768:8:1$GKE9E3BiXMmjRxcI$3c4038cbd204460f6a1302aff027a8dd7e3a150743b6b6c630a5e96542f9b9f9be31c27d835f5430812cd2341336debdf2511aa97b5c9437b23346b7ddc4d740	1	t
-13	Morena Ramirez	m@gmail.com	scrypt:32768:8:1$mM3pgZVsAczkq4m0$0b0d882e4fd46398bcb41c8b36bc5fc00e0ebafcf27886f0f91f1e1d9500f93e948be70dfc543e42b9f5937d9afbe723cea8afbf5e70bee6dec156d6c48320e2	2	t
+13	Morena Ramirez	m@gmail.com	scrypt:32768:8:1$83toxiKsLtOD9gzF$7a0338f9fc0f71cabdc58dc5a13b5bc36721e6c347abe56a70f2cb55943deb500cd9f51e04d5ffb329f21dde684e979e8779737ec88d245e078fe9b7d6e9aa91	2	t
 \.
 
 
@@ -224,14 +240,14 @@ COPY public.usuario (id_usuario, nombre_usuario, correo, clave, id_rol, estatus)
 -- Name: rol_id_rol_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.rol_id_rol_seq', 4, true);
+SELECT pg_catalog.setval('public.rol_id_rol_seq', 8, true);
 
 
 --
 -- Name: usuario_id_usuario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.usuario_id_usuario_seq', 13, true);
+SELECT pg_catalog.setval('public.usuario_id_usuario_seq', 22, true);
 
 
 --
@@ -294,5 +310,5 @@ ALTER TABLE ONLY public.permisos
 -- PostgreSQL database dump complete
 --
 
-\unrestrict OlsextvpDQW1Q5T7k7JtboEJgkM9TqK6OE0LZvKSlfXboSMC1G5mnF5hKCI6eQa
+\unrestrict hRjtMAfpDmR8j8T1Ul2lbGLaIG3WGQm0GISvTbObDr1dElrpTlvPibUxghU3biA
 
