@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if permiso %}Editar{% else %}Nuevo{% endif %} Permiso - ONCC{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div class="flex items-center justify-between mb-2">
+        <div>
+            <h1 class="text-2xl font-bold dark:text-white text-gray-800">
+                {% if permiso %}Editar Privilegio Atómico{% else %}Nuevo Privilegio Atómico{% endif %}
+            </h1>
+            <p class="text-sm dark:text-gray-400 text-gray-500">Configura los parámetros de acceso para el ecosistema global (RBAC)</p>
+        </div>
+        <a href="{{ url_for('core.permiso_index') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white transition-colors flex items-center text-sm font-medium">
+            <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i> Volver al Catálogo
+        </a>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <form method="post" class="p-8 space-y-6" autocomplete="off">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div class="space-y-4">
+                <h3 class="text-sm font-bold uppercase tracking-wide flex items-center text-green-700 dark:text-green-400 border-b border-gray-100 dark:border-gray-700 pb-2">
+                    <i data-lucide="key-round" class="mr-2 w-4 h-4"></i> Parámetros de la Capacidad
+                </h3>
+                
+                <div class="grid grid-cols-1 gap-6">
+                    <!-- Nombre Técnico -->
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Nombre del Permiso (Slug Técnico)</label>
+                        <input type="text" name="nombre" value="{{ permiso.nombre if permiso else '' }}" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none font-mono text-purple-600 dark:text-purple-400" placeholder="Ej: registrar_usuario" required />
+                        <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-1 italic">
+                            Use minúsculas y guiones bajos. Este es el identificador exacto que se evalúa en el backend del servidor.
+                        </p>
+                    </div>
+
+                    <!-- Descripción -->
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Descripción Funcional del Privilegio</label>
+                        <input type="text" name="descripcion" value="{{ permiso.descripcion if permiso else '' }}" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: Permite registrar y dar de alta nuevos funcionarios en el módulo de seguridad." required />
+                        <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-1 italic">
+                            Explique claramente qué acción bloquea o desbloquea este permiso específico en la plataforma.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end pt-6 border-t border-gray-100 dark:border-gray-700">
+                <button type="submit" class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md text-sm shadow-sm transition-colors">
+                    {% if permiso %}Guardar Cambios{% else %}Registrar Permiso{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

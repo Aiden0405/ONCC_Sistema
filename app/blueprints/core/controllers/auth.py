@@ -1,6 +1,11 @@
-from flask import flash, redirect, render_template, request, url_for
+import random  # Generar los números aleatorios del captcha
+from flask import flash, redirect, render_template, request, url_for, session
 from flask_login import current_user, login_required, login_user, logout_user
 from urllib.parse import urljoin, urlparse
+
+# 🌟 IMPORTANTE: Importamos la herramienta 'mail' de tu app y la clase 'Message' para estructurar el correo
+from flask_mail import Message
+from app import mail
 
 from app.blueprints.core import core_bp
 from app.blueprints.core.forms import LoginForm, ResetRequestForm, ResetPasswordForm
@@ -18,6 +23,7 @@ def is_safe_url(target):
 
 @core_bp.route('/auth/login', methods=['GET', 'POST'])
 def login():
+    # 🌟 Ya no limpiamos variables de simulación porque la bandeja local fue removida por seguridad
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
 
@@ -65,19 +71,57 @@ def logout():
 @core_bp.route('/auth/recuperar', methods=['GET', 'POST'])
 def recuperar_contrasena():
     form = ResetRequestForm()
+    
+    # Captcha: Generamos una suma matemática nueva para vistas GET
+    if request.method == 'GET':
+        num1 = random.randint(1, 9)
+        num2 = random.randint(1, 9)
+        session['captcha_resultado'] = num1 + num2
+        session['captcha_texto'] = f"¿Cuánto es {num1} + {num2}?"
+
     if form.validate_on_submit():
         correo = (form.correo.data or '').strip().lower()
-        token = gestor.solicitar_recuperacion(correo)
-        
-        if token:
-            # [MODO DEFENSIVO / DESARROLLADOR]
-            # Imprime el enlace seguro en tu PowerShell para la demostración en vivo.
-            print(f"\n" + "="*60)
-            print(f"[ONCC - SEGURIDAD] ENLACE DE RECUPERACIÓN GENERADO:")
-            print(f"http://127.0.0.1:5000/auth/restablecer/{token}")
-            print("="*60 + "\n")
+        captcha_usuario = request.form.get('captcha', '').strip()
 
-        # Mensaje seguro único para evitar enumeración de usuarios en la interfaz pública
+        # Validación del Captcha Matemático antes de procesar el token
+        if not captcha_usuario or int(captcha_usuario) != session.get('captcha_resultado'):
+            flash('La verificación de seguridad (Captcha) es incorrecta.', 'error')
+            num1 = random.randint(1, 9)
+            num2 = random.randint(1, 9)
+            session['captcha_resultado'] = num1 + num2
+            session['captcha_texto'] = f"¿Cuánto es {num1} + {num2}?"
+            return render_template('auth/recuperar.html', form=form)
+
+        # Buscamos si el usuario existe en la BD
+        usuario = Usuario.query.filter_by(correo=correo).first()
+        
+        # 🌟 Si el usuario existe, generamos el token y mandamos el correo real
+        if usuario:
+            token = gestor.solicitar_recuperacion(correo)
+            if token:
+                enlace_recuperacion = url_for('core.restablecer_contrasena', token=token, _external=True)
+                
+                try:
+                    # Estructuramos el mensaje de correo
+                    msg = Message(
+                        subject="Restablecimiento de Contraseña - ONCC",
+                        recipients=[usuario.correo]
+                    )
+                    # Texto alternativo por si el cliente de correo no lee HTML
+                    msg.body = f"Hola, {usuario.nombre_usuario}.\n\nPara restablecer tu contraseña del sistema ONCC, haz clic en el siguiente enlace:\n{enlace_recuperacion}\n\nEste enlace expirará en 10 minutos."
+                    
+                    # Plantilla de correo HTML estructurada y bonita (la que creas en el paso siguiente)
+                    msg.html = render_template('auth/correo_recuperacion.html', usuario=usuario, enlace=enlace_recuperacion)
+                    
+                    # 🌟 Flask-Mail envía el correo a la bandeja de destino real de manera segura y privada
+                    mail.send(msg)
+                    
+                except Exception as e:
+                    print(f"❌ Error al enviar el correo SMTP: {str(e)}")
+                    flash('Ocurrió un inconveniente al procesar el envío del correo de recuperación.', 'error')
+                    return render_template('auth/recuperar.html', form=form)
+
+        # Mensaje seguro único (se muestra siempre para evitar revelación de cuentas existentes)
         flash('Si el correo institucional se encuentra registrado, recibirá un enlace de recuperación en breve.', 'info')
         return redirect(url_for('core.login'))
 

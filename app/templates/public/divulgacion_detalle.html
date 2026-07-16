@@ -38,6 +38,22 @@
         </div>
         {% endif %}
 
+        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 text-sm leading-relaxed space-y-2">
+            <p class="font-bold text-slate-900">Contenido publicado</p>
+            <p>Este detalle muestra el texto oficial de divulgación aprobado para el portal público. No publica fotos de actividad; si existe una actividad vinculada, se muestra como referencia de origen operativo.</p>
+        </div>
+
+        <div class="p-4 rounded-xl border border-slate-200 bg-white text-slate-700 text-sm leading-relaxed space-y-2">
+            <p class="font-bold text-slate-900">Actividad vinculada</p>
+            {% if actividad_vinculada %}
+            <p><strong>ID:</strong> {{ actividad_vinculada.id_actividad }}</p>
+            <p><strong>Actividad:</strong> {{ actividad_vinculada.tipo_actividad }}</p>
+            <p><strong>Fecha:</strong> {{ actividad_vinculada.fecha_actividad.strftime('%Y-%m-%d') if actividad_vinculada.fecha_actividad else 'No disponible' }}</p>
+            {% else %}
+            <p>No se encontró una actividad asociada a esta publicación.</p>
+            {% endif %}
+        </div>
+
         <div class="text-slate-800 text-sm leading-relaxed whitespace-pre-line font-normal">
             {{ publicacion.contenido }}
         </div>

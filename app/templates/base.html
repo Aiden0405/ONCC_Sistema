@@ -1,33 +1,34 @@
 <!DOCTYPE html>
 <html lang="es" class="light">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}ONCC - Sistema de Gestión{% endblock %}</title>
-    
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = { 
-            darkMode: 'class', 
-            theme: { 
-                extend: { 
-                    colors: { 
-                        green: { 500: '#22c55e', 600: '#16a34a', 700: '#15803d' } 
-                    } 
-                } 
-            } 
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        green: { 500: '#22c55e', 600: '#16a34a', 700: '#15803d' }
+                    }
+                }
+            }
         }
     </script>
-    
+
     <script>
-        (function() {
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
-        })();
+            (function () {
+                const savedTheme = localStorage.getItem('theme');
+                if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            })();
     </script>
 
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -36,136 +37,306 @@
             scrollbar-width: none;
             -ms-overflow-style: none;
         }
+
         .sidebar-scrollbar::-webkit-scrollbar {
             width: 0;
             height: 0;
         }
     </style>
 </head>
-<body class="flex h-screen font-sans transition-colors duration-300 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
 
+<body
+    class="flex h-screen font-sans transition-colors duration-300 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+
+    <!-- 🛡️ EXTRACCIÓN ROBUSTA DE PERMISOS (Soporta 'nombre' y 'nombre_modulo') -->
     {% set permisos_activos = [] %}
     {% if current_user.is_authenticated and current_user.role %}
-        {% set permisos_activos = current_user.role.permissions|map(attribute='nombre_modulo')|list %}
+        {% set lista_temporal = [] %}
+        {% for p in current_user.role.permissions %}
+            {% if p.nombre_modulo %}
+                {% set _ = lista_temporal.append(p.nombre_modulo) %}
+            {% endif %}
+            {% if p.nombre %}
+                {% set _ = lista_temporal.append(p.nombre) %}
+            {% endif %}
+        {% endfor %}
+        {% set permisos_activos = lista_temporal %}
     {% endif %}
 
-    <aside id="sidebar" class="w-64 border-r transition-all duration-300 flex flex-col shadow-sm z-10 bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700 overflow-hidden">
-        <div class="h-16 flex items-center px-6 border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 flex-shrink-0">
+    <!-- 🎯 HELPER JINJA2 CORREGIDO Y SEGURO -->
+    {# Compara de manera directa si alguna de las palabras clave forma parte del endpoint de Flask actual #}
+    {% macro clase_activa(palabras_clave) %}
+        {% set endpoint_actual = request.endpoint | string %}
+        {% set ns = namespace(activo=false) %}
+        {% for palabra in palabras_clave %}
+            {% if palabra in endpoint_actual %}
+                {% set ns.activo = true %}
+            {% endif %}
+        {% endfor %}
+        
+        {% if ns.activo %}
+            bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400 border-l-4 border-green-600 pl-3
+        {% else %}
+            text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 pl-4
+        {% endif %}
+    {% endmacro %}
+
+    <aside id="sidebar"
+        class="w-64 border-r transition-all duration-300 flex flex-col shadow-sm z-10 bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700 overflow-hidden">
+        <div
+            class="h-16 flex items-center px-6 border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 flex-shrink-0">
             <span class="text-xl font-bold text-green-600 tracking-wide flex items-center whitespace-nowrap">
-                <i data-lucide="cloud-rain" class="mr-3 flex-shrink-0"></i> 
+                <i data-lucide="cloud-rain" class="mr-3 flex-shrink-0"></i>
                 <span class="sidebar-text">ONCC Región</span>
             </span>
         </div>
-        
-        <nav class="sidebar-scrollbar flex-1 py-4 space-y-1 px-3 overflow-y-auto overflow-x-hidden">
-            <p class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-4 px-2 text-gray-400 dark:text-gray-500">Principal</p>
-            
-            <a href="{{ url_for('dashboard') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
-                <i data-lucide="activity" class="mr-3 w-5 h-5 flex-shrink-0"></i> 
+
+        <!-- 📜 Id asignado 'sidebar-nav' para el rastreador de scroll en JavaScript -->
+        <nav id="sidebar-nav" class="sidebar-scrollbar flex-1 py-4 space-y-1 px-3 overflow-y-auto overflow-x-hidden">
+            <p
+                class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-4 px-2 text-gray-400 dark:text-gray-500">
+                Principal</p>
+
+            <!-- 🎯 Dashboard / Monitoreo General -->
+            <a href="{{ url_for('dashboard') }}"
+                class="w-full flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['dashboard']) }}">
+                <i data-lucide="activity" class="mr-3 w-5 h-5 flex-shrink-0"></i>
                 <span class="sidebar-text whitespace-nowrap">Monitoreo General</span>
             </a>
-            
-            {# BLOQUE CORE: Visible por defecto para Superusuario (1) y Administrador (2), dinámico para Técnicos #}
-            {% if 'gestionar_usuarios' in permisos_activos or current_user.id_rol|int in (1, 2) %}
-            <p class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">Core</p>
 
-            <a href="{{ url_for('usuario.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
+            {# BLOQUE CORE #}
+            {% if 'gestionar_usuarios' in permisos_activos or current_user.id_rol|int in (1, 2) %}
+            <p
+                class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">
+                Core</p>
+
+            <!-- 🎯 Usuarios -->
+            <a href="{{ url_for('usuario.index') }}"
+                class="w-full flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['usuario', 'users']) }}">
                 <i data-lucide="users" class="mr-3 w-5 h-5 flex-shrink-0"></i>
                 <span class="sidebar-text whitespace-nowrap">Usuarios y Autenticación</span>
             </a>
-            
-            <a href="{{ url_for('core.rol_index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
+
+            <!-- 🎯 Roles y Permisos -->
+            <a href="{{ url_for('core.rol_index') }}"
+                class="w-full flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['rol', 'permiso']) }}">
                 <i data-lucide="shield-check" class="mr-3 w-5 h-5 flex-shrink-0"></i>
                 <span class="sidebar-text whitespace-nowrap">Roles y Permisos (RBAC)</span>
             </a>
             {% endif %}
 
-            {# BLOQUE OPERACIONES: Unificado con bypass numérico estricto para roles 1 y 2 #}
-            {% if 'crear_divulgaciones' in permisos_activos or 'aprobar_divulgaciones' in permisos_activos or current_user.id_rol|int in (1, 2) %}
-            <p class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">Operaciones</p>
+            {# SECCIÓN COMUNITARIO (Mariangel) #}
+            {% if 'gestionar_formaciones' in permisos_activos or 'gestionar_sensibilizaciones' in permisos_activos or 
+                  'crear_divulgaciones' in permisos_activos or 'aprobar_divulgaciones' in permisos_activos or 
+                  current_user.id_rol|int in (1, 2) %}
+            <p
+                class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">
+                Comunitario</p>
 
-            <a href="{{ url_for('core.divulgacion_admin_index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
+            <!-- 🎯 Divulgación -->
+            {% if 'crear_divulgaciones' in permisos_activos or 'aprobar_divulgaciones' in permisos_activos or current_user.id_rol|int in (1, 2) %}
+            <a href="{{ url_for('core.divulgacion_admin_index') }}"
+                class="w-full flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['divulgacion']) }}">
                 <i data-lucide="newspaper" class="mr-3 w-5 h-5 flex-shrink-0"></i>
                 <span class="sidebar-text whitespace-nowrap">Divulgación</span>
             </a>
             {% endif %}
 
-            <p class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">Comunitario</p>
-
-            <a href="{{ url_for('formacion.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
+            <!-- 🎯 Formaciones -->
+            {% if 'gestionar_formaciones' in permisos_activos or current_user.id_rol|int in (1, 2) %}
+            <a href="{{ url_for('formacion.index') }}"
+                class="w-full flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['formacion', 'formaciones']) }}">
                 <i data-lucide="graduation-cap" class="mr-3 w-5 h-5 flex-shrink-0"></i>
                 <span class="sidebar-text whitespace-nowrap">Formaciones</span>
             </a>
+            {% endif %}
 
-            <a href="{{ url_for('sensibilizacion.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
+            <!-- 🎯 Sensibilizaciones -->
+            {% if 'gestionar_sensibilizaciones' in permisos_activos or current_user.id_rol|int in (1, 2) %}
+            <a href="{{ url_for('sensibilizacion.index') }}"
+                class="w-full flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['sensibilizacion', 'sensibilizaciones']) }}">
                 <i data-lucide="megaphone" class="mr-3 w-5 h-5 flex-shrink-0"></i>
                 <span class="sidebar-text whitespace-nowrap">Sensibilizaciones</span>
             </a>
+            {% endif %}
+            {% endif %}
 
-            <p class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">Mapas</p>
+            {# SECCIÓN MAPAS (Gabriel) #}
+            {% if 'gestionar_geomatica' in permisos_activos or 'ver_mapas' in permisos_activos or current_user.id_rol|int in (1, 2) %}
+            <p
+                class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">
+                Mapas</p>
 
-            <a href="{{ url_for('geomatica.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
+            <!-- 🎯 Mapas de Riesgo -->
+            {% if 'gestionar_geomatica' in permisos_activos or current_user.id_rol|int in (1, 2) %}
+            <a href="{{ url_for('geomatica.index') }}"
+                class="w-full flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['geomatica', 'riesgo']) }}">
                 <i data-lucide="map-pinned" class="mr-3 w-5 h-5 flex-shrink-0"></i>
                 <span class="sidebar-text whitespace-nowrap">Mapas de Riesgo</span>
             </a>
+            {% endif %}
 
-            <a href="{{ url_for('mapas.mapas_climaticos_index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
-                <i data-lucide="cloud" class="mr-3 w-5 h-5 flex-shrink-0"></i>
+            <!-- 🎯 Mapas Climáticos -->
+            {% if 'ver_mapas' in permisos_activos or current_user.id_rol|int in (1, 2) %}
+            <a href="{{ url_for('mapas.mapas_climaticos_index') }}"
+                class="w-full flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['climaticos', 'mapas']) }}">
+                <i data-lucide="thermometer-sun" class="mr-3 w-5 h-5 flex-shrink-0"></i>
                 <span class="sidebar-text whitespace-nowrap">Mapas Climáticos</span>
             </a>
+            {% endif %}
+            {% endif %}
 
-            <p class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">Monitoreo</p>
+            {# SECCIÓN MONITOREO #}
+            {% if 'gestionar_monitoreo' in permisos_activos or current_user.id_rol|int in (1, 2) %}
+            <p
+                class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">
+                Monitoreo</p>
 
-            <a href="{{ url_for('actividad.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
+            <!-- 🎯 Tabla de Actividades -->
+            <a href="{{ url_for('actividad.index') }}"
+                class="w-full flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['actividad', 'actividades']) }}">
                 <i data-lucide="clipboard-list" class="mr-3 w-5 h-5 flex-shrink-0"></i>
                 <span class="sidebar-text whitespace-nowrap">Tabla de Actividades</span>
             </a>
+            {% endif %}
 
-            <a href="{{ url_for('reporte.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
-                <i data-lucide="bar-chart-3" class="mr-3 w-5 h-5 flex-shrink-0"></i>
-                <span class="sidebar-text whitespace-nowrap">Comparación de Mapas Climáticos</span>
-            </a>
+            {# SECCIÓN LOGÍSTICA (Aileen) #}
+            {% if 'gestionar_tecnicos' in permisos_activos or 'gestionar_inventario' in permisos_activos or current_user.id_rol|int in (1, 2) %}
+            <p
+                class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">
+                Logística</p>
 
-            <p class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">Logística</p>
-
-            <a href="{{ url_for('logistica.tecnicos_campo_index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
+            <!-- 🎯 Técnicos de Campo (CON PALABRAS TÉCNICAS ESPECÍFICAS PARA EVITAR EL BUG ESPEJO) -->
+            {% if 'gestionar_tecnicos' in permisos_activos or current_user.id_rol|int in (1, 2) %}
+            <a href="{{ url_for('logistica.tecnicos_campo_index') }}"
+                class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['tecnico', 'campo']) }}">
                 <i data-lucide="hard-hat" class="mr-3 w-5 h-5 flex-shrink-0"></i>
                 <span class="sidebar-text whitespace-nowrap">Técnicos de Campo</span>
             </a>
+            {% endif %}
 
-            <a href="{{ url_for('inventario.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
+            <!-- 🎯 Inventario de Equipos -->
+            {% if 'gestionar_inventario' in permisos_activos or current_user.id_rol|int in (1, 2) %}
+            <a href="{{ url_for('inventario.index') }}"
+                class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['inventario']) }}">
                 <i data-lucide="box" class="mr-3 w-5 h-5 flex-shrink-0"></i>
                 <span class="sidebar-text whitespace-nowrap">Inventario de Equipos</span>
+            </a>
+            {% endif %}
+            {% endif %}
+
+            <!-- SECCIÓN DE SOPORTE -->
+            <p
+                class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">
+                Soporte</p>
+
+            <!-- 🎯 Módulo de Ayuda -->
+            <a href="{{ url_for('core.modulo_ayuda') }}"
+                class="w-full flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['ayuda']) }}">
+                <i data-lucide="help-circle" class="mr-3 w-5 h-5 flex-shrink-0 text-green-600 dark:text-green-400"></i>
+                <span class="sidebar-text whitespace-nowrap">Módulo de Ayuda</span>
             </a>
         </nav>
 
         <div class="p-4 border-t border-gray-200 dark:border-gray-700">
-            <a href="{{ url_for('public.home') }}" class="w-full flex items-center px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white transition-colors">
+            <a href="{{ url_for('public.home') }}"
+                class="w-full flex items-center px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white transition-colors">
                 <i data-lucide="globe" class="mr-3 w-5 h-5 flex-shrink-0"></i>
-                <span class="sidebar-text whitespace-nowrap">Sitio Público / Divulgación</span>
+                <span class="sidebar-text whitespace-nowrap">Sitio Público</span>
             </a>
-            <a href="{{ url_for('auth.logout') }}" class="w-full flex items-center px-4 py-2 text-sm font-medium text-red-500 hover:text-red-400 transition-colors">
-                <i data-lucide="log-out" class="mr-3 w-5 h-5 flex-shrink-0"></i> 
+            <a href="{{ url_for('auth.logout') }}"
+                class="w-full flex items-center px-4 py-2 text-sm font-medium text-red-500 hover:text-red-400 transition-colors">
+                <i data-lucide="log-out" class="mr-3 w-5 h-5 flex-shrink-0"></i>
                 <span class="sidebar-text whitespace-nowrap">Cerrar Sesión</span>
             </a>
         </div>
     </aside>
 
     <main class="flex-1 flex flex-col overflow-hidden">
-        <header class="h-16 border-b flex items-center justify-between px-6 shadow-sm z-0 bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-            <button id="menu-toggle" class="focus:outline-none text-gray-500 hover:text-green-600 dark:text-gray-400 dark:hover:text-white transition-colors">
+        <header
+            class="h-16 border-b flex items-center justify-between px-6 shadow-sm bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700 relative z-50">
+            <button id="menu-toggle"
+                class="focus:outline-none text-gray-500 hover:text-green-600 dark:text-gray-400 dark:hover:text-white transition-colors">
                 <i data-lucide="menu"></i>
             </button>
             <div class="flex items-center space-x-4">
-                <button id="theme-toggle" class="focus:outline-none transition-colors text-gray-400 hover:text-gray-800 dark:hover:text-yellow-400">
+                <button id="theme-toggle"
+                    class="focus:outline-none transition-colors text-gray-400 hover:text-gray-800 dark:hover:text-yellow-400">
                     <i id="theme-icon" data-lucide="moon"></i>
                 </button>
+
+                <!-- 🔔 CONTENEDOR DE LA CAMPANITA CON DROP-DOWN EN TAILWIND -->
+                <div class="relative">
+                    <button id="notif-toggle"
+                        class="focus:outline-none text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors relative p-1 mt-1">
+                        <i data-lucide="bell" class="w-5 h-5"></i>
+
+                        <!-- Círculo Rojo Animado -->
+                        {% if conteo_alertas > 0 %}
+                        <span class="absolute top-0 right-0 flex h-2 w-2">
+                            <span
+                                class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                        </span>
+                        {% endif %}
+                    </button>
+
+                    <!-- Menú desplegable flotante -->
+                    <div id="notif-dropdown"
+                        class="hidden absolute right-0 top-full mt-2 w-80 rounded-xl shadow-lg border bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700 z-[100]">
+                        <div
+                            class="px-4 py-2.5 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                            <span
+                                class="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Notificaciones
+                                ({{ conteo_alertas }})</span>
+                        </div>
+                        <div class="max-h-64 overflow-y-auto sidebar-scrollbar">
+
+                            {% if alertas_sistema %}
+                            {% for alerta in alertas_sistema %}
+                            <a href="#"
+                                class="block px-4 py-3 border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                                <div class="flex justify-between items-center mb-1">
+                                    {% if alerta.categoria == 'Seguridad' %}
+                                    <span
+                                        class="px-2 py-0.5 text-[10px] font-bold rounded bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">Seguridad</span>
+                                    {% elif alerta.categoria == 'Usuarios' %}
+                                    <span
+                                        class="px-2 py-0.5 text-[10px] font-bold rounded bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">Usuarios</span>
+                                    {% else %}
+                                    <span
+                                        class="px-2 py-0.5 text-[10px] font-bold rounded bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">Sistema</span>
+                                    {% endif %}
+                                    <span class="text-[10px] text-gray-400">{{ alerta.fecha_creacion | tiempo_atras
+                                        }}</span>
+                                </div>
+                                <p class="text-xs text-gray-600 dark:text-gray-300">{{ alerta.mensaje }}</p>
+                            </a>
+                            {% endfor %}
+                            {% else %}
+                            <div class="px-4 py-6 text-center text-xs text-gray-400 dark:text-gray-500">
+                                No tienes notificaciones pendientes.
+                            </div>
+                            {% endif %}
+
+                        </div>
+                        <div class="p-2 text-center border-t border-gray-200 dark:border-gray-700">
+                            <a href="{{ url_for('core.notificaciones_historial') }}"
+                                class="text-xs font-bold text-green-600 dark:text-green-500 hover:underline">Ver todas
+                                las notificaciones</a>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="flex items-center space-x-3 border-l pl-4 border-gray-200 dark:border-gray-700">
                     <div class="text-right hidden md:block">
-                        <p class="text-sm font-bold text-gray-700 dark:text-white">{{ current_user.nombre_usuario if current_user.is_authenticated else 'Invitado' }}</p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ current_user.role.nombre_rol if current_user.is_authenticated and current_user.role else 'Sede Nororiental' }}</p>
+                        <p class="text-sm font-bold text-gray-700 dark:text-white">{{ current_user.nombre_usuario if
+                            current_user.is_authenticated else 'Invitado' }}</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ current_user.role.nombre_rol if
+                            current_user.is_authenticated and current_user.role else 'Sede Nororiental' }}</p>
                     </div>
-                    <div class="w-9 h-9 rounded-full bg-green-600 flex items-center justify-center text-white font-bold text-sm shadow-sm border-2 border-white ring-2 ring-green-100 dark:border-gray-800 dark:ring-green-900">
+                    <div
+                        class="w-9 h-9 rounded-full bg-green-600 flex items-center justify-center text-white font-bold text-sm shadow-sm border-2 border-white ring-2 ring-green-100 dark:border-gray-800 dark:ring-green-900">
                         {{ current_user.nombre_usuario[:2].upper() if current_user.is_authenticated else 'IN' }}
                     </div>
                 </div>
@@ -184,6 +355,22 @@
         const themeToggleBtn = document.getElementById('theme-toggle');
         const themeIcon = document.getElementById('theme-icon');
         const htmlElement = document.documentElement;
+
+        const notifToggleBtn = document.getElementById('notif-toggle');
+        const notifDropdown = document.getElementById('notif-dropdown');
+        
+        // 🎯 RECUPERACIÓN DE LA POSICIÓN DEL SCROLL DEL MENÚ LATERAL
+        const sidebarNav = document.getElementById('sidebar-nav');
+        if (sidebarNav) {
+            const cachedScrollPosition = sessionStorage.getItem('sidebarScrollPosition');
+            if (cachedScrollPosition) {
+                sidebarNav.scrollTop = parseInt(cachedScrollPosition, 10);
+            }
+
+            sidebarNav.addEventListener('scroll', () => {
+                sessionStorage.setItem('sidebarScrollPosition', sidebarNav.scrollTop);
+            });
+        }
 
         menuToggleBtn.addEventListener('click', () => {
             sidebar.classList.toggle('w-64');
@@ -214,8 +401,23 @@
             syncThemeUI();
         });
 
+        notifToggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            notifDropdown.classList.toggle('hidden');
+
+            const circuloRojo = notifToggleBtn.querySelector('span.absolute');
+            if (circuloRojo) {
+                circuloRojo.remove();
+            }
+        });
+
+        document.addEventListener('click', () => {
+            notifDropdown.classList.add('hidden');
+        });
+
         lucide.createIcons();
     </script>
     {% block scripts %}{% endblock %}
 </body>
+
 </html>

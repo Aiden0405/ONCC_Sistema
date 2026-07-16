@@ -6,6 +6,7 @@ from app.blueprints.core import core_bp
 from app.models.role import Role
 from app.models.usuario import Usuario
 from app.services.auditoria import registrar_accion
+from app.utils.authorization import current_role_id, has_permission, is_superuser
 
 
 def verificar_permiso_dinamico(nombre_permiso):
@@ -15,14 +16,11 @@ def verificar_permiso_dinamico(nombre_permiso):
     """
     if not current_user.is_authenticated:
         abort(403)
-        
-    # Superusuario (1) y Administrador (2) pasan directo sin validar la tabla pívot
-    if int(current_user.id_rol) in (1, 2):
+
+    if is_superuser():
         return True
-        
-    permisos_del_rol = [p.nombre_modulo for p in current_user.role.permissions]
-    
-    if nombre_permiso not in permisos_del_rol:
+
+    if not has_permission(nombre_permiso):
         flash('No tiene privilegios institucionales para acceder a este módulo.', 'error')
         abort(403)
 
@@ -53,7 +51,7 @@ def usuario_nuevo():
             return render_template('usuarios/formulario.html', roles=roles)
             
         # 🛡️ CONTROL DE JERARQUÍA ABSOLUTO EN CREACIÓN
-        rol_creador = int(current_user.id_rol)
+        rol_creador = current_role_id()
         rol_destino = int(id_rol_form)
         
         if rol_creador != 1 and rol_destino <= rol_creador:
@@ -79,6 +77,19 @@ def usuario_nuevo():
         db.session.add(nuevo_usuario)
         db.session.commit()
 
+        # 🔔 ALERTA DE ALTA DE USUARIO (CON CORRECCIÓN DE LEIDO)
+        try:
+            from app.models.notificacion import Notificacion
+            alerta = Notificacion(
+                categoria='Usuarios',
+                mensaje=f"El operador {current_user.nombre_usuario} registró al nuevo usuario {nuevo_usuario.nombre_usuario} en la plataforma.",
+                leido=False # 🌟 Forzado para evitar fallos de NULL en la base de datos
+            )
+            db.session.add(alerta)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
         registrar_accion('Usuarios', nuevo_usuario.id_usuario, 'Crear', current_user.nombre_usuario, detalle=f'Creado usuario {correo}', estado_nuevo=nuevo_usuario.rol)
 
         flash('Usuario creado correctamente.', 'success')
@@ -95,14 +106,13 @@ def usuario_editar(usuario_id):
     
     usuario = Usuario.query.get_or_404(usuario_id)
 
-    # 🛡️ REGLA DE NO AUTO-EDICIÓN EN LA TABLA GENERAL (Segregación de funciones SoD)
-    # El Superusuario (ID 1) sí tiene permitido auto-gestionarse en cualquier vista.
-    if int(current_user.id_rol) != 1 and usuario.id_usuario == current_user.id_usuario:
+    # 🛡️ REGLA DE NO AUTO-EDICIÓN EN LA TABLA GENERAL
+    if current_role_id() != 1 and usuario.id_usuario == current_user.id_usuario:
         flash('Para modificar sus datos personales, utilice el módulo dedicado "Mi Perfil".', 'error')
         return redirect(url_for('usuario.index'))
 
     # 🛡️ BARRERA JERÁRQUICA DE EDICIÓN ESTÁNDAR
-    rol_operador = int(current_user.id_rol)
+    rol_operador = current_role_id()
     rol_objetivo = int(usuario.id_rol)
 
     if rol_operador != 1:
@@ -118,15 +128,14 @@ def usuario_editar(usuario_id):
         id_rol_form = request.form.get('id_rol')
         estatus_form = request.form.get('estatus')
 
-        # 🛡️ CONTROL DE ESCALADA: El operador no puede promover a nadie a un rol superior al suyo
-        if id_rol_form:
+        # 🛡️ CONTROL DE ESCALADA Y ANTI AUTO-DEGRADACIÓN
+        if id_rol_form and usuario.id_usuario != current_user.id_usuario:
             rol_destino = int(id_rol_form)
             if rol_operador != 1 and rol_destino < rol_operador:
                 flash('No puede asignar un nivel de privilegio superior al suyo.', 'error')
                 return redirect(url_for('usuario.index'))
             usuario.id_rol = rol_destino
 
-        # 🛡️ ACTUALIZACIÓN DEL ESTADO DE LA CUENTA
         if estatus_form is not None and usuario.id_usuario != current_user.id_usuario:
             usuario.estatus = (estatus_form == '1')
 
@@ -137,6 +146,19 @@ def usuario_editar(usuario_id):
             usuario.set_password(nueva_pass)
 
         db.session.commit()
+
+        # 🔔 ALERTA DE MODIFICACIÓN DE DATOS (CON CORRECCIÓN DE LEIDO)
+        try:
+            from app.models.notificacion import Notificacion
+            alerta = Notificacion(
+                categoria='Seguridad',
+                mensaje=f"Perfil del usuario {usuario.nombre_usuario} fue actualizado por el operador {current_user.nombre_usuario}.",
+                leido=False # 🌟 Forzado para evitar fallos de NULL en la base de datos
+            )
+            db.session.add(alerta)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
         
         user_correo = getattr(usuario, 'correo', usuario.nombre_usuario)
         registrar_accion('Usuarios', usuario.id_usuario, 'Modificar', current_user.nombre_usuario, detalle=f'Editado usuario {user_correo}', estado_nuevo=usuario.rol)
@@ -155,13 +177,11 @@ def usuario_eliminar(usuario_id):
     
     usuario = Usuario.query.get_or_404(usuario_id)
     
-    # 🛡️ PROTECCIÓN ABSOLUTA ANTI AUTO-ELIMINACIÓN
     if usuario.id_usuario == current_user.id_usuario:
         flash('No puede eliminar su propio usuario mientras esté autenticado en el sistema.', 'error')
         return redirect(url_for('usuario.index'))
 
-    # 🛡️ RESTRICCIONES JERÁRQUICAS DE ELIMINACIÓN
-    rol_operador = int(current_user.id_rol)
+    rol_operador = current_role_id()
     rol_objetivo = int(usuario.id_rol)
 
     if rol_operador != 1:
@@ -172,10 +192,25 @@ def usuario_eliminar(usuario_id):
             flash('Acceso denegado: No posee la jerarquía para eliminar a este usuario.', 'error')
             return redirect(url_for('usuario.index'))
 
+    user_correo = getattr(usuario, 'correo', usuario.nombre_usuario)
+    nombre_eliminado = usuario.nombre_usuario
+
     db.session.delete(usuario)
     db.session.commit()
+
+    # 🔔 ALERTA DE ELIMINACIÓN CRÍTICA (CON CORRECCIÓN DE LEIDO)
+    try:
+        from app.models.notificacion import Notificacion
+        alerta = Notificacion(
+            categoria='Seguridad',
+            mensaje=f"¡CRÍTICO!: La cuenta de {nombre_eliminado} fue removida del sistema por el operador {current_user.nombre_usuario}.",
+            leido=False # 🌟 Forzado para evitar fallos de NULL en la base de datos
+        )
+        db.session.add(alerta)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
     
-    user_correo = getattr(usuario, 'correo', usuario.nombre_usuario)
     registrar_accion('Usuarios', usuario_id, 'Eliminar', current_user.nombre_usuario, detalle=f'Eliminado usuario {user_correo}')
 
     flash('Usuario eliminado correctamente.', 'success')
@@ -202,3 +237,64 @@ def usuario_perfil():
 
     roles = Role.query.order_by(Role.id_rol).all()
     return render_template('usuarios/formulario.html', usuario=usuario, es_perfil=True, roles=roles)
+
+
+# =============================================================================
+#  🔔 ENDPOINT DE ACTUALIZACIÓN ASÍNCRONA PARA LA CAMPANITA
+# =============================================================================
+@core_bp.route('/admin/notificaciones/leer', methods=['POST'])
+@login_required
+def marcar_notificaciones_leidas():
+    """
+    Actualiza masivamente el estado 'leido' a True en la base de datos
+    para todas las alertas sin leer del usuario logueado en esta sesión.
+    """
+    from app.models.notificacion import Notificacion
+
+    try:
+        # 🌟 CORRECCIÓN: Usamos .is_(None) para que PostgreSQL reconozca las alertas globales
+        notificaciones_pendientes = Notificacion.query.filter(
+            (Notificacion.usuario_id == current_user.id_usuario) | (Notificacion.usuario_id.is_(None)),
+            Notificacion.leido == False
+        ).all()
+
+        for notif in notificaciones_pendientes:
+            notif.leido = True
+        
+        db.session.commit()
+        return {'status': 'success', 'message': 'Estatus de lectura sincronizado con éxito.'}, 200
+
+    except Exception as e:
+        db.session.rollback()
+        return {'status': 'error', 'message': str(e)}, 500
+
+
+@core_bp.route('/admin/notificaciones/historial')
+@login_required
+def notificaciones_historial():
+    """
+    Vista formal para listar la bandeja de entrada o historial 
+    completo de notificaciones del ecosistema.
+    """
+    from app.models.notificacion import Notificacion
+
+    # 🌟 CORRECCIÓN: Al entrar al historial, limpiamos usando la sintaxis correcta .is_(None)
+    try:
+        notificaciones_pendientes = Notificacion.query.filter(
+            (Notificacion.usuario_id == current_user.id_usuario) | (Notificacion.usuario_id.is_(None)),
+            Notificacion.leido == False
+        ).all()
+
+        for notif in notificaciones_pendientes:
+            notif.leido = True
+        
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+    # Consultamos todo el historial usando .is_(None)
+    historial = Notificacion.query.filter(
+        (Notificacion.usuario_id == current_user.id_usuario) | (Notificacion.usuario_id.is_(None))
+    ).order_by(Notificacion.fecha_creacion.desc()).all()
+
+    return render_template('usuarios/notificaciones_historial.html', historial=historial)

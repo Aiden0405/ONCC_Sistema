@@ -47,11 +47,11 @@ class NivelActivo(db.Model):
 
     id_nivel = db.Column(db.Integer, primary_key=True)
     nombre_nivel = db.Column(db.String(80), unique=True, nullable=False)
-    descripcion = db.Column('descripción ', db.Text, nullable=False)
+    descripcion = db.Column(db.Text, nullable=False) #  ¡Limpio!
 
 
 class InstitucionActiva(db.Model):
-    __tablename__ = 'institucion'  # CORREGIDO: Nombre limpio de la tabla sin errores de tipeo
+    __tablename__ = 'institucion'
     __table_args__ = {'extend_existing': True}
 
     id_institucion = db.Column(db.Integer, primary_key=True)
@@ -72,7 +72,7 @@ class FormacionActiva(db.Model):
 
     id_formacion = db.Column(db.Integer, primary_key=True)
     nombre_formacion = db.Column(db.Text, nullable=False)
-    id_actividad = db.Column(db.Integer, db.ForeignKey('actividad.id_actividad'), nullable=False, unique=True)
+    id_actividad = db.Column('id_actividad', db.Integer, db.ForeignKey('actividad.id_actividad'), nullable=False, unique=True)
     id_institucion = db.Column(db.Integer, db.ForeignKey('institucion.id_institucion'), nullable=False)
 
     actividad = db.relationship('Actividad', backref=db.backref('formacion', uselist=False))
@@ -83,60 +83,95 @@ class FormacionActiva(db.Model):
         return self.id_formacion
 
     @property
-    def tema(self):
+    def tema_real(self):
+        if "||" in self.nombre_formacion:
+            return self.nombre_formacion.split("||", 1)[0]
         return self.nombre_formacion
 
     @property
-    def comunidad(self):
-        return getattr(getattr(self.actividad, 'comunidad', None), 'nombre_comunidad', '') or ''
+    def tecnico_real(self):
+        if "||" in self.nombre_formacion:
+            return self.nombre_formacion.split("||", 1)[1]
+        return "No asignado"
 
-    @property
-    def fecha(self):
-        return getattr(self.actividad, 'fecha_actividad', None)
+    @classmethod
+    def obtener_historial_completo(cls):
+        historial = db.session.query(
+            cls, 
+            InstitucionActiva, 
+            ActividadActiva
+        ).join(
+            InstitucionActiva, cls.id_institucion == InstitucionActiva.id_institucion
+        ).join(
+            ActividadActiva, cls.id_actividad == ActividadActiva.id_actividad
+        ).order_by(cls.id_formacion.desc()).all()
 
-    @property
-    def asistentes(self):
-        return 0
-
-    @property
-    def estado(self):
-        return 'registrada'
+        formaciones_procesadas = []
+        for formacion, institucion, actividad in historial:
+            fecha_lista = actividad.fecha_actividad.strftime('%d/%m/%Y') if actividad.fecha_actividad else 'N/D'
+            
+            formaciones_procesadas.append({
+                'id_formacion': formacion.id_formacion,
+                'tema': formacion.tema_real,
+                'tecnico': formacion.tecnico_real,
+                'nombre_institucion': institucion.nombre_institucion,
+                'fecha_actividad_cruda': actividad.fecha_actividad,
+                'fecha_formateada': fecha_lista,
+                'id_actividad': formacion.id_actividad,
+                'id_nivel': actividad.id_nivel,
+                'id_institucion': formacion.id_institucion
+            })
+        return formaciones_procesadas
 
 
 class SensibilizacionActiva(db.Model):
-    __tablename__ = 'sensibilizacion'  # CORREGIDO: Sin el espacio fantasma al final
+    __tablename__ = 'sensibilizacion'
     __table_args__ = {'extend_existing': True}
 
-    id_sensivilizacion = db.Column(db.Integer, primary_key=True)
-    nombre_sensivilizacion = db.Column(db.Text, nullable=False)
+    id_sensibilizacion = db.Column('id_sensibilizacion', db.Integer, primary_key=True)
+    nombre_sensivilizacion = db.Column('nombre_sensibilizacion', db.Text, nullable=False)
     id_actividad = db.Column(db.Integer, db.ForeignKey('actividad.id_actividad'), nullable=False, unique=True)
 
     actividad = db.relationship('Actividad', backref=db.backref('sensibilizacion', uselist=False))
 
     @property
     def id(self):
-        return self.id_sensivilizacion
-
+        return self.id_sensibilizacion
+  
     @property
-    def campana(self):
+    def campana_real(self):
+        if "||" in self.nombre_sensivilizacion:
+            return self.nombre_sensivilizacion.split("||", 1)[0]
         return self.nombre_sensivilizacion
 
     @property
-    def territorio(self):
-        return getattr(getattr(self.actividad, 'comunidad', None), 'nombre_comunidad', '') or ''
+    def facilitador_real(self):
+        if "||" in self.nombre_sensivilizacion:
+            return self.nombre_sensivilizacion.split("||", 1)[1]
+        return "No asignado"
 
-    @property
-    def fecha(self):
-        return getattr(self.actividad, 'fecha_actividad', None)
+    @classmethod
+    def obtener_historial_completo(cls):
+        historial = db.session.query(
+            cls,
+            ActividadActiva,
+            ComunidadActiva
+        ).join(
+            ActividadActiva, cls.id_actividad == ActividadActiva.id_actividad
+        ).join(
+            ComunidadActiva, ActividadActiva.id_comunidad == ComunidadActiva.id_comunidad
+        ).order_by(cls.id_sensibilizacion.desc()).all()
 
-    @property
-    def vocero(self):
-        return ''
-
-    @property
-    def alcance(self):
-        return 0
-
-    @property
-    def estado(self):
-        return 'registrada'
+        sensibilizaciones_procesadas = []
+        for sensibilizacion, actividad, comunidad in historial:
+            sensibilizaciones_procesadas.append({
+                'id_sensibilizacion': sensibilizacion.id_sensibilizacion,
+                'campana': sensibilizacion.campana_real,
+                'facilitador': sensibilizacion.facilitador_real,
+                'nombre_comunidad': comunidad.nombre_comunidad,
+                'fecha_actividad': actividad.fecha_actividad,
+                'id_actividad': sensibilizacion.id_actividad,
+                'id_nivel': actividad.id_nivel,
+                'id_comunidad': actividad.id_comunidad
+            })
+        return sensibilizaciones_procesadas

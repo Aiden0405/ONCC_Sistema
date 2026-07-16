@@ -1,0 +1,234 @@
+{% extends 'base.html' %}
+
+{% block title %}Centro de Ayuda - ONCC{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <!-- Encabezado -->
+    <div class="border-b border-gray-200 dark:border-gray-700 pb-5">
+        <h1 class="text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+            <i data-lucide="help-circle" class="text-green-600 w-6 h-6"></i>
+            Centro de Soporte y Ayuda
+        </h1>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Manual de usuario integrado y documentación del Módulo de Seguridad, Roles y Divulgación Pública.
+        </p>
+    </div>
+
+    <!-- Bloques Informativos de Roles -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="p-4 bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 shadow-sm space-y-2">
+            <div class="flex items-center gap-2 text-purple-600 dark:text-purple-400 font-bold text-sm">
+                <i data-lucide="key" class="w-4 h-4"></i>
+                <span>Superusuario</span>
+            </div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Acceso total al ecosistema. Control absoluto del catálogo de permisos, blindaje del sistema y gestión del core transaccional.</p>
+        </div>
+        <div class="p-4 bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 shadow-sm space-y-2">
+            <div class="flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold text-sm">
+                <i data-lucide="shield-check" class="w-4 h-4"></i>
+                <span>Administrador</span>
+            </div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Gestión operativa de cuentas de usuarios de menor rango y aprobación de boletines informativos para el portal público.</p>
+        </div>
+        <div class="p-4 bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 shadow-sm space-y-2">
+            <div class="flex items-center gap-2 text-green-600 dark:text-green-400 font-bold text-sm">
+                <i data-lucide="user" class="w-4 h-4"></i>
+                <span>Técnico</span>
+            </div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Registro de datos de campo, mapas de riesgo y redacción de borradores informativos sujetos a revisión administrativa.</p>
+        </div>
+    </div>
+
+    <!-- Sección de Preguntas Frecuentes (FAQ) -->
+    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm p-6 space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 dark:border-gray-700 pb-4">
+            <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <i data-lucide="book-open" class="w-4 h-4 text-green-600"></i>
+                Preguntas Frecuentes del Sistema (FAQ)
+            </h3>
+            
+            <!-- 🔍 BARRA DE BÚSQUEDA INTERACTIVA -->
+            <div class="relative w-full sm:w-72">
+                <i data-lucide="search" class="absolute left-3 top-2.5 h-4 w-4 text-gray-400"></i>
+                <input type="text" id="faq-search" placeholder="Buscar concepto o duda..." 
+                       class="w-full pl-9 pr-4 py-2 border text-xs rounded-lg bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all">
+            </div>
+        </div>
+
+        <!-- Contenedor general de elementos filtrables -->
+        <div id="faq-container" class="divide-y divide-gray-100 dark:divide-gray-700/50 space-y-1">
+            
+            <!-- CATEGORÍA 1 -->
+            <div class="faq-section-header py-2 bg-gray-50 dark:bg-gray-700/20 px-3 rounded text-xs font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                Gestión de Seguridad y Accesos (RBAC)
+            </div>
+
+            <div class="faq-item py-3.5 transition-all duration-200">
+                <button type="button" class="faq-btn w-full flex items-center justify-between text-left font-semibold text-sm text-slate-800 dark:text-slate-200 outline-none">
+                    <span>¿Cómo funciona la matriz de control de accesos (RBAC)?</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 transition-transform duration-200"></i>
+                </button>
+                <div class="faq-content hidden mt-2 text-xs text-slate-500 dark:text-slate-400 leading-relaxed space-y-1">
+                    <p>El sistema utiliza un Control de Acceso Basado en Roles (RBAC)[cite: 8]. Los privilegios son capacidades atómicas (ej: `crear_divulgaciones`) registradas en un catálogo global[cite: 8]. Desde el panel de Roles, un operador con permisos puede modificar las casillas para reconfigurar en tiempo real qué puede hacer cada cargo institucional[cite: 8].</p>
+                </div>
+            </div>
+
+            <div class="faq-item py-3.5 transition-all duration-200">
+                <button type="button" class="faq-btn w-full flex items-center justify-between text-left font-semibold text-sm text-slate-800 dark:text-slate-200 outline-none">
+                    <span>¿Dónde se auditan las acciones críticas del sistema?</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 transition-transform duration-200"></i>
+                </button>
+                <div class="faq-content hidden mt-2 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                    <p>Cualquier transacción de creación, edición o eliminación ejecuta de manera automatizada una traza inmutable en el módulo de auditoría del servidor[cite: 8]. Esto registra el operador, la acción, el ID del recurso y el detalle exacto de la modificación.</p>
+                </div>
+            </div>
+
+            <!-- CATEGORÍA 2 -->
+            <div class="faq-section-header py-2 bg-gray-50 dark:bg-gray-700/20 px-3 rounded text-xs font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 pt-4">
+                Sistema de Notificaciones y Alertas
+            </div>
+
+            <div class="faq-item py-3.5 transition-all duration-200">
+                <button type="button" class="faq-btn w-full flex items-center justify-between text-left font-semibold text-sm text-slate-800 dark:text-slate-200 outline-none">
+                    <span>¿Por qué el indicador o punto rojo de notificaciones reaparece al cambiar de pantalla?</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 transition-transform duration-200"></i>
+                </button>
+                <div class="faq-content hidden mt-2 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                    <p>Este es un comportamiento de persistencia deliberado para la seguridad del ecosistema. Desplegar la campanita remueve el indicador en la pantalla actual para comodidad visual, pero el estado del registro en PostgreSQL permanece marcado como "no leído". El indicador global solo se apagará de forma permanente una vez que el usuario visite formalmente el historial detallado de notificaciones, lo que garantiza el acuse de recibo de alertas del sistema.</p>
+                </div>
+            </div>
+
+            <div class="faq-item py-3.5 transition-all duration-200">
+                <button type="button" class="faq-btn w-full flex items-center justify-between text-left font-semibold text-sm text-slate-800 dark:text-slate-200 outline-none">
+                    <span>¿Cómo se clasifican los colores de las insignias en las alertas?</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 transition-transform duration-200"></i>
+                </button>
+                <div class="faq-content hidden mt-2 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                    <p>Las notificaciones están categorizadas dinámicamente: las de color azul corresponden a flujos de "Usuarios", las grises a procesos de "Sistema" y las amarillas corresponden a alertas críticas de "Seguridad" (como variaciones de la matriz RBAC, eliminación de expedientes o boletines de divulgación climática de alta prioridad)[cite: 8].</p>
+                </div>
+            </div>
+
+            <!-- CATEGORÍA 3 -->
+            <div class="faq-section-header py-2 bg-gray-50 dark:bg-gray-700/20 px-3 rounded text-xs font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 pt-4">
+                Gobernanza de Divulgación y Boletines
+            </div>
+
+            <div class="faq-item py-3.5 transition-all duration-200">
+                <button type="button" class="faq-btn w-full flex items-center justify-between text-left font-semibold text-sm text-slate-800 dark:text-slate-200 outline-none">
+                    <span>¿Cómo funciona el flujo de revisión y publicación en la Web Pública?</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 transition-transform duration-200"></i>
+                </button>
+                <div class="faq-content hidden mt-2 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                    <p>Cuando un Técnico genera un reporte, se registra bajo el estado de "Borrador". El boletín se almacena de forma aislada y no es visible para la ciudadanía hasta que un Administrador o Superusuario valida los datos y ejecuta la acción transaccional "Aprobar y Publicar".</p>
+                </div>
+            </div>
+
+            <div class="faq-item py-3.5 transition-all duration-200">
+                <button type="button" class="faq-btn w-full flex items-center justify-between text-left font-semibold text-sm text-slate-800 dark:text-slate-200 outline-none">
+                    <span>¿Cómo se utiliza la barra de herramientas del editor de contenido?</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 transition-transform duration-200"></i>
+                </button>
+                <div class="faq-content hidden mt-2 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                    <p>El campo de desarrollo utiliza formato Markdown estándar para estructurar la información sin comprometer la seguridad. Los botones de la barra superior permiten inyectar de manera automatizada las etiquetas para Negrita, Cursiva, Encabezados, Listas ordenadas y bloques de Citas para notas aclaratorias.</p>
+                </div>
+            </div>
+
+            <div class="faq-item py-3.5 transition-all duration-200">
+                <button type="button" class="faq-btn w-full flex items-center justify-between text-left font-semibold text-sm text-slate-800 dark:text-slate-200 outline-none">
+                    <span>¿Qué impacto tiene el nivel de Prioridad (1 al 10) de una publicación?</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 transition-transform duration-200"></i>
+                </button>
+                <div class="faq-content hidden mt-2 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                    <p>La prioridad determina el orden jerárquico de renderizado en el portal público principal. Adicionalmente, si una publicación se aprueba con una prioridad mayor o igual a 7 (ej: alertas críticas por lluvias o incendios), el sistema la procesa automáticamente bajo la categoría de "Seguridad", alertando de inmediato a todo el personal administrativo a través del panel de control.</p>
+                </div>
+            </div>
+            
+            <!-- ⚠️ MENSAJE DE SIN RESULTADOS -->
+            <div id="no-results" class="hidden text-center py-8 text-xs text-gray-400 dark:text-gray-500 italic">
+                <i data-lucide="search-code" class="w-6 h-6 mx-auto mb-2 text-gray-300 dark:text-gray-600"></i>
+                No se encontraron dudas o apartados que coincidan con la búsqueda.
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const faqButtons = document.querySelectorAll('.faq-btn');
+        const searchInput = document.getElementById('faq-search');
+        const faqItems = document.querySelectorAll('.faq-item');
+        const sectionHeaders = document.querySelectorAll('.faq-section-header');
+        const noResultsMessage = document.getElementById('no-results');
+
+        // 🌟 1. LÓGICA DE APERTURA DEL ACCORDION[cite: 8]
+        faqButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const content = btn.nextElementSibling;
+                const icon = btn.querySelector('[data-lucide="chevron-down"]');
+                
+                content.classList.toggle('hidden');
+                
+                if (icon) {
+                    icon.style.transform = content.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+                }
+            });
+        });
+
+        // 🌟 2. FILTRO EN TIEMPO REAL (CLIENT-SIDE)
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase().trim();
+                let matchesGlobal = 0;
+
+                faqItems.forEach(item => {
+                    // Busca tanto en el botón (pregunta) como en el panel interno (respuesta)
+                    const textContent = item.textContent.toLowerCase();
+                    
+                    if (textContent.includes(query)) {
+                        item.classList.remove('hidden');
+                        matchesGlobal++;
+                    } else {
+                        item.classList.add('hidden');
+                        // Cerramos el contenido si se oculta para que no quede abierto al borrar
+                        const content = item.querySelector('.faq-content');
+                        const icon = item.querySelector('[data-lucide="chevron-down"]');
+                        if (content) content.classList.add('hidden');
+                        if (icon) icon.style.transform = 'rotate(0deg)';
+                    }
+                });
+
+                // Control dinámico de las cabeceras de sección (Si no hay elementos visibles en el bloque, se oculta el título)
+                sectionHeaders.forEach(header => {
+                    let next = header.nextElementSibling;
+                    let hasVisibleItems = false;
+                    
+                    while (next && !next.classList.contains('faq-section-header')) {
+                        if (next.classList.contains('faq-item') && !next.classList.contains('hidden')) {
+                            hasVisibleItems = true;
+                            break;
+                        }
+                        next = next.nextElementSibling;
+                    }
+
+                    if (hasVisibleItems || query === "") {
+                        header.classList.remove('hidden');
+                    } else {
+                        header.classList.add('hidden');
+                    }
+                });
+
+                // Mostrar mensaje de error si la búsqueda está en blanco
+                if (matchesGlobal === 0 && query !== "") {
+                    noResultsMessage.classList.remove('hidden');
+                } else {
+                    noResultsMessage.classList.add('hidden');
+                }
+            });
+        }
+
+        if (window.lucide) lucide.createIcons();
+    });
+</script>
+{% endblock %}

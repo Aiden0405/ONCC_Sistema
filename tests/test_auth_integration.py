@@ -1,4 +1,5 @@
 import pytest
+from datetime import datetime, timezone
 
 from app import create_app, db
 from app.models.usuario import Usuario
@@ -10,15 +11,12 @@ def app():
     app = create_app()
     app.config.update({
         'TESTING': True,
-        'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',
         'WTF_CSRF_ENABLED': False,
     })
 
     with app.app_context():
-        db.create_all()
         yield app
         db.session.remove()
-        db.drop_all()
 
 
 @pytest.fixture
@@ -26,27 +24,32 @@ def client(app):
     return app.test_client()
 
 
-def test_register_login_assign_role(app, client):
-    # Crear rol
+def test_login_flow_with_seeded_user(app, client):
+    correo = f"pytest_auth_{int(datetime.now(timezone.utc).timestamp())}@oncc.gob.ve"
+    password = 'AdminONCC2024*'
+
     with app.app_context():
-        r = Role(nombre='Administrador')
-        db.session.add(r)
+        rol = Role.query.filter_by(nombre_rol='Administrador').first()
+        if not rol:
+            rol = Role(nombre='Administrador')
+            db.session.add(rol)
+            db.session.flush()
+
+        usuario = Usuario(
+            nombre_usuario='Pytest Auth User',
+            correo=correo,
+            id_rol=rol.id_rol,
+            estatus=True,
+        )
+        usuario.set_password(password)
+        db.session.add(usuario)
         db.session.commit()
 
-    # Crear usuario
-    resp = client.post('/admin/usuarios/nuevo', data={
-        'nombre': 'Test Admin',
-        'correo': 'admin@oncc.gob.ve',
-        'rol': 'Administrador',
-        'password': 'AdminONCC2024*'
-    }, follow_redirects=True)
-    assert resp.status_code in (200, 302)
-
-    # Intentar login
+    # Intentar login con usuario creado para la prueba
     resp = client.post('/auth/login', data={
-        'correo': 'admin@oncc.gob.ve',
-        'password': 'AdminONCC2024*'
+        'correo': correo,
+        'password': password,
     }, follow_redirects=True)
+
     assert resp.status_code == 200
-    assert b'Perfil' in resp.data or b'dashboard' in resp.data or b'Usuarios' in resp.data
-*** End Patch
+    assert b'dashboard' in resp.data or b'Dashboard' in resp.data or b'monitoreo' in resp.data

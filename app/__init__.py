@@ -1,15 +1,19 @@
 from collections import Counter
 
-from flask import Flask, render_template
+from flask import Flask, render_template, session 
 from flask_login import LoginManager, login_required
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import CSRFProtect
+from flask_mail import Mail 
 
 from config import Config
 
 migrate = Migrate()
 csrf = CSRFProtect()
+mail = Mail() 
+
+# 1. Herramientas
 db = SQLAlchemy()
 login_manager = LoginManager()
 login_manager.login_view = 'core.login'
@@ -19,10 +23,24 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
+    # 🌟 CONFIGURACIÓN CON MAILTRAP PARA DESARROLLO (SIN BLOQUEOS)
+    app.config['MAIL_SERVER'] = 'sandbox.smtp.mailtrap.io'
+    app.config['MAIL_PORT'] = 2525
+    app.config['MAIL_USE_TLS'] = True
+    app.config['MAIL_USE_SSL'] = False
+    
+    # 🔑 Credenciales de desarrollo de tu Inbox virtual en Mailtrap
+    app.config['MAIL_USERNAME'] = 'e4f11f28a9ae86'
+    app.config['MAIL_PASSWORD'] = '7b85444a15b2a5'
+    
+    app.config['MAIL_DEFAULT_SENDER'] = ('ONCC Sistema', 'soporte@oncc.gob.ve')
+
+    # Conectar BD, Login y el servicio de correos a la app
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
     csrf.init_app(app)
+    mail.init_app(app) 
 
     from app.models.usuario import Usuario
 
@@ -30,6 +48,9 @@ def create_app(config_class=Config):
     def load_user(user_id):
         return Usuario.query.get(int(user_id))
 
+    # ==============================================================
+    # REGISTRO DE CONTROLADORES (Blueprints)
+    # ==============================================================
     from app.blueprints.comunitario import comunitario_bp
     from app.blueprints.core import core_bp
     from app.blueprints.logistica import logistica_bp
@@ -45,41 +66,78 @@ def create_app(config_class=Config):
     app.register_blueprint(geografia_bp)
 
     with app.app_context():
-        from app.models.actividad import Actividad
-        from app.models.bitacora import BitacoraTransaccion
-        from app.models.esquema_activo import ComunidadActiva, EstadoActivo, FormacionActiva, InstitucionActiva, NivelActivo, MunicipioActivo, ParroquiaActiva, SensibilizacionActiva
-        from app.models.divulgacion import Publicacion
-        from app.models.geomatica import MapaRiesgo, ElementoMapaRiesgo
-        from app.models.inventario import InventarioEquipo
-        from app.models.reporte import ReporteTransaccional
-        from app.models.visita_portal import VisitaPortal
-        from app.models.password_reset import PasswordReset
-        from app.models.usuario import Usuario
-        from app.models.role import Role, Permission
+        from app.models.actividad import Actividad  # noqa: F401
+        from app.models.bitacora import BitacoraTransaccion  # noqa: F401
+        from app.models.esquema_activo import ActividadActiva  # noqa: F401
+        from app.models.esquema_activo import ComunidadActiva  # noqa: F401
+        from app.models.esquema_activo import EstadoActivo  # noqa: F401
+        from app.models.esquema_activo import FormacionActiva  # noqa: F401
+        from app.models.esquema_activo import InstitucionActiva  # noqa: F401
+        from app.models.esquema_activo import NivelActivo  # noqa: F401
+        from app.models.esquema_activo import MunicipioActivo  # noqa: F401
+        from app.models.esquema_activo import ParroquiaActiva  # noqa: F401
+        from app.models.esquema_activo import SensibilizacionActiva  # noqa: F401
+        from app.models.divulgacion import Publicacion  # noqa: F401
+        from app.models.geomatica import MapaRiesgo  # noqa: F401
+        from app.models.geomatica import ElementoMapaRiesgo  # noqa: F401
+        from app.models.inventario import InventarioEquipo  # noqa: F401
+        from app.models.visita_portal import VisitaPortal  # noqa: F401
+        from app.models.password_reset import PasswordReset  # noqa: F401
+        from app.models.usuario import Usuario  # noqa: F401
+        from app.models.role import Role, Permission  # noqa: F401
+        from app.models.notificacion import Notificacion  # noqa: F401
 
-    # Core Auth & Public
-    from app.blueprints.core.controllers.auth import login as core_login, logout as core_logout, recuperar_contrasena as core_recuperar
+    from app.blueprints.core.controllers.auth import login as core_login
+    from app.blueprints.core.controllers.auth import logout as core_logout
+    from app.blueprints.core.controllers.auth import recuperar_contrasena as core_recuperar
     from app.blueprints.core.controllers.bitacora import bitacora_index as core_bitacora_index
-    from app.blueprints.core.controllers.divulgacion import acerca as core_acerca, contacto as core_contacto, home as core_home, servicios as core_servicios
-    from app.blueprints.core.controllers.roles import rol_editar as core_rol_editar, rol_eliminar as core_rol_eliminar, rol_gestionar_permisos as core_rol_gestionar_permisos, rol_index as core_rol_index, rol_nuevo as core_rol_nuevo
-    from app.blueprints.core.controllers.usuarios import usuario_editar as core_usuario_editar, usuario_eliminar as core_usuario_eliminar, usuario_index as core_usuario_index, usuario_nuevo as core_usuario_nuevo, usuario_perfil as core_usuario_perfil
+    from app.blueprints.core.controllers.divulgacion import acerca as core_acerca
+    from app.blueprints.core.controllers.divulgacion import contacto as core_contacto
+    from app.blueprints.core.controllers.divulgacion import home as core_home
+    from app.blueprints.core.controllers.divulgacion import servicios as core_servicios
+    from app.blueprints.core.controllers.roles import rol_editar as core_rol_editar
+    from app.blueprints.core.controllers.roles import rol_eliminar as core_rol_eliminar
+    from app.blueprints.core.controllers.roles import rol_gestionar_permisos as core_rol_gestionar_permisos
+    from app.blueprints.core.controllers.roles import rol_index as core_rol_index
+    from app.blueprints.core.controllers.roles import rol_nuevo as core_rol_nuevo
+    from app.blueprints.core.controllers.usuarios import usuario_editar as core_usuario_editar
+    from app.blueprints.core.controllers.usuarios import usuario_eliminar as core_usuario_eliminar
+    from app.blueprints.core.controllers.usuarios import usuario_index as core_usuario_index
+    from app.blueprints.core.controllers.usuarios import usuario_nuevo as core_usuario_nuevo
+    from app.blueprints.core.controllers.usuarios import usuario_perfil as core_usuario_perfil
     
-    # Logística
-    from app.blueprints.logistica.controllers.inventario import editar as logistica_inventario_editar, eliminar as logistica_inventario_eliminar, inventario_index as logistica_inventario_index, nuevo as logistica_inventario_nuevo
+    # 📦 CONTROLADORES DE LOGÍSTICA (AILEEN)
+    from app.blueprints.logistica.controllers.inventario import editar as logistica_inventario_editar
+    from app.blueprints.logistica.controllers.inventario import eliminar as logistica_inventario_eliminar
+    from app.blueprints.logistica.controllers.inventario import inventario_index as logistica_inventario_index
+    from app.blueprints.logistica.controllers.inventario import nuevo as logistica_inventario_nuevo
+    from app.blueprints.logistica.controllers.inventario import nuevo_movimiento as logistica_nuevo_movimiento
+    from app.blueprints.logistica.controllers.inventario import editar_movimiento as logistica_editar_movimiento
+    from app.blueprints.logistica.controllers.inventario import eliminar_movimiento as logistica_eliminar_movimiento
+    from app.blueprints.logistica.controllers.inventario import acta_responsabilidad as logistica_acta_responsabilidad
+    from app.blueprints.logistica.controllers.inventario import reporte_inventario as logistica_reporte_inventario
+    from app.blueprints.logistica.controllers.inventario import reporte_movimientos as logistica_reporte_movimientos
     
-    # Geomática (Mapas)
+    from app.blueprints.logistica.controllers.tecnicos_campo import tecnicos_campo_index as logistica_tecnicos_index
+    from app.blueprints.logistica.controllers.tecnicos_campo import tecnicos_nuevo as logistica_tecnicos_nuevo
+    from app.blueprints.logistica.controllers.tecnicos_campo import tecnicos_editar as logistica_tecnicos_editar
+    from app.blueprints.logistica.controllers.tecnicos_campo import tecnicos_eliminar as logistica_tecnicos_eliminar
+    
+    # 🗺️ CONTROLADORES DE MAPAS ACTUALIZADOS DESDE RAMA GABRIEL
+    from app.blueprints.mapas.controllers.riesgo import eliminar_mapa as mapas_cambiar_estado
     from app.blueprints.mapas.controllers.riesgo import mapas_riesgo_index as mapas_index
     from app.blueprints.mapas.controllers.riesgo import vista_carga_ssbc, vista_dibujar_mapa
     from app.blueprints.mapas.controllers.riesgo import obtener_todos_mapas, crear_mapa as mapas_crear_mapa, obtener_mapa as mapas_obtener_mapa, actualizar_mapa as mapas_actualizar_mapa, eliminar_mapa as mapas_eliminar_mapa, procesar_archivo as mapas_procesar_archivo
-    
-    # Monitoreo y Comunitario
-    from app.blueprints.monitoreo.controllers.actividades import actividades_cambiar_estado as monitoreo_actividad_cambiar_estado, actividades_index as monitoreo_actividad_index, nueva as monitoreo_actividad_nueva
-    from app.blueprints.monitoreo.controllers.comparacion_mapas_climaticos import reporte_cambiar_estado as monitoreo_reporte_cambiar_estado, comparacion_index as monitoreo_reporte_index, nuevo as monitoreo_reporte_nuevo
-    from app.blueprints.comunitario.controllers.formaciones import formacion_cambiar_estado, formacion_nuevo, formaciones_index as comunitario_formaciones_index
-    from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizacion_cambiar_estado, sensibilizacion_nuevo, sensibilizaciones_index as comunitario_sensibilizaciones_index
-    from app.blueprints.geografia.controllers.ubicaciones import obtener_estados, obtener_municipios, obtener_parroquias, obtener_comunidades
+    from app.blueprints.monitoreo.controllers.actividades import actividades_cambiar_estado as monitoreo_actividad_cambiar_estado
+    from app.blueprints.monitoreo.controllers.actividades import actividades_index as monitoreo_actividad_index
+    from app.blueprints.monitoreo.controllers.actividades import nueva as monitoreo_actividad_nueva
+    from app.blueprints.comunitario.controllers.formaciones import formacion_cambiar_estado
+    from app.blueprints.comunitario.controllers.formaciones import formacion_nuevo
+    from app.blueprints.comunitario.controllers.formaciones import formaciones_index as comunitario_formaciones_index
+    from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizacion_cambiar_estado
+    from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizacion_editar as sensibilizacion_nuevo
+    from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizaciones_index as comunitario_sensibilizaciones_index
 
-    # Rutas estáticas
     app.add_url_rule('/', endpoint='public.home', view_func=core_home)
     app.add_url_rule('/acerca', endpoint='public.acerca', view_func=core_acerca)
     app.add_url_rule('/servicios', endpoint='public.servicios', view_func=core_servicios)
@@ -87,6 +145,10 @@ def create_app(config_class=Config):
     app.add_url_rule('/auth/login', endpoint='auth.login', view_func=core_login, methods=['GET', 'POST'])
     app.add_url_rule('/auth/logout', endpoint='auth.logout', view_func=core_logout)
     app.add_url_rule('/auth/recuperar', endpoint='auth.recuperar_contrasena', view_func=core_recuperar, methods=['GET', 'POST'])
+
+    # Enlazar la nueva ruta dinámica de restablecer que procesará los tokens reales
+    from app.blueprints.core.controllers.auth import restablecer_contrasena as core_restablecer
+    app.add_url_rule('/auth/restablecer/<token>', endpoint='core.restablecer_contrasena', view_func=core_restablecer, methods=['GET', 'POST'])
 
     app.add_url_rule('/formaciones', endpoint='formacion.index', view_func=comunitario_formaciones_index)
     app.add_url_rule('/formaciones/nuevo', endpoint='formacion.nuevo', view_func=formacion_nuevo, methods=['POST'])
@@ -111,20 +173,32 @@ def create_app(config_class=Config):
     app.add_url_rule('/actividades/nueva', endpoint='actividad.nueva', view_func=monitoreo_actividad_nueva, methods=['GET', 'POST'])
     app.add_url_rule('/actividades/<int:actividad_id>/estado', endpoint='actividad.cambiar_estado', view_func=monitoreo_actividad_cambiar_estado, methods=['POST'])
 
+    # 📦 REGLAS DE ENRUTAMIENTO DE LOGÍSTICA (INVENTARIO)
     app.add_url_rule('/inventario/', endpoint='inventario.index', view_func=logistica_inventario_index)
     app.add_url_rule('/inventario/nuevo', endpoint='inventario.nuevo', view_func=logistica_inventario_nuevo, methods=['POST'])
     app.add_url_rule('/inventario/<int:equipo_id>/editar', endpoint='inventario.editar', view_func=logistica_inventario_editar, methods=['POST'])
     app.add_url_rule('/inventario/<int:equipo_id>/eliminar', endpoint='inventario.eliminar', view_func=logistica_inventario_eliminar, methods=['POST'])
+    # 🔄 RUTAS INTERNAS PARA MOVIMIENTOS DE INVENTARIO
+    app.add_url_rule('/inventario/nuevo-movimiento', endpoint='inventario.nuevo_movimiento', view_func=logistica_nuevo_movimiento, methods=['POST'])
+    app.add_url_rule('/inventario/movimiento/<int:movimiento_id>/editar', endpoint='inventario.editar_movimiento', view_func=logistica_editar_movimiento, methods=['POST'])
+    app.add_url_rule('/inventario/movimiento/<int:movimiento_id>/eliminar', endpoint='inventario.eliminar_movimiento', view_func=logistica_eliminar_movimiento, methods=['POST'])
+    
+    # 📄 RUTAS PARA REPORTES Y ACTAS EN PDF
+    app.add_url_rule('/inventario/reporte', endpoint='inventario.reporte_inventario', view_func=logistica_reporte_inventario, methods=['GET'])
+    app.add_url_rule('/inventario/reporte-movimientos', endpoint='inventario.reporte_movimientos', view_func=logistica_reporte_movimientos, methods=['GET'])
+    app.add_url_rule('/inventario/<int:equipo_id>/acta', endpoint='inventario.acta_responsabilidad', view_func=logistica_acta_responsabilidad, methods=['GET'])
+    
+    # 👷 REGLAS PARA TÉCNICOS DE CAMPO
+    app.add_url_rule('/tecnicos-campo', endpoint='logistica.tecnicos_campo_index', view_func=logistica_tecnicos_index)
+    app.add_url_rule('/tecnicos-campo/nuevo', endpoint='logistica.tecnicos_nuevo', view_func=logistica_tecnicos_nuevo, methods=['POST'])
+    app.add_url_rule('/tecnicos-campo/<int:tecnico_id>/editar', endpoint='logistica.tecnicos_editar', view_func=logistica_tecnicos_editar, methods=['POST'])
+    app.add_url_rule('/tecnicos-campo/<int:tecnico_id>/eliminar', endpoint='logistica.tecnicos_eliminar', view_func=logistica_tecnicos_eliminar, methods=['POST'])
 
-    # ==============================================================
-    # Geomática
-    # ==============================================================
+    # 🗺️ REGLAS DE ENRUTAMIENTO CORREGIDAS PARA EVITAR EL BUILDERROR
     app.add_url_rule('/geomatica/', endpoint='geomatica.index', view_func=mapas_index, methods=['GET'])
     app.add_url_rule('/geomatica/carga-ssbc', endpoint='geomatica.carga_ssbc', view_func=vista_carga_ssbc, methods=['GET'])
     app.add_url_rule('/geomatica/dibujar/<int:mapa_id>', endpoint='geomatica.dibujar_mapa', view_func=vista_dibujar_mapa, methods=['GET'])
     app.add_url_rule('/geomatica/procesar', endpoint='geomatica.procesar_archivo', view_func=mapas_procesar_archivo, methods=['POST'])
-    
-    # API JSON CRUD
     app.add_url_rule('/geomatica/mapas', endpoint='geomatica.obtener_todos_mapas', view_func=obtener_todos_mapas, methods=['GET'])
     app.add_url_rule('/geomatica/crear_mapa', endpoint='geomatica.crear_mapa', view_func=mapas_crear_mapa, methods=['POST'])
     app.add_url_rule('/geomatica/mapas/<int:mapa_id>', endpoint='geomatica.obtener_mapa', view_func=mapas_obtener_mapa, methods=['GET'])
@@ -155,7 +229,6 @@ def create_app(config_class=Config):
         from app.models.divulgacion import Publicacion
         from app.models.geomatica import MapaRiesgo
         from app.models.inventario import InventarioEquipo
-        from app.models.reporte import ReporteTransaccional
 
         actividades = Actividad.query.order_by(Actividad.creado_en.desc()).limit(5).all()
         total_actividades = Actividad.query.count()
@@ -169,7 +242,6 @@ def create_app(config_class=Config):
         modulos_operativos = {
             'inventario': InventarioEquipo.query.count(),
             'mapas': MapaRiesgo.query.count(),
-            'reportes': ReporteTransaccional.query.count(),
             'actividades': total_actividades,
             'divulgacion': Publicacion.query.count(),
             'divulgacion_publicadas': Publicacion.query.filter_by(estado_publicacion='publicado').count(),
@@ -182,7 +254,6 @@ def create_app(config_class=Config):
         resumen = {
             'inventario': modulos_operativos['inventario'],
             'mapas': modulos_operativos['mapas'],
-            'reportes': modulos_operativos['reportes'],
             'formaciones': modulos_operativos['formaciones'],
             'sensibilizaciones': modulos_operativos['sensibilizaciones'],
             'divulgacion': modulos_operativos['divulgacion'],
@@ -196,7 +267,60 @@ def create_app(config_class=Config):
             mapa_estados=mapa_estados,
             modulos_operativos=modulos_operativos,
         )
-# Manejador global de errores URL (404)
+
+
+    # ==============================================================
+    # ⏱️ FILTRO PERSONALIZADO PARA CALCULAR EL TIEMPO TRANSCURRIDO
+    # ==============================================================
+    @app.template_filter('tiempo_atras')
+    def tiempo_atras_filter(fecha):
+        if not fecha:
+            return "Ahora"
+            
+        from datetime import datetime
+        ahora = datetime.utcnow()
+        diferencia = ahora - fecha
+
+        segundos = int(diferencia.total_seconds())
+        
+        if segundos < 60:
+            return "Hace un momento"
+        
+        minutos = segundos // 60
+        if minutos < 60:
+            return f"Hace {minutos} min"
+            
+        horas = minutos // 60
+        if horas < 24:
+            return f"Hace {horas} {'hora' if horas == 1 else 'horas'}"
+            
+        dias = horas // 24
+        if dias == 1:
+            return "Ayer"
+        if dias < 7:
+            return f"Hace {dias} días"
+            
+        return fecha.strftime('%d/%m/%Y')
+
+    @app.context_processor
+    def inject_notifications():
+        from app.models.notificacion import Notificacion
+        from flask_login import current_user
+
+        if current_user.is_authenticated:
+            alertas = Notificacion.query.filter(
+                (Notificacion.usuario_id == current_user.id_usuario) | (Notificacion.usuario_id.is_(None))
+            ).order_by(Notificacion.fecha_creacion.desc()).limit(5).all()
+            
+            conteo_alertas = Notificacion.query.filter(
+                (Notificacion.usuario_id == current_user.id_usuario) | (Notificacion.usuario_id.is_(None)),
+                Notificacion.leido == False
+            ).count()
+            
+            return dict(alertas_sistema=alertas, conteo_alertas=conteo_alertas)
+        
+        return dict(alertas_sistema=[], conteo_alertas=0)
+    # Manejador global de errores URL (404)
     @app.errorhandler(404)
     def pagina_no_encontrada(e):
         return render_template('404.html'), 404

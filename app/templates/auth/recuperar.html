@@ -39,7 +39,7 @@
 
     <div class="max-w-md w-full mx-4 bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-100 dark:border-gray-700 transition-colors duration-300">
         
-        <a href="{{ url_for('auth.login') }}" class="inline-flex items-center text-sm font-medium text-gray-500 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400 transition-colors mb-6">
+        <a href="{{ url_for('core.login') }}" class="inline-flex items-center text-sm font-medium text-gray-500 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400 transition-colors mb-6">
             <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i> Volver al Acceso
         </a>
 
@@ -49,7 +49,7 @@
             </div>
             <h2 class="text-2xl font-bold text-gray-800 dark:text-white text-center">Recuperación de Acceso</h2>
             <p class="text-sm text-gray-500 dark:text-gray-400 text-center mt-2 leading-relaxed">
-                Ingresa tu correo institucional. Si está registrado en el sistema, recibirás las instrucciones para restablecer tu contraseña.
+                Ingresa tu correo institucional y resuelve el reto de seguridad para restablecer tu contraseña.
             </p>
         </div>
         
@@ -65,6 +65,8 @@
 
         <form method="POST" class="space-y-5">
             {{ form.hidden_tag() }}
+            
+            <!-- Campo de Correo -->
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2 ml-1">Correo Institucional</label>
                 <div class="relative">
@@ -76,7 +78,20 @@
                 {% endif %}
             </div>
 
-            <button type="submit" class="w-full flex items-center justify-center py-3 px-4 rounded-xl shadow-lg shadow-green-600/20 text-white bg-green-600 hover:bg-green-700 active:scale-[0.98] transition-all font-bold tracking-wide">
+            <!-- 🌟 Bloque del Captcha Matemático Integrado -->
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2 ml-1">
+                    Verificación de Seguridad (Captcha)
+                </label>
+                <div class="flex items-center space-x-3">
+                    <span class="px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-mono font-bold rounded-xl select-none border border-gray-200 dark:border-gray-600 whitespace-nowrap">
+                        {{ session.get('captcha_texto', '¿Cuánto es 5 + 3?') }}
+                    </span>
+                    <input type="number" name="captcha" class="block w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent dark:text-white transition-all outline-none font-mono" placeholder="Resultado" required />
+                </div>
+            </div>
+
+            <button type="submit" class="w-full flex items-center justify-center py-3 px-4 rounded-xl shadow-lg shadow-green-600/20 text-white bg-green-600 hover:bg-green-700 active:scale-[0.98] transition-all font-bold tracking-wide mt-2">
                 <span>Solicitar Recuperación</span>
                 <i data-lucide="send" class="ml-2 w-4 h-4"></i>
             </button>

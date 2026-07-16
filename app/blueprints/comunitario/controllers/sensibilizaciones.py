@@ -1,114 +1,149 @@
+# app/blueprints/comunitario/controllers/sensibilizaciones.py
 from datetime import datetime
-
 from flask import flash, redirect, render_template, request, url_for
+from flask_login import login_required, current_user
 
 from app import db
 from app.blueprints.comunitario import comunitario_bp
-from app.models.actividad import Actividad as ActividadActiva
+from app.blueprints.comunitario.forms import SensibilizacionForm
+# 🌟 Importamos tu validador de seguridad dinámico del Core
+from app.blueprints.core.controllers.roles import verificar_permiso_dinamico
+# Importamos nuestro nuevo modelo independiente
+from app.models.esquema_activo import SensibilizacionActiva as Sensibilizacion
 from app.models.esquema_activo import (
-    ComunidadActiva,
-    EstadoActivo,
-    InstitucionActiva,
-    NivelActivo,
-    ParroquiaActiva,
-    SensibilizacionActiva,
-    MunicipioActivo,
+    ActividadActiva as Actividad,
+    NivelActivo as Nivel,
+    ComunidadActiva as Comunidad
 )
 
-
-def _asegurar_territorio_base():
-    estado = EstadoActivo.query.filter_by(nombre_estado='Lara').first()
-    if not estado:
-        estado = EstadoActivo(nombre_estado='Lara')
-        db.session.add(estado)
-        db.session.flush()
-
-    municipio = MunicipioActivo.query.filter_by(nombre_municipio='Iribarren', id_estado=estado.id_estado).first()
-    if not municipio:
-        municipio = MunicipioActivo(id_estado=estado.id_estado, nombre_municipio='Iribarren')
-        db.session.add(municipio)
-        db.session.flush()
-
-    parroquia = ParroquiaActiva.query.filter_by(nombre_parroquia='Catedral', id_municipio=municipio.id_municipio).first()
-    if not parroquia:
-        parroquia = ParroquiaActiva(id_municipio=municipio.id_municipio, nombre_parroquia='Catedral')
-        db.session.add(parroquia)
-        db.session.flush()
-
-    comunidad = ComunidadActiva.query.filter_by(nombre_comunidad='Comunidad General', id_parroquia=parroquia.id_parroquia).first()
-    if not comunidad:
-        comunidad = ComunidadActiva(id_parroquia=parroquia.id_parroquia, nombre_comunidad='Comunidad General')
-        db.session.add(comunidad)
-        db.session.flush()
-
-    nivel = NivelActivo.query.filter_by(nombre_nivel='Base').first()
-    if not nivel:
-        nivel = NivelActivo(nombre_nivel='Base', descripcion='Nivel base para registros iniciales')
-        db.session.add(nivel)
-        db.session.flush()
-
-    institucion = InstitucionActiva.query.filter_by(nombre_institucion='Institución General', id_comunidad=comunidad.id_comunidad).first()
-    if not institucion:
-        institucion = InstitucionActiva(
-            id_comunidad=comunidad.id_comunidad,
-            nombre_institucion='Institución General',
-            tipo_intitucion='Comunitaria',
-            direccion_exacta='Sin dirección registrada',
-            numero_contacto='Sin contacto',
-            correo_electronico='sin-correo@oncc.local',
-        )
-        db.session.add(institucion)
-        db.session.flush()
-
-    return comunidad, nivel, institucion
-
-
-@comunitario_bp.route('/sensibilizaciones')
+# ==========================================
+# 1. LISTAR Y REGISTRAR (GET y POST)
+# ==========================================
+@comunitario_bp.route('/sensibilizaciones', methods=['GET', 'POST'])
+@login_required  
 def sensibilizaciones_index():
-    _asegurar_territorio_base()
-    sensibilizaciones = SensibilizacionActiva.query.order_by(SensibilizacionActiva.id_sensivilizacion.desc()).all()
-    return render_template('sensibilizaciones/index.html', sensibilizaciones=sensibilizaciones, estados_flujo=['registrada'])
+    # 🛡️ Blindaje Dinámico Ajustado al Slug de la Base de Datos
+    verificar_permiso_dinamico('gestionar_sensibilizaciones')
 
+    form = SensibilizacionForm()
 
-@comunitario_bp.route('/sensibilizaciones/nuevo', methods=['POST'])
-def sensibilizacion_nuevo():
-    campana = (request.form.get('campana') or '').strip()
-    territorio_nombre = (request.form.get('territorio') or 'Comunidad General').strip()
-    fecha = request.form.get('fecha')
+    # Cargar menús desplegables
+    comunidades = Comunidad.query.all()
+    form.id_comunidad.choices = [(c.id_comunidad, c.nombre_comunidad) for c in comunidades]
+    
+    niveles = Nivel.query.all()
+    form.id_nivel.choices = [(niv.id_nivel, niv.nombre_nivel) for niv in niveles]
 
-    if not campana or not fecha:
-        flash('Campaña y fecha son obligatorias.', 'error')
-        return redirect(url_for('sensibilizacion.index'))
+    # CLICK EN "REGISTRAR"
+    if form.validate_on_submit():
+        try:
+            # 1. Registrar fila en la tabla 'actividad' (Padre)
+            nueva_actividad = Actividad(
+                fecha_actividad=form.fecha.data,
+                tipo_actividad=['sensibilizacion'],
+                id_comunidad=form.id_comunidad.data,
+                id_nivel=form.id_nivel.data
+            )
+            db.session.add(nueva_actividad)
+            db.session.flush() # Genera la id_actividad automáticamente
 
-    comunidad, nivel, _ = _asegurar_territorio_base()
-    if territorio_nombre and territorio_nombre != comunidad.nombre_comunidad:
-        comunidad = ComunidadActiva.query.filter_by(nombre_comunidad=territorio_nombre, id_parroquia=comunidad.id_parroquia).first()
-        if not comunidad:
-            comunidad = ComunidadActiva(id_parroquia=comunidad.id_parroquia, nombre_comunidad=territorio_nombre)
-            db.session.add(comunidad)
-            db.session.flush()
+            # Consolidamos el nombre con el facilitador usando tu formato original "||"
+            campana_consolidada = f"{form.nombre_sensibilizacion.data}||{form.facilitador.data}"
 
-    actividad = ActividadActiva(
-        fecha_actividad=datetime.strptime(fecha, '%Y-%m-%d').date(),
-        tipo_actividad=['sensibilizacion'],
-        id_comunidad=comunidad.id_comunidad,
-        id_nivel=nivel.id_nivel,
+            # 2. Registrar en la tabla 'sensibilizacion' (Hijo)
+            nueva_sensibilizacion = Sensibilizacion(
+                nombre_sensivilizacion=campana_consolidada,
+                id_actividad=nueva_actividad.id_actividad
+            )
+            db.session.add(nueva_sensibilizacion)
+            
+            db.session.commit()
+            flash('Taller de sensibilización registrado con éxito.', 'success')
+            return redirect(url_for('comunitario.sensibilizaciones_index'))
+
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error al registrar la sensibilización: {str(e)}', 'error')
+
+    # LLAMADA AL MODELO: Dejamos el controlador flaco invocando la función del modelo
+    sensibilizaciones_procesadas = Sensibilizacion.obtener_historial_completo()
+
+    return render_template(
+        'sensibilizaciones/index.html', 
+        form=form, 
+        sensibilizaciones=sensibilizaciones_procesadas
     )
-    db.session.add(actividad)
-    db.session.flush()
 
-    sensibilizacion = SensibilizacionActiva(
-        nombre_sensibilizacion=campana,
-        id_actividad=actividad.id_actividad,
-    )
-    db.session.add(sensibilizacion)
-    db.session.commit()
+# ==========================================
+# 2. MODIFICAR / ACTUALIZAR (POST)
+# ==========================================
+@comunitario_bp.route('/sensibilizaciones/editar/<int:id_sensibilizacion>', methods=['POST'])
+@login_required
+def sensibilizacion_editar(id_sensibilizacion):
+    # 🛡️ Blindaje Dinámico Ajustado al Slug de la Base de Datos
+    verificar_permiso_dinamico('gestionar_sensibilizaciones')
 
-    flash('Sensibilización registrada correctamente.', 'success')
-    return redirect(url_for('sensibilizacion.index'))
+    sensibilizacion = Sensibilizacion.query.get_or_404(id_sensibilizacion)
+    actividad = Actividad.query.get(sensibilizacion.id_actividad)
 
+    campana_nueva = request.form.get('edit_nombre_sensibilizacion')
+    facilitador_nuevo = request.form.get('edit_facilitador') 
+    fecha_nueva = request.form.get('edit_fecha')
+    id_comunidad_nueva = request.form.get('edit_id_comunidad')
+    id_nivel_nuevo = request.form.get('edit_id_nivel')
 
-@comunitario_bp.route('/sensibilizaciones/<int:sensibilizacion_id>/estado', methods=['POST'])
+    try:
+        if fecha_nueva:
+            actividad.fecha_actividad = datetime.strptime(fecha_nueva, '%Y-%m-%d').date()
+        if id_nivel_nuevo:
+            actividad.id_nivel = int(id_nivel_nuevo)
+        if id_comunidad_nueva:
+            actividad.id_comunidad = int(id_comunidad_nueva)
+
+        # Empaquetamos con el formato original del sistema
+        sensibilizacion.nombre_sensivilizacion = f"{campana_nueva}||{facilitador_nuevo}"
+
+        db.session.commit()
+        flash('Sensibilización actualizada correctamente.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al modificar: {str(e)}', 'error')
+
+    # CORRECCIÓN DE ENDPOINT: Redirige de forma consistente al index del blueprint
+    return redirect(url_for('comunitario.sensibilizaciones_index'))
+
+# ==========================================
+# 3. ELIMINAR (POST)
+# ==========================================
+@comunitario_bp.route('/sensibilizaciones/eliminar/<int:id_sensibilizacion>', methods=['POST'])
+@login_required
+def sensibilizacion_eliminar(id_sensibilizacion):
+    # 🛡️ Blindaje Dinámico Ajustado al Slug de la Base de Datos
+    verificar_permiso_dinamico('gestionar_sensibilizaciones')
+
+    sensibilizacion = Sensibilizacion.query.get_or_404(id_sensibilizacion)
+    actividad = Actividad.query.get(sensibilizacion.id_actividad)
+
+    try:
+        db.session.delete(sensibilizacion)
+        if actividad:
+            db.session.delete(actividad)
+            
+        db.session.commit()
+        flash('Sensibilización eliminada del historial.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al eliminar: {str(e)}', 'error')
+
+    return redirect(url_for('comunitario.sensibilizaciones_index'))
+
+# ==========================================
+# 4. CAMBIO DE ESTADO (Manejado por app.add_url_rule)
+# ==========================================
+@login_required
 def sensibilizacion_cambiar_estado(sensibilizacion_id):
-    flash('El esquema entregado no guarda un estado persistente para sensibilizaciones.', 'info')
-    return redirect(url_for('sensibilizacion.index'))
+    # 🛡️ Blindaje Dinámico Ajustado al Slug de la Base de Datos
+    verificar_permiso_dinamico('gestionar_sensibilizaciones')
+
+    flash('Funcionalidad de cambio de estado en desarrollo.', 'info')
+    return redirect(url_for('comunitario.sensibilizaciones_index'))
