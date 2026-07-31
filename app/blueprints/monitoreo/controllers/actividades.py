@@ -8,7 +8,7 @@ from werkzeug.utils import secure_filename
 from app import db
 from app.blueprints.monitoreo import monitoreo_bp
 from app.constants import ESTADOS_ACTIVIDAD
-from app.models.actividad import Actividad
+from app.models.actividad import ActividadLegacy as Actividad
 from app.models.bitacora import BitacoraTransaccion
 
 

@@ -77,7 +77,7 @@ def create_app(config_class=Config):
     from app.blueprints.monitoreo.controllers.actividades import actividades_cambiar_estado as monitoreo_actividad_cambiar_estado, actividades_index as monitoreo_actividad_index, nueva as monitoreo_actividad_nueva
     from app.blueprints.monitoreo.controllers.comparacion_mapas_climaticos import reporte_cambiar_estado as monitoreo_reporte_cambiar_estado, comparacion_index as monitoreo_reporte_index, nuevo as monitoreo_reporte_nuevo
     from app.blueprints.comunitario.controllers.formaciones import formacion_cambiar_estado, formacion_nuevo, formaciones_index as comunitario_formaciones_index
-    from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizacion_cambiar_estado, sensibilizacion_nuevo, sensibilizaciones_index as comunitario_sensibilizaciones_index
+    from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizacion_cambiar_estado, sensibilizacion_nuevo, sensibilizacion_editar, sensibilizacion_eliminar, sensibilizaciones_index as comunitario_sensibilizaciones_index
     from app.blueprints.geografia.controllers.ubicaciones import obtener_estados, obtener_municipios, obtener_parroquias, obtener_comunidades
 
     # Rutas estáticas

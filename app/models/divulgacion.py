@@ -9,7 +9,7 @@ class Divulgacion(db.Model):
     # Clave primaria mapeada al campo físico de Postgres
     id = db.Column('id_divulgacion', db.Integer, primary_key=True)
     
-    # Llave foránea hacia la tabla actividad del mismo módulo local
+    # Llave foránea hacia la tabla actividades
     id_actividad = db.Column(db.Integer, db.ForeignKey('actividad.id_actividad'), nullable=False)
     
     # Campos específicos físicos mapeados a nombres limpios de Python
@@ -17,20 +17,14 @@ class Divulgacion(db.Model):
     descripcion = db.Column('descripcion_divulgacion', db.Text, nullable=False)
     permiso = db.Column('permiso_divulgacion', db.String(50), nullable=False)
 
-    # =========================================================================
-    # RELACIONES (Navegación del ORM)
-    # =========================================================================
-    # Relación 1 a 1 con la Actividad base (uselist=False garantiza objeto directo)
-    id_actividad = db.Column(db.Integer, db.ForeignKey('actividad.id_actividad'), nullable=False)
-    
-    # Cambia la relación a back_populates y especifica la foreign_key
+    # Relación 1 a 1 con la Actividad base
     actividad_obj = db.relationship(
-    'Actividad', 
-    back_populates='divulgacion', # Apunta a la propiedad 'divulgacion' de la clase Actividad
-    foreign_keys=[id_actividad])
-    # =========================================================================
-    # SINÓNIMOS (Para compatibilidad con controladores y consultas existentes)
-    # =========================================================================
+        'Actividad', 
+        back_populates='divulgacion',
+        foreign_keys=[id_actividad]
+    )
+
+    # Sinónimos
     id_divulgacion = synonym('id')
     nombre_divulgacion = synonym('nombre')
     descripcion_divulgacion = synonym('descripcion')
@@ -43,7 +37,6 @@ class Divulgacion(db.Model):
 class Publicacion(db.Model):
     __tablename__ = 'publicaciones'
 
-    # Columnas según database/sql.sql y actualización en Postgres
     id = db.Column(db.Integer, primary_key=True)
     tipo = db.Column(db.String(40), nullable=False, default='boletin')
     titulo = db.Column(db.String(180), nullable=False)
@@ -54,11 +47,9 @@ class Publicacion(db.Model):
     creado_en = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     actualizado_en = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # === NUEVAS COLUMNAS CONECTADAS CON TU TABLA USUARIO ===
     id_usuario = db.Column(db.Integer, db.ForeignKey('usuario.id_usuario'), nullable=False)
     autor = db.relationship('Usuario', backref='publicaciones')
 
-    # Sinónimos para compatibilidad con el código que esperaba otros nombres
     id_divulgacion = synonym('id')
     titulo_publicidad = synonym('titulo')
     estatus_revision = synonym('estado')
