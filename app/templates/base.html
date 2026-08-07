@@ -81,8 +81,9 @@
         {% endif %}
     {% endmacro %}
 
-    <aside id="sidebar"
-        class="w-64 border-r transition-all duration-300 flex flex-col shadow-sm z-10 bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700 overflow-hidden">
+    <!-- Reemplaza tu etiqueta <aside> con esta: -->
+<aside id="sidebar"
+    class="absolute md:relative z-40 inset-y-0 left-0 transform -translate-x-full md:translate-x-0 w-64 border-r transition-all duration-300 flex flex-col shadow-sm bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700 overflow-hidden h-full">
         <div
             class="h-16 flex items-center px-6 border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 flex-shrink-0">
             <span class="text-xl font-bold text-green-600 tracking-wide flex items-center whitespace-nowrap">
@@ -173,6 +174,10 @@
                 class="w-full flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['geomatica', 'riesgo']) }}">
                 <i data-lucide="map-pinned" class="mr-3 w-5 h-5 flex-shrink-0"></i>
                 <span class="sidebar-text whitespace-nowrap">Mapas de Riesgo</span>
+            </a>
+            <a href="{{ url_for('catalogo.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
+                <i data-lucide="map-pin-pen" class="mr-3 w-5 h-5 flex-shrink-0"></i>
+                <span class="sidebar-text whitespace-nowrap">Catalogo Simbolos</span>
             </a>
             {% endif %}
 

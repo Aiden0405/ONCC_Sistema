@@ -68,7 +68,6 @@ def create_app(config_class=Config):
     with app.app_context():
         from app.models.actividad import Actividad  # noqa: F401
         from app.models.bitacora import BitacoraTransaccion  # noqa: F401
-        from app.models.esquema_activo import ActividadActiva  # noqa: F401
         from app.models.esquema_activo import ComunidadActiva  # noqa: F401
         from app.models.esquema_activo import EstadoActivo  # noqa: F401
         from app.models.esquema_activo import FormacionActiva  # noqa: F401
@@ -79,7 +78,8 @@ def create_app(config_class=Config):
         from app.models.esquema_activo import SensibilizacionActiva  # noqa: F401
         from app.models.divulgacion import Publicacion  # noqa: F401
         from app.models.geomatica import MapaRiesgo  # noqa: F401
-        from app.models.geomatica import ElementoMapaRiesgo  # noqa: F401
+        from app.models.geomatica import ElementosMapaRiesgo  # noqa: F401
+        from app.models.geomatica import Simbologia # noqa: F401
         from app.models.inventario import InventarioEquipo  # noqa: F401
         from app.models.visita_portal import VisitaPortal  # noqa: F401
         from app.models.password_reset import PasswordReset  # noqa: F401
@@ -127,16 +127,39 @@ def create_app(config_class=Config):
     from app.blueprints.mapas.controllers.riesgo import eliminar_mapa as mapas_cambiar_estado
     from app.blueprints.mapas.controllers.riesgo import mapas_riesgo_index as mapas_index
     from app.blueprints.mapas.controllers.riesgo import vista_carga_ssbc, vista_dibujar_mapa
-    from app.blueprints.mapas.controllers.riesgo import obtener_todos_mapas, crear_mapa as mapas_crear_mapa, obtener_mapa as mapas_obtener_mapa, actualizar_mapa as mapas_actualizar_mapa, eliminar_mapa as mapas_eliminar_mapa, procesar_archivo as mapas_procesar_archivo
+    from app.blueprints.mapas.controllers.riesgo import catalogo_index as catalogo_simbolos_index
+    from app.blueprints.mapas.controllers.riesgo import crear_simbologia
+    from app.blueprints.mapas.controllers.riesgo import listar_simbologia
+    from app.blueprints.mapas.controllers.riesgo import obtener_simbologia
+    from app.blueprints.mapas.controllers.riesgo import actualizar_simbologia
+    from app.blueprints.mapas.controllers.riesgo import eliminar_simbologia
+    from app.blueprints.mapas.controllers.riesgo import obtener_todos_mapas
+    from app.blueprints.mapas.controllers.riesgo import crear_mapa as mapas_crear_mapa
+    from app.blueprints.mapas.controllers.riesgo import obtener_mapa as mapas_obtener_mapa
+    from app.blueprints.mapas.controllers.riesgo import actualizar_mapa as mapas_actualizar_mapa
+    from app.blueprints.mapas.controllers.riesgo import eliminar_mapa as mapas_eliminar_mapa
+    from app.blueprints.mapas.controllers.riesgo import procesar_archivo as mapas_procesar_archivo
+    from app.blueprints.mapas.controllers.riesgo import actualizar_elemento
+    from app.blueprints.mapas.controllers.riesgo import eliminar_elemento
     from app.blueprints.monitoreo.controllers.actividades import actividades_cambiar_estado as monitoreo_actividad_cambiar_estado
     from app.blueprints.monitoreo.controllers.actividades import actividades_index as monitoreo_actividad_index
     from app.blueprints.monitoreo.controllers.actividades import nueva as monitoreo_actividad_nueva
     from app.blueprints.comunitario.controllers.formaciones import formacion_cambiar_estado
     from app.blueprints.comunitario.controllers.formaciones import formacion_nuevo
     from app.blueprints.comunitario.controllers.formaciones import formaciones_index as comunitario_formaciones_index
+    from app.blueprints.comunitario.controllers.formaciones import formacion_editar as formacion_editar
+    from app.blueprints.comunitario.controllers.formaciones import formacion_eliminar as formacion_eliminar
+    from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizacion_editar as sensibilizacion_editar
+    from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizacion_eliminar as sensibilizacion_eliminar
+    from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizaciones_index as sensibilizacoiones_index
+    from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizacion_cambiar_estado
+    from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizaciones_index as comunitario_sensibilizaciones_index
     from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizacion_cambiar_estado
     from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizacion_editar as sensibilizacion_nuevo
-    from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizaciones_index as comunitario_sensibilizaciones_index
+    from app.blueprints.geografia.controllers.ubicaciones import obtener_estados as geografia_obtener_estados
+    from app.blueprints.geografia.controllers.ubicaciones import obtener_municipios as geografia_obtener_municipios
+    from app.blueprints.geografia.controllers.ubicaciones import obtener_parroquias as geografia_obtener_parroquias
+    from app.blueprints.geografia.controllers.ubicaciones import obtener_comunidades as geografia_obtener_comunidades
 
     app.add_url_rule('/', endpoint='public.home', view_func=core_home)
     app.add_url_rule('/acerca', endpoint='public.acerca', view_func=core_acerca)
@@ -159,8 +182,8 @@ def create_app(config_class=Config):
 
     app.add_url_rule('/admin/usuarios/', endpoint='usuario.index', view_func=core_usuario_index)
     app.add_url_rule('/admin/usuarios/nuevo', endpoint='usuario.nuevo', view_func=core_usuario_nuevo, methods=['GET', 'POST'])
-    app.add_url_rule('/admin/usuarios/<int:usuario_id>/editar', endpoint='usuario.editar', view_func=core_usuario_editar, methods=['GET', 'POST'])
-    app.add_url_rule('/admin/usuarios/<int:usuario_id>/eliminar', endpoint='usuario.eliminar', view_func=core_usuario_eliminar, methods=['POST'])
+    app.add_url_rule('/admin/usuarios/<int:id_usuario>/editar', endpoint='usuario.editar', view_func=core_usuario_editar, methods=['GET', 'POST'])
+    app.add_url_rule('/admin/usuarios/<int:id_usuario>/eliminar', endpoint='usuario.eliminar', view_func=core_usuario_eliminar, methods=['POST'])
     app.add_url_rule('/admin/usuarios/perfil', endpoint='usuario.perfil', view_func=core_usuario_perfil, methods=['GET', 'POST'])
 
     app.add_url_rule('/admin/roles/', endpoint='rol.index', view_func=core_rol_index)
@@ -198,21 +221,26 @@ def create_app(config_class=Config):
     app.add_url_rule('/geomatica/', endpoint='geomatica.index', view_func=mapas_index, methods=['GET'])
     app.add_url_rule('/geomatica/carga-ssbc', endpoint='geomatica.carga_ssbc', view_func=vista_carga_ssbc, methods=['GET'])
     app.add_url_rule('/geomatica/dibujar/<int:mapa_id>', endpoint='geomatica.dibujar_mapa', view_func=vista_dibujar_mapa, methods=['GET'])
-    app.add_url_rule('/geomatica/procesar', endpoint='geomatica.procesar_archivo', view_func=mapas_procesar_archivo, methods=['POST'])
+    app.add_url_rule('/geomatica/procesar', endpoint='geomatica.procesar_archivo', view_func=mapas_procesar_archivo, methods=['GET', 'POST'])  
     app.add_url_rule('/geomatica/mapas', endpoint='geomatica.obtener_todos_mapas', view_func=obtener_todos_mapas, methods=['GET'])
     app.add_url_rule('/geomatica/crear_mapa', endpoint='geomatica.crear_mapa', view_func=mapas_crear_mapa, methods=['POST'])
     app.add_url_rule('/geomatica/mapas/<int:mapa_id>', endpoint='geomatica.obtener_mapa', view_func=mapas_obtener_mapa, methods=['GET'])
     app.add_url_rule('/geomatica/mapas/<int:mapa_id>', endpoint='geomatica.actualizar_mapa', view_func=mapas_actualizar_mapa, methods=['PUT'])
     app.add_url_rule('/geomatica/mapas/<int:mapa_id>', endpoint='geomatica.eliminar_mapa', view_func=mapas_eliminar_mapa, methods=['DELETE'])    
+    app.add_url_rule('/geomatica/elementos/<int:id_elemento>', endpoint='geomatica.actualizar_elemento', view_func=actualizar_elemento, methods=['PUT'])
+    app.add_url_rule('/geomatica/elementos/<int:id_elemento>', endpoint='geomatica.eliminar_elemento', view_func=eliminar_elemento, methods=['DELETE'])
 
-    app.add_url_rule('/reportes/', endpoint='reporte.index', view_func=monitoreo_reporte_index)
-    app.add_url_rule('/reportes/nuevo', endpoint='reporte.nuevo', view_func=monitoreo_reporte_nuevo, methods=['POST'])
-    app.add_url_rule('/reportes/<int:reporte_id>/estado', endpoint='reporte.cambiar_estado', view_func=monitoreo_reporte_cambiar_estado, methods=['POST'])
+    app.add_url_rule('/catalogo/', endpoint='catalogo.index', view_func=catalogo_simbolos_index, methods=['GET'])
+    app.add_url_rule('/catalogo/crear', endpoint='catalogo.crear_simbologia', view_func=crear_simbologia, methods=['POST'])
+    app.add_url_rule('/catalogo/listar', endpoint='catalogo.listar_simbologia', view_func=listar_simbologia, methods=['GET'])
+    app.add_url_rule('/catalogo/<int:id_simbologia>', endpoint='catalogo.obtener_simbologia', view_func=obtener_simbologia, methods=['GET'])
+    app.add_url_rule('/catalogo/<int:id_simbologia>', endpoint='catalogo.actualizar_simbologia', view_func=actualizar_simbologia, methods=['PUT'])
+    app.add_url_rule('/catalogo/<int:id_simbologia>', endpoint='catalogo.eliminar_simbologia', view_func=eliminar_simbologia, methods=['DELETE'])
 
-    app.add_url_rule('/api/geografia/estados', endpoint='geografia.obtener_estados', view_func=obtener_estados, methods=['GET'])
-    app.add_url_rule('/api/geografia/municipios/<int:id_estado>', endpoint='geografia.obtener_municipios', view_func=obtener_municipios, methods=['GET'])    
-    app.add_url_rule('/api/geografia/parroquias/<int:id_municipio>', endpoint='geografia.obtener_parroquias', view_func=obtener_parroquias, methods=['GET'])
-    app.add_url_rule('/api/geografia/comunidades/<int:id_parroquia>', endpoint='geografia.obtener_comunidades', view_func=obtener_comunidades, methods=['GET'])
+    app.add_url_rule('/api/geografia/estados', endpoint='geografia.obtener_estados', view_func=geografia_obtener_estados, methods=['GET'])
+    app.add_url_rule('/api/geografia/municipios/<int:id_estado>', endpoint='geografia.obtener_municipios', view_func=geografia_obtener_municipios, methods=['GET'])    
+    app.add_url_rule('/api/geografia/parroquias/<int:id_municipio>', endpoint='geografia.obtener_parroquias', view_func=geografia_obtener_parroquias, methods=['GET'])
+    app.add_url_rule('/api/geografia/comunidades/<int:id_parroquia>', endpoint='geografia.obtener_comunidades', view_func=geografia_obtener_comunidades, methods=['GET'])
     
     try:
         from app import cli as app_cli
@@ -309,11 +337,11 @@ def create_app(config_class=Config):
 
         if current_user.is_authenticated:
             alertas = Notificacion.query.filter(
-                (Notificacion.usuario_id == current_user.id_usuario) | (Notificacion.usuario_id.is_(None))
+                (Notificacion.id_usuario == current_user.id_usuario) | (Notificacion.id_usuario.is_(None))
             ).order_by(Notificacion.fecha_creacion.desc()).limit(5).all()
             
             conteo_alertas = Notificacion.query.filter(
-                (Notificacion.usuario_id == current_user.id_usuario) | (Notificacion.usuario_id.is_(None)),
+                (Notificacion.id_usuario == current_user.id_usuario) | (Notificacion.id_usuario.is_(None)),
                 Notificacion.leido == False
             ).count()
             

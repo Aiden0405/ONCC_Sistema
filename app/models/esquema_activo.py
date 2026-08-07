@@ -99,11 +99,11 @@ class FormacionActiva(db.Model):
         historial = db.session.query(
             cls, 
             InstitucionActiva, 
-            ActividadActiva
+            Actividad
         ).join(
             InstitucionActiva, cls.id_institucion == InstitucionActiva.id_institucion
         ).join(
-            ActividadActiva, cls.id_actividad == ActividadActiva.id_actividad
+            Actividad, cls.id_actividad == Actividad.id_actividad
         ).order_by(cls.id_formacion.desc()).all()
 
         formaciones_procesadas = []
@@ -154,12 +154,12 @@ class SensibilizacionActiva(db.Model):
     def obtener_historial_completo(cls):
         historial = db.session.query(
             cls,
-            ActividadActiva,
+            Actividad,
             ComunidadActiva
         ).join(
-            ActividadActiva, cls.id_actividad == ActividadActiva.id_actividad
+            Actividad, cls.id_actividad == Actividad.id_actividad
         ).join(
-            ComunidadActiva, ActividadActiva.id_comunidad == ComunidadActiva.id_comunidad
+            ComunidadActiva, Actividad.id_comunidad == ComunidadActiva.id_comunidad
         ).order_by(cls.id_sensibilizacion.desc()).all()
 
         sensibilizaciones_procesadas = []

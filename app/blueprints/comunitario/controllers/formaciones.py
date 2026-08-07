@@ -9,11 +9,11 @@ from app.blueprints.comunitario.forms import FormacionForm
 # 🌟 Importamos tu validador de seguridad dinámico del Core
 from app.blueprints.core.controllers.roles import verificar_permiso_dinamico
 from app.models.esquema_activo import (
-    ActividadActiva as Actividad,
     NivelActivo as Nivel,
     InstitucionActiva as Institucion,
     ComunidadActiva as Comunidad
 )
+from app.models.actividad import Actividad
 from app.models.esquema_activo import FormacionActiva as Formacion
 
 # ==========================================

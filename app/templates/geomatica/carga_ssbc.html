@@ -1,5 +1,4 @@
 {% extends 'base.html' %}
-
 {% block title %}Carga de Mapas de Riesgo - ONCC{% endblock %}
 
 {% block content %}
@@ -11,86 +10,97 @@
         </div>
     </div>
 
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="space-y-2 mb-4">
+                {% for category, message in messages %}
+                    <div class="p-4 rounded-md text-sm shadow-sm flex items-center space-x-2 
+                        {% if category == 'error' %}bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 
+                        {% else %}bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800{% endif %}">
+                        <i data-lucide="{% if category == 'error' %}alert-circle{% else %}check-circle{% endif %}" class="w-5 h-5"></i>
+                        <span>{{ message }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
     <div class="p-6 rounded-xl shadow-sm border bg-white dark:bg-gray-800 dark:border-gray-700 space-y-6">
         
         <div class="flex items-center space-x-4">
-            <div class="w-12 h-12 rounded-full flex items-center justify-center bg-red-50 text-red-600 shrink-0">
-                <i data-lucide="shield-alert" class="w-6 h-6"></i>
+            <!-- Icono y header en verde institucional -->
+            <div class="w-12 h-12 rounded-full flex items-center justify-center bg-green-50 dark:bg-green-900/40 text-green-600 dark:text-green-400 shrink-0">
+                <i data-lucide="map-pin" class="w-6 h-6"></i>
             </div>
             <div>
                 <h3 class="text-lg font-bold text-gray-800 dark:text-white">Cargar Nuevo Mapa de Riesgo</h3>
-                <p class="text-xs text-gray-500 dark:text-gray-400">Asigne una actividad de la lista. Si no anexa un archivo físico, el sistema abrirá las herramientas de dibujo interactivo.</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Asigne una actividad. Si no anexa un archivo físico, el sistema abrirá el editor web.</p>
             </div>
         </div>
-        
-        <form method="POST" action="{{ url_for('geomatica.procesar_archivo') }}" enctype="multipart/form-data" class="space-y-4">
+
+        <form method="POST" action="{{ url_for('geomatica.procesar_archivo') }}" enctype="multipart/form-data" class="space-y-5" id="formMapa">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             
-            <div class="flex flex-col space-y-1">
-                <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Asignar a Actividad Ejecutada (Tipo: Mapa de Riesgo)</label>
-                <select name="id_actividad" required class="w-full p-2.5 border rounded-md text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none cursor-pointer">
-                    <option value="">-- Seleccione la actividad correspondiente a vincular --</option>
-                    {% for act in actividades_disponibles %}
-                        <option value="{{ act.id_actividad }}">
-                            ID Actividad: {{ act.id_actividad }} | Tipo: {{ act.tipo_actividad }} | Planificada: {{ act.fecha_actividad }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Nombre del Mapa</label>
-                    <input type="text" name="nombre" placeholder="Ej: Mapa de Riesgo Inundación" required 
-                           class="w-full border rounded-md p-2 text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none" />
-                </div>
-                <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Archivo Cartográfico (Opcional: .KML, .JPG, .PNG)</label>
-                    <input type="file" name="archivo_mapa" accept=".kml, .jpg, .jpeg, .png"
-                           class="block w-full text-sm border rounded-md p-1.5 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white file:mr-4 file:py-1 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100 dark:file:bg-red-900/30 dark:file:text-red-400 cursor-pointer" />
-                    <p class="text-[10px] text-gray-500 mt-1">* Si sube un KML o lo deja vacío, irá al editor web. Las imágenes (.png, .jpg) se guardan directamente.</p>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-md dark:bg-gray-900/50 border dark:border-gray-700">
-                <div class="flex flex-col space-y-2">
-                    <label class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Estado</label>
-                    <select id="estado" onchange="alCambiarEstado(this.value)" class="p-2 border rounded-md text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white cursor-pointer focus:ring-2 focus:ring-red-500 outline-none">
-                        <option value="">Seleccione Estado</option>
+            <!-- Selector de Actividad Mejorado y Filtrado -->
+            <div class="flex flex-col space-y-2">
+                <label class="block text-xs font-bold uppercase text-gray-700 dark:text-gray-300 tracking-wide">Asignar a Actividad Ejecutada</label>
+                <div class="relative">
+                    <select name="id_actividad" required class="w-full p-3 pl-4 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none shadow-sm appearance-none cursor-pointer transition-all">
+                        <option value="" class="text-gray-500 dark:text-gray-400 dark:bg-gray-700">-- Seleccione la actividad planificada --</option>
+                        {% for act in actividades_disponibles %}
+                            <!-- Filtro estricto por tipo de actividad 'Mapa de Riesgo' -->
+                            {% if act.tipo_actividad|lower == 'mapa de riesgo' or act.tipo_actividad|lower == 'mapa_riesgo' %}
+                                <option value="{{ act.id_actividad }}" 
+                                    {% if act.mapa_asignado or act.asignada %}disabled class="text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 italic"{% else %}class="text-gray-800 dark:text-white dark:bg-gray-700 font-medium"{% endif %}>
+                                    ID: {{ act.id_actividad }} | Planificada: {{ act.fecha_actividad }}
+                                    {% if act.mapa_asignado or act.asignada %} - (Ya tiene un mapa asignado) {% endif %}
+                                </option>
+                            {% endif %}
+                        {% endfor %}
                     </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 dark:text-gray-400">
+                        <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold uppercase text-gray-700 dark:text-gray-300 tracking-wide">Nombre del Mapa</label>
+                    <input type="text" name="nombre" placeholder="Ej: Mapa de Riesgo Inundación" required class="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-400 shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all" />
                 </div>
                 
-                <div class="flex flex-col space-y-2">
-                    <label class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Municipio</label>
-                    <select id="municipio" onchange="alCambiarMunicipio(this.value)" disabled class="p-2 border rounded-md text-sm bg-gray-100 dark:bg-gray-800 dark:border-gray-600 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-red-500 outline-none">
-                        <option value="">Seleccione Municipio</option>
-                    </select>
-                </div>
-                
-                <div class="flex flex-col space-y-2">
-                    <label class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Parroquia</label>
-                    <select id="parroquia" onchange="alCambiarParroquia(this.value)" disabled class="p-2 border rounded-md text-sm bg-gray-100 dark:bg-gray-800 dark:border-gray-600 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-red-500 outline-none">
-                        <option value="">Seleccione Parroquia</option>
-                    </select>
-                </div>
-                
-                <div class="flex flex-col space-y-2">
-                    <label class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Comunidad</label>
-                    <select id="comunidad" name="comunidad" disabled class="p-2 border rounded-md text-sm bg-gray-100 dark:bg-gray-800 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-red-500 outline-none disabled:opacity-50 disabled:cursor-not-allowed">
-                        <option value="">Seleccione Comunidad</option>
-                    </select>
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold uppercase text-gray-700 dark:text-gray-300 tracking-wide">Archivo (Máx 5MB)</label>
+                    <div class="relative border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-2.5 bg-gray-50 dark:bg-gray-700/50 hover:bg-green-50 dark:hover:bg-gray-700 hover:border-green-400 dark:hover:border-green-500 transition-colors cursor-pointer" onclick="document.getElementById('archivo_mapa').click()">
+                        <div class="flex items-center justify-center gap-2 text-gray-500 dark:text-gray-300">
+                            <i data-lucide="upload" class="w-5 h-5"></i>
+                            <span id="texto-archivo" class="text-sm font-medium">Clic para subir archivo...</span>
+                        </div>
+                        <!-- Soporte extendido para .geojson -->
+                        <input type="file" id="archivo_mapa" name="archivo_mapa" accept=".kml, .geojson, .jpg, .jpeg, .png" class="hidden" onchange="document.getElementById('texto-archivo').innerText = this.files[0] ? this.files[0].name : 'Clic para subir archivo...'" />
+                    </div>
+                    <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-1.5 leading-tight flex items-start gap-1">
+                        <i data-lucide="info" class="w-3.5 h-3.5 text-blue-500 shrink-0"></i>
+                        <span><strong>Vectores (.kml, .geojson):</strong> Abren el editor interactivo.<br>
+                        <strong>Imágenes (.png, .jpg):</strong> Se guardan y redirigen al index.</span>
+                    </p>
                 </div>
             </div>
 
-            <div class="space-y-1">
-                <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Descripción detallada</label>
-                <textarea name="descripcion" rows="3" required placeholder="Describa los detalles, observaciones o hallazgos principales del mapa..." 
-                          class="w-full border rounded-md p-2 text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"></textarea>
+            <div class="space-y-2">
+                <label class="block text-xs font-bold uppercase text-gray-700 dark:text-gray-300 tracking-wide">Descripción detallada</label>
+                <textarea name="descripcion" rows="3" required placeholder="Describa los detalles del mapa..." class="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-400 shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"></textarea>
             </div>
 
-            <div class="flex justify-end pt-4 border-t dark:border-gray-700 mt-4">
-                <button type="submit" class="bg-red-600 hover:bg-red-700 transition-colors text-white rounded-md text-sm font-medium px-6 py-2.5 shadow-sm flex items-center space-x-2">
-                    <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+            <div class="flex justify-between pt-5 border-t border-gray-200 dark:border-gray-700 mt-5 items-center">
+                <a href="javascript:history.back()" class="bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-lg text-sm font-semibold px-6 py-2.5 shadow-sm flex items-center space-x-2 transition-colors">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                    <span>Cancelar</span>
+                </a>
+                
+                <button type="submit" id="btnSubmit" class="bg-green-600 hover:bg-green-700 transition-colors text-white rounded-lg text-sm font-semibold px-6 py-2.5 shadow-sm flex items-center space-x-2">
+                    <i data-lucide="save" class="w-4 h-4"></i>
                     <span>Registrar Mapa</span>
                 </button>
             </div>
@@ -100,162 +110,95 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    function escapeHTML(str) {
-    if (!str) return '';
-    const p = document.createElement('p');
-    p.textContent = str;
-    return p.innerHTML;
-}
     document.addEventListener('DOMContentLoaded', () => {
-        const formulario = document.querySelector('form');
-        
-        if (formulario) {
-            formulario.addEventListener('submit', function(e) {
-                const btn = this.querySelector('button[type="submit"]');
-                if (btn) {
-                    // Deshabilitar botón para bloquear clicks extra
-                    btn.disabled = true;
-                    btn.classList.add('opacity-70', 'cursor-not-allowed');
-                    
-                    // Feedback visual de carga
-                    btn.innerHTML = `
-                        <i data-lucide="loader" class="animate-spin w-4 h-4 mr-2 inline-block alignment-middle"></i>
-                        <span>Subiendo archivo...</span>
-                    `;
-                    
-                    // Renderizar el icono de carga de Lucide
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+
+        const form = document.getElementById('formMapa');
+        if (!form) return;
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const inputArchivo = document.getElementById('archivo_mapa');
+            
+            // VALIDACIÓN: Límite de 5MB
+            if (inputArchivo.files.length > 0) {
+                const tamañoMB = inputArchivo.files[0].size / 1024 / 1024;
+                if (tamañoMB > 5) {
+                    Swal.fire('Archivo muy pesado', 'El mapa o imagen no debe exceder los 5MB.', 'warning');
+                    return false;
+                }
+            }
+
+            const btn = document.getElementById('btnSubmit');
+            const originalContent = btn.innerHTML;
+
+            // Estado visual de carga
+            btn.disabled = true;
+            btn.classList.add('opacity-70', 'cursor-not-allowed');
+            btn.innerHTML = `<i data-lucide="loader" class="animate-spin w-4 h-4 mr-2 inline-block align-middle"></i><span>Procesando...</span>`;
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            const formData = new FormData(this);
+
+            try {
+                const response = await fetch(this.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                // 1. IMPRESIÓN EN CONSOLA PARA INSPECCIÓN DE RESPUESTA
+                console.log('=== RESPUESTA SERVIDOR ===');
+                console.log('Status HTTP:', response.status);
+                console.log('Payload JSON:', data);
+
+                if (response.ok && data.status === 'success') {
+                    // 2. ALERTA DE CONFIRMACIÓN ANTES DE CUALQUIER REDIRECCIÓN
+                    Swal.fire({
+                        title: '¡Procesamiento Completado!',
+                        text: `${data.message}\n\n¿Deseas ir al editor a dibujar el mapa ahora?`,
+                        icon: 'success',
+                        showCancelButton: true,
+                        confirmButtonColor: '#16a34a',
+                        cancelButtonColor: '#6b7280',
+                        confirmButtonText: 'Sí, ir al mapa',
+                        cancelButtonText: 'Permanecer aquí'
+                    }).then((result) => {
+                        if (result.isConfirmed && data.redirect_url) {
+                            window.location.href = data.redirect_url;
+                        } else {
+                            console.log('Navegación pausada. Permanece en la pantalla actual para inspección.');
+                            // Restaurar botón
+                            btn.disabled = false;
+                            btn.classList.remove('opacity-70', 'cursor-not-allowed');
+                            btn.innerHTML = originalContent;
+                            if (typeof lucide !== 'undefined') lucide.createIcons();
+                        }
+                    });
+                } else {
+                    Swal.fire('Error', data.message || 'Ocurrió un problema al procesar el mapa.', 'error');
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-70', 'cursor-not-allowed');
+                    btn.innerHTML = originalContent;
                     if (typeof lucide !== 'undefined') lucide.createIcons();
                 }
-            });
-        }
+
+            } catch (error) {
+                console.error('Error procesando la petición Fetch:', error);
+                Swal.fire('Error de Red', 'No se pudo comunicar con el servidor.', 'error');
+                btn.disabled = false;
+                btn.classList.remove('opacity-70', 'cursor-not-allowed');
+                btn.innerHTML = originalContent;
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+        });
     });
-function cargarEstados() {
-    fetch('/api/geografia/estados')
-        .then(res => res.json())
-        .then(data => {
-            // Abre la consola del navegador (F12) para ver esta línea:
-            console.log("Backend Estados:", data); 
-            
-            const selectEstado = document.getElementById('estado');
-            selectEstado.innerHTML = '<option value="">Todos los Estados</option>';
-            
-            data.forEach(est => {
-                // Autodetecta si la llave es 'id' o 'id_estado', 'nombre' o 'nombre_estado'
-                const id = est.id || est.id_estado || est.idEstado;
-                const nombre = est.nombre || est.nombre_estado || est.nombreEstado;
-                
-                selectEstado.innerHTML += `<option value="${id}">${escapeHTML(nombre || 'Error: Sin nombre')}</option>`;
-            });
-        })
-        .catch(err => console.error("Error cargando estados:", err));
-}
-
-function alCambiarEstado(estadoId) {
-    const selectMunicipio = document.getElementById('municipio');
-    const selectParroquia = document.getElementById('parroquia');
-    const selectComunidad = document.getElementById('comunidad');
-
-    selectMunicipio.innerHTML = '<option value="">Todos los Municipios</option>';
-    selectParroquia.innerHTML = '<option value="">Todas las Parroquias</option>';
-    selectComunidad.innerHTML = '<option value="">Todas las Comunidades</option>';
-    
-    selectMunicipio.disabled = true;
-    selectParroquia.disabled = true;
-    selectComunidad.disabled = true;
-
-    if (!estadoId) return;
-
-    fetch(`/api/geografia/municipios/${estadoId}`)
-        .then(res => res.json())
-        .then(data => {
-            console.log("Backend Municipios:", data);
-            
-            data.forEach(mun => {
-                const id = mun.id || mun.id_municipio || mun.idMunicipio;
-                const nombre = mun.nombre || mun.nombre_municipio || mun.nombreMunicipio;
-                
-                selectMunicipio.innerHTML += `<option value="${id}">${escapeHTML(nombre || 'Error: Sin nombre')}</option>`;
-            });
-            selectMunicipio.disabled = false;
-        })
-        .catch(err => console.error("Error cargando municipios:", err));
-}
-
-function alCambiarMunicipio(municipioId) {
-    const selectParroquia = document.getElementById('parroquia');
-    const selectComunidad = document.getElementById('comunidad');
-
-    selectParroquia.innerHTML = '<option value="">Todas las Parroquias</option>';
-    selectComunidad.innerHTML = '<option value="">Todas las Comunidades</option>';
-    
-    selectParroquia.disabled = true;
-    selectComunidad.disabled = true;
-
-    if (!municipioId) return;
-
-    fetch(`/api/geografia/parroquias/${municipioId}`)
-        .then(res => res.json())
-        .then(data => {
-            console.log("Backend Parroquias:", data);
-            
-            data.forEach(par => {
-                const id = par.id || par.id_parroquia || par.idParroquia;
-                const nombre = par.nombre || par.nombre_parroquia || par.nombreParroquia;
-                
-                selectParroquia.innerHTML += `<option value="${id}">${escapeHTML(nombre || 'Error: Sin nombre')}</option>`;
-            });
-            selectParroquia.disabled = false;
-        })
-        .catch(err => console.error("Error cargando parroquias:", err));
-}
-
-function alCambiarParroquia(parroquiaId) {
-    const selectComunidad = document.getElementById('comunidad');
-    
-    selectComunidad.innerHTML = '<option value="">Todas las Comunidades</option>';
-    selectComunidad.disabled = true;
-
-    if (!parroquiaId) return;
-
-    fetch(`/api/geografia/comunidades/${parroquiaId}`)
-        .then(res => res.json())
-        .then(data => {
-            console.log("Backend Comunidades:", data);
-            
-            data.forEach(com => {
-                const id = com.id || com.id_comunidad || com.idComunidad;
-                const nombre = com.nombre || com.nombre_comunidad || com.nombreComunidad;
-                
-                selectComunidad.innerHTML += `<option value="${id}">${escapeHTML(nombre || 'Error: Sin nombre')}</option>`;
-            });
-            selectComunidad.disabled = false;
-        })
-        .catch(err => console.error("Error cargando comunidades:", err));
-}
-document.addEventListener('DOMContentLoaded', () => {
-    
-    // 1. Ejecutamos la lógica de mapas dentro de una cápsula (try-catch)
-    try {
-        // Usamos la función que mencionas haber modificado
-        if (typeof obtener_mapas_filtrados === 'function') {
-            obtener_mapas_filtrados();
-        } else if (typeof cargarTablaMapas === 'function') {
-            cargarTablaMapas();
-        } else {
-            console.warn("No se encontró la función para cargar los mapas.");
-        }
-    } catch (error) {
-        // Si hay un error aquí, se reporta, pero NO detiene la página
-        console.error("🔥 Error detectado en obtener_mapas_filtrados:", error);
-    }
-
-    // 2. Ejecutamos la carga de estados independientemente
-    try {
-        cargarEstados(); // ¡Ahora esta función se ejecutará sí o sí!
-    } catch (error) {
-        console.error("🔥 Error al ejecutar cargarEstados:", error);
-    }
-});
 </script>
 {% endblock %}

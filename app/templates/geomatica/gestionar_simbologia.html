@@ -1,0 +1,416 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto p-4 max-w-6xl">
+    <!-- Encabezado del Módulo -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+        <div class="flex items-center gap-4">
+            <div class="bg-green-600 text-white p-3.5 rounded-lg shadow-md flex items-center justify-center h-12 w-12">
+                <i class="fa fa-layer-group text-xl"></i>
+            </div>
+            <div>
+                <h2 class="text-2xl font-bold text-gray-800 tracking-tight">Catálogo de Simbología</h2>
+                <p class="text-gray-500 text-sm mt-0.5">Gestión de estilos visuales para los elementos del mapa de riesgo.</p>
+            </div>
+        </div>
+        <button onclick="abrirModalCrear()" class="bg-green-600 text-white px-5 py-2.5 rounded-lg shadow-md hover:bg-green-700 hover:shadow-lg transition-all flex items-center gap-2 font-medium text-sm">
+            <i class="fa fa-plus-circle"></i> Nuevo Símbolo
+        </button>
+    </div>
+
+    <!-- Barra de Herramientas (Buscador) -->
+    <div class="mb-4">
+        <div class="relative w-full md:w-1/2 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex items-center focus-within:ring-2 focus-within:ring-green-500 transition-all">
+            <div class="pl-4 text-gray-400">
+                <i class="fa fa-search"></i>
+            </div>
+            <input type="text" id="buscador-tabla" onkeyup="filtrarTabla()" placeholder="Buscar por nombre, categoría o geometría..." class="w-full py-3 px-3 text-sm text-gray-700 bg-transparent border-none focus:ring-0 outline-none placeholder-gray-400">
+        </div>
+    </div>
+
+    <!-- Contenedor de la Tabla -->
+    <div class="bg-white shadow-md rounded-xl border border-gray-200 overflow-hidden">
+        <div class="max-h-[500px] overflow-y-auto custom-scrollbar">
+            <table class="min-w-full bg-white text-sm text-left text-gray-600 relative">
+                <thead class="bg-gray-50 text-gray-700 uppercase text-xs font-semibold sticky top-0 z-10 shadow-sm">
+                    <tr>
+                        <th class="py-4 px-6">Categoría</th>
+                        <th class="py-4 px-6">Nombre del Elemento</th>
+                        <th class="py-4 px-6">Tipo Geometría</th>
+                        <th class="py-4 px-6">Vista Previa / Estilo</th>
+                        <th class="py-4 px-6 text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-simbologia" class="divide-y divide-gray-100">
+                    <tr><td colspan="5" class="text-center py-10 text-gray-400"><i class="fa fa-spinner fa-spin text-2xl mb-2"></i><br>Cargando catálogo...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<!-- Se añade leaflet-geosearch CSS/JS por requerimiento del módulo -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet-geosearch@3.0.0/dist/geosearch.css" />
+<script src="https://unpkg.com/leaflet-geosearch@3.0.0/dist/geosearch.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    const BASE_URL = '/catalogo'; 
+    let simbolosGlobal = []; 
+
+    document.addEventListener('DOMContentLoaded', cargarSimbologia);
+
+    function filtrarTabla() {
+        const input = document.getElementById("buscador-tabla").value.toLowerCase();
+        document.querySelectorAll("#tabla-simbologia tr.fila-dato").forEach(fila => {
+            fila.style.display = fila.textContent.toLowerCase().includes(input) ? "" : "none";
+        });
+    }
+
+    async function cargarSimbologia() {
+        try {
+            const res = await fetch(`${BASE_URL}/listar`);
+            if (!res.ok) throw new Error('Error de red');
+            const data = await res.json();
+            simbolosGlobal = data;
+            
+            const tbody = document.getElementById('tabla-simbologia');
+            tbody.innerHTML = '';
+            
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-10 text-gray-500">No se encontraron símbolos registrados.</td></tr>';
+                return;
+            }
+
+            data.forEach(s => {
+                let badgeClass = s.categoria === 'Riesgo' ? 'bg-red-50 text-red-700 border-red-200' : 
+                                 (s.categoria === 'Recurso' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-orange-50 text-orange-700 border-orange-200');
+                
+                let geomIcon = s.tipo_geometria === 'Point' ? '<i class="fa fa-map-marker-alt text-green-500 mr-1"></i> Punto' :
+                               (s.tipo_geometria === 'Polygon' ? '<i class="fa fa-draw-polygon text-green-500 mr-1"></i> Polígono' : '<i class="fa fa-route text-green-500 mr-1"></i> Línea');
+
+                let estiloHtml = '';
+                const est = s.estilo_defecto || {};
+                
+                if (s.tipo_geometria === 'Point' && est.isIcon && est.iconUrl) {
+                    estiloHtml = `<div class="flex items-center gap-3"><div class="bg-gray-50 p-1.5 rounded-lg border border-gray-200 shadow-sm"><img src="${est.iconUrl}" class="w-7 h-7 object-contain" alt="Icono"></div><span class="text-xs text-gray-500 font-medium">Imagen</span></div>`;
+                } else {
+                    const colorAMostrar = est.color || est.fillColor || '#888888';
+                    let tipoTexto = s.tipo_geometria === 'Polygon' ? (est.fillPattern === 'grid' || est.fillPattern === 'cuadricula' ? 'Patrón' : 'Sólido') : (est.dashArray ? 'Punteada' : 'Continua');
+                    estiloHtml = `<div class="flex items-center gap-3"><span class="w-6 h-6 rounded-md border border-gray-300 shadow-inner" style="background-color: ${colorAMostrar}"></span><span class="text-xs text-gray-500 font-medium">${colorAMostrar} ${tipoTexto ? '('+tipoTexto+')' : ''}</span></div>`;
+                }
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-green-50/50 transition-colors fila-dato">
+                        <td class="py-3 px-6"><span class="px-2.5 py-1 rounded-md text-xs font-bold border ${badgeClass}">${s.categoria}</span></td>
+                        <td class="py-3 px-6 font-semibold text-gray-800">${s.nombre_elemento}</td>
+                        <td class="py-3 px-6 text-gray-600">${geomIcon}</td>
+                        <td class="py-3 px-6">${estiloHtml}</td>
+                        <td class="py-3 px-6 text-center">
+                            <div class="flex justify-center gap-2">
+                                <button onclick="abrirModalEditar(${s.id_simbologia})" class="text-green-600 bg-green-50 hover:bg-green-100 p-2 rounded-lg transition-colors" title="Editar"><i class="fa fa-edit"></i></button>
+                                <button onclick="eliminarSimbologia(${s.id_simbologia})" class="text-red-600 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition-colors" title="Eliminar"><i class="fa fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+        } catch (error) {
+            Swal.fire('Error', 'Hubo un problema al cargar el catálogo.', 'error');
+        }
+    }
+
+    async function abrirModalCrear() {
+        const { value: result } = await Swal.fire({
+            title: 'Nuevo Elemento Geográfico',
+            html: generarFormularioHTML(null),
+            focusConfirm: false,
+            showCancelButton: true,
+            confirmButtonText: '<i class="fa fa-save"></i> Guardar',
+            cancelButtonText: 'Cancelar',
+            customClass: { confirmButton: 'bg-green-600 hover:bg-green-700', popup: 'rounded-xl', htmlContainer: 'm-0 p-4' },
+            preConfirm: () => validarExtraerDatos()
+        });
+        if (result) enviarPeticion(`${BASE_URL}/crear`, 'POST', result);
+    }
+
+    async function abrirModalEditar(id) {
+        const simbolo = simbolosGlobal.find(s => s.id_simbologia === id);
+        if (!simbolo) return;
+        const { value: result } = await Swal.fire({
+            title: 'Editar Símbolo',
+            html: generarFormularioHTML(simbolo),
+            focusConfirm: false,
+            showCancelButton: true,
+            confirmButtonText: '<i class="fa fa-sync"></i> Actualizar',
+            cancelButtonText: 'Cancelar',
+            customClass: { confirmButton: 'bg-green-600 hover:bg-green-700', popup: 'rounded-xl', htmlContainer: 'm-0 p-4' },
+            preConfirm: () => validarExtraerDatos()
+        });
+        if (result) enviarPeticion(`${BASE_URL}/${id}`, 'PUT', result);
+    }
+
+    async function eliminarSimbologia(id) {
+        const result = await Swal.fire({
+            title: '¿Eliminar símbolo?',
+            text: "Esta acción borrará los datos permanentemente.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            customClass: { popup: 'rounded-xl' }
+        });
+        if (result.isConfirmed) enviarPeticion(`${BASE_URL}/${id}`, 'DELETE', null);
+    }
+
+    window.cambiarVistaEstilos = function() {
+        const geom = document.getElementById('swal-geom').value;
+        document.querySelectorAll('.seccion-estilo').forEach(el => el.classList.add('hidden'));
+        document.getElementById('estilos-' + geom).classList.remove('hidden');
+    };
+
+    window.cargarIconoBase64 = function(input) {
+        if (input.files && input.files[0]) {
+            const archivo = input.files[0];
+            if (archivo.size > 2 * 1024 * 1024) {
+                Swal.showValidationMessage('⚠️ El archivo excede 2MB.');
+                input.value = '';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('swal-icono-b64').value = e.target.result;
+                const imgPreview = document.getElementById('preview-icono');
+                imgPreview.src = e.target.result;
+                imgPreview.style.display = 'block';
+                Swal.resetValidationMessage(); 
+            }
+            reader.readAsDataURL(archivo);
+        }
+    };
+
+    window.quitarIconoModal = function() {
+        document.getElementById('swal-icono-b64').value = '';
+        document.getElementById('swal-icono-file').value = '';
+        const imgPreview = document.getElementById('preview-icono');
+        imgPreview.src = '';
+        imgPreview.style.display = 'none';
+    };
+
+    function generarFormularioHTML(simbolo) {
+        const cat = simbolo ? simbolo.categoria : 'Riesgo';
+        const nom = simbolo ? simbolo.nombre_elemento : '';
+        const geom = simbolo ? simbolo.tipo_geometria : 'Point';
+        const est = simbolo && simbolo.estilo_defecto ? simbolo.estilo_defecto : {};
+
+        const tieneIcono = est.isIcon && est.iconUrl;
+        const previewIconoHtml = tieneIcono 
+            ? `<img id="preview-icono" src="${est.iconUrl}" class="h-9 w-9 object-contain bg-white border border-gray-200 rounded p-1 shadow-sm" alt="Ícono">` 
+            : `<img id="preview-icono" src="" style="display:none;" class="h-9 w-9 object-contain bg-white border border-gray-200 rounded p-1 shadow-sm">`;
+
+        return `
+            <div class="space-y-4 text-left font-sans mt-2">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Categoría</label>
+                        <select id="swal-cat" class="w-full p-2 border border-gray-300 rounded-md bg-gray-50 text-sm outline-none">
+                            <option value="Riesgo" ${cat==='Riesgo'?'selected':''}>Riesgo</option>
+                            <option value="Recurso" ${cat==='Recurso'?'selected':''}>Recurso</option>
+                            <option value="Vulnerabilidad" ${cat==='Vulnerabilidad'?'selected':''}>Vulnerabilidad</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Geometría</label>
+                        <select id="swal-geom" class="w-full p-2 border border-gray-300 rounded-md bg-gray-50 text-sm outline-none" onchange="window.cambiarVistaEstilos()">
+                            <option value="Point" ${geom==='Point'?'selected':''}>Punto (Marcador)</option>
+                            <option value="Polygon" ${geom==='Polygon'?'selected':''}>Polígono (Área)</option>
+                            <option value="LineString" ${geom==='LineString'?'selected':''}>Línea (Ruta)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Nombre del Elemento</label>
+                    <input id="swal-nom" type="text" placeholder="Ej: Quebrada Inundable" class="w-full p-2 border border-gray-300 rounded-md text-sm outline-none shadow-sm" value="${nom}">
+                </div>
+
+                <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg shadow-sm">
+                    <label class="block text-xs font-semibold text-blue-800 uppercase mb-3"><i class="fa fa-palette mr-1"></i> Personalización Visual</label>
+
+                    <!-- ESTILOS PUNTO -->
+                    <div id="estilos-Point" class="seccion-estilo ${geom==='Point'?'':'hidden'} space-y-3">
+                        <div class="grid grid-cols-1 gap-3">
+                            <div class="flex items-center gap-2">
+                                <div class="flex-1">
+                                    <label class="text-xs text-gray-700 font-medium block mb-1">Icono Personalizado (Opcional)</label>
+                                    <input type="file" id="swal-icono-file" accept="image/png, image/jpeg, image/svg+xml, image/webp" class="w-full p-1.5 border border-gray-300 rounded text-xs outline-none bg-white shadow-sm" onchange="window.cargarIconoBase64(this)">
+                                    <input type="hidden" id="swal-icono-b64" value="${est.iconUrl || ''}">
+                                </div>
+                                <div class="flex-shrink-0 flex items-center mt-5">
+                                    ${previewIconoHtml}
+                                    <button type="button" onclick="window.quitarIconoModal()" class="ml-1 text-[10px] bg-gray-200 hover:bg-red-100 text-gray-700 hover:text-red-600 font-bold px-2 py-1.5 rounded border border-gray-300 transition" title="Quitar ícono">✕</button>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-700 font-medium block mb-1">Color Base (aplica si no hay ícono)</label>
+                                <input type="color" id="swal-punto-color" value="${est.color || '#3388ff'}" class="w-full h-8 rounded cursor-pointer border border-gray-300 p-0 shadow-sm">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ESTILOS POLÍGONO -->
+                    <div id="estilos-Polygon" class="seccion-estilo ${geom==='Polygon'?'':'hidden'}">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-xs text-gray-700 font-medium block mb-1">Color Principal (Borde/Relleno)</label>
+                                <input type="color" id="swal-poli-color" value="${est.fillColor || est.color || '#ef4444'}" class="w-full h-8 rounded cursor-pointer border border-gray-300 p-0 shadow-sm">
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-700 font-medium block mb-1">Patrón de Relleno</label>
+                                <select id="swal-poli-patron" class="w-full p-1.5 border border-gray-300 rounded text-xs outline-none bg-white shadow-sm">
+                                    <option value="solido" ${est.fillPattern==='solid' || !est.fillPattern ? 'selected':''}>Color Sólido</option>
+                                    <option value="rayado" ${est.fillPattern==='rayado'?'selected':''}>Rayado</option>
+                                    <option value="cuadricula" ${est.fillPattern==='grid' || est.fillPattern==='cuadricula' ?'selected':''}>Cuadrícula</option>
+                                    <option value="triangulo" ${est.fillPattern==='triangulo'?'selected':''}>Triángulos</option>
+                                    <option value="pentagono" ${est.fillPattern==='pentagono'?'selected':''}>Pentágonos</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-700 font-medium block mb-1">Grosor Borde</label>
+                                <input type="number" id="swal-poli-grosor" value="${est.weight !== undefined ? est.weight : 2}" min="0" max="10" class="w-full p-1.5 border border-gray-300 rounded text-xs outline-none bg-white shadow-sm">
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-700 font-medium block mb-1">Estilo de Borde</label>
+                                <select id="swal-poli-borde" class="w-full p-1.5 border border-gray-300 rounded text-xs outline-none bg-white shadow-sm">
+                                    <option value="" ${!est.dashArray ? 'selected':''}>Continuo</option>
+                                    <option value="5,5" ${est.dashArray==='5,5'?'selected':''}>Punteado</option>
+                                    <option value="15,10" ${est.dashArray==='15,10' || est.dashArray==='10, 10'?'selected':''}>Discontinuo</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ESTILOS LÍNEA -->
+                    <div id="estilos-LineString" class="seccion-estilo ${geom==='LineString'?'':'hidden'}">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-xs text-gray-700 font-medium block mb-1">Color de Línea</label>
+                                <input type="color" id="swal-linea-color" value="${est.color || '#3388ff'}" class="w-full h-8 rounded cursor-pointer border border-gray-300 p-0 shadow-sm">
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-700 font-medium block mb-1">Grosor</label>
+                                <input type="number" id="swal-linea-grosor" value="${est.weight !== undefined ? est.weight : 4}" min="1" max="10" class="w-full p-1.5 border border-gray-300 rounded text-xs outline-none bg-white shadow-sm">
+                            </div>
+                            <div class="col-span-2">
+                                <label class="text-xs text-gray-700 font-medium block mb-1">Estilo de Trazo</label>
+                                <select id="swal-linea-trazo" class="w-full p-1.5 border border-gray-300 rounded text-xs outline-none bg-white shadow-sm">
+                                    <option value="" ${!est.dashArray ? 'selected':''}>Línea Continua</option>
+                                    <option value="5,5" ${est.dashArray==='5,5'?'selected':''}>Línea Punteada</option>
+                                    <option value="15,10" ${est.dashArray==='15,10' || est.dashArray==='10, 10'?'selected':''}>Línea Discontinua</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function validarExtraerDatos() {
+        const cat = document.getElementById('swal-cat').value;
+        const nom = document.getElementById('swal-nom').value.trim();
+        const geom = document.getElementById('swal-geom').value;
+        
+        if (!nom || nom.length < 3 || nom.length > 100) {
+            Swal.showValidationMessage('El nombre debe tener entre 3 y 100 caracteres.');
+            return false;
+        }
+        
+        let estilo_defecto = {};
+
+        if (geom === 'Point') {
+            const iconUrl = document.getElementById('swal-icono-b64').value;
+            const color = document.getElementById('swal-punto-color').value;
+            
+            if (iconUrl) {
+                estilo_defecto = { isIcon: true, iconUrl: iconUrl, iconSize: [30, 30] };
+            } else {
+                estilo_defecto = { isIcon: false, color: color, fillColor: color, fillOpacity: 1, radius: 8, weight: 2 };
+            }
+        } 
+        else if (geom === 'Polygon') {
+            const color = document.getElementById('swal-poli-color').value;
+            const patron = document.getElementById('swal-poli-patron').value;
+            const borde = document.getElementById('swal-poli-borde').value;
+            const grosor = parseFloat(document.getElementById('swal-poli-grosor').value);
+            
+            if (isNaN(grosor) || grosor < 0 || grosor > 10) {
+                Swal.showValidationMessage('El grosor debe ser un número entre 0 y 10.');
+                return false;
+            }
+
+            estilo_defecto = { 
+                fillColor: color, 
+                fillOpacity: (patron==='solido'||!patron) ? 0.4 : 0.8, 
+                fillPattern: patron, 
+                color: color, 
+                weight: grosor,
+                dashArray: borde || null
+            };
+        } 
+        else if (geom === 'LineString') {
+            const color = document.getElementById('swal-linea-color').value;
+            const trazo = document.getElementById('swal-linea-trazo').value;
+            const grosor = parseFloat(document.getElementById('swal-linea-grosor').value);
+            
+            if (isNaN(grosor) || grosor < 1 || grosor > 10) {
+                Swal.showValidationMessage('El grosor debe ser un número entre 1 y 10.');
+                return false;
+            }
+
+            estilo_defecto = { 
+                color: color, 
+                weight: grosor, 
+                dashArray: trazo || null 
+            };
+        }
+
+        return { datos: { categoria: cat, nombre_elemento: nom, tipo_geometria: geom, estilo_defecto: estilo_defecto } };
+    }
+
+    async function enviarPeticion(url, method, resultPayload) {
+        try {
+            Swal.fire({ title: 'Procesando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            let options = { method: method, headers: { 'X-CSRFToken': '{{ csrf_token() }}' } };
+
+            if (resultPayload) {
+                let formData = new FormData();
+                formData.append('datos', JSON.stringify(resultPayload.datos));
+                options.body = formData;
+            }
+
+            const res = await fetch(url, options);
+            const data = await res.json();
+
+            if (res.ok && data.status === 'success') {
+                Swal.fire({ icon: 'success', title: '¡Éxito!', text: data.message, timer: 2000, showConfirmButton: false, customClass: { popup: 'rounded-xl' } });
+                cargarSimbologia(); 
+            } else {
+                Swal.fire({ icon: 'warning', title: 'Atención', text: data.message || 'Error en la operación', customClass: { popup: 'rounded-xl' }});
+            }
+        } catch (error) {
+            Swal.fire({ icon: 'error', title: 'Error de Red', text: 'No se pudo conectar con el servidor', customClass: { popup: 'rounded-xl' }});
+        }
+    }
+</script>
+{% endblock %}

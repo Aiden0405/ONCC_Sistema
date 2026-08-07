@@ -11,10 +11,10 @@ from app.blueprints.core.controllers.roles import verificar_permiso_dinamico
 # Importamos nuestro nuevo modelo independiente
 from app.models.esquema_activo import SensibilizacionActiva as Sensibilizacion
 from app.models.esquema_activo import (
-    ActividadActiva as Actividad,
     NivelActivo as Nivel,
     ComunidadActiva as Comunidad
 )
+from app.models.actividad import Actividad
 
 # ==========================================
 # 1. LISTAR Y REGISTRAR (GET y POST)
