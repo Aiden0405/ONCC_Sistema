@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict hRjtMAfpDmR8j8T1Ul2lbGLaIG3WGQm0GISvTbObDr1dElrpTlvPibUxghU3biA
+\restrict sOPfZQHJfHr38Wi8wKPN0o8xPbWuURkZ3n4WAKSzYoMw9WwAW4Alac8yy3j62i7
 
 -- Dumped from database version 17.10
 -- Dumped by pg_dump version 17.10
@@ -225,6 +225,7 @@ COPY public.usuario (id_usuario, nombre_usuario, correo, clave, id_rol, estatus)
 21	Andres Romero	andres@gmail.com	scrypt:32768:8:1$vydSDIHt7hxP9qoh$e967a80241f8950c8b55ba6b3402766971b2cbdc3e50cfd70a5cd39fd1d8de022f38926913508594235ecb21f7cf9c1d5afc4f50d29797a9e2fc8381faaea402	7	t
 19	Luis Ramirez	nirkules@fosil.pro	scrypt:32768:8:1$iEEWHK8yb3wwki3t$abebf4c098565f9d71a72093ffaa8e7fc277a8c2166816ef4dab5f83758a17b0a864f347994badbdaf1da15c22537f0148fd5fa2932323f296403fe92ede1602	3	t
 22	Angelo Martinez	angelo@gmail.com	scrypt:32768:8:1$z9RriXxxz83acnO2$0c3cfa3f6fa2a88840ebcba1186e58abcd25e37e078a9214c3f40167aa137e6b5e307b8ccc98c5fc016a6645d13568d0fcdd1f00a5c25b6f4c79ebff829df5cf	8	t
+23	Pytest Auth User	pytest_auth_1786570661@oncc.gob.ve	scrypt:32768:8:1$dOXbLaux2rN27yY1$5f02235e6c239835f0c81b8c7fecf74881cac2da35e1c6e1722632917c9d9aacd0bfdf59871a7264e219c6d85453a76a1de887351977b4331b759e821986c3cd	2	t
 4	Aileen Moyeja	moyejada@gmail.com	scrypt:32768:8:1$gWzZ18QlcvRuH56c$0a7fe348ceafa52a0326fd19965ba51e22b36c541b562b7dd3031337e73c6f4e03d9d8b1a79600a329f4328c0d9e904da6609ddf7307f91fe48a436142c9614b	1	t
 2	Mariangel Reyes	maruchan@gmail.com	scrypt:32768:8:1$dUzD64KmnHWQHxFJ$990ae5e50f714411534cd9b6b09a46d2c4329528f9c0f1f740c73b62ad0a4cf31aed48225dde644d0186386a250fc52a576494b196014e544d0eb25fe7b1ba6b	3	t
 5	Gabriel Castaneda	gabrilucho@gmail.com	scrypt:32768:8:1$Uq0ne8CIh6hnPwDG$fff57d087028d0fc1ddfdbf97da69e7e1988a10a1f75afec178f2771bfcd3a5193c0ba251404ccab560ef0ad253dd16c4b945e48a6c7534cfefe3e33508e1dc0	2	t
@@ -247,7 +248,7 @@ SELECT pg_catalog.setval('public.rol_id_rol_seq', 8, true);
 -- Name: usuario_id_usuario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.usuario_id_usuario_seq', 22, true);
+SELECT pg_catalog.setval('public.usuario_id_usuario_seq', 23, true);
 
 
 --
@@ -310,5 +311,5 @@ ALTER TABLE ONLY public.permisos
 -- PostgreSQL database dump complete
 --
 
-\unrestrict hRjtMAfpDmR8j8T1Ul2lbGLaIG3WGQm0GISvTbObDr1dElrpTlvPibUxghU3biA
+\unrestrict sOPfZQHJfHr38Wi8wKPN0o8xPbWuURkZ3n4WAKSzYoMw9WwAW4Alac8yy3j62i7
 

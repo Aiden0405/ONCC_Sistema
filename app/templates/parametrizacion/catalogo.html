@@ -1,0 +1,427 @@
+{% extends 'base.html' %}
+
+{% block title %}Catálogos y Parametrización - ONCC{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
+    
+    <!-- CABECERA -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div>
+            <h1 class="text-2xl font-bold dark:text-white text-gray-800">Catálogos y Parametrización</h1>
+            <p class="text-sm dark:text-gray-400 text-gray-500">Gestión centralizada de entidades maestras y despliegue territorial</p>
+        </div>
+    </div>
+
+    <!-- MENSAJES FLASH -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="p-4 rounded-xl border text-sm font-medium shadow-sm flex items-center {% if category == 'error' %}bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800{% else %}bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800{% endif %}">
+                    <i data-lucide="{% if category == 'error' %}alert-triangle{% else %}check-circle{% endif %}" class="mr-2.5 w-5 h-5 flex-shrink-0"></i>
+                    <span>{{ message }}</span>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- PESTAÑAS DE CONTROL -->
+    <div class="border-b border-gray-200 dark:border-gray-700 flex flex-wrap gap-2 sm:gap-6">
+        <button id="btn-inst" onclick="cambiarTab('instituciones')" class="pb-3 text-sm font-bold border-b-2 border-green-600 text-green-600 dark:text-green-400 transition-all flex items-center gap-2">
+            <i data-lucide="building-2" class="w-4 h-4"></i> Instituciones / Sedes
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 font-mono">{{ instituciones|length }}</span>
+        </button>
+        <button id="btn-com" onclick="cambiarTab('comunidades')" class="pb-3 text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white transition-all flex items-center gap-2">
+            <i data-lucide="map-pin" class="w-4 h-4"></i> Comunidades
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-mono">{{ comunidades|length }}</span>
+        </button>
+        <button id="btn-niv" onclick="cambiarTab('niveles')" class="pb-3 text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white transition-all flex items-center gap-2">
+            <i data-lucide="layers" class="w-4 h-4"></i> Niveles de Instrucción
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-mono">{{ niveles|length }}</span>
+        </button>
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- PESTAÑA 1: INSTITUCIONES                                       -->
+    <!-- ============================================================== -->
+    <div id="tab-instituciones" class="space-y-6">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-green-700 dark:text-green-400 mb-4 flex items-center">
+                <i data-lucide="plus-circle" class="w-4 h-4 mr-2"></i> Registrar Nueva Institución / Sede
+            </h3>
+            <form action="{{ url_for('core.nueva_institucion') }}" method="POST" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end" onsubmit="guardarPestañaActual('instituciones')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <div class="md:col-span-2 space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Nombre de la Institución / Escuela / Sede</label>
+                    <input type="text" name="nombre_institucion" required class="w-full border rounded-lg p-2.5 text-sm bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none" placeholder="Ej: UPTAEB - Sede Central">
+                </div>
+
+                <div>
+                    <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white text-sm font-semibold py-2.5 px-4 rounded-lg shadow-sm transition-all flex items-center justify-center">
+                        <i data-lucide="plus" class="w-4 h-4 mr-1.5"></i> Agregar Institución
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm">
+            <div class="p-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between gap-4">
+                <div class="relative flex-1 max-w-xs">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" onkeyup="filtrarTabla(this, 'tabla-inst')" placeholder="Buscar institución..." class="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 dark:text-white outline-none focus:ring-2 focus:ring-green-500">
+                </div>
+                <span class="text-xs text-gray-400 font-mono">{{ instituciones|length }} registro(s)</span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table id="tabla-inst" class="w-full text-sm text-left">
+                    <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-700/40 text-gray-500 dark:text-gray-400 border-b dark:border-gray-700">
+                        <tr>
+                            <th class="px-6 py-3 font-semibold">ID</th>
+                            <th class="px-6 py-3 font-semibold">Nombre Institución</th>
+                            <th class="px-6 py-3 font-semibold text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
+                        {% for inst in instituciones %}
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                            <td class="px-6 py-3.5 font-mono text-xs text-gray-400">#0{{ inst.id_institucion }}</td>
+                            <td class="px-6 py-3.5 font-medium text-gray-900 dark:text-white">{{ inst.nombre_institucion }}</td>
+                            <td class="px-6 py-3.5 text-right space-x-2 whitespace-nowrap">
+                                <button type="button"
+                                        onclick="abrirModalEditar(this)"
+                                        data-action="{{ url_for('core.editar_institucion', id_inst=inst.id_institucion) }}"
+                                        data-tipo="institucion"
+                                        data-nombre="{{ inst.nombre_institucion }}"
+                                        data-descripcion=""
+                                        class="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors" 
+                                        title="Editar">
+                                    <i data-lucide="edit" class="w-4 h-4 inline"></i>
+                                </button>
+                                <form action="{{ url_for('core.eliminar_institucion', id_inst=inst.id_institucion) }}" method="POST" class="inline" onsubmit="guardarPestañaActual('instituciones'); return confirm('¿Desea borrar esta institución?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors" title="Eliminar">
+                                        <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3" class="px-6 py-8 text-center text-gray-400">No hay instituciones registradas aún.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- PESTAÑA 2: COMUNIDADES                                         -->
+    <!-- ============================================================== -->
+    <div id="tab-comunidades" class="hidden space-y-6">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-green-700 dark:text-green-400 mb-4 flex items-center">
+                <i data-lucide="plus-circle" class="w-4 h-4 mr-2"></i> Registrar Nueva Comunidad
+            </h3>
+            <form action="{{ url_for('core.nueva_comunidad') }}" method="POST" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end" onsubmit="guardarPestañaActual('comunidades')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <div class="md:col-span-2 space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Nombre de la Comunidad / Sector</label>
+                    <input type="text" name="nombre_comunidad" required class="w-full border rounded-lg p-2.5 text-sm bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none" placeholder="Ej: Comunidad Central">
+                </div>
+
+                <div>
+                    <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white text-sm font-semibold py-2.5 px-4 rounded-lg shadow-sm transition-all flex items-center justify-center">
+                        <i data-lucide="plus" class="w-4 h-4 mr-1.5"></i> Agregar Comunidad
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm">
+            <div class="p-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between gap-4">
+                <div class="relative flex-1 max-w-xs">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" onkeyup="filtrarTabla(this, 'tabla-com')" placeholder="Buscar comunidad..." class="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 dark:text-white outline-none focus:ring-2 focus:ring-green-500">
+                </div>
+                <span class="text-xs text-gray-400 font-mono">{{ comunidades|length }} registro(s)</span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table id="tabla-com" class="w-full text-sm text-left">
+                    <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-700/40 text-gray-500 dark:text-gray-400 border-b dark:border-gray-700">
+                        <tr>
+                            <th class="px-6 py-3 font-semibold">ID</th>
+                            <th class="px-6 py-3 font-semibold">Comunidad / Sector</th>
+                            <th class="px-6 py-3 font-semibold text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
+                        {% for com in comunidades %}
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                            <td class="px-6 py-3.5 font-mono text-xs text-gray-400">#0{{ com.id_comunidad }}</td>
+                            <td class="px-6 py-3.5 font-medium text-gray-900 dark:text-white">{{ com.nombre_comunidad }}</td>
+                            <td class="px-6 py-3.5 text-right space-x-2 whitespace-nowrap">
+                                <button type="button"
+                                        onclick="abrirModalEditar(this)"
+                                        data-action="{{ url_for('core.editar_comunidad', id_com=com.id_comunidad) }}"
+                                        data-tipo="comunidad"
+                                        data-nombre="{{ com.nombre_comunidad }}"
+                                        data-descripcion=""
+                                        class="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors" 
+                                        title="Editar">
+                                    <i data-lucide="edit" class="w-4 h-4 inline"></i>
+                                </button>
+                                <form action="{{ url_for('core.eliminar_comunidad', id_com=com.id_comunidad) }}" method="POST" class="inline" onsubmit="guardarPestañaActual('comunidades'); return confirm('¿Desea borrar esta comunidad?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors" title="Eliminar">
+                                        <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3" class="px-6 py-8 text-center text-gray-400">No hay comunidades en la base de datos.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- PESTAÑA 3: NIVELES                                             -->
+    <!-- ============================================================== -->
+    <div id="tab-niveles" class="hidden space-y-6">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-green-700 dark:text-green-400 mb-4 flex items-center">
+                <i data-lucide="plus-circle" class="w-4 h-4 mr-2"></i> Registrar Nuevo Nivel de Instrucción
+            </h3>
+            <form action="{{ url_for('core.nuevo_nivel') }}" method="POST" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end" onsubmit="guardarPestañaActual('niveles')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Nombre del Nivel</label>
+                    <input type="text" name="nombre_nivel" required class="w-full border rounded-lg p-2.5 text-sm bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none" placeholder="Ej: Regional, Local, Comunal">
+                </div>
+
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Descripción / Alcance</label>
+                    <input type="text" name="descripcion" class="w-full border rounded-lg p-2.5 text-sm bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none" placeholder="Ej: Ámbito municipal operativo">
+                </div>
+
+                <div>
+                    <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white text-sm font-semibold py-2.5 px-4 rounded-lg shadow-sm transition-all flex items-center justify-center">
+                        <i data-lucide="plus" class="w-4 h-4 mr-1.5"></i> Agregar Nivel
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm">
+            <div class="p-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between gap-4">
+                <div class="relative flex-1 max-w-xs">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" onkeyup="filtrarTabla(this, 'tabla-niv')" placeholder="Buscar nivel..." class="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 dark:text-white outline-none focus:ring-2 focus:ring-green-500">
+                </div>
+                <span class="text-xs text-gray-400 font-mono">{{ niveles|length }} registro(s)</span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table id="tabla-niv" class="w-full text-sm text-left">
+                    <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-700/40 text-gray-500 dark:text-gray-400 border-b dark:border-gray-700">
+                        <tr>
+                            <th class="px-6 py-3 font-semibold">ID</th>
+                            <th class="px-6 py-3 font-semibold">Nivel de Instrucción</th>
+                            <th class="px-6 py-3 font-semibold">Descripción</th>
+                            <th class="px-6 py-3 font-semibold text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
+                        {% for niv in niveles %}
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                            <td class="px-6 py-3.5 font-mono text-xs text-gray-400">#0{{ niv.id_nivel }}</td>
+                            <td class="px-6 py-3.5 font-medium text-gray-900 dark:text-white">{{ niv.nombre_nivel }}</td>
+                            <td class="px-6 py-3.5 text-xs text-gray-500 dark:text-gray-400">{{ niv.descripcion if niv.descripcion else 'Sin descripción' }}</td>
+                            <td class="px-6 py-3.5 text-right space-x-2 whitespace-nowrap">
+                                <!-- BOTÓN EDITAR CON DATA ATTRIBUTES SEGUROS -->
+                                <button type="button"
+                                        onclick="abrirModalEditar(this)"
+                                        data-action="{{ url_for('core.editar_nivel', id_niv=niv.id_nivel) }}"
+                                        data-tipo="nivel"
+                                        data-nombre="{{ niv.nombre_nivel }}"
+                                        data-descripcion="{{ niv.descripcion if niv.descripcion else '' }}"
+                                        class="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors" 
+                                        title="Editar">
+                                    <i data-lucide="edit" class="w-4 h-4 inline"></i>
+                                </button>
+                                <form action="{{ url_for('core.eliminar_nivel', id_niv=niv.id_nivel) }}" method="POST" class="inline" onsubmit="guardarPestañaActual('niveles'); return confirm('¿Desea borrar este nivel?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors" title="Eliminar">
+                                        <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="px-6 py-8 text-center text-gray-400">No hay niveles registrados.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- ✏️ MODAL DE EDICIÓN RÁPIDA                                      -->
+<!-- ============================================================== -->
+<div id="modalEditar" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-gray-100 dark:border-gray-700">
+        <div class="flex justify-between items-center border-b pb-3 dark:border-gray-700">
+            <h3 class="text-base font-bold text-gray-800 dark:text-white" id="modal_titulo">Modificar Registro</h3>
+            <button onclick="cerrarModalEditar()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-lg">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <form id="formEditarModal" method="POST" class="space-y-4" onsubmit="guardarPestañaDesdeAction()">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="space-y-1">
+                <label id="modal_label_nombre" class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Nombre</label>
+                <input type="text" id="modal_input_nombre" name="nombre_institucion" required class="w-full border rounded-lg p-2.5 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white outline-none focus:ring-2 focus:ring-green-500">
+            </div>
+
+            <!-- CAMPO ADICIONAL PARA DESCRIPCIÓN DE NIVEL -->
+            <div id="modal_div_descripcion" class="space-y-1 hidden">
+                <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Descripción</label>
+                <input type="text" id="modal_input_descripcion" name="descripcion" class="w-full border rounded-lg p-2.5 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white outline-none focus:ring-2 focus:ring-green-500">
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-3 border-t dark:border-gray-700">
+                <button type="button" onclick="cerrarModalEditar()" class="bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg text-xs font-semibold px-4 py-2 transition-colors">
+                    Cancelar
+                </button>
+                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-semibold px-5 py-2 transition-colors shadow-sm">
+                    Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- ⚙️ CONTROL JAVASCRIPT: PERSISTENCIA Y BÚSQUEDA                   -->
+<!-- ============================================================== -->
+<script>
+    // 🌟 1. GESTIÓN Y PERSISTENCIA DE PESTAÑAS
+    function cambiarTab(tab) {
+        document.getElementById('tab-instituciones').classList.toggle('hidden', tab !== 'instituciones');
+        document.getElementById('tab-comunidades').classList.toggle('hidden', tab !== 'comunidades');
+        document.getElementById('tab-niveles').classList.toggle('hidden', tab !== 'niveles');
+
+        const btnInst = document.getElementById('btn-inst');
+        const btnCom = document.getElementById('btn-com');
+        const btnNiv = document.getElementById('btn-niv');
+
+        const claseActiva = 'pb-3 text-sm font-bold border-b-2 border-green-600 text-green-600 dark:text-green-400 transition-all flex items-center gap-2';
+        const claseInactiva = 'pb-3 text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white transition-all flex items-center gap-2';
+
+        btnInst.className = (tab === 'instituciones') ? claseActiva : claseInactiva;
+        btnCom.className = (tab === 'comunidades') ? claseActiva : claseInactiva;
+        btnNiv.className = (tab === 'niveles') ? claseActiva : claseInactiva;
+
+        localStorage.setItem('oncc_catalogo_tab', tab);
+        window.location.hash = tab;
+    }
+
+    function guardarPestañaActual(tab) {
+        localStorage.setItem('oncc_catalogo_tab', tab);
+    }
+
+    function guardarPestañaDesdeAction() {
+        const actionUrl = document.getElementById('formEditarModal').action;
+        if (actionUrl.includes('institucion')) localStorage.setItem('oncc_catalogo_tab', 'instituciones');
+        else if (actionUrl.includes('comunidad')) localStorage.setItem('oncc_catalogo_tab', 'comunidades');
+        else localStorage.setItem('oncc_catalogo_tab', 'niveles');
+    }
+
+    // 🌟 2. MODAL DE EDICIÓN MEDIANTE DATA ATTRIBUTES
+    function abrirModalEditar(boton) {
+        const actionUrl = boton.dataset.action;
+        const tipo = boton.dataset.tipo;
+        const nombreActual = boton.dataset.nombre;
+        const descripcionActual = boton.dataset.descripcion || '';
+
+        const form = document.getElementById('formEditarModal');
+        const inputNombre = document.getElementById('modal_input_nombre');
+        const divDesc = document.getElementById('modal_div_descripcion');
+        const inputDesc = document.getElementById('modal_input_descripcion');
+        const labelNombre = document.getElementById('modal_label_nombre');
+        const tituloModal = document.getElementById('modal_titulo');
+        
+        form.action = actionUrl;
+        inputNombre.value = nombreActual;
+
+        if (tipo === 'institucion') {
+            inputNombre.name = 'nombre_institucion';
+            labelNombre.textContent = 'Nombre de la Institución';
+            tituloModal.textContent = 'Modificar Institución';
+            divDesc.classList.add('hidden');
+        } else if (tipo === 'comunidad') {
+            inputNombre.name = 'nombre_comunidad';
+            labelNombre.textContent = 'Nombre de la Comunidad';
+            tituloModal.textContent = 'Modificar Comunidad';
+            divDesc.classList.add('hidden');
+        } else {
+            inputNombre.name = 'nombre_nivel';
+            labelNombre.textContent = 'Nombre del Nivel';
+            tituloModal.textContent = 'Modificar Nivel de Instrucción';
+            divDesc.classList.remove('hidden');
+            inputDesc.value = descripcionActual;
+        }
+
+        document.getElementById('modalEditar').classList.remove('hidden');
+        if (window.lucide) lucide.createIcons();
+    }
+
+    function cerrarModalEditar() {
+        document.getElementById('modalEditar').classList.add('hidden');
+    }
+
+    // 🌟 3. FILTRO DE BÚSQUEDA INSTANTÁNEO
+    function filtrarTabla(input, tablaId) {
+        const filtro = input.value.toLowerCase();
+        const filas = document.querySelectorAll(`#${tablaId} tbody tr`);
+        
+        filas.forEach(fila => {
+            const texto = fila.textContent.toLowerCase();
+            fila.style.display = texto.includes(filtro) ? '' : 'none';
+        });
+    }
+
+    // 🌟 4. RECUPERAR PESTAÑA AL CARGAR
+    document.addEventListener('DOMContentLoaded', () => {
+        const hash = window.location.hash.replace('#', '');
+        const guardada = localStorage.getItem('oncc_catalogo_tab');
+        const tabInicial = hash || guardada || 'instituciones';
+        
+        cambiarTab(tabInicial);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') cerrarModalEditar();
+        });
+        
+        if (window.lucide) lucide.createIcons();
+    });
+</script>
+{% endblock %}

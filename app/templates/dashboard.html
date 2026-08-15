@@ -219,6 +219,7 @@
         </div>
     </div>
 
+    <!-- 🌟 SECCIÓN DE ACTIVIDADES RECIENTES (CORREGIDA) -->
     <div class="grid grid-cols-1 gap-6 xl:grid-cols-[1.25fr_0.95fr]">
         <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <div class="flex items-center justify-between gap-3">
@@ -237,10 +238,29 @@
                         <i data-lucide="file-text" class="h-5 w-5"></i>
                     </div>
                     <div class="min-w-0 flex-1">
-                        <p class="truncate text-sm font-semibold text-slate-900 dark:text-white">{{ actividad.actividad }}</p>
-                        <p class="truncate text-xs text-slate-500 dark:text-slate-400">{{ actividad.municipio }}, {{ actividad.estado_geo }}</p>
+                        <!-- 🌟 RESCATE DINÁMICO DEL NOMBRE REAL -->
+                        <p class="truncate text-sm font-semibold text-slate-900 dark:text-white">
+                            {% if actividad.monitoreo and actividad.monitoreo.nombre_monitoreo %}
+                                {{ actividad.monitoreo.nombre_monitoreo }}
+                            {% elif actividad.formacion_activa_rel and actividad.formacion_activa_rel.tema_real %}
+                                {{ actividad.formacion_activa_rel.tema_real }}
+                            {% elif actividad.sensibilizacion_activa_rel and actividad.sensibilizacion_activa_rel.campana_real %}
+                                {{ actividad.sensibilizacion_activa_rel.campana_real }}
+                            {% elif actividad.descripcion %}
+                                {{ actividad.descripcion|truncate(40) }}
+                            {% else %}
+                                Jornada de {{ actividad.tipo_actividad|title }}
+                            {% endif %}
+                        </p>
+                        <!-- 🌟 UBICACIÓN TERRITORIAL LIMPIA -->
+                        <p class="truncate text-xs text-slate-500 dark:text-slate-400">
+                            {{ actividad.comunidad.nombre_comunidad if actividad.comunidad else 'Comunidad Central' }}
+                            {% if actividad.municipio_nombre %} - {{ actividad.municipio_nombre }}{% endif %}
+                        </p>
                     </div>
-                    <span class="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500 shadow-sm dark:bg-gray-800 dark:text-slate-300">{{ actividad.estado }}</span>
+                    <span class="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500 shadow-sm dark:bg-gray-800 dark:text-slate-300">
+                        {{ actividad.estado_operativo_real|default('Completado', true) }}
+                    </span>
                 </div>
                 {% else %}
                 <div class="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500 dark:bg-gray-700/50 dark:text-slate-400">Todavía no hay actividades registradas.</div>

@@ -24,18 +24,11 @@
         </div>
         
         <form method="POST" action="{{ url_for('geomatica.procesar_archivo') }}" enctype="multipart/form-data" class="space-y-4">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {{ form.hidden_tag() }}
             
             <div class="flex flex-col space-y-1">
                 <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Asignar a Actividad Ejecutada (Tipo: Mapa de Riesgo)</label>
-                <select name="id_actividad" required class="w-full p-2.5 border rounded-md text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none cursor-pointer">
-                    <option value="">-- Seleccione la actividad correspondiente a vincular --</option>
-                    {% for act in actividades_disponibles %}
-                        <option value="{{ act.id_actividad }}">
-                            ID Actividad: {{ act.id_actividad }} | Tipo: {{ act.tipo_actividad }} | Planificada: {{ act.fecha_actividad }}
-                        </option>
-                    {% endfor %}
-                </select>
+                {{ form.id_actividad(class_='w-full p-2.5 border rounded-md text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none cursor-pointer') }}
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">

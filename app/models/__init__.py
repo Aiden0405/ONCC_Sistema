@@ -9,6 +9,7 @@ from app.models.notificacion import Notificacion
 from app.models.divulgacion import Publicacion
 from app.models.geomatica import MapaRiesgo
 from app.models.inventario import InventarioEquipo
+from app.models.tecnico import Tecnico
 from app.models.esquema_activo import ActividadActiva
 from app.models.esquema_activo import ComunidadActiva
 from app.models.esquema_activo import EstadoActivo

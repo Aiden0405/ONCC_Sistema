@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
-from wtforms import HiddenField, PasswordField, SelectField, StringField, TextAreaField, IntegerField
-from wtforms.validators import DataRequired, Email, Length, Optional, AnyOf, NumberRange
+from wtforms import FileField, HiddenField, PasswordField, SelectField, StringField, TextAreaField, IntegerField, DateField
+from wtforms.validators import DataRequired, Email, Length, Optional, AnyOf, NumberRange, EqualTo, InputRequired
 
 class LoginForm(FlaskForm):
     correo = StringField(
@@ -20,10 +20,30 @@ class ResetRequestForm(FlaskForm):
 
 class ResetPasswordForm(FlaskForm):
     password = PasswordField('Nueva contraseña', validators=[DataRequired(), Length(min=6, max=128)])
-    confirm = PasswordField('Confirmar contraseña', validators=[DataRequired(), Length(min=6, max=128)])
+    confirm = PasswordField('Confirmar contraseña', validators=[DataRequired(), Length(min=6, max=128), EqualTo('password', message='Las contraseñas no coinciden.')])
 
 
 class PublicacionForm(FlaskForm):
+    # Selector de la Actividad Padre Registrada
+    id_actividad = SelectField(
+        'Actividad de Campo (Origen)',
+        coerce=int,
+        validators=[InputRequired(message='Debe seleccionar una actividad de origen.')]
+    )
+    nombre_divulgacion = StringField(
+        'Nombre de la Divulgación',
+        validators=[DataRequired(message='El nombre de la divulgación es obligatorio.'), Length(max=100)]
+    )
+    descripcion_divulgacion = TextAreaField(
+        'Descripción de la Divulgación',
+        validators=[DataRequired(message='La descripción de la divulgación es obligatoria.')]
+    )
+    permiso_divulgacion = StringField(
+        'Permiso / Alcance',
+        validators=[DataRequired(message='Debe indicar el permiso de la divulgación.'), Length(max=50)],
+        default='Público'
+    )
+    
     tipo = SelectField(
         'Tipo de publicación',
         choices=[
@@ -58,15 +78,33 @@ class PublicacionForm(FlaskForm):
         validators=[DataRequired(), AnyOf(['borrador', 'publicado', 'archivado'])],
         default='borrador',
     )
-
-    # Campos transaccionales vinculados
-    id_divulgacion = SelectField(
-        'Monitoreo / Actividad de Origen',
-        coerce=int,
-        validators=[DataRequired(message='Debe seleccionar un monitoreo de origen.')]
-    )
     prioridad = IntegerField(
         'Prioridad de Alerta (1-10)',
         validators=[DataRequired(), NumberRange(min=1, max=10)],
-        default=1
+        default=1,
+    )
+
+
+class MapaRiesgoForm(FlaskForm):
+    id_actividad = SelectField(
+        'Actividad de origen',
+        coerce=int,
+        validators=[InputRequired(message='Debe seleccionar una actividad válida.')],
+    )
+    nombre = StringField(
+        'Nombre del mapa',
+        validators=[DataRequired(message='El nombre del mapa es obligatorio.'), Length(max=100)],
+    )
+    descripcion = TextAreaField(
+        'Descripción',
+        validators=[DataRequired(message='La descripción del mapa es obligatoria.')],
+    )
+    archivo_mapa = FileField('Archivo cartográfico')
+
+
+class ActividadForm(FlaskForm):
+    tecnico_responsable = SelectField(
+        'Técnico Responsable',
+        coerce=int,
+        validators=[InputRequired(message='Debe seleccionar un técnico responsable.')],
     )

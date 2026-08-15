@@ -8,9 +8,22 @@ from werkzeug.utils import secure_filename
 from geoalchemy2.functions import ST_AsGeoJSON, ST_GeomFromGeoJSON
 
 from app import db
+from app.blueprints.mapas.forms import MapaRiesgoForm
 from app.models.geomatica import MapaRiesgo, ElementoMapaRiesgo
 from app.models.actividad import Actividad
 from app.models.esquema_activo import ComunidadActiva, ParroquiaActiva, MunicipioActivo, EstadoActivo
+
+
+def _cargar_actividades_mapa(form):
+    actividades = Actividad.query.filter_by(tipo_actividad='MAPA_RIESGO').order_by(Actividad.id_actividad.desc()).all()
+    if actividades:
+        form.id_actividad.choices = [(0, '-- Seleccione la actividad correspondiente --')]
+        form.id_actividad.choices.extend(
+            (act.id_actividad, f"ID Actividad: {act.id_actividad} | Tipo: {act.tipo_actividad} | Planificada: {act.fecha_actividad}")
+            for act in actividades
+        )
+    else:
+        form.id_actividad.choices = [(0, 'No hay actividades registradas')]
 
 @login_required
 def mapas_riesgo_index():
@@ -19,14 +32,15 @@ def mapas_riesgo_index():
 @login_required
 def vista_carga_ssbc():
     """ Vista del formulario de carga con selector de actividades """
+    form = MapaRiesgoForm()
+    _cargar_actividades_mapa(form)
     cargas = MapaRiesgo.query.order_by(MapaRiesgo.fecha_registro.desc()).all()
-    actividades_disponibles = Actividad.query.filter_by(tipo_actividad='MAPA_RIESGO').all()
     estados_flujo = ['Pendiente', 'En Revisión', 'Aprobado', 'Rechazado']
     
     return render_template(
         'geomatica/carga_ssbc.html', 
+        form=form,
         cargas=cargas, 
-        actividades_disponibles=actividades_disponibles,
         estados_flujo=estados_flujo
     )
 
@@ -40,10 +54,22 @@ def vista_dibujar_mapa(mapa_id):
 @login_required
 def procesar_archivo():
     """ Procesa el formulario de carga inicial del mapa base """
-    nombre = request.form.get('nombre')
-    descripcion = request.form.get('descripcion')
-    id_act_dinamico = request.form.get('id_actividad') 
-    archivo = request.files.get('archivo_mapa') 
+    form = MapaRiesgoForm()
+    _cargar_actividades_mapa(form)
+
+    if not form.validate_on_submit():
+        flash('Debe completar los campos obligatorios del mapa de riesgo.', 'error')
+        return render_template(
+            'geomatica/carga_ssbc.html',
+            form=form,
+            cargas=MapaRiesgo.query.order_by(MapaRiesgo.fecha_registro.desc()).all(),
+            estados_flujo=['Pendiente', 'En Revisión', 'Aprobado', 'Rechazado']
+        )
+
+    nombre = form.nombre.data
+    descripcion = form.descripcion.data
+    id_act_dinamico = form.id_actividad.data
+    archivo = form.archivo_mapa.data
 
     if not id_act_dinamico:
         flash('Debe seleccionar una actividad válida de la lista.', 'error')

@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict T6zWGEHuG6Du30SX3GSOjBjAND9gcKtApUW8ZST1uMu2eiD1u8TZx5HDIF777e7
+\restrict KV8z7ZB8lSY9t9q7cevsvleW97fFcdhHPg6YWyL2rRLtChgc8MVkYaqt47f1yzU
 
 -- Dumped from database version 17.10
 -- Dumped by pg_dump version 17.10
@@ -99,7 +99,11 @@ CREATE TABLE public.actividad (
     tipo_actividad character varying(50) NOT NULL,
     id_comunidad integer NOT NULL,
     id_nivel integer,
-    id_usuario integer
+    id_usuario integer,
+    descripcion text,
+    poblacion integer DEFAULT 0,
+    acuerdos text,
+    minuta_archivo character varying(255)
 );
 
 
@@ -1900,7 +1904,10 @@ ALTER TABLE ONLY public.visitas_portal ALTER COLUMN id SET DEFAULT nextval('publ
 -- Data for Name: actividad; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.actividad (id_actividad, fecha_actividad, tipo_actividad, id_comunidad, id_nivel, id_usuario) FROM stdin;
+COPY public.actividad (id_actividad, fecha_actividad, tipo_actividad, id_comunidad, id_nivel, id_usuario, descripcion, poblacion, acuerdos, minuta_archivo) FROM stdin;
+15	2026-08-15	MONITOREO	1	1	4	Modo ejemplo	12	Compromiso comunitario.	uploads/minutas/WhatsApp_Image_2026-03-30_at_5.38.37_PM.pdf
+16	2026-08-14	FORMACION	11	1	4	\N	0	\N	\N
+17	2026-08-14	SENSIBILIZACION	1	1	4	\N	0	\N	\N
 \.
 
 
@@ -1909,6 +1916,7 @@ COPY public.actividad (id_actividad, fecha_actividad, tipo_actividad, id_comunid
 --
 
 COPY public.actividad_tecnico (id_actividad_tecnico, id_actividad, id_tecnico) FROM stdin;
+17	15	2
 \.
 
 
@@ -1999,6 +2007,23 @@ COPY public.bitacora_transacciones (id, modulo, registro_id, accion, estado_nuev
 63	Permisos	10	Crear	\N	Aileen Moyeja	Creado el privilegio atómico: gestionar_actividades	2026-07-15 09:23:29.040349
 64	Roles	3	ActualizarPermisos	\N	Aileen Moyeja	Permisos actualizados para Tecnico: []	2026-07-15 09:25:38.584089
 65	Roles	3	ActualizarPermisos	\N	Aileen Moyeja	Permisos actualizados para Tecnico: ['6']	2026-07-15 09:29:17.416401
+66	actividades	4	creacion	Planificada	Aileen Moyeja	Actividad Sensibilización Comunitaria registrada	2026-08-12 23:11:37.236247
+67	actividades	4	cambio_estado	Completado	Aileen Moyeja	Actividad Sensibilización Comunitaria paso a Completado	2026-08-12 23:13:46.289859
+68	actividades	6	creacion	Completado	Aileen Moyeja	Actividad Taller de sensibilizacion comunitaria. registrada	2026-08-13 10:49:50.917581
+69	actividades	6	edicion	Planificada	Aileen Moyeja	Actividad Taller de sensibilizacion comunitaria. modificada	2026-08-13 10:56:59.096466
+70	actividades	6	edicion	\N	Aileen Moyeja	Actividad Taller de sensibilizacion comunitaria. modificada	2026-08-13 21:37:01.263673
+71	actividades	6	edicion	Completado	Aileen Moyeja	Actividad Taller de sensibilizacion comunitaria. actualizada	2026-08-13 22:49:19.310118
+72	actividades	6	edicion	Completado	Aileen Moyeja	Actividad Taller de sensibilizacion comunitaria. actualizada	2026-08-13 23:02:45.812003
+73	actividades	6	edicion	Completado	Aileen Moyeja	Actividad Taller de sensibilizacion comunitaria. actualizada	2026-08-13 23:03:42.413294
+74	actividades	6	edicion	Completado	Aileen Moyeja	Actividad Taller de sensibilizacion comunitaria. actualizada	2026-08-13 23:16:16.333617
+75	actividades	6	edicion	En proceso	Aileen Moyeja	Actividad Taller de sensibilizacion comunitaria. actualizada	2026-08-13 23:16:48.379562
+76	actividades	6	edicion	En proceso	Aileen Moyeja	Actividad MONITOREO actualizada a En proceso	2026-08-13 23:24:17.80572
+77	actividades	6	edicion	Completado	Aileen Moyeja	Actividad MONITOREO actualizada a Completado	2026-08-13 23:24:36.188503
+78	actividades	6	edicion	Completado	Aileen Moyeja	Actividad MONITOREO actualizada a Completado	2026-08-13 23:26:18.916
+79	actividades	15	creacion	Suspendida	Aileen Moyeja	Actividad SENSIBILIZACION registrada en Suspendida	2026-08-13 23:52:00.904013
+80	actividades	15	edicion	Completado	Aileen Moyeja	Actividad MONITOREO actualizada a Completado	2026-08-14 11:41:24.481166
+81	Divulgación	4	Crear	borrador	Aileen Moyeja	Creado contenido: Titulo de articulo...	2026-08-14 11:53:14.604412
+82	Divulgación	4	Modificar	publicado	Aileen Moyeja	Aprobada para la Web: Titulo de articulo...	2026-08-14 11:53:42.111932
 \.
 
 
@@ -2015,6 +2040,8 @@ COPY public.categoria (id_categoria, nombre_categoria, descripcion_categoria) FR
 --
 
 COPY public.comunidad (id_comunidad, id_parroquia, nombre_comunidad) FROM stdin;
+1	1	Comunidad Central
+11	1	Comunidad Oriental
 \.
 
 
@@ -2023,6 +2050,7 @@ COPY public.comunidad (id_comunidad, id_parroquia, nombre_comunidad) FROM stdin;
 --
 
 COPY public.divulgacion (id_divulgacion, id_actividad, nombre_divulgacion, descripcion_divulgacion, permiso_divulgacion) FROM stdin;
+1	15	Jornada Informativa	Describa el propósito.	Público
 \.
 
 
@@ -2055,6 +2083,7 @@ COPY public.equipo_monitoreo (id_monitoreo_equipo, id_equipo, id_monitoreo) FROM
 --
 
 COPY public.estado (id_estado, nombre_estado) FROM stdin;
+1	Lara
 \.
 
 
@@ -2063,6 +2092,7 @@ COPY public.estado (id_estado, nombre_estado) FROM stdin;
 --
 
 COPY public.formacion (id_formacion, id_actividad, id_institucion, nombre_formacion, tipo_actividad, id_nivel) FROM stdin;
+4	16	2	Gestion de Riesgo||Alcides Romero	FORMACION	1
 \.
 
 
@@ -2071,6 +2101,8 @@ COPY public.formacion (id_formacion, id_actividad, id_institucion, nombre_formac
 --
 
 COPY public.imagenes (id_imagen, url_imagen, nombre_imagen, fecha_imagen) FROM stdin;
+1	uploads/fotos_actividad/ee0dc581fdff27eaace9110ae2d62367.jpg	ee0dc581fdff27eaace9110ae2d62367.jpg	2026-08-13
+7	uploads/fotos_actividad/ee0dc581fdff27eaace9110ae2d62367.jpg	ee0dc581fdff27eaace9110ae2d62367.jpg	2026-08-13
 \.
 
 
@@ -2079,6 +2111,7 @@ COPY public.imagenes (id_imagen, url_imagen, nombre_imagen, fecha_imagen) FROM s
 --
 
 COPY public.imagenes_actividad (id_imagenes_actividad, id_imagen, id_actividad) FROM stdin;
+2	7	15
 \.
 
 
@@ -2095,6 +2128,8 @@ COPY public.imagenes_publicacion (id_imagenes_publicacion, id_imagen, id_publica
 --
 
 COPY public.institucion (id_institucion, id_comunidad, nombre_institucion, tipo_institucion, direccion_exacta, numero_contacto, correo_electronico) FROM stdin;
+1	1	UPTAEB	Educativa	Sede Comunitaria	S/N	contacto@oncc.gob.ve
+2	1	IUJO	Educativa	Sede Comunitaria	S/N	contacto@oncc.gob.ve
 \.
 
 
@@ -2159,6 +2194,7 @@ COPY public.modulos (id_modulo, nombre_modulo, descripcion_modulo) FROM stdin;
 --
 
 COPY public.monitoreo (id_monitoreo, id_actividad, nombre_monitoreo, tipo_actividad) FROM stdin;
+7	15	Taller de Sensibilización comunitaria	MONITOREO
 \.
 
 
@@ -2175,6 +2211,7 @@ COPY public.movimientos (id_movimientos, id_equipo, id_ubicacion_origen, id_ubic
 --
 
 COPY public.municipio (id_municipio, id_estado, nombre_municipio) FROM stdin;
+1	1	Iribarren
 \.
 
 
@@ -2183,6 +2220,9 @@ COPY public.municipio (id_municipio, id_estado, nombre_municipio) FROM stdin;
 --
 
 COPY public.nivel (id_nivel, nombre_nivel, descripcion) FROM stdin;
+1	Regional	Nivel de cobertura regional para la actividad
+3	Local	Nivel formativo e institucional: Local
+4	Comunal	Ámbito Comunal
 \.
 
 
@@ -2225,6 +2265,7 @@ COPY public.notificaciones (id, usuario_id, categoria, mensaje, leido, fecha_cre
 38	\N	Seguridad	Ecosistema: Se registró una nueva capacidad atómica en el catálogo global: 'gestionar_actividades'.	t	2026-07-15 09:23:29.040349
 39	\N	Seguridad	🔒 SEGURIDAD: La matriz de accesos y capacidades para el rol 'Tecnico' fue reconfigurada por Aileen Moyeja.	t	2026-07-15 09:25:38.551201
 40	\N	Seguridad	🔒 SEGURIDAD: La matriz de accesos y capacidades para el rol 'Tecnico' fue reconfigurada por Aileen Moyeja.	t	2026-07-15 09:29:17.399739
+41	\N	Sistema	Divulgación: El operador Aileen Moyeja registró un nuevo contenido bajo estatus 'borrador': 'Titulo de articulo...'.	f	2026-08-14 11:53:14.587628
 \.
 
 
@@ -2233,6 +2274,7 @@ COPY public.notificaciones (id, usuario_id, categoria, mensaje, leido, fecha_cre
 --
 
 COPY public.parroquia (id_parroquia, id_municipio, nombre_parroquia) FROM stdin;
+1	1	Catedral
 \.
 
 
@@ -2282,8 +2324,7 @@ COPY public.permiso (id_modulo, id_rol) FROM stdin;
 --
 
 COPY public.publicaciones (id_publicacion, id_divulgacion, id_usuario, tipo, titulo_publicacion, membrete, resumen, contenido, estado_publicacion, fecha_publicacion, publicado_en, creado_en, actualizado_en, prioridad) FROM stdin;
-2	\N	1	Boletin Especial	ALERTA MAXIMA: Riesgo de Inundacion Critica por Lluvias en Zonas Vulnerables	Observatorio Nacional de la Crisis Clim tica	Se registra un nivel critico de saturacion de suelos tras precipitaciones continuas.	Cuerpo del informe tecnico institucional del ONCC detallando las medidas de seguridad y monitoreo...	publicado	2026-06-23	2026-06-23 21:33:34.458368	2026-06-23 21:33:34.458368	2026-06-23 21:33:34.458368	10
-3	\N	1	Reporte de Rutina	Monitoreo Institucional: Condiciones Climaticas Estables en la Region	Observatorio Nacional de la Crisis Clim tica	Se reportan cielos parcialmente nublados y precipitaciones d‚biles aisladas sin riesgo inminente.	Cuerpo del informe mensual del ONCC donde se constata que los niveles de los principales caudales se mantienen bajo los limites de seguridad.	publicado	2026-06-23	2026-06-23 21:35:06.485096	2026-06-23 21:35:06.485096	2026-06-23 21:35:06.485096	4
+4	1	4	informe	Titulo de articulo	\N	Resumen introductorio	Desarrolle el cuerpo del reporte.	publicado	2026-08-15	2026-08-14 11:53:42.111309	2026-08-14 07:53:14.540268	2026-08-14 07:53:42.103347	6
 \.
 
 
@@ -2316,6 +2357,7 @@ COPY public.roles (id_rol, nombre_rol) FROM stdin;
 --
 
 COPY public.sensibilizacion (id_sensibilizacion, id_actividad, nombre_sensibilizacion, tipo_actividad, id_nivel) FROM stdin;
+2	17	Gestion de Desechos Solidos||Maria Perez	SENSIBILIZACION	1
 \.
 
 
@@ -2332,6 +2374,9 @@ COPY public.spatial_ref_sys (srid, auth_name, auth_srid, srtext, proj4text) FROM
 --
 
 COPY public.tecnicos (id_tecnico, cedula, nombres, apellidos) FROM stdin;
+1	V-12345678	Angel	Garc¡a
+2	V-87654321	Aileen	Moyeja
+3	V-11223344	Brayan	Aiden
 \.
 
 
@@ -2400,6 +2445,12 @@ COPY public.visitas_portal (id, mes, creado_en) FROM stdin;
 34	2026-07	2026-07-15 01:05:05.38247
 35	2026-07	2026-07-15 08:20:13.756911
 36	2026-07	2026-07-15 14:21:05.387515
+37	2026-07	2026-07-15 22:43:46.28753
+38	2026-08	2026-08-12 22:16:27.071732
+39	2026-08	2026-08-13 08:22:04.02248
+40	2026-08	2026-08-13 21:09:47.589616
+41	2026-08	2026-08-14 11:00:23.236988
+42	2026-08	2026-08-14 13:12:06.336788
 \.
 
 
@@ -2407,14 +2458,14 @@ COPY public.visitas_portal (id, mes, creado_en) FROM stdin;
 -- Name: actividad_id_actividad_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.actividad_id_actividad_seq', 1, false);
+SELECT pg_catalog.setval('public.actividad_id_actividad_seq', 17, true);
 
 
 --
 -- Name: actividad_tecnico_id_actividad_tecnico_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.actividad_tecnico_id_actividad_tecnico_seq', 1, false);
+SELECT pg_catalog.setval('public.actividad_tecnico_id_actividad_tecnico_seq', 17, true);
 
 
 --
@@ -2428,7 +2479,7 @@ SELECT pg_catalog.setval('public.actividades_id_seq', 1, false);
 -- Name: bitacora_transacciones_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.bitacora_transacciones_id_seq', 65, true);
+SELECT pg_catalog.setval('public.bitacora_transacciones_id_seq', 82, true);
 
 
 --
@@ -2442,14 +2493,14 @@ SELECT pg_catalog.setval('public.categoria_id_categoria_seq', 1, false);
 -- Name: comunidad_id_comunidad_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.comunidad_id_comunidad_seq', 10, true);
+SELECT pg_catalog.setval('public.comunidad_id_comunidad_seq', 11, true);
 
 
 --
 -- Name: divulgacion_id_divulgacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.divulgacion_id_divulgacion_seq', 1, false);
+SELECT pg_catalog.setval('public.divulgacion_id_divulgacion_seq', 1, true);
 
 
 --
@@ -2484,21 +2535,21 @@ SELECT pg_catalog.setval('public.estado_id_estado_seq', 10, true);
 -- Name: formacion_id_formacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.formacion_id_formacion_seq', 1, false);
+SELECT pg_catalog.setval('public.formacion_id_formacion_seq', 4, true);
 
 
 --
 -- Name: imagenes_actividad_id_imagenes_actividad_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.imagenes_actividad_id_imagenes_actividad_seq', 1, false);
+SELECT pg_catalog.setval('public.imagenes_actividad_id_imagenes_actividad_seq', 2, true);
 
 
 --
 -- Name: imagenes_id_imagen_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.imagenes_id_imagen_seq', 1, false);
+SELECT pg_catalog.setval('public.imagenes_id_imagen_seq', 7, true);
 
 
 --
@@ -2512,7 +2563,7 @@ SELECT pg_catalog.setval('public.imagenes_publicacion_id_imagenes_publicacion_se
 -- Name: institucion_id_institucion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.institucion_id_institucion_seq', 1, false);
+SELECT pg_catalog.setval('public.institucion_id_institucion_seq', 2, true);
 
 
 --
@@ -2568,7 +2619,7 @@ SELECT pg_catalog.setval('public.modulos_id_modulo_seq', 1, false);
 -- Name: monitoreo_id_monitoreo_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.monitoreo_id_monitoreo_seq', 1, false);
+SELECT pg_catalog.setval('public.monitoreo_id_monitoreo_seq', 7, true);
 
 
 --
@@ -2589,14 +2640,14 @@ SELECT pg_catalog.setval('public.municipio_id_municipio_seq', 10, true);
 -- Name: nivel_id_nivel_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.nivel_id_nivel_seq', 1, false);
+SELECT pg_catalog.setval('public.nivel_id_nivel_seq', 4, true);
 
 
 --
 -- Name: notificaciones_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.notificaciones_id_seq', 40, true);
+SELECT pg_catalog.setval('public.notificaciones_id_seq', 41, true);
 
 
 --
@@ -2617,7 +2668,7 @@ SELECT pg_catalog.setval('public.password_resets_id_seq', 25, true);
 -- Name: publicaciones_id_publicacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.publicaciones_id_publicacion_seq', 3, true);
+SELECT pg_catalog.setval('public.publicaciones_id_publicacion_seq', 4, true);
 
 
 --
@@ -2645,14 +2696,14 @@ SELECT pg_catalog.setval('public.roles_id_rol_seq', 1, false);
 -- Name: sensibilizacion_id_sensibilizacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.sensibilizacion_id_sensibilizacion_seq', 1, false);
+SELECT pg_catalog.setval('public.sensibilizacion_id_sensibilizacion_seq', 2, true);
 
 
 --
 -- Name: tecnicos_id_tecnico_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.tecnicos_id_tecnico_seq', 1, false);
+SELECT pg_catalog.setval('public.tecnicos_id_tecnico_seq', 3, true);
 
 
 --
@@ -2680,15 +2731,7 @@ SELECT pg_catalog.setval('public.usuario_id_usuario_seq', 1, false);
 -- Name: visitas_portal_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.visitas_portal_id_seq', 36, true);
-
-
---
--- Name: actividad actividad_fecha_actividad_tipo_actividad_id_comunidad_key; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.actividad
-    ADD CONSTRAINT actividad_fecha_actividad_tipo_actividad_id_comunidad_key UNIQUE (fecha_actividad, tipo_actividad, id_comunidad);
+SELECT pg_catalog.setval('public.visitas_portal_id_seq', 42, true);
 
 
 --
@@ -3438,14 +3481,6 @@ ALTER TABLE ONLY public.actividad
 
 
 --
--- Name: actividad fk_actividad_usuario; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.actividad
-    ADD CONSTRAINT fk_actividad_usuario FOREIGN KEY (id_usuario) REFERENCES public.usuario(id_usuario);
-
-
---
 -- Name: formacion formacion_actividad_compuesta_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3665,5 +3700,5 @@ ALTER TABLE ONLY public.ubicacion
 -- PostgreSQL database dump complete
 --
 
-\unrestrict T6zWGEHuG6Du30SX3GSOjBjAND9gcKtApUW8ZST1uMu2eiD1u8TZx5HDIF777e7
+\unrestrict KV8z7ZB8lSY9t9q7cevsvleW97fFcdhHPg6YWyL2rRLtChgc8MVkYaqt47f1yzU
 

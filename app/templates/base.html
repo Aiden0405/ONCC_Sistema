@@ -48,7 +48,7 @@
 <body
     class="flex h-screen font-sans transition-colors duration-300 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
 
-    <!-- 🛡️ EXTRACCIÓN ROBUSTA DE PERMISOS (Soporta 'nombre' y 'nombre_modulo') -->
+    <!-- 🛡️ EXTRACCIÓN ROBUSTA DE PERMISOS -->
     {% set permisos_activos = [] %}
     {% if current_user.is_authenticated and current_user.role %}
         {% set lista_temporal = [] %}
@@ -63,8 +63,7 @@
         {% set permisos_activos = lista_temporal %}
     {% endif %}
 
-    <!-- 🎯 HELPER JINJA2 CORREGIDO Y SEGURO -->
-    {# Compara de manera directa si alguna de las palabras clave forma parte del endpoint de Flask actual #}
+    <!-- 🎯 HELPER JINJA2 CORREGIDO -->
     {% macro clase_activa(palabras_clave) %}
         {% set endpoint_actual = request.endpoint | string %}
         {% set ns = namespace(activo=false) %}
@@ -91,7 +90,6 @@
             </span>
         </div>
 
-        <!-- 📜 Id asignado 'sidebar-nav' para el rastreador de scroll en JavaScript -->
         <nav id="sidebar-nav" class="sidebar-scrollbar flex-1 py-4 space-y-1 px-3 overflow-y-auto overflow-x-hidden">
             <p
                 class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-4 px-2 text-gray-400 dark:text-gray-500">
@@ -125,7 +123,7 @@
             </a>
             {% endif %}
 
-            {# SECCIÓN COMUNITARIO (Mariangel) #}
+            {# SECCIÓN COMUNITARIO #}
             {% if 'gestionar_formaciones' in permisos_activos or 'gestionar_sensibilizaciones' in permisos_activos or 
                   'crear_divulgaciones' in permisos_activos or 'aprobar_divulgaciones' in permisos_activos or 
                   current_user.id_rol|int in (1, 2) %}
@@ -161,7 +159,7 @@
             {% endif %}
             {% endif %}
 
-            {# SECCIÓN MAPAS (Gabriel) #}
+            {# SECCIÓN MAPAS #}
             {% if 'gestionar_geomatica' in permisos_activos or 'ver_mapas' in permisos_activos or current_user.id_rol|int in (1, 2) %}
             <p
                 class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">
@@ -200,13 +198,13 @@
             </a>
             {% endif %}
 
-            {# SECCIÓN LOGÍSTICA (Aileen) #}
+            {# SECCIÓN LOGÍSTICA #}
             {% if 'gestionar_tecnicos' in permisos_activos or 'gestionar_inventario' in permisos_activos or current_user.id_rol|int in (1, 2) %}
             <p
                 class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">
                 Logística</p>
 
-            <!-- 🎯 Técnicos de Campo (CON PALABRAS TÉCNICAS ESPECÍFICAS PARA EVITAR EL BUG ESPEJO) -->
+            <!-- 🎯 Técnicos de Campo -->
             {% if 'gestionar_tecnicos' in permisos_activos or current_user.id_rol|int in (1, 2) %}
             <a href="{{ url_for('logistica.tecnicos_campo_index') }}"
                 class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['tecnico', 'campo']) }}">
@@ -223,6 +221,20 @@
                 <span class="sidebar-text whitespace-nowrap">Inventario de Equipos</span>
             </a>
             {% endif %}
+            {% endif %}
+
+            {# 🗃️ SECCIÓN PARAMETRIZACIÓN / TABLAS MAESTRAS #}
+            {% if 'gestionar_usuarios' in permisos_activos or current_user.id_rol|int in (1, 2) %}
+            <p
+                class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">
+                Parametrización</p>
+
+            <!-- 🎯 Catálogos del Sistema -->
+            <a href="{{ url_for('core.catalogos_index') }}"
+                class="w-full flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['catalogos', 'parametrizacion']) }}">
+                <i data-lucide="database" class="mr-3 w-5 h-5 flex-shrink-0 text-green-600 dark:text-green-400"></i>
+                <span class="sidebar-text whitespace-nowrap">Catálogos del Sistema</span>
+            </a>
             {% endif %}
 
             <!-- SECCIÓN DE SOPORTE -->
@@ -265,13 +277,11 @@
                     <i id="theme-icon" data-lucide="moon"></i>
                 </button>
 
-                <!-- 🔔 CONTENEDOR DE LA CAMPANITA CON DROP-DOWN EN TAILWIND -->
                 <div class="relative">
                     <button id="notif-toggle"
                         class="focus:outline-none text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors relative p-1 mt-1">
                         <i data-lucide="bell" class="w-5 h-5"></i>
 
-                        <!-- Círculo Rojo Animado -->
                         {% if conteo_alertas > 0 %}
                         <span class="absolute top-0 right-0 flex h-2 w-2">
                             <span
@@ -281,7 +291,6 @@
                         {% endif %}
                     </button>
 
-                    <!-- Menú desplegable flotante -->
                     <div id="notif-dropdown"
                         class="hidden absolute right-0 top-full mt-2 w-80 rounded-xl shadow-lg border bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700 z-[100]">
                         <div
@@ -359,7 +368,6 @@
         const notifToggleBtn = document.getElementById('notif-toggle');
         const notifDropdown = document.getElementById('notif-dropdown');
         
-        // 🎯 RECUPERACIÓN DE LA POSICIÓN DEL SCROLL DEL MENÚ LATERAL
         const sidebarNav = document.getElementById('sidebar-nav');
         if (sidebarNav) {
             const cachedScrollPosition = sessionStorage.getItem('sidebarScrollPosition');

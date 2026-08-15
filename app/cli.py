@@ -37,24 +37,49 @@ def do_seed():
             tecnico_role = Role(nombre='Técnico', descripcion='Operativo de campo')
             db.session.add(tecnico_role)
 
-        # Permisos
-        p_manage_users = Permission.query.filter_by(nombre='manage_users').first()
-        if not p_manage_users:
-            p_manage_users = Permission(nombre='manage_users', descripcion='Crear/Editar/Eliminar usuarios')
-            db.session.add(p_manage_users)
+        # Permisos canónicos usados por controladores y plantillas
+        permisos_base = [
+            ('gestionar_usuarios', 'Crear, editar y eliminar usuarios, roles y accesos'),
+            ('gestionar_monitoreo', 'Administrar actividades y monitoreo'),
+            ('gestionar_formaciones', 'Administrar formaciones comunitarias'),
+            ('gestionar_sensibilizaciones', 'Administrar sensibilizaciones comunitarias'),
+            ('crear_divulgaciones', 'Crear contenido de divulgación'),
+            ('aprobar_divulgaciones', 'Aprobar y publicar contenido de divulgación'),
+        ]
 
-        p_manage_roles = Permission.query.filter_by(nombre='manage_roles').first()
-        if not p_manage_roles:
-            p_manage_roles = Permission(nombre='manage_roles', descripcion='Gestionar roles y permisos')
-            db.session.add(p_manage_roles)
+        permisos_creados = {}
+        for nombre_permiso, descripcion_permiso in permisos_base:
+            permiso = Permission.query.filter_by(nombre=nombre_permiso).first()
+            if not permiso:
+                permiso = Permission(nombre=nombre_permiso, descripcion=descripcion_permiso)
+                db.session.add(permiso)
+            permisos_creados[nombre_permiso] = permiso
 
         db.session.commit()
 
-        # Asociar permisos
-        if p_manage_users not in admin_role.permissions:
-            admin_role.permissions.append(p_manage_users)
-        if p_manage_roles not in director_role.permissions:
-            director_role.permissions.append(p_manage_roles)
+        # Asociar permisos a roles base
+        for permiso_nombre in ('gestionar_usuarios', 'gestionar_monitoreo', 'gestionar_formaciones', 'gestionar_sensibilizaciones', 'crear_divulgaciones'):
+            permiso = permisos_creados[permiso_nombre]
+            if permiso not in admin_role.permissions:
+                admin_role.permissions.append(permiso)
+
+        for permiso_nombre in ('gestionar_usuarios', 'gestionar_monitoreo', 'gestionar_formaciones', 'gestionar_sensibilizaciones', 'crear_divulgaciones', 'aprobar_divulgaciones'):
+            permiso = permisos_creados[permiso_nombre]
+            if permiso not in director_role.permissions:
+                director_role.permissions.append(permiso)
+
+        # Compatibilidad con permisos legados si ya existen en BD
+        legacy_permissions = {
+            'manage_users': 'gestionar_usuarios',
+            'manage_roles': 'gestionar_usuarios',
+        }
+        for legacy_name, canonical_name in legacy_permissions.items():
+            legacy_perm = Permission.query.filter_by(nombre=legacy_name).first()
+            canonical_perm = permisos_creados[canonical_name]
+            if legacy_perm and legacy_perm not in admin_role.permissions:
+                admin_role.permissions.append(legacy_perm)
+            if legacy_perm and legacy_perm not in director_role.permissions:
+                director_role.permissions.append(legacy_perm)
 
         db.session.commit()
 

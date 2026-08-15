@@ -155,7 +155,7 @@
 </section>
 
 <!-- ==========================================
-     4. COMPONENTES OPERATIVOS (Eliminada redundancia previa)
+     4. CAPACIDADES OPERATIVAS
      ========================================== -->
 <section id="capacidades" class="mt-24 space-y-6">
     <p class="text-xs uppercase tracking-[0.3em] text-emerald-700 font-semibold">Capacidades Operativas del Ecosistema</p>
@@ -179,51 +179,86 @@
 </section>
 
 <!-- ==========================================
-     5. REPOSITORIO DIGITAL DE PUBLICACIONES Y DIVULGACIÓN
+     5. REPOSITORIO DIGITAL DE PUBLICACIONES Y DIVULGACIÓN (MEJORADO CON FOTO)
      ========================================== -->
 <section id="publicaciones" class="mt-24 space-y-6">
-    <p class="text-xs uppercase tracking-[0.3em] text-emerald-700 font-semibold">Biblioteca Digital y Publicaciones Oficiales</p>
+    <div class="flex items-center justify-between">
+        <div>
+            <p class="text-xs uppercase tracking-[0.3em] text-emerald-700 font-bold">Biblioteca Digital</p>
+            <h2 class="text-2xl font-black text-slate-900 tracking-tight">Publicaciones y Boletines Oficiales</h2>
+        </div>
+    </div>
     
     {% if publicaciones %}
-    <div class="grid md:grid-cols-2 gap-6 text-sm">
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 text-sm">
         {% for publicacion in publicaciones %}
-        <article class="group flex flex-col justify-between p-6 rounded-3xl border border-slate-200 bg-white hover:shadow-xl transition-all duration-300 {% if publicacion.prioridad and publicacion.prioridad >= 8 %} ring-2 ring-red-500/50 bg-red-50/10 {% endif %}">
+        <article class="group flex flex-col justify-between rounded-3xl border border-slate-200 bg-white overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 {% if publicacion.prioridad and publicacion.prioridad >= 8 %} ring-2 ring-red-500/50 {% endif %}">
+            
             <div class="space-y-4">
-                <div class="w-full h-44 rounded-2xl border overflow-hidden flex flex-col items-center justify-center group-hover:scale-[1.01] transition-transform 
-                    {% if publicacion.prioridad and publicacion.prioridad >= 8 %} bg-gradient-to-br from-red-600 to-amber-700 text-white border-transparent
-                    {% elif publicacion.prioridad and publicacion.prioridad >= 5 %} bg-gradient-to-br from-orange-500 to-yellow-600 text-white border-transparent
-                    {% else %} bg-gradient-to-br from-slate-100 to-slate-50 text-emerald-600/40 border-slate-200/60 {% endif %}">
-                    
-                    {% if publicacion.prioridad and publicacion.prioridad >= 8 %}
-                        <i data-lucide="alert-triangle" class="w-12 h-12 animate-bounce"></i>
-                        <span class="text-[10px] font-black uppercase tracking-[0.2em] mt-2">ALERTA CLIMÁTICA CRÍTICA</span>
+                <!-- 📸 IMAGEN DESTACADA DE LA TARJETA (FOTO REAL O BANNER) -->
+                <div class="relative w-full h-48 overflow-hidden bg-slate-100 border-b border-slate-100">
+                    {% if publicacion.divulgacion and publicacion.divulgacion.actividad and publicacion.divulgacion.actividad.imagenes_asociadas and publicacion.divulgacion.actividad.imagenes_asociadas|length > 0 %}
+                        <!-- FOTO REAL CARGADA EN LA ACTIVIDAD -->
+                        <img src="{{ url_for('static', filename=publicacion.divulgacion.actividad.imagenes_asociadas[0].imagen.url_imagen) }}" 
+                             alt="{{ publicacion.titulo }}" 
+                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                     {% else %}
-                        <i data-lucide="newspaper" class="w-12 h-12 stroke-[1.2]"></i>
+                        <!-- BANNER DINÁMICO POR PRIORIDAD SI NO HAY FOTO -->
+                        <div class="w-full h-full flex flex-col items-center justify-center 
+                            {% if publicacion.prioridad and publicacion.prioridad >= 8 %} bg-gradient-to-br from-red-600 to-amber-700 text-white
+                            {% elif publicacion.prioridad and publicacion.prioridad >= 5 %} bg-gradient-to-br from-emerald-800 to-teal-950 text-emerald-100
+                            {% else %} bg-gradient-to-br from-slate-800 to-slate-900 text-slate-300 {% endif %}">
+                            
+                            {% if publicacion.prioridad and publicacion.prioridad >= 8 %}
+                                <i data-lucide="alert-triangle" class="w-10 h-10 animate-bounce text-amber-300"></i>
+                                <span class="text-[9px] font-black uppercase tracking-[0.2em] mt-2">Alerta Crítica</span>
+                            {% else %}
+                                <i data-lucide="newspaper" class="w-10 h-10 text-emerald-400/80 stroke-[1.5]"></i>
+                                <span class="text-[9px] uppercase tracking-[0.2em] text-slate-400 mt-2">ONCC Boletín</span>
+                            {% endif %}
+                        </div>
                     {% endif %}
+
+                    <!-- BADGE SUPERIOR DE TIPO DE BOLETÍN -->
+                    <div class="absolute top-3 left-3">
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/90 text-slate-900 shadow-sm backdrop-blur-xs">
+                            {{ publicacion.tipo }}
+                        </span>
+                    </div>
+
+                    <!-- BADGE DE PRIORIDAD -->
+                    <div class="absolute top-3 right-3">
+                        <span class="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full font-bold shadow-xs
+                            {% if publicacion.prioridad and publicacion.prioridad >= 8 %} bg-red-600 text-white
+                            {% elif publicacion.prioridad and publicacion.prioridad >= 5 %} bg-amber-500 text-white
+                            {% else %} bg-emerald-600 text-white {% endif %}">
+                            Nivel {{ publicacion.prioridad|default(1) }}
+                        </span>
+                    </div>
                 </div>
                 
-                <div class="flex items-start justify-between gap-3 pt-2">
-                    <h3 class="font-black text-lg text-slate-900 group-hover:text-emerald-700 transition-colors leading-snug">{{ publicacion.titulo }}</h3>
+                <!-- CUERPO DE LA TARJETA -->
+                <div class="px-6 space-y-2">
+                    <p class="text-[11px] font-mono text-slate-400">
+                        {{ publicacion.publicado_en.strftime('%d/%m/%Y') if publicacion.publicado_en else (publicacion.fecha_publicacion.strftime('%d/%m/%Y') if publicacion.fecha_publicacion else 'Reciente') }}
+                    </p>
                     
-                    <span class="text-[10px] uppercase tracking-[0.2em] px-2 py-0.5 rounded font-bold whitespace-nowrap
-                        {% if publicacion.prioridad and publicacion.prioridad >= 8 %} bg-red-100 text-red-800
-                        {% elif publicacion.prioridad and publicacion.prioridad >= 5 %} bg-orange-100 text-orange-800
-                        {% else %} bg-emerald-50 text-emerald-700 {% endif %}">
-                        Prioridad {{ publicacion.prioridad|default(1) }}
-                    </span>
+                    <h3 class="font-bold text-base text-slate-900 group-hover:text-emerald-700 transition-colors leading-snug line-clamp-2">
+                        {{ publicacion.titulo_publicacion if publicacion.titulo_publicacion else publicacion.titulo }}
+                    </h3>
+                    
+                    <p class="text-slate-600 text-xs leading-relaxed line-clamp-3">
+                        {{ publicacion.resumen if publicacion.resumen else (publicacion.contenido|truncate(120) if publicacion.contenido else 'Documento técnico oficial para consulta ciudadana.') }}
+                    </p>
                 </div>
-                
-                {% if publicacion.resumen %}
-                <p class="text-slate-600 text-xs leading-relaxed line-clamp-3">{{ publicacion.resumen }}</p>
-                {% else %}
-                <p class="text-slate-600 text-xs leading-relaxed line-clamp-3">{{ publicacion.contenido if publicacion.contenido else 'Documento técnico oficial en fase de aprobación y revisión final.' }}</p>
-                {% endif %}
             </div>
             
-            <div class="mt-6 pt-4 border-t border-slate-100 flex justify-end">
-                <a href="{{ url_for('core.divulgacion_detalle', pub_id=publicacion.id) }}" class="inline-flex items-center text-xs font-bold text-emerald-700 hover:text-emerald-600 group/link transition-colors">
-                    Consultar Documento Completo 
-                    <i data-lucide="arrow-right" class="w-3.5 h-3.5 ml-1 transform group-hover/link:translate-x-0.5 transition-transform"></i>
+            <!-- PIE DE TARJETA CON ENLACE DIRECTO -->
+            <div class="px-6 pb-6 pt-4 mt-2 border-t border-slate-100 flex items-center justify-between">
+                <span class="text-[11px] text-slate-400 font-medium">Lectura abierta</span>
+                <a href="{{ url_for('core.divulgacion_detalle', pub_id=publicacion.id_publicacion if publicacion.id_publicacion else publicacion.id) }}" class="inline-flex items-center text-xs font-bold text-emerald-700 hover:text-emerald-800 group/link transition-colors">
+                    Consultar Documento 
+                    <i data-lucide="arrow-right" class="w-3.5 h-3.5 ml-1 transform group-hover/link:translate-x-1 transition-transform"></i>
                 </a>
             </div>
         </article>
@@ -231,11 +266,11 @@
     </div>
     {% else %}
     <div class="grid md:grid-cols-2 gap-5 text-sm">
-        <div class="p-5 rounded-2xl border border-slate-200 bg-white shadow-2xs">
+        <div class="p-5 rounded-2xl border border-slate-200 bg-white shadow-xs">
             <p class="font-bold text-slate-900 mb-2">Balances e Informes Técnicos Extendidos</p>
             <p class="text-slate-700 text-xs leading-relaxed">Reportes anuales consolidados sobre variables hidrometeorológicas e impacto de contingencias geográficas históricas en la región.</p>
         </div>
-        <div class="p-5 rounded-2xl border border-slate-200 bg-white shadow-2xs">
+        <div class="p-5 rounded-2xl border border-slate-200 bg-white shadow-xs">
             <p class="font-bold text-slate-900 mb-2">Hitos de Gestión e Inclusión de Capacidades</p>
             <p class="text-slate-700 text-xs leading-relaxed">Síntesis formativas de los programas de capacitación comunitaria y mapas zonales validados por las unidades operacionales.</p>
         </div>
@@ -249,15 +284,15 @@
 <section id="adaptacion" class="mt-24 space-y-4">
     <p class="text-xs uppercase tracking-[0.3em] text-emerald-700 font-semibold">Adaptación y Mitigación Comunitaria</p>
     <div class="grid md:grid-cols-3 gap-5 text-sm">
-        <div class="p-5 rounded-2xl border border-slate-200 bg-white hover:border-slate-300 transition-colors shadow-2xs">
+        <div class="p-5 rounded-2xl border border-slate-200 bg-white hover:border-slate-300 transition-colors shadow-xs">
             <p class="font-bold text-slate-900 mb-2">Capacitación Técnica Local</p>
             <p class="text-slate-700 leading-relaxed text-xs">Transferencia metodológica mediante talleres estructurados y planes formativos certificados para la autogestión de riesgos en sectores vulnerables.</p>
         </div>
-        <div class="p-5 rounded-2xl border border-slate-200 bg-white hover:border-slate-300 transition-colors shadow-2xs">
+        <div class="p-5 rounded-2xl border border-slate-200 bg-white hover:border-slate-300 transition-colors shadow-xs">
             <p class="font-bold text-slate-900 mb-2">Codiseño de Contingencias</p>
             <p class="text-slate-700 leading-relaxed text-xs">Asesoramiento analítico continuo para la estructuración de planes de contingencia comunitarios basados en modelos climáticos predictivos.</p>
         </div>
-        <div class="p-5 rounded-2xl border border-slate-200 bg-white hover:border-slate-300 transition-colors shadow-2xs">
+        <div class="p-5 rounded-2xl border border-slate-200 bg-white hover:border-slate-300 transition-colors shadow-xs">
             <p class="font-bold text-slate-900 mb-2">Auditoría de Impacto Estructural</p>
             <p class="text-slate-700 leading-relaxed text-xs">Evaluación constante e inspección del comportamiento de las obras civiles y medidas físicas destinadas a la mitigación del cambio climático.</p>
         </div>

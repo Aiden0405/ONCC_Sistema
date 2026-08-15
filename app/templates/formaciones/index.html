@@ -1,5 +1,8 @@
-{% extends 'base.html' %} {% block title %}Formaciones - ONCC{% endblock %} {%
-block content %}
+{% extends 'base.html' %} 
+
+{% block title %}Formaciones - ONCC{% endblock %} 
+
+{% block content %}
 <div class="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
   <div class="flex items-center justify-between mb-2">
     <div>
@@ -7,220 +10,135 @@ block content %}
         Módulo de Formaciones
       </h1>
       <p class="text-sm dark:text-gray-400 text-gray-500">
-        Planificación, vinculación institucional y seguimiento pedagógico de
-        jornadas climáticas
+        Planificación, vinculación institucional y seguimiento pedagógico de jornadas climáticas
       </p>
     </div>
   </div>
 
-  {% with messages = get_flashed_messages(with_categories=true) %} {% if
-  messages %} {% for category, message in messages %}
-  <div
-    class="p-4 rounded-md border text-sm font-medium shadow-sm flex items-center {% if category == 'error' %}bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800{% else %}bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800{% endif %}"
-  >
-    <i
-      data-lucide="{% if category == 'error' %}alert-triangle{% else %}check-circle{% endif %}"
-      class="mr-2 w-5 h-5"
-    ></i>
-    <span>{{ message }}</span>
-  </div>
-  {% endfor %} {% endif %} {% endwith %}
+  {% with messages = get_flashed_messages(with_categories=true) %} 
+    {% if messages %} 
+      {% for category, message in messages %}
+      <div class="p-4 rounded-md border text-sm font-medium shadow-sm flex items-center {% if category == 'error' %}bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800{% else %}bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800{% endif %}">
+        <i data-lucide="{% if category == 'error' %}alert-triangle{% else %}check-circle{% endif %}" class="mr-2 w-5 h-5"></i>
+        <span>{{ message }}</span>
+      </div>
+      {% endfor %} 
+    {% endif %} 
+  {% endwith %}
 
-  <div
-    class="rounded-xl shadow-sm border p-6 bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700"
-  >
-    <h3
-      class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400 mb-4 flex items-center"
-    >
-      <i data-lucide="graduation-cap" class="w-4 h-4 mr-2"></i> Registrar Nueva
-      Jornada de Formación
+  <!-- FORMULARIO SUPERIOR DE REGISTRO -->
+  <div class="rounded-xl shadow-sm border p-6 bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+    <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400 mb-4 flex items-center">
+      <i data-lucide="graduation-cap" class="w-4 h-4 mr-2"></i> Registrar Nueva Jornada de Formación
     </h3>
 
-    <form
-      method="POST"
-      action="{{ url_for('comunitario.formaciones_index') }}"
-      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end"
-    >
-      {{ form.csrf_token }}
+    <form method="POST" action="{{ url_for('formacion.nuevo') if 'formacion.nuevo' in url_map else url_for('comunitario.formacion_nuevo') }}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
+      {{ form.hidden_tag() }}
 
       <div class="space-y-1">
-        <label
-          class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase"
-          >Técnico / Facilitador</label
-        >
-        <input
-          type="text"
-          name="tecnico"
-          placeholder="Ej: Lcdo. Alcides Romero"
-          required
-          class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
-        />
+        <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Técnico / Facilitador</label>
+        {{ form.tecnico(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none', placeholder='Ej: Lcdo. Alcides Romero') }}
+        {% for error in form.tecnico.errors %}<p class="text-xs text-red-600 mt-1">{{ error }}</p>{% endfor %}
       </div>
 
       <div class="space-y-1">
-        <label
-          class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase"
-          >Tema de la Formación</label
-        >
-        <input
-          type="text"
-          name="nombre_formacion"
-          placeholder="Ej: Gestión de Riesgos Climáticos"
-          required
-          class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
-        />
+        <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Tema de la Formación</label>
+        {{ form.nombre_formacion(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none', placeholder='Ej: Gestión de Riesgos Climáticos') }}
+        {% for error in form.nombre_formacion.errors %}<p class="text-xs text-red-600 mt-1">{{ error }}</p>{% endfor %}
       </div>
 
       <div class="space-y-1">
-        <label
-          class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase"
-          >Fecha Ejecución</label
-        >
-        <input
-          type="date"
-          name="fecha"
-          required
-          class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
-        />
+        <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Fecha Ejecución</label>
+        {{ form.fecha_actividad(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none') }}
+        {% for error in form.fecha_actividad.errors %}<p class="text-xs text-red-600 mt-1">{{ error }}</p>{% endfor %}
       </div>
 
       <div class="space-y-1">
-        <label
-          class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase"
-          >Nivel de Instrucción</label
-        >
-        <select
-          name="id_nivel"
-          required
-          class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
-        >
-          <option value="" disabled selected>Seleccione nivel...</option>
-          {% for id, nombre in form.id_nivel.choices %}
-          <option value="{{ id }}">{{ nombre }}</option>
-          {% endfor %}
-        </select>
+        <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Comunidad</label>
+        {{ form.id_comunidad(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none') }}
+        {% for error in form.id_comunidad.errors %}<p class="text-xs text-red-600 mt-1">{{ error }}</p>{% endfor %}
       </div>
 
       <div class="space-y-1">
-        <label
-          class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase"
-          >Institución / Sede</label
-        >
-        <select
-          name="id_institucion"
-          required
-          class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
-        >
-          <option value="" disabled selected>Seleccione institución...</option>
-          {% for id, nombre in form.id_institucion.choices %}
-          <option value="{{ id }}">{{ nombre }}</option>
-          {% endfor %}
-        </select>
+        <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Nivel de Instrucción</label>
+        {{ form.id_nivel(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none') }}
+        {% for error in form.id_nivel.errors %}<p class="text-xs text-red-600 mt-1">{{ error }}</p>{% endfor %}
       </div>
 
-      <div class="md:col-span-2 lg:col-span-5 flex justify-end pt-2">
-        <button
-          type="submit"
-          class="bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-medium px-6 py-2 transition-colors shadow-sm inline-flex items-center justify-center"
-        >
-          <i data-lucide="plus-circle" class="w-4 h-4 mr-2"></i> Registrar
-          Formación
+      <div class="space-y-1">
+        <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Institución / Sede</label>
+        {{ form.id_institucion(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none') }}
+        {% for error in form.id_institucion.errors %}<p class="text-xs text-red-600 mt-1">{{ error }}</p>{% endfor %}
+      </div>
+
+      <div class="md:col-span-2 lg:col-span-6 flex justify-end pt-2">
+        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-medium px-6 py-2 transition-colors shadow-sm inline-flex items-center justify-center">
+          <i data-lucide="plus-circle" class="w-4 h-4 mr-2"></i> Registrar Formación
         </button>
       </div>
     </form>
   </div>
 
-  <div
-    class="rounded-xl shadow-sm border overflow-hidden bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700"
-  >
-    <div
-      class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between"
-    >
+  <!-- TABLA DE HISTORIAL -->
+  <div class="rounded-xl shadow-sm border overflow-hidden bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+    <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
       <div>
-        <h3
-          class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400"
-        >
-          Historial de Jornadas de Formación
-        </h3>
-        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-          Bitácora consolidada del sistema
-        </p>
+        <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400">Historial de Jornadas de Formación</h3>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Bitácora consolidada del sistema</p>
       </div>
-      <span class="text-xs text-gray-500 dark:text-gray-400 font-mono"
-        >{{ formaciones|length }} registro(s)</span
-      >
+      <span class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ formaciones|length }} registro(s)</span>
     </div>
 
     <div class="overflow-x-auto">
       <table class="w-full text-sm text-left border-collapse">
         <thead>
-          <tr
-            class="text-xs uppercase tracking-wider bg-gray-50 text-gray-500 dark:bg-gray-700/40 dark:text-gray-400"
-          >
+          <tr class="text-xs uppercase tracking-wider bg-gray-50 text-gray-500 dark:bg-gray-700/40 dark:text-gray-400">
             <th class="px-6 py-3 font-semibold">ID</th>
             <th class="px-6 py-3 font-semibold">Tema de la Formación</th>
             <th class="px-6 py-3 font-semibold">Técnico / Facilitador</th>
-            <th class="px-6 py-3 font-semibold">
-              Institución / Sede Académica
-            </th>
+            <th class="px-6 py-3 font-semibold">Institución / Sede Académica</th>
             <th class="px-6 py-3 font-semibold">Fecha Ejecución</th>
             <th class="px-6 py-3 font-semibold text-center">Acciones</th>
           </tr>
         </thead>
-        <tbody
-          class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300"
-        >
+        <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
           {% for item in formaciones %}
-          <tr
-            class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
-          >
+          <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
             <td class="px-6 py-4 font-mono text-xs text-gray-400">
-              {{ item.id_formacion }}
+              #{{ item.id_formacion }}
             </td>
             <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-100">
-              {{ item.tema }}
+              {{ item.tema if item.tema is defined else item.nombre_formacion }}
             </td>
             <td class="px-6 py-4 text-gray-600 dark:text-gray-400">
-              {{ item.tecnico }}
+              {{ item.tecnico if item.tecnico is defined else (item.nombre_tecnico if item.nombre_tecnico is defined else 'No asignado') }}
             </td>
             <td class="px-6 py-4 text-gray-600 dark:text-gray-400 font-medium">
-              {{ item.nombre_institucion }}
+              {{ item.nombre_institucion if item.nombre_institucion is defined else (item.institucion.nombre_institucion if item.institucion is defined else 'Sin institución') }}
             </td>
-
             <td class="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-400">
-              {{ item.fecha_formateada }}
+              {{ item.fecha_formateada if item.fecha_formateada is defined else (item.actividad.fecha_actividad.strftime('%Y-%m-%d') if item.actividad and item.actividad.fecha_actividad else 'N/D') }}
             </td>
 
             <td class="px-6 py-4 text-center space-x-3">
               {% if current_user.id_rol in [1, 2] %}
-              <button
-                onclick="abrirModalEdicion('{{ item.id_formacion }}', '{{ item.tema }}', '{{ item.tecnico }}', '{{ item.fecha_actividad_cruda }}', '{{ item.id_institucion }}', '{{ item.id_nivel }}')"
-                class="text-blue-600 hover:text-blue-800 transition-colors"
-                title="Editar"
-              >
+              <button type="button"
+                      onclick="abrirModalEdicion(this)"
+                      data-id="{{ item.id_formacion }}"
+                      data-tema="{{ item.tema if item.tema is defined else item.nombre_formacion }}"
+                      data-tecnico="{% if item.tecnico is defined %}{{ item.tecnico }}{% elif item.nombre_tecnico is defined %}{{ item.nombre_tecnico }}{% else %}{% endif %}"
+                      data-fecha="{% if item.fecha_actividad_cruda is defined %}{{ item.fecha_actividad_cruda }}{% elif item.actividad and item.actividad.fecha_actividad %}{{ item.actividad.fecha_actividad }}{% else %}{% endif %}"
+                      data-comunidad="{% if item.id_comunidad is defined %}{{ item.id_comunidad }}{% elif item.actividad and item.actividad.id_comunidad %}{{ item.actividad.id_comunidad }}{% else %}{% endif %}"
+                      data-institucion="{{ item.id_institucion }}"
+                      data-nivel="{{ item.id_nivel }}"
+                      class="text-blue-600 hover:text-blue-800 transition-colors"
+                      title="Editar">
                 <i data-lucide="edit" class="w-4 h-4 inline"></i>
               </button>
 
-              <form
-                action="{{ url_for('comunitario.formacion_eliminar', id_formacion=item.id_formacion) }}"
-                method="POST"
-                class="inline"
-                onsubmit="
-                  return confirm(
-                    '¿Estás completamente segura de eliminar esta formación? Esta acción borrará la actividad asociada.',
-                  );
-                "
-              >
-                <input
-                  type="hidden"
-                  name="csrf_token"
-                  value="{{ csrf_token() }}"
-                />
-                <button
-                  type="submit"
-                  class="text-red-600 hover:text-red-800 transition-colors"
-                  title="Eliminar"
-                >
+              <form action="{{ url_for('comunitario.formacion_eliminar', id_formacion=item.id_formacion) }}" method="POST" class="inline" onsubmit="return confirm('¿Estás completamente seguro de eliminar esta formación? Esta acción borrará la actividad asociada.');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <button type="submit" class="text-red-600 hover:text-red-800 transition-colors" title="Eliminar">
                   <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
                 </button>
               </form>
@@ -231,19 +149,10 @@ block content %}
           </tr>
           {% else %}
           <tr>
-            <td
-              colspan="6"
-              class="px-6 py-10 text-center text-gray-500 dark:text-gray-400"
-            >
+            <td colspan="6" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
               <div class="flex flex-col items-center justify-center space-y-1">
-                <i
-                  data-lucide="graduation-cap"
-                  class="w-6 h-6 text-gray-300 dark:text-gray-600"
-                ></i>
-                <p class="text-sm font-medium">
-                  No se encuentran jornadas pedagógicas registradas en la
-                  bitácora.
-                </p>
+                <i data-lucide="graduation-cap" class="w-6 h-6 text-gray-300 dark:text-gray-600"></i>
+                <p class="text-sm font-medium">No se encuentran jornadas pedagógicas registradas en la bitácora.</p>
               </div>
             </td>
           </tr>
@@ -254,83 +163,44 @@ block content %}
   </div>
 </div>
 
-<div
-  id="modalEdicion"
-  class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden flex items-center justify-center p-4 z-50 animate-in fade-in duration-200"
->
-  <div
-    class="bg-white dark:bg-gray-800 rounded-xl max-w-lg w-full p-6 shadow-xl space-y-4 border border-gray-100 dark:border-gray-700"
-  >
-    <div
-      class="flex justify-between items-center border-b pb-2 dark:border-gray-700"
-    >
-      <h3 class="text-lg font-bold text-gray-800 dark:text-white">
-        Modificar Jornada de Formación
-      </h3>
-      <button
-        onclick="cerrarModalEdicion()"
-        class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-      >
-        &times;
-      </button>
+<!-- MODAL DE EDICIÓN -->
+<div id="modalEdicion" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+  <div class="bg-white dark:bg-gray-800 rounded-xl max-w-lg w-full p-6 shadow-xl space-y-4 border border-gray-100 dark:border-gray-700">
+    <div class="flex justify-between items-center border-b pb-2 dark:border-gray-700">
+      <h3 class="text-lg font-bold text-gray-800 dark:text-white">Modificar Jornada de Formación</h3>
+      <button onclick="cerrarModalEdicion()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">&times;</button>
     </div>
 
     <form id="formEditar" method="POST" class="space-y-4">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
       <div class="space-y-1">
-        <label
-          class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase"
-          >Técnico / Facilitador</label
-        >
-        <input
-          type="text"
-          id="edit_tecnico"
-          name="edit_tecnico"
-          required
-          class="w-full border rounded-md p-2 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white outline-none"
-        />
+        <label class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Técnico / Facilitador</label>
+        <input type="text" id="edit_tecnico" name="edit_tecnico" required class="w-full border rounded-md p-2 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white outline-none" />
       </div>
 
       <div class="space-y-1">
-        <label
-          class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase"
-          >Tema de la Formación</label
-        >
-        <input
-          type="text"
-          id="edit_nombre_formacion"
-          name="edit_nombre_formacion"
-          required
-          class="w-full border rounded-md p-2 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white outline-none"
-        />
+        <label class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Tema de la Formación</label>
+        <input type="text" id="edit_nombre_formacion" name="edit_nombre_formacion" required class="w-full border rounded-md p-2 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white outline-none" />
       </div>
 
       <div class="space-y-1">
-        <label
-          class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase"
-          >Fecha Ejecución</label
-        >
-        <input
-          type="date"
-          id="edit_fecha"
-          name="edit_fecha"
-          required
-          class="w-full border rounded-md p-2 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white outline-none"
-        />
+        <label class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Fecha Ejecución</label>
+        <input type="date" id="edit_fecha" name="edit_fecha" required class="w-full border rounded-md p-2 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white outline-none" />
       </div>
 
       <div class="space-y-1">
-        <label
-          class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase"
-          >Nivel de Instrucción</label
-        >
-        <select
-          id="edit_id_nivel"
-          name="edit_id_nivel"
-          required
-          class="w-full border rounded-md p-2 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white outline-none"
-        >
+        <label class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Comunidad</label>
+        <select id="edit_id_comunidad" name="edit_id_comunidad" required class="w-full border rounded-md p-2 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white outline-none">
+          {% for id, nombre in form.id_comunidad.choices %}
+          <option value="{{ id }}">{{ nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="space-y-1">
+        <label class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Nivel de Instrucción</label>
+        <select id="edit_id_nivel" name="edit_id_nivel" required class="w-full border rounded-md p-2 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white outline-none">
           {% for id, nombre in form.id_nivel.choices %}
           <option value="{{ id }}">{{ nombre }}</option>
           {% endfor %}
@@ -338,36 +208,19 @@ block content %}
       </div>
 
       <div class="space-y-1">
-        <label
-          class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase"
-          >Institución / Sede</label
-        >
-        <select
-          id="edit_id_institucion"
-          name="edit_id_institucion"
-          required
-          class="w-full border rounded-md p-2 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white outline-none"
-        >
+        <label class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Institución / Sede</label>
+        <select id="edit_id_institucion" name="edit_id_institucion" required class="w-full border rounded-md p-2 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white outline-none">
           {% for id, nombre in form.id_institucion.choices %}
           <option value="{{ id }}">{{ nombre }}</option>
           {% endfor %}
         </select>
       </div>
 
-      <div
-        class="flex justify-end space-x-2 pt-2 border-t dark:border-gray-700"
-      >
-        <button
-          type="button"
-          onclick="cerrarModalEdicion()"
-          class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md text-sm px-4 py-2 hover:bg-gray-300"
-        >
+      <div class="flex justify-end space-x-2 pt-2 border-t dark:border-gray-700">
+        <button type="button" onclick="cerrarModalEdicion()" class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md text-sm px-4 py-2 hover:bg-gray-300">
           Cancelar
         </button>
-        <button
-          type="submit"
-          class="bg-blue-600 text-white rounded-md text-sm px-4 py-2 hover:bg-blue-700"
-        >
+        <button type="submit" class="bg-blue-600 text-white rounded-md text-sm px-4 py-2 hover:bg-blue-700">
           Guardar Cambios
         </button>
       </div>
@@ -376,25 +229,22 @@ block content %}
 </div>
 
 <script>
-  function abrirModalEdicion(id, tema, tecnico, fecha, idInstitucion, idNivel) {
-    // Cambiamos dinámicamente la URL del formulario para apuntar al ID correcto
-    document.getElementById("formEditar").action = "/formaciones/editar/" + id;
+  function abrirModalEdicion(boton) {
+    const id = boton.dataset.id;
+    document.getElementById("formEditar").action = "{{ url_for('comunitario.formacion_editar', id_formacion=0) if 'comunitario.formacion_editar' in url_map else '/formaciones/editar/0' }}".replace('0', id);
 
-    // Cargamos los valores actuales del registro en los inputs del modal
-    document.getElementById('edit_nombre_formacion').value = tema;
-    document.getElementById('edit_tecnico').value = tecnico;
-    document.getElementById('edit_fecha').value = fecha;
-    document.getElementById('edit_id_institucion').value = idInstitucion;
-    document.getElementById('edit_id_nivel').value = idNivel;
+    document.getElementById('edit_nombre_formacion').value = boton.dataset.tema || '';
+    document.getElementById('edit_tecnico').value = boton.dataset.tecnico || '';
+    document.getElementById('edit_fecha').value = boton.dataset.fecha || '';
+    document.getElementById('edit_id_comunidad').value = boton.dataset.comunidad || '';
+    document.getElementById('edit_id_institucion').value = boton.dataset.institucion || '';
+    document.getElementById('edit_id_nivel').value = boton.dataset.nivel || '';
 
-    // Mostramos el modal quitando la clase hidden
     document.getElementById("modalEdicion").classList.remove("hidden");
   }
   
   function cerrarModalEdicion() {
-    // Ocultamos el modal añadiendo la clase hidden
     document.getElementById("modalEdicion").classList.add("hidden");
   }
 </script>
-
 {% endblock %}

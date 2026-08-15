@@ -1,62 +1,60 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SelectField, DateField
+from wtforms import DateField, SelectField, StringField
 from wtforms.validators import DataRequired
 
+
 class FormacionForm(FlaskForm):
-    # Menú desplegable para el Nivel de Instrucción
-    id_nivel = SelectField(
-        'Nivel de Instrucción',
-        coerce=int,
-        validators=[DataRequired(message='Debe seleccionar el nivel de instrucción.')]
-    )
-    # Campo libre para el tema (por ahora)
-    nombre_formacion = StringField(
-        'Tema o Contenido de la Formación',
-        validators=[DataRequired(message='El tema de la formación es obligatorio.')]
-    )
-    # Menú desplegable para las Instituciones
-    id_institucion = SelectField(
-        'Institución Educativa / Ente Sede',
-        coerce=int,
-        validators=[DataRequired(message='Debe seleccionar una institución.')]
-    )
-    # Campo de fecha (calendario)
-    fecha = DateField(
-        'Fecha de Ejecución',
+    fecha_actividad = DateField(
+        'Fecha de ejecución',
         format='%Y-%m-%d',
-        validators=[DataRequired(message='La fecha es obligatoria.')]
+        validators=[DataRequired(message='La fecha es obligatoria.')],
     )
-   # Campo libre para escribir el nombre del facilitador (por ahora)
+    id_comunidad = SelectField(
+        'Comunidad',
+        coerce=int,
+        validators=[DataRequired(message='Debe seleccionar una comunidad.')],
+    )
+    id_nivel = SelectField(
+        'Nivel de instrucción',
+        coerce=int,
+        validators=[DataRequired(message='Debe seleccionar el nivel de instrucción.')],
+    )
+    id_institucion = SelectField(
+        'Institución / Sede',
+        coerce=int,
+        validators=[DataRequired(message='Debe seleccionar una institución.')],
+    )
+    nombre_formacion = StringField(
+        'Tema de la formación',
+        validators=[DataRequired(message='El tema de la formación es obligatorio.')],
+    )
     tecnico = StringField(
         'Técnico / Facilitador',
-        validators=[DataRequired(message='Debe ingresar el nombre del facilitador.')]
+        validators=[DataRequired(message='Debe ingresar el nombre del facilitador.')],
     )
+
+
 class SensibilizacionForm(FlaskForm):
-    # Menú desplegable para el Nivel de Instrucción
-    id_nivel = SelectField(
-        'Nivel de Instrucción',
-        coerce=int,
-        validators=[DataRequired(message='Debe seleccionar el nivel de instrucción.')]
+    fecha_actividad = DateField(
+        'Fecha de ejecución',
+        format='%Y-%m-%d',
+        validators=[DataRequired(message='La fecha es obligatoria.')],
     )
-    # Campo para el nombre o campaña de la sensibilización
-    nombre_sensibilizacion = StringField(
-        'Nombre del Taller / Campaña de Sensibilización',
-        validators=[DataRequired(message='El nombre de la sensibilización es obligatorio.')]
-    )
-    # Menú desplegable para las Comunidades (Territorio)
     id_comunidad = SelectField(
         'Comunidad / Territorio',
         coerce=int,
-        validators=[DataRequired(message='Debe seleccionar una comunidad.')]
+        validators=[DataRequired(message='Debe seleccionar una comunidad.')],
     )
-    # Campo de fecha (calendario)
-    fecha = DateField(
-        'Fecha de Ejecución',
-        format='%Y-%m-%d',
-        validators=[DataRequired(message='La fecha es obligatoria.')]
+    id_nivel = SelectField(
+        'Nivel de instrucción',
+        coerce=int,
+        validators=[DataRequired(message='Debe seleccionar el nivel de instrucción.')],
     )
-    # Campo para el técnico / facilitador
+    nombre_sensibilizacion = StringField(
+        'Nombre del taller / campaña de sensibilización',
+        validators=[DataRequired(message='El nombre de la sensibilización es obligatorio.')],
+    )
     facilitador = StringField(
         'Técnico / Facilitador',
-        validators=[DataRequired(message='Debe ingresar el nombre del técnico.')]
+        validators=[DataRequired(message='Debe ingresar el nombre del técnico.')],
     )

@@ -7,10 +7,10 @@
     <div class="flex items-center justify-between mb-2">
         <div>
             <h1 class="text-2xl font-bold dark:text-white text-gray-800">
-                {% if es_edicion %}Modificar Publicación{% else %}Crear Publicación{% endif %}
+                {% if es_edicion %}Modificar Publicación{% else %}Crear Publicación de Divulgación{% endif %}
             </h1>
             <p class="text-sm dark:text-gray-400 text-gray-500">
-                {% if es_edicion %}Edite los campos del borrador antes de su revisión institucional{% else %}Crea contenido que luego podrá ser publicado en el portal público{% endif %}
+                Vincule el boletín a una actividad registrada para autorizar su difusión en el portal
             </p>
         </div>
         <a href="{{ url_for('core.divulgacion_admin_index') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white transition-colors inline-flex items-center text-sm">
@@ -18,57 +18,83 @@
         </a>
     </div>
 
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
         <form method="post" class="p-8 space-y-6" autocomplete="off">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {{ form.hidden_tag() }}
 
-            <div>
-                <h3 class="text-sm font-bold uppercase tracking-wide mb-4 flex items-center text-green-700 dark:text-green-400">
-                    <i data-lucide="file-text" class="mr-2 w-4 h-4"></i> Datos de la Publicación
+            <!-- VÍNCULO A LA ACTIVIDAD DE CAMPO -->
+            <div class="p-5 bg-gray-50 dark:bg-gray-700/30 rounded-xl border border-gray-100 dark:border-gray-700 space-y-4">
+                <h3 class="text-sm font-bold uppercase tracking-wide flex items-center text-green-700 dark:text-green-400 border-b border-gray-200 dark:border-gray-600 pb-2">
+                    <i data-lucide="link" class="mr-2 w-4 h-4"></i> 1. Vínculo a la Actividad de Campo (Padre)
                 </h3>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 p-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-gray-100 dark:border-gray-700">
-                    <div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
                         <label class="block text-xs font-bold uppercase mb-1 text-gray-600 dark:text-gray-400">
-                            <i data-lucide="activity" class="inline w-3 h-3 mr-1 text-green-600"></i> Monitoreo / Actividad de Origen
+                            Actividad Registrada de Origen
                         </label>
-                        {{ form.id_divulgacion(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white', oninvalid="this.setCustomValidity('Por favor, seleccione el despliegue técnico de origen.')", oninput="this.setCustomValidity('')") }}
-                        <p class="text-[10px] text-gray-400 mt-1">Obligatorio: Vincula esta publicación a un despliegue técnico previo.</p>
+                        {{ form.id_actividad(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none') }}
+                        <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-1 italic">
+                            * La comunidad, nivel y fecha de ejecución se heredarán directamente de la actividad seleccionada.
+                        </p>
                     </div>
 
                     <div>
                         <label class="block text-xs font-bold uppercase mb-1 text-gray-600 dark:text-gray-400">
-                            <i data-lucide="alert-circle" class="inline w-3 h-3 mr-1 text-orange-500"></i> Prioridad de Alerta (1 al 10)
+                            Nombre del Acto / Divulgación
                         </label>
-                        {{ form.prioridad(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white', type='number', min='1', max='10', oninvalid="this.setCustomValidity('Defina un rango válido del 1 al 10 para la prioridad.')", oninput="this.setCustomValidity('')") }}
-                        <p class="text-[10px] text-gray-400 mt-1">Ej: Prioridad 10 para incendios, 7 para riesgos graves por lluvias.</p>
+                        {{ form.nombre_divulgacion(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white', placeholder="Ej: Jornada Informativa Comunitaria") }}
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase mb-1 text-gray-600 dark:text-gray-400">
+                            Permiso / Alcance de Difusión
+                        </label>
+                        {{ form.permiso_divulgacion(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white') }}
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold uppercase mb-1 text-gray-600 dark:text-gray-400">Descripción del Aval</label>
+                        {{ form.descripcion_divulgacion(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white', rows='2', placeholder="Describa el propósito institucional del boletín...") }}
                     </div>
                 </div>
+            </div>
+
+            <!-- CONTENIDO DE LA PUBLICACIÓN -->
+            <div class="space-y-4 pt-2">
+                <h3 class="text-sm font-bold uppercase tracking-wide flex items-center text-green-700 dark:text-green-400 border-b border-gray-100 dark:border-gray-700 pb-2">
+                    <i data-lucide="newspaper" class="mr-2 w-4 h-4"></i> 2. Contenido Informativo para la Web
+                </h3>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         {{ form.tipo.label(class_='block text-xs font-semibold uppercase mb-1 text-gray-600 dark:text-gray-400') }}
-                        {{ form.tipo(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white', oninvalid="this.setCustomValidity('Especifique el tipo de boletín informativo.')", oninput="this.setCustomValidity('')") }}
+                        {{ form.tipo(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white') }}
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase mb-1 text-gray-600 dark:text-gray-400">
+                            Prioridad de Alerta (1 al 10)
+                        </label>
+                        {{ form.prioridad(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white', type='number', min='1', max='10') }}
                     </div>
 
                     <div class="md:col-span-2">
                         {{ form.titulo.label(class_='block text-xs font-semibold uppercase mb-1 text-gray-600 dark:text-gray-400') }}
-                        {{ form.titulo(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white', maxlength="150", oninvalid="this.setCustomValidity('Por favor, introduzca un título institucional para la divulgación.')", oninput="this.setCustomValidity('')") }}
+                        {{ form.titulo(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white', maxlength="150", placeholder="Título público del artículo...") }}
                     </div>
 
                     <div class="md:col-span-2">
                         {{ form.resumen.label(class_='block text-xs font-semibold uppercase mb-1 text-gray-600 dark:text-gray-400') }}
-                        {{ form.resumen(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white', maxlength="300", oninvalid="this.setCustomValidity('Por favor, redacte un breve resumen informativo.')", oninput="this.setCustomValidity('')") }}
+                        {{ form.resumen(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white', maxlength="300", placeholder="Resumen introductorio...") }}
                     </div>
 
-                    <!-- 🛡️ CAMPO CON EDITOR MARKDOWN INTEGRADO -->
                     <div class="md:col-span-2 space-y-2">
                         <div class="flex justify-between items-center">
                             {{ form.contenido.label(class_='block text-xs font-bold uppercase text-gray-600 dark:text-gray-400') }}
                             <span id="char-counter" class="text-[10px] font-mono text-gray-400">0 / 5000 caracteres</span>
                         </div>
                         
-                        <!-- Barra de Herramientas Operativa -->
                         <div class="flex items-center gap-1 p-1.5 bg-gray-50 dark:bg-gray-700/50 border border-b-0 border-gray-300 dark:border-gray-600 rounded-t-md">
                             <button type="button" onclick="inyectarFormato('**', '**')" class="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-600 dark:text-gray-300 transition-colors" title="Negrita">
                                 <i data-lucide="bold" class="w-4 h-4"></i>
@@ -83,12 +109,9 @@
                             <button type="button" onclick="inyectarFormato('* ', '')" class="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-600 dark:text-gray-300 transition-colors" title="Lista de viñetas">
                                 <i data-lucide="list" class="w-4 h-4"></i>
                             </button>
-                            <button type="button" onclick="inyectarFormato('> ', '')" class="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-600 dark:text-gray-300 transition-colors" title="Cita / Alerta Importante">
-                                <i data-lucide="quote" class="w-4 h-4"></i>
-                            </button>
                         </div>
 
-                        {{ form.contenido(class_='w-full h-56 border rounded-b-md p-3 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white font-mono focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all resize-y', id='contenido_editor', maxlength="5000", placeholder="Redacte el cuerpo del reporte... Use la barra superior para dar estructura visual a los párrafos.", oninvalid="this.setCustomValidity('Por favor, desarrolle el cuerpo del reporte institucional.')", oninput="this.setCustomValidity('')") }}
+                        {{ form.contenido(class_='w-full h-48 border rounded-b-md p-3 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white font-mono focus:ring-2 focus:ring-green-500 outline-none resize-y', id='contenido_editor', maxlength="5000", placeholder="Desarrolle el cuerpo del reporte...") }}
                     </div>
 
                     <div>
@@ -113,19 +136,12 @@
 
     function inyectarFormato(antes, despues) {
         if (!textarea) return;
-        
         const inicioPos = textarea.selectionStart;
         const finPos = textarea.selectionEnd;
         const textoSeleccionado = textarea.value.substring(inicioPos, finPos);
         
-        const nuevoTexto = antes + textoSeleccionado + despues;
-        
-        textarea.value = textarea.value.substring(0, inicioPos) + nuevoTexto + textarea.value.substring(finPos);
-        
+        textarea.value = textarea.value.substring(0, inicioPos) + antes + textoSeleccionado + despues + textarea.value.substring(finPos);
         textarea.focus();
-        textarea.selectionStart = inicioPos + antes.length;
-        textarea.selectionEnd = inicioPos + antes.length + textoSeleccionado.length;
-        
         actualizarContador();
     }
 
@@ -133,12 +149,6 @@
         if (!textarea || !counter) return;
         const longitud = textarea.value.length;
         counter.textContent = `${longitud} / 5000 caracteres`;
-        
-        if (longitud >= 4800) {
-            counter.className = 'text-[10px] font-mono text-red-500 font-bold';
-        } else {
-            counter.className = 'text-[10px] font-mono text-gray-400';
-        }
     }
 
     document.addEventListener('DOMContentLoaded', () => {
