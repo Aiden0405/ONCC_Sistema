@@ -1,5 +1,8 @@
 from collections import Counter
 from datetime import datetime
+import logging
+import os
+from logging.handlers import RotatingFileHandler
 
 from flask import Flask, render_template, session 
 from flask_login import LoginManager, login_required
@@ -44,6 +47,14 @@ def create_app(config_class=Config):
     login_manager.init_app(app)
     csrf.init_app(app)
     mail.init_app(app) 
+
+    # Registro de errores a archivo (para diagnosticar fallos 500)
+    os.makedirs(app.instance_path, exist_ok=True)
+    manejador_logs = RotatingFileHandler(
+        os.path.join(app.instance_path, 'flask_errores.log'),
+        maxBytes=1_000_000, backupCount=3, encoding='utf-8')
+    manejador_logs.setLevel(logging.ERROR)
+    app.logger.addHandler(manejador_logs)
 
     # ==============================================================
     # Cargador de Usuarios para Flask-Login

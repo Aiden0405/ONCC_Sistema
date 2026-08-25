@@ -8,6 +8,10 @@ class Tecnico(db.Model):
     cedula = db.Column(db.String(15), nullable=False)
     nombres = db.Column(db.String(60), nullable=False)
     apellidos = db.Column(db.String(60), nullable=False)
+    especialidad = db.Column(db.String(100), nullable=True)
+
+    # Enlace lógico con seguridad.usuario (otra base de datos, sin FK real)
+    id_usuario = db.Column(db.Integer, nullable=True, unique=True)
 
     def __repr__(self):
         return f"<Tecnico {self.id_tecnico}: {self.nombres} {self.apellidos}>"

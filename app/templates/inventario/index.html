@@ -11,7 +11,7 @@
             <p class="text-sm dark:text-gray-400 text-gray-500">Expediente, custodia y estatus operativo de equipos tecnológicos (EMAs, Pluviómetros, GPS)</p>
         </div>
         <div class="flex gap-2">
-            <button onclick="exportarReporte()" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center shadow-sm transition-colors">
+            <button onclick="abrirModalConfirmarReporte(exportarReporte)" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center shadow-sm transition-colors">
                 <i data-lucide="file-text" class="mr-2 w-4 h-4"></i> Generar reporte
             </button>
             <button onclick="limpiarErrorModal('modal-inventario'); document.getElementById('modal-inventario').classList.remove('hidden')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center shadow-sm transition-colors">
@@ -151,6 +151,18 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- Paginación Tabla Equipos -->
+        <div class="px-6 py-3 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
+            <span id="contador-registros-tabla" class="text-xs text-gray-500 dark:text-gray-400">{{ inventario|length }} registro(s)</span>
+            <div class="flex items-center gap-3">
+                <span id="info-paginacion-equipos" class="text-xs text-gray-500 dark:text-gray-400">Página 1 de 1</span>
+                <div class="flex items-center gap-2">
+                    <button id="btn-prev-equipos" onclick="cambiarPagina('equipos', -1)" class="px-4 py-2 text-sm font-medium border rounded-md transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 disabled:opacity-40 disabled:pointer-events-none">Anterior</button>
+                    <button id="btn-next-equipos" onclick="cambiarPagina('equipos', 1)" class="px-4 py-2 text-sm font-medium bg-green-600 hover:bg-green-700 text-white rounded-md shadow-sm transition-colors disabled:opacity-40 disabled:pointer-events-none">Siguiente</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="rounded-xl shadow-sm border bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700">
@@ -159,7 +171,7 @@
                 <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400">Historial de movimientos</h3>
             </div>
             <div class="flex items-center gap-2">
-                <button onclick="exportarReporteMovimientos()" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center shadow-sm transition-colors">
+                <button onclick="abrirModalConfirmarReporte(exportarReporteMovimientos)" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center shadow-sm transition-colors">
                     <i data-lucide="file-text" class="mr-2 w-4 h-4"></i> Generar reporte
                 </button>
                 <button onclick="document.getElementById('modal-movimiento').classList.remove('hidden')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center shadow-sm transition-colors">
@@ -203,75 +215,40 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
-                    <tr data-id="1" class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
-                        <td class="px-6 py-4 font-mono font-bold text-green-700 dark:text-green-400" data-label="Movimiento ID">#MOV-001</td>
+                    {% for mov in movimientos %}
+                    <tr data-id="{{ mov.id_movimiento }}" class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                        <td class="px-6 py-4 font-mono font-bold text-green-700 dark:text-green-400" data-label="Movimiento ID">{{ mov.codigo }}</td>
                         <td class="px-6 py-4 font-medium" data-label="Equipo">
                             <div class="flex items-center">
                                 <i data-lucide="layers" class="mr-2 w-4 h-4 text-gray-400 dark:text-gray-500"></i>
-                                12345690
+                                {{ mov.codigo_equipo }}
                             </div>
                         </td>
-                        <td class="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-400 hidden sm:table-cell" data-label="Fecha">2026-05-10</td>
-                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400 hidden lg:table-cell" data-label="Ubicación Origen">Almacén Central</td>
-                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400 hidden lg:table-cell" data-label="Ubicación Destino">La hacienda</td>
-                        <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-200" data-label="Motivo / Responsable">Despliegue inicial / J. Pérez</td>
+                        <td class="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-400 hidden sm:table-cell" data-label="Fecha">{{ mov.fecha_movimiento.strftime('%Y-%m-%d') }}</td>
+                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400 hidden lg:table-cell" data-label="Ubicación Origen">{{ mov.ubicacion_origen }}</td>
+                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400 hidden lg:table-cell" data-label="Ubicación Destino">{{ mov.ubicacion_destino }}</td>
+                        <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-200" data-label="Motivo / Responsable">{{ mov.motivo_responsable }}</td>
                         <td class="px-6 py-4" data-label="Acciones">
                             <div class="flex items-center justify-center gap-2">
-                                <button onclick="abrirModalEditarMovimiento(1)" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors" title="Editar movimiento">
+                                <button onclick="abrirModalEditarMovimiento({{ mov.id_movimiento }})" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors" title="Editar movimiento">
                                     <i data-lucide="pencil" class="w-4 h-4"></i>
                                 </button>
-                                <button onclick="abrirModalEliminarMovimiento(1)" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors" title="Eliminar movimiento">
+                                <button onclick="abrirModalEliminarMovimiento({{ mov.id_movimiento }})" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors" title="Eliminar movimiento">
                                     <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="abrirModalReporteMovimiento({{ mov.id_movimiento }})" class="text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 transition-colors" title="Generar reporte del movimiento">
+                                    <i data-lucide="file-text" class="w-4 h-4"></i>
                                 </button>
                             </div>
                         </td>
                     </tr>
-                    <tr data-id="2" class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
-                        <td class="px-6 py-4 font-mono font-bold text-green-700 dark:text-green-400" data-label="Movimiento ID">#MOV-002</td>
-                        <td class="px-6 py-4 font-medium" data-label="Equipo">
-                            <div class="flex items-center">
-                                <i data-lucide="layers" class="mr-2 w-4 h-4 text-gray-400 dark:text-gray-500"></i>
-                                1234567
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-400 hidden sm:table-cell" data-label="Fecha">2026-05-15</td>
-                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400 hidden lg:table-cell" data-label="Ubicación Origen">Almacén Central</td>
-                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400 hidden lg:table-cell" data-label="Ubicación Destino">Bella Vista</td>
-                        <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-200" data-label="Motivo / Responsable">Asignación / M. Reyes</td>
-                        <td class="px-6 py-4" data-label="Acciones">
-                            <div class="flex items-center justify-center gap-2">
-                                <button onclick="abrirModalEditarMovimiento(2)" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors" title="Editar movimiento">
-                                    <i data-lucide="pencil" class="w-4 h-4"></i>
-                                </button>
-                                <button onclick="abrirModalEliminarMovimiento(2)" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors" title="Eliminar movimiento">
-                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                </button>
-                            </div>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
+                            No hay movimientos registrados en el historial.
                         </td>
                     </tr>
-                    <tr data-id="3" class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
-                        <td class="px-6 py-4 font-mono font-bold text-green-700 dark:text-green-400" data-label="Movimiento ID">#MOV-003</td>
-                        <td class="px-6 py-4 font-medium" data-label="Equipo">
-                            <div class="flex items-center">
-                                <i data-lucide="layers" class="mr-2 w-4 h-4 text-gray-400 dark:text-gray-500"></i>
-                                12345690
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-400 hidden sm:table-cell" data-label="Fecha">2026-07-06</td>
-                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400 hidden lg:table-cell" data-label="Ubicación Origen">La hacienda</td>
-                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400 hidden lg:table-cell" data-label="Ubicación Destino">Bella Vista</td>
-                        <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-200" data-label="Motivo / Responsable">Traslado por Falla / Director Reg.</td>
-                        <td class="px-6 py-4" data-label="Acciones">
-                            <div class="flex items-center justify-center gap-2">
-                                <button onclick="abrirModalEditarMovimiento(3)" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors" title="Editar movimiento">
-                                    <i data-lucide="pencil" class="w-4 h-4"></i>
-                                </button>
-                                <button onclick="abrirModalEliminarMovimiento(3)" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors" title="Eliminar movimiento">
-                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
+                    {% endfor %}
                     <tr id="fila-sin-resultados-mov" class="hidden">
                         <td colspan="7" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
                             No se encontraron movimientos que coincidan con los filtros aplicados.
@@ -280,8 +257,15 @@
                 </tbody>
             </table>
         </div>
-        <div class="px-6 py-3 border-t border-gray-100 dark:border-gray-700 flex justify-end">
-            <span class="text-xs text-gray-500 dark:text-gray-400">3 registro(s)</span>
+        <div class="px-6 py-3 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
+            <span class="text-xs text-gray-500 dark:text-gray-400">{{ movimientos|length }} registro(s)</span>
+            <div class="flex items-center gap-3">
+                <span id="info-paginacion-movimientos" class="text-xs text-gray-500 dark:text-gray-400">Página 1 de 1</span>
+                <div class="flex items-center gap-2">
+                    <button id="btn-prev-movimientos" onclick="cambiarPagina('movimientos', -1)" class="px-4 py-2 text-sm font-medium border rounded-md transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 disabled:opacity-40 disabled:pointer-events-none">Anterior</button>
+                    <button id="btn-next-movimientos" onclick="cambiarPagina('movimientos', 1)" class="px-4 py-2 text-sm font-medium bg-green-600 hover:bg-green-700 text-white rounded-md shadow-sm transition-colors disabled:opacity-40 disabled:pointer-events-none">Siguiente</button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -482,6 +466,42 @@
     </div>
 </div>
 
+<!-- Modal Confirmar Generar Reporte -->
+<div id="modal-confirmar-reporte" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="rounded-xl shadow-xl w-full max-w-md bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-6 text-center relative">
+        <button onclick="document.getElementById('modal-confirmar-reporte').classList.add('hidden')" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+            <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+        <div class="w-14 h-14 mx-auto mb-4 rounded-full bg-amber-100 dark:bg-amber-900/20 flex items-center justify-center">
+            <i data-lucide="file-text" class="w-7 h-7 text-amber-600 dark:text-amber-400"></i>
+        </div>
+        <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-2">¿Estás seguro de generar este reporte?</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Estás a punto de generar el reporte. Ten en cuenta que los filtros que hayas aplicado actualmente en la selección modificarán y definirán los datos que incluirá el archivo final.</p>
+        <div class="flex justify-center gap-3">
+            <button type="button" onclick="document.getElementById('modal-confirmar-reporte').classList.add('hidden')" class="px-5 py-2.5 border rounded-lg text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Cancelar</button>
+            <button type="button" onclick="confirmarGenerarReporte()" class="px-5 py-2.5 bg-amber-600 rounded-lg text-sm font-medium text-white hover:bg-amber-700 transition-colors shadow-sm">Sí, generar reporte</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Reporte de Movimiento -->
+<div id="modal-reporte-movimiento" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="rounded-xl shadow-xl w-full max-w-md bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-6 text-center relative">
+        <button onclick="document.getElementById('modal-reporte-movimiento').classList.add('hidden')" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+            <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+        <div class="w-14 h-14 mx-auto mb-4 rounded-full bg-amber-100 dark:bg-amber-900/20 flex items-center justify-center">
+            <i data-lucide="file-text" class="w-7 h-7 text-amber-600 dark:text-amber-400"></i>
+        </div>
+        <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-2">Generar Reporte de Movimiento</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">¿Desea generar el reporte PDF del movimiento seleccionado?</p>
+        <form id="form-reporte-movimiento" method="GET" target="_blank" class="flex justify-center gap-3">
+            <button type="button" onclick="document.getElementById('modal-reporte-movimiento').classList.add('hidden')" class="px-5 py-2.5 border rounded-lg text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Volver</button>
+            <button type="submit" class="px-5 py-2.5 bg-amber-600 rounded-lg text-sm font-medium text-white hover:bg-amber-700 transition-colors shadow-sm">Continuar</button>
+        </form>
+    </div>
+</div>
+
 <!-- Modal Registrar Movimiento -->
 <div id="modal-movimiento" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
     <div class="rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
@@ -501,16 +521,48 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-1">
                     <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Movimiento ID</label>
-                    <input type="text" name="movimiento_id" value="#MOV-004" readonly class="w-full border rounded-md p-2 text-sm bg-gray-50 border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none" />
+                    <input type="text" name="movimiento_id" value="#MOV-{{ '%03d' % ((movimientos | map(attribute='id_movimiento') | list | max) + 1 if movimientos else 1) }}" readonly class="w-full border rounded-md p-2 text-sm bg-gray-50 border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none" />
                 </div>
                 <div class="space-y-1">
                     <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Equipo</label>
-                    <select name="equipo" required oninvalid="this.setCustomValidity('Seleccione un equipo')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                    <select name="equipo" id="equipo-movimiento" required onchange="cargarDatosEquipo(this.value)" oninvalid="this.setCustomValidity('Seleccione un equipo')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
                         <option value="">Seleccione...</option>
                         {% for inv in inventario %}
                         <option value="{{ inv.codigo }}">{{ inv.codigo }} - {{ inv.tipo_equipo }}</option>
                         {% endfor %}
                     </select>
+                </div>
+
+                <div id="datos-equipo-movimiento" class="hidden md:col-span-2 rounded-lg border bg-gray-50 border-gray-200 dark:bg-gray-700/40 dark:border-gray-600 p-4">
+                    <p class="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3 flex items-center">
+                        <i data-lucide="info" class="mr-2 w-4 h-4"></i> Datos del equipo seleccionado
+                    </p>
+                    <dl class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3 text-sm">
+                        <div>
+                            <dt class="text-[10px] font-semibold uppercase text-gray-400 dark:text-gray-500">Tipo de Equipo</dt>
+                            <dd id="dato-equipo-tipo" class="font-medium text-gray-800 dark:text-gray-100 mt-0.5">—</dd>
+                        </div>
+                        <div>
+                            <dt class="text-[10px] font-semibold uppercase text-gray-400 dark:text-gray-500">Ubicación Actual</dt>
+                            <dd id="dato-equipo-ubicacion" class="font-medium text-gray-800 dark:text-gray-100 mt-0.5">—</dd>
+                        </div>
+                        <div>
+                            <dt class="text-[10px] font-semibold uppercase text-gray-400 dark:text-gray-500">Responsable</dt>
+                            <dd id="dato-equipo-responsable" class="font-medium text-gray-800 dark:text-gray-100 mt-0.5">—</dd>
+                        </div>
+                        <div>
+                            <dt class="text-[10px] font-semibold uppercase text-gray-400 dark:text-gray-500">Estado Operativo</dt>
+                            <dd id="dato-equipo-estado-operativo" class="font-medium text-gray-800 dark:text-gray-100 mt-0.5">—</dd>
+                        </div>
+                        <div>
+                            <dt class="text-[10px] font-semibold uppercase text-gray-400 dark:text-gray-500">Estado de Flujo</dt>
+                            <dd id="dato-equipo-estado-flujo" class="font-medium text-gray-800 dark:text-gray-100 mt-0.5">—</dd>
+                        </div>
+                        <div>
+                            <dt class="text-[10px] font-semibold uppercase text-gray-400 dark:text-gray-500">Últ. Mantenimiento</dt>
+                            <dd id="dato-equipo-mantenimiento" class="font-medium text-gray-800 dark:text-gray-100 mt-0.5">—</dd>
+                        </div>
+                    </dl>
                 </div>
             </div>
             
@@ -781,6 +833,14 @@ function filtrarTabla() {
     if (contador) {
         contador.textContent = visibles + ' registro(s)';
     }
+
+    const contadorTabla = document.getElementById('contador-registros-tabla');
+    if (contadorTabla) {
+        contadorTabla.textContent = visibles + ' registro(s)';
+    }
+
+    paginaActual.equipos = 1;
+    paginarTabla('equipos');
 }
 
 function limpiarFiltros() {
@@ -792,6 +852,66 @@ function limpiarFiltros() {
         }
     });
     filtrarTabla();
+}
+
+const REGISTROS_POR_PAGINA = 5;
+const paginaActual = { equipos: 1, movimientos: 1 };
+
+function paginarTabla(clave) {
+    const selector = clave === 'equipos' ? 'table:has(.filtro-tabla)' : 'table:has(.filtro-movimientos)';
+    const visibles = Array.from(document.querySelectorAll(selector + ' tbody tr[data-id]'))
+        .filter(function(fila) { return fila.style.display !== 'none'; })
+        .map(function(fila) { return fila.dataset.id; });
+
+    const totalPaginas = Math.max(1, Math.ceil(visibles.length / REGISTROS_POR_PAGINA));
+    if (paginaActual[clave] > totalPaginas) paginaActual[clave] = totalPaginas;
+    if (paginaActual[clave] < 1) paginaActual[clave] = 1;
+
+    const inicio = (paginaActual[clave] - 1) * REGISTROS_POR_PAGINA;
+    const enPagina = new Set(visibles.slice(inicio, inicio + REGISTROS_POR_PAGINA));
+
+    document.querySelectorAll(selector + ' tbody tr[data-id]').forEach(function(fila) {
+        fila.classList.toggle('hidden', !enPagina.has(fila.dataset.id));
+    });
+
+    const info = document.getElementById('info-paginacion-' + clave);
+    if (info) info.textContent = 'Página ' + paginaActual[clave] + ' de ' + totalPaginas;
+
+    const btnPrev = document.getElementById('btn-prev-' + clave);
+    if (btnPrev) btnPrev.disabled = paginaActual[clave] <= 1;
+
+    const btnNext = document.getElementById('btn-next-' + clave);
+    if (btnNext) btnNext.disabled = paginaActual[clave] >= totalPaginas;
+}
+
+function cambiarPagina(clave, delta) {
+    paginaActual[clave] += delta;
+    paginarTabla(clave);
+}
+
+function cargarDatosEquipo(codigo) {
+    const panel = document.getElementById('datos-equipo-movimiento');
+    const origen = document.querySelector('#modal-movimiento input[name="ubicacion_origen"]');
+    const equipo = equiposData.find(function(e) { return e.codigo === codigo; });
+
+    if (!equipo) {
+        panel.classList.add('hidden');
+        if (origen) origen.value = '';
+        return;
+    }
+
+    document.getElementById('dato-equipo-tipo').textContent = equipo.tipo_equipo || '—';
+    document.getElementById('dato-equipo-ubicacion').textContent = equipo.ubicacion || 'N/D';
+    document.getElementById('dato-equipo-responsable').textContent = equipo.responsable || 'N/D';
+    document.getElementById('dato-equipo-estado-operativo').textContent = equipo.estado_operativo || 'N/D';
+    document.getElementById('dato-equipo-estado-flujo').textContent = equipo.estado_flujo || 'N/D';
+    document.getElementById('dato-equipo-mantenimiento').textContent = equipo.ultimo_mantenimiento || 'N/D';
+
+    panel.classList.remove('hidden');
+
+    if (origen && equipo.ubicacion) {
+        origen.value = equipo.ubicacion;
+    }
 }
 
 function filtrarMovimientos() {
@@ -826,13 +946,12 @@ function filtrarMovimientos() {
     if (sinResultados) {
         sinResultados.classList.toggle('hidden', visibles > 0);
     }
+
+    paginaActual.movimientos = 1;
+    paginarTabla('movimientos');
 }
 
-const movimientosData = [
-    { id: 1, codigo: '#MOV-001', equipo: '12345690', fecha: '2026-05-10', origen: 'Almacén Central', destino: 'La hacienda', motivo: 'Despliegue inicial / J. Pérez' },
-    { id: 2, codigo: '#MOV-002', equipo: '1234567', fecha: '2026-05-15', origen: 'Almacén Central', destino: 'Bella Vista', motivo: 'Asignación / M. Reyes' },
-    { id: 3, codigo: '#MOV-003', equipo: '12345690', fecha: '2026-07-06', origen: 'La hacienda', destino: 'Bella Vista', motivo: 'Traslado por Falla / Director Reg.' },
-];
+const movimientosData = {{ movimientos_json | tojson | safe }};
 
 function abrirModalEditarMovimiento(id) {
     const mov = movimientosData.find(m => m.id === id);
@@ -854,6 +973,11 @@ function abrirModalEliminarMovimiento(id) {
     if (!mov) return;
     document.getElementById('form-eliminar-movimiento').action = "{{ url_for('inventario.eliminar_movimiento', movimiento_id=0) }}".replace('/0', '/' + id);
     document.getElementById('modal-eliminar-movimiento').classList.remove('hidden');
+}
+
+function abrirModalReporteMovimiento(id) {
+    document.getElementById('form-reporte-movimiento').action = "{{ url_for('inventario.reporte_movimientos') }}?ids=" + id;
+    document.getElementById('modal-reporte-movimiento').classList.remove('hidden');
 }
 
 function exportarReporteMovimientos() {
@@ -881,6 +1005,24 @@ function exportarReporte() {
     const url = ids.length > 0 ? baseUrl + '?ids=' + ids.join(',') : baseUrl;
     window.open(url, '_blank');
 }
+
+let accionReportePendiente = null;
+
+function abrirModalConfirmarReporte(accion) {
+    accionReportePendiente = accion;
+    document.getElementById('modal-confirmar-reporte').classList.remove('hidden');
+}
+
+function confirmarGenerarReporte() {
+    document.getElementById('modal-confirmar-reporte').classList.add('hidden');
+    if (typeof accionReportePendiente === 'function') {
+        accionReportePendiente();
+        accionReportePendiente = null;
+    }
+}
+
+paginarTabla('equipos');
+paginarTabla('movimientos');
 </script>
 
 <style>

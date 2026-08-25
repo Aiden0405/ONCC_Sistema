@@ -4,28 +4,49 @@ from sqlalchemy.exc import IntegrityError
 
 from app import db
 from app.models.role import Role
+from app.models.tecnico import Tecnico
 from app.models.usuario import Usuario
 
 
 class TecnicoService:
 
+    NOMBRES_ROL_TECNICO = ('Técnico', 'Tecnico')
+
+    @staticmethod
+    def _obtener_rol_tecnico():
+        return Role.query.filter(Role.nombre_rol.in_(TecnicoService.NOMBRES_ROL_TECNICO)).first()
+
     @staticmethod
     def listar_tecnicos():
-        role_tecnico = Role.query.filter_by(nombre_rol='Técnico').first()
+        role_tecnico = TecnicoService._obtener_rol_tecnico()
         if not role_tecnico:
             return []
         return Usuario.query.filter_by(id_rol=role_tecnico.id_rol).order_by(Usuario.nombre_usuario).all()
 
     @staticmethod
-    def serializar(tecnicos):
-        return [{
-            'id_usuario': u.id_usuario,
-            'nombre_usuario': u.nombre_usuario,
-            'correo': u.correo,
-            'cedula': u.cedula,
-            'especialidad': u.especialidad,
-            'estatus': u.estatus,
-        } for u in tecnicos]
+    def _perfiles_por_usuario(ids_usuarios):
+        perfiles = {}
+        ids = [i for i in ids_usuarios if i is not None]
+        if ids:
+            for perfil in Tecnico.query.filter(Tecnico.id_usuario.in_(ids)).all():
+                perfiles[perfil.id_usuario] = perfil
+        return perfiles
+
+    @staticmethod
+    def serializar(usuarios):
+        perfiles = TecnicoService._perfiles_por_usuario([u.id_usuario for u in usuarios])
+        resultado = []
+        for u in usuarios:
+            perfil = perfiles.get(u.id_usuario)
+            resultado.append({
+                'id_usuario': u.id_usuario,
+                'nombre_usuario': u.nombre_usuario,
+                'correo': u.correo,
+                'cedula': perfil.cedula if perfil else None,
+                'especialidad': perfil.especialidad if perfil else None,
+                'estatus': u.estatus,
+            })
+        return resultado
 
     @staticmethod
     def crear_tecnico(datos):
@@ -43,20 +64,17 @@ class TecnicoService:
         if existe_correo:
             return {'ok': False, 'error': 'Ya existe un usuario con ese correo.'}
 
-        if cedula:
-            existe_cedula = Usuario.query.filter_by(cedula=cedula).first()
-            if existe_cedula:
-                return {'ok': False, 'error': 'Ya existe un usuario con esa cédula.'}
+        existe_cedula = Tecnico.query.filter_by(cedula=cedula).first()
+        if existe_cedula:
+            return {'ok': False, 'error': 'Ya existe un técnico con esa cédula.'}
 
-        role_tecnico = Role.query.filter_by(nombre_rol='Técnico').first()
+        role_tecnico = TecnicoService._obtener_rol_tecnico()
         if not role_tecnico:
             return {'ok': False, 'error': 'El rol Técnico no existe. Ejecute flask seed primero.'}
 
         usuario = Usuario(
             nombre_usuario=nombre,
             correo=correo,
-            cedula=cedula,
-            especialidad=especialidad,
             id_rol=role_tecnico.id_rol,
             estatus=estatus,
         )
@@ -64,10 +82,20 @@ class TecnicoService:
         db.session.add(usuario)
 
         try:
+            db.session.flush()
+
+            perfil = Tecnico(
+                cedula=cedula,
+                nombres=nombre,
+                apellidos='',
+                especialidad=especialidad,
+                id_usuario=usuario.id_usuario,
+            )
+            db.session.add(perfil)
             db.session.commit()
         except IntegrityError:
             db.session.rollback()
-            return {'ok': False, 'error': 'Esa cédula ya está registrada en el sistema.'}
+            return {'ok': False, 'error': 'No se pudo registrar el técnico. Verifique que los datos no estén duplicados.'}
 
         return {'ok': True, 'mensaje': 'Técnico registrado exitosamente.'}
 
@@ -89,27 +117,40 @@ class TecnicoService:
         if existe_correo and existe_correo.id_usuario != usuario.id_usuario:
             return {'ok': False, 'error': 'Ya existe otro usuario con ese correo.'}
 
-        if cedula:
-            existe_cedula = Usuario.query.filter_by(cedula=cedula).first()
-            if existe_cedula and existe_cedula.id_usuario != usuario.id_usuario:
-                return {'ok': False, 'error': 'Ya existe otro usuario con esa cédula.'}
+        existe_cedula = Tecnico.query.filter_by(cedula=cedula).first()
+        if existe_cedula and existe_cedula.id_usuario != usuario.id_usuario:
+            return {'ok': False, 'error': 'Ya existe otro técnico con esa cédula.'}
 
         usuario.nombre_usuario = nombre
         usuario.correo = correo
-        usuario.cedula = cedula
-        usuario.especialidad = especialidad
         usuario.estatus = estatus
+
+        perfil = Tecnico.query.filter_by(id_usuario=usuario.id_usuario).first()
+        if perfil:
+            perfil.cedula = cedula
+            perfil.nombres = nombre
+            perfil.especialidad = especialidad
+        else:
+            perfil = Tecnico(
+                cedula=cedula,
+                nombres=nombre,
+                apellidos='',
+                especialidad=especialidad,
+                id_usuario=usuario.id_usuario,
+            )
+            db.session.add(perfil)
 
         try:
             db.session.commit()
         except IntegrityError:
             db.session.rollback()
-            return {'ok': False, 'error': 'Esa cédula ya está registrada en el sistema.'}
+            return {'ok': False, 'error': 'No se pudo actualizar el técnico. Verifique que los datos no estén duplicados.'}
 
         return {'ok': True, 'mensaje': 'Técnico actualizado exitosamente.'}
 
     @staticmethod
     def eliminar_tecnico(tecnico_id):
         usuario = Usuario.query.get_or_404(tecnico_id)
+        Tecnico.query.filter_by(id_usuario=usuario.id_usuario).delete()
         db.session.delete(usuario)
         db.session.commit()

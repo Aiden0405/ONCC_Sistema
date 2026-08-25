@@ -8,8 +8,9 @@ from app.services.tecnico_service import TecnicoService
 @logistica_bp.route('/tecnicos-campo')
 @login_required
 def tecnicos_campo_index():
-    tecnicos = TecnicoService.listar_tecnicos()
-    return render_template('logistica/tecnicos_campo.html', tecnicos=tecnicos, tecnicos_json=TecnicoService.serializar(tecnicos))
+    usuarios_tecnicos = TecnicoService.listar_tecnicos()
+    tecnicos = TecnicoService.serializar(usuarios_tecnicos)
+    return render_template('logistica/tecnicos_campo.html', tecnicos=tecnicos, tecnicos_json=TecnicoService.serializar(usuarios_tecnicos))
 
 
 @logistica_bp.route('/tecnicos-campo/nuevo', methods=['POST'])

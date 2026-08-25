@@ -9,7 +9,12 @@ from app.services.inventario_service import InventarioService
 @login_required
 def inventario_index():
     equipos = InventarioService.listar_equipos()
-    return render_template('inventario/index.html', inventario=equipos, inventario_json=InventarioService.serializar(equipos))
+    movimientos = InventarioService.listar_movimientos()
+    return render_template('inventario/index.html',
+                           inventario=equipos,
+                           inventario_json=InventarioService.serializar(equipos),
+                           movimientos=movimientos,
+                           movimientos_json=InventarioService.serializar_movimientos(movimientos))
 
 
 @logistica_bp.route('/inventario/nuevo', methods=['POST'])
@@ -98,6 +103,11 @@ def editar_movimiento(movimiento_id):
 @login_required
 def eliminar_movimiento(movimiento_id):
     resultado = InventarioService.eliminar_movimiento(movimiento_id, current_user)
+    if not resultado['ok']:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'ok': False, 'error': resultado['error']})
+        flash(resultado['error'], 'error')
+        return redirect(url_for('inventario.index'))
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return jsonify({'ok': True, 'redirect': url_for('inventario.index'), 'mensaje': resultado['mensaje']})
     flash(resultado['mensaje'], 'success')
