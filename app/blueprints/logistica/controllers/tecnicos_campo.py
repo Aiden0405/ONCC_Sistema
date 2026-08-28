@@ -51,6 +51,13 @@ def tecnicos_eliminar(tecnico_id):
     return redirect(url_for('logistica.tecnicos_campo_index'))
 
 
+@logistica_bp.route('/tecnicos-campo/<int:tecnico_id>/movimientos')
+@login_required
+def tecnicos_movimientos(tecnico_id):
+    movimientos = TecnicoService.serializar_movimientos_tecnico(tecnico_id)
+    return jsonify({'movimientos': movimientos})
+
+
 @logistica_bp.route('/tecnicos-campo/reporte', methods=['GET'])
 @login_required
 def reporte_tecnicos():

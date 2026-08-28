@@ -774,7 +774,19 @@ function abrirModalEditar(id) {
 
     limpiarErrorModal('modal-editar-inventario');
 
-    document.getElementById('edit-tipo_equipo').value = equipo.tipo_equipo || '';
+    const selectTipo = document.getElementById('edit-tipo_equipo');
+    const tipoActual = (equipo.tipo_equipo || '').trim();
+    let existeOpcion = false;
+    Array.from(selectTipo.options).forEach(function(op) {
+        if (op.value === tipoActual) existeOpcion = true;
+    });
+    if (tipoActual && !existeOpcion) {
+        const nuevo = document.createElement('option');
+        nuevo.value = tipoActual;
+        nuevo.textContent = tipoActual;
+        selectTipo.appendChild(nuevo);
+    }
+    selectTipo.value = tipoActual;
     document.getElementById('edit-codigo').value = equipo.codigo || '';
     document.getElementById('edit-ubicacion').value = equipo.ubicacion || '';
     document.getElementById('edit-responsable').value = equipo.responsable || '';

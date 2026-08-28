@@ -49,6 +49,48 @@ class TecnicoService:
         return resultado
 
     @staticmethod
+    def serializar_movimientos_tecnico(tecnico_id):
+        from app.models.inventario import InventarioEquipo, MovimientoEquipo
+
+        perfiles = TecnicoService._perfiles_por_usuario([tecnico_id])
+        tecnico = Usuario.query.get(tecnico_id)
+        perfil = perfiles.get(tecnico_id)
+        if not tecnico:
+            return []
+
+        nombres = [n for n in (tecnico.nombre_usuario, perfil.nombres if perfil else None) if n]
+
+        equipos = InventarioEquipo.query.all()
+        ids_equipos = set()
+        for eq in equipos:
+            responsable = eq.responsable or ''
+            if any(nombre and nombre.strip() and nombre.strip().lower() in responsable.lower() for nombre in nombres):
+                ids_equipos.add(eq.id)
+
+        if not ids_equipos:
+            return []
+
+        movimientos = MovimientoEquipo.query.filter(
+            MovimientoEquipo.id_equipo.in_(ids_equipos)
+        ).order_by(MovimientoEquipo.fecha_movimiento.desc(), MovimientoEquipo.id_movimiento.desc()).all()
+
+        resultado = []
+        for mov in movimientos:
+            equipo = mov.equipo_rel
+            resultado.append({
+                'id': mov.id_movimiento,
+                'codigo': mov.codigo,
+                'equipo': mov.codigo_equipo,
+                'fecha': mov.fecha_movimiento.strftime('%Y-%m-%d'),
+                'origen': mov.ubicacion_origen,
+                'destino': mov.ubicacion_destino,
+                'motivo': mov.motivo_responsable,
+                'tipo_equipo': equipo.tipo_equipo if equipo else '—',
+                'nombre_equipo': equipo.codigo_interno if equipo else '—',
+            })
+        return resultado
+
+    @staticmethod
     def crear_tecnico(datos):
         nombre = datos.get('nombre', '').strip()
         correo = datos.get('correo', '').strip().lower()
