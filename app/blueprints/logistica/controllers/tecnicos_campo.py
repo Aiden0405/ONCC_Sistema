@@ -1,4 +1,4 @@
-from flask import flash, jsonify, redirect, render_template, request, url_for
+from flask import flash, jsonify, redirect, render_template, request, url_for, Response
 from flask_login import login_required
 
 from app.blueprints.logistica import logistica_bp
@@ -49,3 +49,18 @@ def tecnicos_eliminar(tecnico_id):
     TecnicoService.eliminar_tecnico(tecnico_id)
     flash('Técnico eliminado del sistema.', 'success')
     return redirect(url_for('logistica.tecnicos_campo_index'))
+
+
+@logistica_bp.route('/tecnicos-campo/reporte', methods=['GET'])
+@login_required
+def reporte_tecnicos():
+    usuarios_tecnicos = TecnicoService.listar_tecnicos()
+    tecnicos = TecnicoService.serializar(usuarios_tecnicos)
+    ids = request.args.get('ids')
+    if ids:
+        id_list = [int(x) for x in ids.split(',') if x.strip().isdigit()]
+        if id_list:
+            tecnicos = [t for t in tecnicos if t['id_usuario'] in id_list]
+    buf = TecnicoService.generar_reporte_pdf(tecnicos)
+    return Response(buf, mimetype='application/pdf',
+                    headers={'Content-Disposition': 'inline; filename=reporte_tecnicos.pdf'})

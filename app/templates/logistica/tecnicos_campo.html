@@ -11,6 +11,9 @@
             <p class="text-sm dark:text-gray-400 text-gray-500">Módulo maestro para el registro de los operarios, ingenieros, geólogos y analistas de campo de la ONCC.</p>
         </div>
         <div class="flex items-center gap-2">
+            <button onclick="abrirModalConfirmarReporte(exportarReporteTecnicos)" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center shadow-sm transition-colors">
+                <i data-lucide="file-text" class="mr-2 w-4 h-4"></i> Generar reporte
+            </button>
             <button onclick="abrirModalCrearTecnico()" class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-medium transition-colors shadow-sm">
                 <i data-lucide="plus" class="w-4 h-4 mr-2"></i> Nuevo Técnico
             </button>
@@ -35,9 +38,9 @@
         <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center justify-between">
             <div class="space-y-1">
                 <p class="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 font-bold">Técnicos Activos</p>
-                <p class="text-2xl font-bold text-gray-800 dark:text-white">{{ tecnicos|length }} Analista(s)</p>
+                <p class="text-2xl font-bold text-gray-800 dark:text-white">({{ '%02d' % (tecnicos|selectattr('estatus')|list|length) }}) Disponibles</p>
                 <p class="text-xs text-green-600 dark:text-green-400 font-medium flex items-center">
-                    <span class="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5 animate-pulse"></span> Desplegados en Región Lara
+                    <span class="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5 animate-pulse"></span> Estado Lara
                 </p>
             </div>
             <div class="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg text-green-600 dark:text-green-400">
@@ -71,11 +74,10 @@
             <div>
                 <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400">Ficha de trabajo: Técnicos</h3>
             </div>
-            <span class="text-xs font-mono text-gray-400 dark:text-gray-500">{{ tecnicos|length }} registro(s)</span>
         </div>
 
         <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left border-collapse">
+            <table id="tabla-tecnicos" class="w-full text-sm text-left border-collapse">
                 <thead>
                     <tr class="text-xs uppercase tracking-wider bg-gray-50 text-gray-500 dark:bg-gray-700/40 dark:text-gray-400">
                         <th class="px-6 py-3 font-semibold">Cédula</th>
@@ -84,10 +86,33 @@
                         <th class="px-6 py-3">Estatus de Disponibilidad</th>
                         <th class="px-6 py-3 text-center">Acciones</th>
                     </tr>
+                    <tr class="bg-gray-50/50 dark:bg-gray-700/20 hidden sm:table-row">
+                        <th class="px-6 py-2">
+                            <input type="text" data-col="0" class="filtro-tecnicos w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="Cédula..." oninput="filtrarTablaTecnicos()">
+                        </th>
+                        <th class="px-6 py-2">
+                            <input type="text" data-col="1" class="filtro-tecnicos w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="Nombre..." oninput="filtrarTablaTecnicos()">
+                        </th>
+                        <th class="px-6 py-2">
+                            <input type="text" data-col="2" class="filtro-tecnicos w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="Especialidad..." oninput="filtrarTablaTecnicos()">
+                        </th>
+                        <th class="px-6 py-2">
+                            <select data-col="3" class="filtro-tecnicos w-full text-xs border rounded px-1 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" onchange="filtrarTablaTecnicos()">
+                                <option value="" disabled selected hidden>Estatus</option>
+                                <option>Disponible</option>
+                                <option>No Disponible</option>
+                            </select>
+                        </th>
+                        <th class="px-6 py-2 text-center">
+                            <button onclick="limpiarFiltrosTecnicos()" class="text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors" title="Limpiar filtros">
+                                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </th>
+                    </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
                     {% for t in tecnicos %}
-                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                    <tr data-id="{{ t.id_usuario }}" class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
                         <td class="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-400">{{ t.cedula or '—' }}</td>
                         <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-100 whitespace-nowrap">
                             <div class="flex items-center">
@@ -128,8 +153,24 @@
                         </td>
                     </tr>
                     {% endfor %}
+                    <tr id="fila-sin-resultados-tecnicos" class="hidden">
+                        <td colspan="5" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
+                            No se encontraron técnicos que coincidan con los filtros aplicados.
+                        </td>
+                    </tr>
                 </tbody>
             </table>
+        </div>
+
+        <div class="px-6 py-3 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
+            <span class="text-xs text-gray-500 dark:text-gray-400">{{ tecnicos|length }} registro(s)</span>
+            <div class="flex items-center gap-3">
+                <span id="info-paginacion-tecnicos" class="text-xs text-gray-500 dark:text-gray-400">Página 1 de 1</span>
+                <div class="flex items-center gap-2">
+                    <button id="btn-prev-tecnicos" onclick="cambiarPaginaTecnicos(-1)" class="px-4 py-2 text-sm font-medium border rounded-md transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 disabled:opacity-40 disabled:pointer-events-none">Anterior</button>
+                    <button id="btn-next-tecnicos" onclick="cambiarPaginaTecnicos(1)" class="px-4 py-2 text-sm font-medium bg-green-600 hover:bg-green-700 text-white rounded-md shadow-sm transition-colors disabled:opacity-40 disabled:pointer-events-none">Siguiente</button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -241,6 +282,24 @@
     </div>
 </div>
 
+<!-- Modal Confirmar Generar Reporte -->
+<div id="modal-confirmar-reporte" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="rounded-xl shadow-xl w-full max-w-md bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-6 text-center relative">
+        <button onclick="document.getElementById('modal-confirmar-reporte').classList.add('hidden')" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+            <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+        <div class="w-14 h-14 mx-auto mb-4 rounded-full bg-amber-100 dark:bg-amber-900/20 flex items-center justify-center">
+            <i data-lucide="file-text" class="w-7 h-7 text-amber-600 dark:text-amber-400"></i>
+        </div>
+        <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-2">¿Estás seguro de generar este reporte?</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Estás a punto de generar el reporte. Ten en cuenta que los filtros que hayas aplicado actualmente en la selección modificarán y definirán los datos que incluirá el archivo final.</p>
+        <div class="flex justify-center gap-3">
+            <button type="button" onclick="document.getElementById('modal-confirmar-reporte').classList.add('hidden')" class="px-5 py-2.5 border rounded-lg text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Cancelar</button>
+            <button type="button" onclick="confirmarGenerarReporte()" class="px-5 py-2.5 bg-amber-600 rounded-lg text-sm font-medium text-white hover:bg-amber-700 transition-colors shadow-sm">Sí, generar reporte</button>
+        </div>
+    </div>
+</div>
+
 <script>
 function mostrarErrorTecnico(modalId, mensaje) {
     const modal = document.getElementById(modalId);
@@ -334,6 +393,129 @@ function abrirModalEditarTecnico(id) {
 function abrirModalEliminarTecnico(id) {
     document.getElementById('form-eliminar-tecnico').action = "{{ url_for('logistica.tecnicos_eliminar', tecnico_id=0) }}".replace('/0', '/' + id);
     document.getElementById('modal-eliminar-tecnico').classList.remove('hidden');
+}
+
+function filtrarTablaTecnicos() {
+    const inputs = document.querySelectorAll('.filtro-tecnicos');
+    const filas = document.querySelectorAll('#tabla-tecnicos tbody tr[data-id]');
+    let visibles = 0;
+
+    filas.forEach(function(fila) {
+        let mostrar = true;
+        inputs.forEach(function(input) {
+            const valor = input.value.toLowerCase().trim();
+            if (!valor) return;
+
+            const col = parseInt(input.dataset.col);
+            const celdas = fila.querySelectorAll('td');
+            if (col < celdas.length) {
+                const texto = celdas[col].textContent.toLowerCase().trim();
+                if (!texto.includes(valor)) {
+                    mostrar = false;
+                }
+            }
+        });
+
+        fila.style.display = mostrar ? '' : 'none';
+        if (mostrar) visibles++;
+    });
+
+    const sinResultados = document.getElementById('fila-sin-resultados-tecnicos');
+    if (sinResultados) {
+        sinResultados.classList.toggle('hidden', visibles > 0);
+    }
+
+    const contador = document.getElementById('contador-registros-tecnicos');
+    if (contador) {
+        contador.textContent = visibles + ' registro(s)';
+    }
+
+    paginaActualTecnicos = 1;
+    paginarTablaTecnicos();
+}
+
+function limpiarFiltrosTecnicos() {
+    document.querySelectorAll('.filtro-tecnicos').forEach(function(el) {
+        if (el.tagName === 'SELECT') {
+            el.selectedIndex = 0;
+        } else {
+            el.value = '';
+        }
+    });
+    filtrarTablaTecnicos();
+}
+
+const REGISTROS_POR_PAGINA_TEC = 6;
+let paginaActualTecnicos = 1;
+
+function paginarTablaTecnicos() {
+    const filas = Array.from(document.querySelectorAll('#tabla-tecnicos tbody tr[data-id]'))
+        .filter(function(fila) { return fila.style.display !== 'none'; });
+
+    const totalPaginas = Math.max(1, Math.ceil(filas.length / REGISTROS_POR_PAGINA_TEC));
+    if (paginaActualTecnicos > totalPaginas) paginaActualTecnicos = totalPaginas;
+    if (paginaActualTecnicos < 1) paginaActualTecnicos = 1;
+
+    const inicio = (paginaActualTecnicos - 1) * REGISTROS_POR_PAGINA_TEC;
+    const enPagina = filas.slice(inicio, inicio + REGISTROS_POR_PAGINA_TEC);
+
+    document.querySelectorAll('#tabla-tecnicos tbody tr[data-id]').forEach(function(fila) {
+        fila.classList.add('hidden');
+    });
+    enPagina.forEach(function(fila) {
+        fila.classList.remove('hidden');
+    });
+
+    const sinResultados = document.getElementById('fila-sin-resultados-tecnicos');
+    if (sinResultados) {
+        sinResultados.classList.add('hidden');
+    }
+
+    const info = document.getElementById('info-paginacion-tecnicos');
+    if (info) info.textContent = 'Página ' + paginaActualTecnicos + ' de ' + totalPaginas;
+
+    const btnPrev = document.getElementById('btn-prev-tecnicos');
+    if (btnPrev) btnPrev.disabled = paginaActualTecnicos <= 1;
+
+    const btnNext = document.getElementById('btn-next-tecnicos');
+    if (btnNext) btnNext.disabled = paginaActualTecnicos >= totalPaginas;
+}
+
+function cambiarPaginaTecnicos(delta) {
+    paginaActualTecnicos += delta;
+    paginarTablaTecnicos();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    paginarTablaTecnicos();
+});
+
+function exportarReporteTecnicos() {
+    const filas = document.querySelectorAll('#tabla-tecnicos tbody tr[data-id]');
+    const ids = [];
+    filas.forEach(function(fila) {
+        if (fila.style.display !== 'none') {
+            ids.push(fila.dataset.id);
+        }
+    });
+    const baseUrl = "{{ url_for('logistica.reporte_tecnicos') }}";
+    const url = ids.length > 0 ? baseUrl + '?ids=' + ids.join(',') : baseUrl;
+    window.open(url, '_blank');
+}
+
+let accionReportePendiente = null;
+
+function abrirModalConfirmarReporte(accion) {
+    accionReportePendiente = accion;
+    document.getElementById('modal-confirmar-reporte').classList.remove('hidden');
+}
+
+function confirmarGenerarReporte() {
+    document.getElementById('modal-confirmar-reporte').classList.add('hidden');
+    if (typeof accionReportePendiente === 'function') {
+        accionReportePendiente();
+        accionReportePendiente = null;
+    }
 }
 </script>
 {% endblock %}
