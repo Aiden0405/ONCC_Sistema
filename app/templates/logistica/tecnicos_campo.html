@@ -195,6 +195,7 @@
                 <div class="min-w-0">
                     <p id="ver-tec-nombre" class="text-base sm:text-lg font-bold text-gray-800 dark:text-white break-words"></p>
                     <p id="ver-tec-cedula" class="text-sm text-gray-500 dark:text-gray-400 font-mono"></p>
+                    <span id="ver-tec-rol" class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider mt-1 bg-violet-50 text-violet-700 dark:bg-violet-900/20 dark:text-violet-300 border border-violet-100 dark:border-violet-800/50"></span>
                 </div>
             </div>
             <div class="grid grid-cols-1 gap-3 sm:gap-4">
@@ -458,6 +459,7 @@ function abrirModalVerTecnico(id) {
     document.getElementById('ver-tec-iniciales').textContent = nombre.slice(0, 2).toUpperCase();
     document.getElementById('ver-tec-nombre').textContent = nombre;
     document.getElementById('ver-tec-cedula').textContent = 'Cédula: ' + (t.cedula || '—');
+    document.getElementById('ver-tec-rol').textContent = t.rol || 'Sin Rol';
     document.getElementById('ver-tec-correo').textContent = t.correo || '—';
     document.getElementById('ver-tec-especialidad').textContent = t.especialidad || '—';
     const estatusEl = document.getElementById('ver-tec-estatus');

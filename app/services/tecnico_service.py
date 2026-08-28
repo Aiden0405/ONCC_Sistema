@@ -45,6 +45,7 @@ class TecnicoService:
                 'cedula': perfil.cedula if perfil else None,
                 'especialidad': perfil.especialidad if perfil else None,
                 'estatus': u.estatus,
+                'rol': u.rol,
             })
         return resultado
 

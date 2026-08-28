@@ -342,6 +342,8 @@ class InventarioService:
     def eliminar_equipo(equipo_id, usuario):
         equipo = InventarioEquipo.query.get_or_404(equipo_id)
 
+        MovimientoEquipo.query.filter_by(id_equipo=equipo.id).delete()
+
         db.session.add(BitacoraTransaccion(
             modulo='inventario',
             registro_id=equipo.id,

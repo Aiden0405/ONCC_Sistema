@@ -774,24 +774,29 @@ function abrirModalEditar(id) {
 
     limpiarErrorModal('modal-editar-inventario');
 
-    const selectTipo = document.getElementById('edit-tipo_equipo');
-    const tipoActual = (equipo.tipo_equipo || '').trim();
-    let existeOpcion = false;
-    Array.from(selectTipo.options).forEach(function(op) {
-        if (op.value === tipoActual) existeOpcion = true;
-    });
-    if (tipoActual && !existeOpcion) {
-        const nuevo = document.createElement('option');
-        nuevo.value = tipoActual;
-        nuevo.textContent = tipoActual;
-        selectTipo.appendChild(nuevo);
+    function asegurarOpcion(selectId, valor) {
+        const select = document.getElementById(selectId);
+        const v = (valor || '').trim();
+        let existe = false;
+        Array.from(select.options).forEach(function(op) {
+            if (op.value === v) existe = true;
+        });
+        if (v && !existe) {
+            const nuevo = document.createElement('option');
+            nuevo.value = v;
+            nuevo.textContent = v;
+            select.appendChild(nuevo);
+        }
+        select.value = v;
     }
-    selectTipo.value = tipoActual;
+
+    asegurarOpcion('edit-tipo_equipo', equipo.tipo_equipo);
+    asegurarOpcion('edit-estado_operativo', equipo.estado_operativo);
+    asegurarOpcion('edit-estado', equipo.estado_flujo);
+
     document.getElementById('edit-codigo').value = equipo.codigo || '';
     document.getElementById('edit-ubicacion').value = equipo.ubicacion || '';
     document.getElementById('edit-responsable').value = equipo.responsable || '';
-    document.getElementById('edit-estado_operativo').value = equipo.estado_operativo || '';
-    document.getElementById('edit-estado').value = equipo.estado_flujo || '';
     document.getElementById('edit-ultimo_mantenimiento').value = equipo.ultimo_mantenimiento || '';
 
     document.getElementById('form-editar-equipo').action = "{{ url_for('inventario.editar', equipo_id=0) }}".replace('/0', '/' + id);
