@@ -80,6 +80,9 @@ def create_app(config_class=Config):
         from app.models.geomatica import MapaRiesgo  # noqa: F401
         from app.models.geomatica import ElementosMapaRiesgo  # noqa: F401
         from app.models.geomatica import Simbologia # noqa: F401
+        # 🌦️ INYECCIÓN DE NUEVOS MODELOS CLIMÁTICOS
+        from app.models.clima import MapaClimatico  # noqa: F401
+        from app.models.clima import RegistroClimatico  # noqa: F401
         from app.models.inventario import InventarioEquipo  # noqa: F401
         from app.models.visita_portal import VisitaPortal  # noqa: F401
         from app.models.password_reset import PasswordReset  # noqa: F401
@@ -141,6 +144,15 @@ def create_app(config_class=Config):
     from app.blueprints.mapas.controllers.riesgo import procesar_archivo as mapas_procesar_archivo
     from app.blueprints.mapas.controllers.riesgo import actualizar_elemento
     from app.blueprints.mapas.controllers.riesgo import eliminar_elemento
+
+    # 🌦️ NUEVOS CONTROLADORES CLIMÁTICOS
+    # Asegúrate de guardar el controlador generado previamente en app/blueprints/mapas/controllers/climaticos.py
+    from app.blueprints.mapas.controllers.climaticos import mapas_climaticos_index
+    from app.blueprints.mapas.controllers.climaticos import procesar_mapa_climatico
+    from app.blueprints.mapas.controllers.climaticos import listar_mapas_climaticos
+    from app.blueprints.mapas.controllers.climaticos import eliminar_mapa_climatico
+    from app.blueprints.mapas.controllers.climaticos import actualizar_mapa_climatico
+
     from app.blueprints.monitoreo.controllers.actividades import actividades_cambiar_estado as monitoreo_actividad_cambiar_estado
     from app.blueprints.monitoreo.controllers.actividades import actividades_index as monitoreo_actividad_index
     from app.blueprints.monitoreo.controllers.actividades import nueva as monitoreo_actividad_nueva
@@ -230,6 +242,13 @@ def create_app(config_class=Config):
     app.add_url_rule('/geomatica/elementos/<int:id_elemento>', endpoint='geomatica.actualizar_elemento', view_func=actualizar_elemento, methods=['PUT'])
     app.add_url_rule('/geomatica/elementos/<int:id_elemento>', endpoint='geomatica.eliminar_elemento', view_func=eliminar_elemento, methods=['DELETE'])
 
+    # 🌦️ NUEVAS REGLAS DE ENRUTAMIENTO CLIMÁTICAS
+    app.add_url_rule('/mapas-climaticos', endpoint='mapas.mapas_climaticos_index', view_func=mapas_climaticos_index, methods=['GET'])
+    app.add_url_rule('/mapas-climaticos/procesar', endpoint='mapas.procesar_mapa_climatico', view_func=procesar_mapa_climatico, methods=['POST'])
+    app.add_url_rule('/mapas-climaticos/lista', endpoint='mapas.listar_mapas_climaticos', view_func=listar_mapas_climaticos, methods=['GET'])
+    app.add_url_rule('/mapas-climaticos/<int:mapa_id>', endpoint='mapas.eliminar_mapa_climatico', view_func=eliminar_mapa_climatico, methods=['DELETE'])
+    app.add_url_rule('/mapas-climaticos/<int:mapa_id>/actualizar', endpoint='geomatica.actualizar_mapa_climatico', view_func=actualizar_mapa_climatico, methods=['POST', 'PUT'])
+    
     app.add_url_rule('/catalogo/', endpoint='catalogo.index', view_func=catalogo_simbolos_index, methods=['GET'])
     app.add_url_rule('/catalogo/crear', endpoint='catalogo.crear_simbologia', view_func=crear_simbologia, methods=['POST'])
     app.add_url_rule('/catalogo/listar', endpoint='catalogo.listar_simbologia', view_func=listar_simbologia, methods=['GET'])

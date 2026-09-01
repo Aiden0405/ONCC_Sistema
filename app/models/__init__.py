@@ -10,6 +10,8 @@ from app.models.divulgacion import Publicacion
 from app.models.geomatica import MapaRiesgo
 from app.models.geomatica import Simbologia
 from app.models.geomatica import ElementosMapaRiesgo
+from app.models.clima import MapaClimatico
+from app.models.clima import RegistroClimatico
 from app.models.inventario import InventarioEquipo
 from app.models.esquema_activo import ComunidadActiva
 from app.models.esquema_activo import EstadoActivo

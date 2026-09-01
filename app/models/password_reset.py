@@ -4,6 +4,7 @@ from app import db
 from sqlalchemy.orm import foreign
 
 class PasswordReset(db.Model):
+    __bind_key__ = 'seguridad'
     __tablename__ = 'password_resets'
 
     id = db.Column(db.Integer, primary_key=True)

@@ -66,4 +66,6 @@ class ElementosMapaRiesgo(db.Model):
     descripcion_especifica = db.Column(db.Text, nullable=True)
     estilo_personalizado = db.Column(JSONB, nullable=True) 
     geom = db.Column(Geometry(geometry_type='GEOMETRY', srid=4326), nullable=False)
+
+
    

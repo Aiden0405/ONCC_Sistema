@@ -1,189 +1,249 @@
 {% extends 'base.html' %}
-
 {% block title %}Mapas Climáticos - ONCC{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
+<div class="max-w-7xl mx-auto space-y-6 animate-in fade-in duration-500">
     
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
+    <!-- Cabecera -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
         <div>
-            <p class="text-xs uppercase tracking-wider text-green-600 dark:text-green-400 font-bold">Cartografía Automatizada</p>
+            <p class="text-xs uppercase tracking-wider text-blue-600 dark:text-blue-400 font-bold">Cartografía Automatizada</p>
             <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Mapas Climáticos Temáticos</h1>
-            <p class="text-sm text-gray-500 dark:text-gray-400">Procesamiento de vectores, isolíneas térmicas y modelado de variables pluviométricas</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Procesamiento de isoyetas, isotermas e inyección de datos SSBC.</p>
         </div>
         <div class="flex items-center gap-2">
-            <a href="#" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md text-sm font-medium transition-colors border border-gray-200 dark:border-gray-700 shadow-xs">
-                <i data-lucide="shield-alert" class="w-4 h-4 mr-2 text-red-500"></i> Ir a Mapas de Riesgo
+            <a href="#" onclick="abrirModalCarga()" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700 transition-colors text-sm font-medium">
+                <i data-lucide="upload-cloud" class="w-4 h-4 mr-2"></i> Subir Imagen Climática
             </a>
         </div>
     </div>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                {% if category == 'error' %}
-                    <div class="p-4 rounded-md bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800 flex items-center shadow-sm">
-                        <i data-lucide="alert-triangle" class="mr-2 w-5 h-5"></i> 
-                        <span class="text-sm font-medium">{{ message }}</span>
-                    </div>
-                {% else %}
-                    <div class="p-4 rounded-md bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800 flex items-center shadow-sm">
-                        <i data-lucide="check-circle" class="mr-2 w-5 h-5"></i> 
-                        <span class="text-sm font-medium">{{ message }}</span>
-                    </div>
-                {% endif %}
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center justify-between">
-            <div class="space-y-1">
-                <p class="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 font-bold">Capas Climáticas</p>
-                <p class="text-2xl font-bold text-gray-800 dark:text-white">{{ cargas|length }} Matriz(ces)</p>
-                <p class="text-xs text-gray-400">Modelos isoyetas e isotermas</p>
-            </div>
-            <div class="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg text-green-600 dark:text-green-400">
-                <i data-lucide="map" class="w-6 h-6"></i>
-            </div>
+    <!-- Panel de Filtros -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
+        <div class="flex items-center space-x-3 border-b border-gray-100 dark:border-gray-700 pb-4 mb-6">
+            <i data-lucide="filter" class="text-blue-600 dark:text-blue-400 w-5 h-5"></i>
+            <h3 class="text-lg font-bold text-gray-800 dark:text-white">Filtrar por Entidad</h3>
         </div>
-
-        <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center justify-between">
-            <div class="space-y-1">
-                <p class="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 font-bold">Variables de Entrada</p>
-                <p class="text-2xl font-bold text-gray-800 dark:text-white">SSBC Data</p>
-                <p class="text-xs text-green-600 dark:text-green-400 font-medium">Precipitación / Temperatura</p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+            <div class="flex flex-col space-y-2">
+                <label class="text-xs font-semibold uppercase tracking-wider text-gray-500">Estado</label>
+                <select id="filtro_estado" onchange="aplicarFiltrosClimaticos()" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    <option value="">Todos los Estados</option>
+                    <!-- Llenado dinámico mediante JS -->
+                </select>
             </div>
-            <div class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-blue-600 dark:text-blue-400">
-                <i data-lucide="cloud-rain" class="w-6 h-6"></i>
-            </div>
-        </div>
-
-        <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center justify-between">
-            <div class="space-y-1">
-                <p class="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 font-bold">Tipo de Registro</p>
-                <p class="text-2xl font-bold text-gray-800 dark:text-white">Transaccional</p>
-                <p class="text-xs text-gray-500 dark:text-gray-400">Auditoría con cambios de flujo</p>
-            </div>
-            <div class="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg text-purple-600 dark:text-purple-400">
-                <i data-lucide="git-branch" class="w-6 h-6"></i>
-            </div>
-        </div>
-    </div>
-
-    <div class="p-6 rounded-xl shadow-sm border bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700 space-y-6">
-        <div class="flex items-center space-x-4">
-            <div class="w-12 h-12 rounded-full flex items-center justify-center bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400 shrink-0">
-                <i data-lucide="upload-cloud" class="w-6 h-6"></i>
-            </div>
-            <div>
-                <h3 class="text-lg font-bold text-gray-800 dark:text-white">Procesar Archivo de Variables Atmosféricas</h3>
-                <p class="text-xs text-gray-500 dark:text-gray-400">Cargue las capturas de los equipos de campo para la inyección y generación del mapa climático</p>
-            </div>
-        </div>
-        
-        <form method="POST" action="{{ url_for('geomatica.carga_ssbc') }}" enctype="multipart/form-data" class="space-y-4">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div class="md:col-span-2 space-y-1">
-                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Título del Mapa Climático</label>
-                    <input type="text" name="nombre" placeholder="Ej: Histograma Pluviométrico Trimestral - Lara" required 
-                           class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" />
-                </div>
-                <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Variable Atmosférica</label>
-                    <select name="tipo_mapa" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
-                        <option value="temperatura">Mapa temático de temperatura</option>
-                        <option value="precipitacion">Mapa temático de precipitación</option>
-                    </select>
-                </div>
-                <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Edición / Versión</label>
-                    <input type="text" name="version" placeholder="Ej: v1.0" required 
-                           class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" />
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end pt-2">
-                <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Cobertura Territorial / Eje</label>
-                    <input type="text" name="cobertura" placeholder="Ej: Municipio Morán y Jiménez" required 
-                           class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" />
-                </div>
-                <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Archivo de Transmisor (.ssbc, .xlsx)</label>
-                    <input type="file" name="archivo_ssbc" accept=".xlsx, .xls, .ssbc, .csv" required
-                           class="block w-full text-xs text-gray-500 dark:text-gray-400 border border-gray-300 dark:border-gray-600 rounded-md p-1.5 bg-white dark:bg-gray-700
-                           file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-green-50 file:text-green-700 dark:file:bg-green-900/30 dark:file:text-green-400" />
-                </div>
-                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-medium h-9 transition-colors shadow-sm flex items-center justify-center">
-                    <i data-lucide="database" class="mr-2 w-4 h-4"></i> Iniciar Procesamiento
+            <div class="md:col-span-2 flex justify-end">
+                <button type="button" onclick="limpiarFiltrosClimaticos()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg flex items-center hover:bg-gray-50">
+                    <i data-lucide="refresh-cw" class="w-4 h-4 mr-2"></i> Limpiar Filtros
                 </button>
             </div>
-        </form>
+        </div>
     </div>
 
-    <div class="rounded-xl shadow-sm border overflow-hidden bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
-        <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+    <!-- Directorio y Tabla Dinámica -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden relative">
+        <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
-                <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400">Capas Climáticas Almacenadas</h3>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Historial del flujo de matrices validadas y consolidadas por el personal del observatorio</p>
+                <h3 class="text-sm font-bold uppercase tracking-wide text-blue-700 dark:text-blue-400">Directorio de Capas Climáticas</h3>
+                <span id="contadorRegistrosClima" class="text-xs text-gray-500 mt-1">0 registro(s)</span>
             </div>
-            <span class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ cargas|length }} registro(s)</span>
+            <div class="relative w-full sm:w-72">
+                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <i data-lucide="search" class="w-4 h-4 text-gray-400"></i>
+                </div>
+                <input type="text" id="buscadorClima" onkeyup="renderizarTablaClimatica()" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Buscar por tipo...">
+            </div>
         </div>
 
         <div class="overflow-x-auto">
             <table class="w-full text-sm text-left border-collapse">
                 <thead>
                     <tr class="text-xs uppercase tracking-wider bg-gray-50 text-gray-500 dark:bg-gray-700/40 dark:text-gray-400">
-                        <th class="px-6 py-3 font-semibold">Identificador del Mapa</th>
-                        <th class="px-6 py-3 font-semibold">Variable Atmosférica</th>
-                        <th class="px-6 py-3 font-semibold">Versión</th>
+                        <th class="px-6 py-3 font-semibold">Variable / Tipo</th>
                         <th class="px-6 py-3 font-semibold">Archivo Origen</th>
-                        <th class="px-6 py-3 font-semibold">Cobertura</th>
-                        <th class="px-6 py-3 text-right">Estatus / Transmisión</th>
+                        <th class="px-6 py-3 font-semibold">Fecha Creación</th>
+                        <th class="px-6 py-3 text-right">Acciones</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
-                    {% for carga in cargas %}
-                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
-                        <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-100">{{ carga.nombre }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold bg-blue-50 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300 uppercase tracking-tight">
-                                {{ carga.tipo_mapa }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-400">{{ carga.version }}</td>
-                        <td class="px-6 py-4 font-mono text-xs text-gray-500 dark:text-gray-400 max-w-xs truncate">
-                            {{ carga.archivo or 'N/D' }}
-                        </td>
-                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400">{{ carga.cobertura }}</td>
-                        <td class="px-6 py-4 text-right whitespace-nowrap">
-                            <form method="POST" action="{{ url_for('geomatica.cambiar_estado', mapa_id=carga.id) }}" class="inline-flex items-center gap-1.5 bg-gray-50 dark:bg-gray-900/60 p-1 rounded-md border border-gray-100 dark:border-gray-700">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <select name="estado" class="border rounded bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white px-2 py-0.5 text-xs focus:ring-1 focus:ring-green-500 outline-none">
-                                    {% for estado in estados_flujo %}
-                                        <option value="{{ estado }}" {% if estado == carga.estado %}selected{% endif %}>{{ estado }}</option>
-                                    {% endfor %}
-                                </select>
-                                <button class="text-[11px] font-semibold px-2 py-0.5 rounded bg-green-600 text-white hover:bg-green-700 transition-colors shadow-2xs">Actualizar</button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="6" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
-                            <div class="flex flex-col items-center justify-center space-y-2">
-                                <i data-lucide="cloud-sun" class="w-8 h-8 text-gray-300 dark:text-gray-600"></i>
-                                <p class="text-sm font-medium">No hay matrices dinámicas ni mapas climáticos procesados en la bitácora.</p>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
+                <tbody id="cuerpoTablaClima" class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
+                    <!-- Filas inyectadas por JS -->
                 </tbody>
             </table>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    let mapasClimaticosData = []; 
+    const csrfToken = "{{ csrf_token() }}";
+
+    function cargarTablaClimatica() {
+        fetch('/mapas-climaticos/lista')
+            .then(res => res.json())
+            .then(data => { 
+                mapasClimaticosData = data; 
+                renderizarTablaClimatica(); 
+            }).catch(console.error);
+    }
+
+    function aplicarFiltrosClimaticos() {
+        const estado_id = document.getElementById('filtro_estado').value;
+        const url = estado_id ? `/mapas-climaticos/lista?estado=${estado_id}` : '/mapas-climaticos/lista';
+        
+        fetch(url)
+            .then(res => res.json())
+            .then(data => { 
+                mapasClimaticosData = data; 
+                renderizarTablaClimatica(); 
+            });
+    }
+
+    function renderizarTablaClimatica() {
+        const busq = document.getElementById('buscadorClima').value.toLowerCase();
+        let filtrados = mapasClimaticosData.filter(m => (m.tipo_de_mapa||'').toLowerCase().includes(busq));
+        
+        const tbody = document.getElementById('cuerpoTablaClima');
+        document.getElementById('contadorRegistrosClima').innerText = `${filtrados.length} registro(s)`;
+        tbody.innerHTML = '';
+        
+        if (filtrados.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-gray-500">No hay mapas climáticos almacenados.</td></tr>`;
+            return;
+        }
+
+        filtrados.forEach(mapa => {
+            tbody.innerHTML += `
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                    <td class="px-6 py-4 font-medium uppercase tracking-tight text-blue-700 dark:text-blue-400">${mapa.tipo_de_mapa}</td>
+                    <td class="px-6 py-4 font-mono text-xs truncate max-w-xs">${mapa.url_mapa.split('/').pop()}</td>
+                    <td class="px-6 py-4 text-xs">${new Date(mapa.fecha_creacion).toLocaleDateString()}</td>
+                    <td class="px-6 py-4 text-right space-x-2">
+                        <button onclick="verImagenClimatica('${mapa.url_mapa}')" class="text-blue-600 hover:text-blue-900" title="Ver Mapa"><i data-lucide="image" class="w-4 h-4 inline"></i></button>
+                        <button onclick="eliminarMapaClimatico(${mapa.id})" class="text-red-600 hover:text-red-900" title="Eliminar"><i data-lucide="trash-2" class="w-4 h-4 inline"></i></button>
+                    </td>
+                </tr>
+            `;
+        });
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function verImagenClimatica(url) {
+        Swal.fire({
+            imageUrl: `/static/${url}`,
+            imageAlt: 'Mapa Climático',
+            width: '80%',
+            confirmButtonColor: '#2563eb',
+            customClass: { image: 'rounded-lg shadow-md' }
+        });
+    }
+
+    async function abrirModalCarga() {
+        // Obtenemos los estados previamente cargados en el select principal para inyectarlos en el modal
+        const opcionesEstados = document.getElementById('filtro_estado').innerHTML;
+        
+        const { value: formValues } = await Swal.fire({
+            title: 'Procesar Imagen Climática',
+            html: `
+                <form id="formCargaClima" class="text-left space-y-4">
+                    <div>
+                        <label class="block text-xs uppercase text-gray-600">Estado / Entidad</label>
+                        <select id="swal-estado" class="w-full mt-1 p-2 border rounded-md" required>${opcionesEstados}</select>
+                    </div>
+                    <div>
+                        <label class="block text-xs uppercase text-gray-600">Tipo de Mapa</label>
+                        <select id="swal-tipo" class="w-full mt-1 p-2 border rounded-md" required>
+                            <option value="temperatura">Isotermas (Temperatura)</option>
+                            <option value="precipitacion">Isoyetas (Precipitación)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs uppercase text-gray-600">Archivo de Imagen</label>
+                        <input type="file" id="swal-archivo" accept=".png, .jpg, .jpeg, .webp" class="w-full mt-1 border rounded-md text-sm p-1" required>
+                    </div>
+                </form>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Procesar e Inyectar',
+            confirmButtonColor: '#2563eb',
+            preConfirm: () => {
+                const estado = document.getElementById('swal-estado').value;
+                const tipo = document.getElementById('swal-tipo').value;
+                const archivo = document.getElementById('swal-archivo').files[0];
+                
+                if (!estado || !archivo) return Swal.showValidationMessage('Debe seleccionar un estado y adjuntar una imagen.');
+                
+                let formData = new FormData();
+                formData.append('id_estado', estado);
+                formData.append('tipo_mapa', tipo);
+                formData.append('archivo_mapa', archivo);
+                return formData;
+            }
+        });
+
+        if (formValues) {
+            Swal.fire({ title: 'Procesando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            fetch('/mapas-climaticos/procesar', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken },
+                body: formValues
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    Swal.fire('Procesado', data.message, 'success');
+                    cargarTablaClimatica();
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+            });
+        }
+    }
+
+    function eliminarMapaClimatico(id) {
+        Swal.fire({
+            title: '¿Eliminar capa climática?',
+            text: "Esta acción destruirá el archivo físico asociado.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            confirmButtonText: 'Sí, eliminar'
+        }).then((res) => {
+            if(res.isConfirmed) {
+                fetch(`/mapas-climaticos/${id}`, { 
+                    method: 'DELETE', 
+                    headers: { 'X-CSRFToken': csrfToken } 
+                })
+                .then(r => r.json())
+                .then(data => { 
+                    if(data.status === 'success') { 
+                        Swal.fire('Eliminado', '', 'success'); 
+                        cargarTablaClimatica(); 
+                    } 
+                });
+            }
+        });
+    }
+
+    function limpiarFiltrosClimaticos() {
+        document.getElementById('filtro_estado').value = '';
+        document.getElementById('buscadorClima').value = '';
+        cargarTablaClimatica();
+    }
+
+    // Inicialización (Asegúrate de tener un endpoint /api/geografia/estados como en mapa_riesgo)
+    document.addEventListener('DOMContentLoaded', () => { 
+        fetch('/api/geografia/estados')
+            .then(res => res.json())
+            .then(data => {
+                const select = document.getElementById('filtro_estado');
+                data.forEach(item => {
+                    select.innerHTML += `<option value="${item.id_estado}">${item.nombre_estado}</option>`;
+                });
+            });
+        cargarTablaClimatica(); 
+    });
+</script>
 {% endblock %}
