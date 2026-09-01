@@ -51,23 +51,23 @@
                     <tr class="text-xs uppercase tracking-wider bg-gray-50 text-gray-500 dark:bg-gray-700/40 dark:text-gray-400">
                         <th class="px-6 py-3 font-semibold">Título del Contenido</th>
                         <th class="px-6 py-3 font-semibold">Tipo</th>
-                        <th class="px-6 py-3 font-semibold text-center">Prioridad Alerta</th>
-                        <th class="px-6 py-3 font-semibold">Estatus de Publicación</th>
-                        <th class="px-6 py-3 font-semibold">Fecha de Creación</th>
-                        <th class="px-6 py-3 text-right">Acciones Transaccionales</th>
+                        <th class="px-6 py-3 font-semibold text-center">Prioridad</th>
+                        <th class="px-6 py-3 font-semibold">Estatus</th>
+                        <th class="px-6 py-3 font-semibold">Creación</th>
+                        <th class="px-6 py-3 text-right">Acciones</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
                     {% for p in publicaciones %}
                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
                         <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-100 max-w-sm truncate">
-                            <div class="font-semibold text-gray-900 dark:text-white">{{ p.titulo }}</div>
+                            <div class="font-semibold text-gray-900 dark:text-white truncate">{{ p.titulo }}</div>
                             <div class="text-[11px] text-gray-400 dark:text-gray-500 mt-1 flex items-center gap-1">
                                 <i data-lucide="link" class="w-3 h-3 text-green-600 dark:text-green-400"></i>
-                                {% if p.id_divulgacion %}
-                                    <span class="text-green-700 dark:text-green-400 font-bold">Origen:</span> Despliegue Técnico #{{ p.id_divulgacion }}
+                                {% if p.id_divulgacion and p.divulgacion %}
+                                    <span class="text-green-700 dark:text-green-400 font-semibold">{{ p.divulgacion.nombre_divulgacion }}</span> (Actividad #{{ p.divulgacion.id_actividad }})
                                 {% else %}
-                                    <span class="text-gray-400 dark:text-gray-500 italic">Sin despliegue (Inyección directa por BD)</span>
+                                    <span class="text-gray-400 italic">Sin despliegue directo</span>
                                 {% endif %}
                             </div>
                         </td>
@@ -110,53 +110,70 @@
                             {{ p.creado_en.strftime('%Y-%m-%d') }}
                         </td>
                         
-                        <td class="px-6 py-4 text-right whitespace-nowrap space-x-2">
-                            {% if p.estado != 'publicado' %}
-                                {# 🛡️ CONTROL DE AUTORÍA EN INTERFAZ #}
-                                {% if current_user.id_rol|int in (1, 2) or p.id_usuario|int == current_user.id|int %}
-                                    <a href="{{ url_for('core.divulgacion_admin_editar', pub_id=p.id) }}" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300 transition-colors">
-                                        <i data-lucide="edit" class="w-3.5 h-3.5 mr-1"></i> Editar
-                                    </a>
+                        <!-- BOTONES DE ACCIÓN -->
+                        <td class="px-6 py-4 text-right whitespace-nowrap space-x-1">
+                            
+                            <!-- 👁️ BOTÓN VER DETALLES (MODAL) -->
+                            <button type="button" 
+                                    onclick="abrirModalDetalle(this)"
+                                    data-titulo="{{ p.titulo }}"
+                                    data-tipo="{{ p.tipo }}"
+                                    data-prioridad="{{ p.prioridad|default(1) }}"
+                                    data-estado="{{ p.estado }}"
+                                    data-fecha="{{ p.creado_en.strftime('%d/%m/%Y') }}"
+                                    data-resumen="{{ p.resumen if p.resumen else 'Sin resumen registrado.' }}"
+                                    data-contenido="{{ p.contenido if p.contenido else 'Sin contenido.' }}"
+                                    data-acto="{{ p.divulgacion.nombre_divulgacion if p.divulgacion else 'No especificado' }}"
+                                    data-permiso="{{ p.divulgacion.permiso_divulgacion if p.divulgacion else 'Público' }}"
+                                    data-aval="{{ p.divulgacion.descripcion_divulgacion if p.divulgacion else 'Sin descripción de aval' }}"
+                                    data-actividad="{% if p.divulgacion and p.divulgacion.actividad %}#{{ p.divulgacion.actividad.id_actividad }} - {{ p.divulgacion.actividad.tipo_actividad }} ({{ p.divulgacion.actividad.fecha_actividad }}){% else %}Sin actividad{% endif %}"
+                                    data-comunidad="{% if p.divulgacion and p.divulgacion.actividad and p.divulgacion.actividad.comunidad %}{{ p.divulgacion.actividad.comunidad.nombre_comunidad }}{% else %}Comunidad General{% endif %}"
+                                    class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-300 transition-colors" title="Ver detalles y trazabilidad">
+                                <i data-lucide="eye" class="w-3.5 h-3.5 mr-1"></i> Ver
+                            </button>
 
-                                    <form action="{{ url_for('core.divulgacion_admin_eliminar', pub_id=p.id) }}" method="post" class="inline" onsubmit="return confirm('¿Está seguro de que desea eliminar este borrador de forma permanente?');">
+                            <!-- ✏️ BOTÓN EDITAR -->
+                            {% if current_user.id_rol|int in (1, 2) or p.id_usuario|int == current_user.id|int %}
+                                <a href="{{ url_for('core.divulgacion_admin_editar', pub_id=p.id) }}" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300 transition-colors">
+                                    <i data-lucide="edit" class="w-3.5 h-3.5 mr-1"></i> Editar
+                                </a>
+                            {% endif %}
+
+                            {% if p.estado != 'publicado' %}
+                                {% if current_user.id_rol|int in (1, 2) or p.id_usuario|int == current_user.id|int %}
+                                    <form action="{{ url_for('core.divulgacion_admin_eliminar', pub_id=p.id) }}" method="post" class="inline" onsubmit="return confirm('¿Está seguro de que desea eliminar este borrador?');">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                         <button type="submit" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300 transition-colors">
-                                            <i data-lucide="trash-2" class="w-3.5 h-3.5 mr-1"></i> Eliminar
+                                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                                         </button>
                                     </form>
                                 {% endif %}
 
                                 {% if 'aprobar_divulgaciones' in permisos_activos or current_user.id_rol|int in (1, 2) %}
-                                <form action="{{ url_for('core.divulgacion_admin_aprobar', pub_id=p.id) }}" method="post" class="inline" onsubmit="return confirm('¿Desea aprobar y lanzar esta publicación al portal público?');">
+                                <form action="{{ url_for('core.divulgacion_admin_aprobar', pub_id=p.id) }}" method="post" class="inline" onsubmit="return confirm('¿Desea publicar este contenido en la web?');">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-bold text-white bg-green-600 hover:bg-green-700 transition-colors shadow-sm">
-                                        <i data-lucide="globe" class="w-3.5 h-3.5 mr-1"></i> Aprobar y Publicar
+                                        <i data-lucide="globe" class="w-3.5 h-3.5 mr-1"></i> Publicar
                                     </button>
                                 </form>
                                 {% endif %}
                                 
                             {% else %}
-                                <div class="inline-flex items-center gap-2">
-                                    <span class="text-xs font-medium text-gray-400 dark:text-gray-500 italic inline-flex items-center mr-2">
-                                        <i data-lucide="check" class="w-3.5 h-3.5 mr-1 text-green-500"></i> Visible en Web
-                                    </span>
+                                {% if 'aprobar_divulgaciones' in permisos_activos or current_user.id_rol|int in (1, 2) %}
+                                    <form action="{{ url_for('core.divulgacion_admin_despublicar', pub_id=p.id) }}" method="post" class="inline" onsubmit="return confirm('¿Desea retirar esta publicación del portal web?');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300 transition-colors">
+                                            <i data-lucide="eye-off" class="w-3.5 h-3.5 mr-1"></i> Despublicar
+                                        </button>
+                                    </form>
 
-                                    {% if 'aprobar_divulgaciones' in permisos_activos or current_user.id_rol|int in (1, 2) %}
-                                        <form action="{{ url_for('core.divulgacion_admin_despublicar', pub_id=p.id) }}" method="post" class="inline" onsubmit="return confirm('¿Desea retirar esta publicación del portal público y volverla borrador?');">
-                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                            <button type="submit" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300 transition-colors">
-                                                <i data-lucide="eye-off" class="w-3.5 h-3.5 mr-1"></i> Quitar de la Web
-                                            </button>
-                                        </form>
-
-                                        <form action="{{ url_for('core.divulgacion_admin_eliminar', pub_id=p.id) }}" method="post" class="inline" onsubmit="return confirm('🚨 ¡ADVERTENCIA! Esta publicación está activa en la web. ¿Está seguro de que desea eliminarla por completo de la base de datos?');">
-                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                            <button type="submit" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300 transition-colors">
-                                                <i data-lucide="trash-2" class="w-3.5 h-3.5 mr-1"></i> Eliminar de Raíz
-                                            </button>
-                                        </form>
-                                    {% endif %}
-                                </div>
+                                    <form action="{{ url_for('core.divulgacion_admin_eliminar', pub_id=p.id) }}" method="post" class="inline" onsubmit="return confirm('🚨 ¡ADVERTENCIA! Esta publicación está activa en la web. ¿Desea eliminarla permanentemente?');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300 transition-colors">
+                                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                    </form>
+                                {% endif %}
                             {% endif %}
                         </td>
                     </tr>
@@ -175,4 +192,132 @@
         </div>
     </div>
 </div>
+
+<!-- ============================================================== -->
+<!-- 🔍 MODAL DE DETALLE COMPLETO Y TRAZABILIDAD INSTITUCIONAL      -->
+<!-- ============================================================== -->
+<div id="modalDetalleDivulgacion" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 max-w-2xl w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        
+        <!-- HEADER DEL MODAL -->
+        <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-slate-50 dark:bg-gray-700/40">
+            <div class="flex items-center gap-2">
+                <div class="p-1.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-lg">
+                    <i data-lucide="file-check" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-gray-900 dark:text-white" id="modalTitulo">Detalles de Publicación</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Ficha técnica y aval de divulgación</p>
+                </div>
+            </div>
+            <button onclick="cerrarModalDetalle()" class="text-gray-400 hover:text-gray-600 dark:hover:text-white p-1 rounded-lg">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <!-- CUERPO DEL MODAL -->
+        <div class="p-6 space-y-5 max-h-[75vh] overflow-y-auto custom-scrollbar text-sm">
+            
+            <!-- BLOQUE 1: TRAZABILIDAD OPERATIVA (AVAL PADRE) -->
+            <div class="bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 rounded-xl p-4 space-y-3">
+                <p class="text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+                    <i data-lucide="link" class="w-4 h-4"></i> 1. Aval Institucional de Origen
+                </p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div>
+                        <span class="text-gray-500 dark:text-gray-400 font-medium block">Actividad de Campo Vinculada:</span>
+                        <span id="modalActividad" class="font-bold text-gray-800 dark:text-gray-200"></span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500 dark:text-gray-400 font-medium block">Comunidad / Sector:</span>
+                        <span id="modalComunidad" class="font-bold text-gray-800 dark:text-gray-200"></span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500 dark:text-gray-400 font-medium block">Nombre del Acto:</span>
+                        <span id="modalActo" class="font-bold text-gray-800 dark:text-gray-200"></span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500 dark:text-gray-400 font-medium block">Alcance / Permiso:</span>
+                        <span id="modalPermiso" class="font-bold text-emerald-700 dark:text-emerald-300"></span>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <span class="text-gray-500 dark:text-gray-400 font-medium block">Descripción del Aval:</span>
+                        <span id="modalAval" class="text-gray-700 dark:text-gray-300 italic"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BLOQUE 2: CONTENIDO EDITORIAL DE LA WEB -->
+            <div class="space-y-3">
+                <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                    <i data-lucide="newspaper" class="w-4 h-4"></i> 2. Contenido Informativo para la Web
+                </p>
+
+                <div class="flex flex-wrap gap-2 text-xs">
+                    <span id="modalBadgeTipo" class="px-2.5 py-1 rounded-md font-semibold bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 uppercase"></span>
+                    <span id="modalBadgePrioridad" class="px-2.5 py-1 rounded-md font-bold bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300"></span>
+                    <span id="modalBadgeEstado" class="px-2.5 py-1 rounded-md font-bold uppercase"></span>
+                    <span id="modalFecha" class="px-2.5 py-1 rounded-md text-gray-500 dark:text-gray-400 font-mono"></span>
+                </div>
+
+                <div class="bg-gray-50 dark:bg-gray-700/30 p-3.5 rounded-xl border border-gray-100 dark:border-gray-700">
+                    <span class="text-xs font-bold uppercase text-gray-500 dark:text-gray-400 block mb-1">Resumen Ejecutivo:</span>
+                    <p id="modalResumen" class="text-gray-700 dark:text-gray-300 text-xs leading-relaxed"></p>
+                </div>
+
+                <div>
+                    <span class="text-xs font-bold uppercase text-gray-500 dark:text-gray-400 block mb-1">Cuerpo del Reporte:</span>
+                    <div id="modalContenido" class="p-3.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-200 text-xs leading-relaxed max-h-48 overflow-y-auto whitespace-pre-line font-sans"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FOOTER DEL MODAL -->
+        <div class="px-6 py-3 bg-gray-50 dark:bg-gray-700/40 border-t border-gray-100 dark:border-gray-700 flex justify-end">
+            <button onclick="cerrarModalDetalle()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-800 dark:text-white rounded-lg text-xs font-semibold transition-colors">
+                Cerrar
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function abrirModalDetalle(boton) {
+        document.getElementById('modalTitulo').textContent = boton.dataset.titulo || 'Sin Título';
+        document.getElementById('modalActividad').textContent = boton.dataset.actividad;
+        document.getElementById('modalComunidad').textContent = boton.dataset.comunidad;
+        document.getElementById('modalActo').textContent = boton.dataset.acto;
+        document.getElementById('modalPermiso').textContent = boton.dataset.permiso;
+        document.getElementById('modalAval').textContent = boton.dataset.aval;
+
+        document.getElementById('modalBadgeTipo').textContent = boton.dataset.tipo;
+        document.getElementById('modalBadgePrioridad').textContent = 'Prioridad ' + boton.dataset.prioridad;
+        
+        const badgeEstado = document.getElementById('modalBadgeEstado');
+        badgeEstado.textContent = boton.dataset.estado;
+        if (boton.dataset.estado === 'publicado') {
+            badgeEstado.className = 'px-2.5 py-1 rounded-md font-bold uppercase bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300';
+        } else {
+            badgeEstado.className = 'px-2.5 py-1 rounded-md font-bold uppercase bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300';
+        }
+
+        document.getElementById('modalFecha').textContent = 'Creado: ' + boton.dataset.fecha;
+        document.getElementById('modalResumen').textContent = boton.dataset.resumen;
+        document.getElementById('modalContenido').textContent = boton.dataset.contenido;
+
+        document.getElementById('modalDetalleDivulgacion').classList.remove('hidden');
+        if (window.lucide) lucide.createIcons();
+    }
+
+    function cerrarModalDetalle() {
+        document.getElementById('modalDetalleDivulgacion').classList.add('hidden');
+    }
+
+    // Cerrar modal al presionar la tecla ESC
+    document.addEventListener('keydown', function(event) {
+        if (event.key === "Escape") {
+            cerrarModalDetalle();
+        }
+    });
+</script>
 {% endblock %}

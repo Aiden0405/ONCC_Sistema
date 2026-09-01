@@ -15,6 +15,13 @@ from app.services.gestor_sesion import GestorSesion
 gestor = GestorSesion()
 
 
+def _generar_captcha():
+    num1 = random.randint(1, 9)
+    num2 = random.randint(1, 9)
+    session['captcha_resultado'] = num1 + num2
+    session['captcha_texto'] = f"¿Cuánto es {num1} + {num2}?"
+
+
 def is_safe_url(target):
     ref_url = urlparse(request.host_url)
     test_url = urlparse(urljoin(request.host_url, target))
@@ -71,25 +78,23 @@ def logout():
 @core_bp.route('/auth/recuperar', methods=['GET', 'POST'])
 def recuperar_contrasena():
     form = ResetRequestForm()
-    
-    # Captcha: Generamos una suma matemática nueva para vistas GET
-    if request.method == 'GET':
-        num1 = random.randint(1, 9)
-        num2 = random.randint(1, 9)
-        session['captcha_resultado'] = num1 + num2
-        session['captcha_texto'] = f"¿Cuánto es {num1} + {num2}?"
+
+    if request.method == 'GET' or 'captcha_resultado' not in session:
+        _generar_captcha()
 
     if form.validate_on_submit():
         correo = (form.correo.data or '').strip().lower()
         captcha_usuario = request.form.get('captcha', '').strip()
 
+        try:
+            captcha_valido = int(captcha_usuario) == int(session.get('captcha_resultado'))
+        except (TypeError, ValueError):
+            captcha_valido = False
+
         # Validación del Captcha Matemático antes de procesar el token
-        if not captcha_usuario or int(captcha_usuario) != session.get('captcha_resultado'):
+        if not captcha_valido:
             flash('La verificación de seguridad (Captcha) es incorrecta.', 'error')
-            num1 = random.randint(1, 9)
-            num2 = random.randint(1, 9)
-            session['captcha_resultado'] = num1 + num2
-            session['captcha_texto'] = f"¿Cuánto es {num1} + {num2}?"
+            _generar_captcha()
             return render_template('auth/recuperar.html', form=form)
 
         # Buscamos si el usuario existe en la BD

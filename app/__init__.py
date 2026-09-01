@@ -1,4 +1,5 @@
 from collections import Counter
+from datetime import datetime
 
 from flask import Flask, render_template, session 
 from flask_login import LoginManager, login_required
@@ -84,6 +85,7 @@ def create_app(config_class=Config):
         from app.models.clima import MapaClimatico  # noqa: F401
         from app.models.clima import RegistroClimatico  # noqa: F401
         from app.models.inventario import InventarioEquipo  # noqa: F401
+        from app.models.tecnico import Tecnico  # noqa: F401
         from app.models.visita_portal import VisitaPortal  # noqa: F401
         from app.models.password_reset import PasswordReset  # noqa: F401
         from app.models.usuario import Usuario  # noqa: F401
@@ -108,7 +110,19 @@ def create_app(config_class=Config):
     from app.blueprints.core.controllers.usuarios import usuario_index as core_usuario_index
     from app.blueprints.core.controllers.usuarios import usuario_nuevo as core_usuario_nuevo
     from app.blueprints.core.controllers.usuarios import usuario_perfil as core_usuario_perfil
-    
+
+    # 🗃️ CONTROLADOR DE PARAMETRIZACIÓN Y TABLAS MAESTRAS (CRUD COMPLETO)
+    from app.blueprints.parametrizacion.catalogos import catalogos_index as core_catalogos_index
+    from app.blueprints.parametrizacion.catalogos import nueva_institucion as core_nueva_institucion
+    from app.blueprints.parametrizacion.catalogos import editar_institucion as core_editar_institucion
+    from app.blueprints.parametrizacion.catalogos import eliminar_institucion as core_eliminar_institucion
+    from app.blueprints.parametrizacion.catalogos import nueva_comunidad as core_nueva_comunidad
+    from app.blueprints.parametrizacion.catalogos import editar_comunidad as core_editar_comunidad
+    from app.blueprints.parametrizacion.catalogos import eliminar_comunidad as core_eliminar_comunidad
+    from app.blueprints.parametrizacion.catalogos import nuevo_nivel as core_nuevo_nivel
+    from app.blueprints.parametrizacion.catalogos import editar_nivel as core_editar_nivel
+    from app.blueprints.parametrizacion.catalogos import eliminar_nivel as core_eliminar_nivel
+
     # 📦 CONTROLADORES DE LOGÍSTICA (AILEEN)
     from app.blueprints.logistica.controllers.inventario import editar as logistica_inventario_editar
     from app.blueprints.logistica.controllers.inventario import eliminar as logistica_inventario_eliminar
@@ -120,13 +134,13 @@ def create_app(config_class=Config):
     from app.blueprints.logistica.controllers.inventario import acta_responsabilidad as logistica_acta_responsabilidad
     from app.blueprints.logistica.controllers.inventario import reporte_inventario as logistica_reporte_inventario
     from app.blueprints.logistica.controllers.inventario import reporte_movimientos as logistica_reporte_movimientos
-    
+
     from app.blueprints.logistica.controllers.tecnicos_campo import tecnicos_campo_index as logistica_tecnicos_index
     from app.blueprints.logistica.controllers.tecnicos_campo import tecnicos_nuevo as logistica_tecnicos_nuevo
     from app.blueprints.logistica.controllers.tecnicos_campo import tecnicos_editar as logistica_tecnicos_editar
     from app.blueprints.logistica.controllers.tecnicos_campo import tecnicos_eliminar as logistica_tecnicos_eliminar
-    
-    # 🗺️ CONTROLADORES DE MAPAS ACTUALIZADOS DESDE RAMA GABRIEL
+
+    # 🗺️ CONTROLADORES DE MAPAS
     from app.blueprints.mapas.controllers.riesgo import eliminar_mapa as mapas_cambiar_estado
     from app.blueprints.mapas.controllers.riesgo import mapas_riesgo_index as mapas_index
     from app.blueprints.mapas.controllers.riesgo import vista_carga_ssbc, vista_dibujar_mapa
@@ -181,15 +195,14 @@ def create_app(config_class=Config):
     app.add_url_rule('/auth/logout', endpoint='auth.logout', view_func=core_logout)
     app.add_url_rule('/auth/recuperar', endpoint='auth.recuperar_contrasena', view_func=core_recuperar, methods=['GET', 'POST'])
 
-    # Enlazar la nueva ruta dinámica de restablecer que procesará los tokens reales
     from app.blueprints.core.controllers.auth import restablecer_contrasena as core_restablecer
     app.add_url_rule('/auth/restablecer/<token>', endpoint='core.restablecer_contrasena', view_func=core_restablecer, methods=['GET', 'POST'])
 
     app.add_url_rule('/formaciones', endpoint='formacion.index', view_func=comunitario_formaciones_index)
-    app.add_url_rule('/formaciones/nuevo', endpoint='formacion.nuevo', view_func=formacion_nuevo, methods=['POST'])
+    app.add_url_rule('/formaciones/nuevo', endpoint='formacion.nuevo', view_func=formacion_nuevo, methods=['GET', 'POST'])
     app.add_url_rule('/formaciones/<int:formacion_id>/estado', endpoint='formacion.cambiar_estado', view_func=formacion_cambiar_estado, methods=['POST'])
     app.add_url_rule('/sensibilizaciones', endpoint='sensibilizacion.index', view_func=comunitario_sensibilizaciones_index)
-    app.add_url_rule('/sensibilizaciones/nuevo', endpoint='sensibilizacion.nuevo', view_func=sensibilizacion_nuevo, methods=['POST'])
+    app.add_url_rule('/sensibilizaciones/nuevo', endpoint='sensibilizacion.nuevo', view_func=sensibilizacion_nuevo, methods=['GET', 'POST'])
     app.add_url_rule('/sensibilizaciones/<int:sensibilizacion_id>/estado', endpoint='sensibilizacion.cambiar_estado', view_func=sensibilizacion_cambiar_estado, methods=['POST'])
 
     app.add_url_rule('/admin/usuarios/', endpoint='usuario.index', view_func=core_usuario_index)
@@ -203,6 +216,21 @@ def create_app(config_class=Config):
     app.add_url_rule('/admin/roles/<int:rol_id>/editar', endpoint='rol.editar', view_func=core_rol_editar, methods=['GET', 'POST'])
     app.add_url_rule('/admin/roles/<int:rol_id>/eliminar', endpoint='rol.eliminar', view_func=core_rol_eliminar, methods=['POST'])
     app.add_url_rule('/admin/roles/<int:rol_id>/permisos', endpoint='rol.gestionar_permisos', view_func=core_rol_gestionar_permisos, methods=['GET', 'POST'])
+
+    # 🗃️ RUTAS DE PARAMETRIZACIÓN Y TABLAS MAESTRAS (CREAR, EDITAR Y ELIMINAR)
+    app.add_url_rule('/admin/catalogos/', endpoint='core.catalogos_index', view_func=core_catalogos_index)
+    
+    app.add_url_rule('/admin/catalogos/institucion/nueva', endpoint='core.nueva_institucion', view_func=core_nueva_institucion, methods=['POST'])
+    app.add_url_rule('/admin/catalogos/institucion/<int:id_inst>/editar', endpoint='core.editar_institucion', view_func=core_editar_institucion, methods=['POST'])
+    app.add_url_rule('/admin/catalogos/institucion/<int:id_inst>/eliminar', endpoint='core.eliminar_institucion', view_func=core_eliminar_institucion, methods=['POST'])
+    
+    app.add_url_rule('/admin/catalogos/comunidad/nueva', endpoint='core.nueva_comunidad', view_func=core_nueva_comunidad, methods=['POST'])
+    app.add_url_rule('/admin/catalogos/comunidad/<int:id_com>/editar', endpoint='core.editar_comunidad', view_func=core_editar_comunidad, methods=['POST'])
+    app.add_url_rule('/admin/catalogos/comunidad/<int:id_com>/eliminar', endpoint='core.eliminar_comunidad', view_func=core_eliminar_comunidad, methods=['POST'])
+    
+    app.add_url_rule('/admin/catalogos/nivel/nuevo', endpoint='core.nuevo_nivel', view_func=core_nuevo_nivel, methods=['POST'])
+    app.add_url_rule('/admin/catalogos/nivel/<int:id_niv>/editar', endpoint='core.editar_nivel', view_func=core_editar_nivel, methods=['POST'])
+    app.add_url_rule('/admin/catalogos/nivel/<int:id_niv>/eliminar', endpoint='core.eliminar_nivel', view_func=core_eliminar_nivel, methods=['POST'])
 
     app.add_url_rule('/actividades/', endpoint='actividad.index', view_func=monitoreo_actividad_index)
     app.add_url_rule('/actividades/nueva', endpoint='actividad.nueva', view_func=monitoreo_actividad_nueva, methods=['GET', 'POST'])
@@ -218,12 +246,10 @@ def create_app(config_class=Config):
     app.add_url_rule('/inventario/movimiento/<int:movimiento_id>/editar', endpoint='inventario.editar_movimiento', view_func=logistica_editar_movimiento, methods=['POST'])
     app.add_url_rule('/inventario/movimiento/<int:movimiento_id>/eliminar', endpoint='inventario.eliminar_movimiento', view_func=logistica_eliminar_movimiento, methods=['POST'])
     
-    # 📄 RUTAS PARA REPORTES Y ACTAS EN PDF
     app.add_url_rule('/inventario/reporte', endpoint='inventario.reporte_inventario', view_func=logistica_reporte_inventario, methods=['GET'])
     app.add_url_rule('/inventario/reporte-movimientos', endpoint='inventario.reporte_movimientos', view_func=logistica_reporte_movimientos, methods=['GET'])
     app.add_url_rule('/inventario/<int:equipo_id>/acta', endpoint='inventario.acta_responsabilidad', view_func=logistica_acta_responsabilidad, methods=['GET'])
     
-    # 👷 REGLAS PARA TÉCNICOS DE CAMPO
     app.add_url_rule('/tecnicos-campo', endpoint='logistica.tecnicos_campo_index', view_func=logistica_tecnicos_index)
     app.add_url_rule('/tecnicos-campo/nuevo', endpoint='logistica.tecnicos_nuevo', view_func=logistica_tecnicos_nuevo, methods=['POST'])
     app.add_url_rule('/tecnicos-campo/<int:tecnico_id>/editar', endpoint='logistica.tecnicos_editar', view_func=logistica_tecnicos_editar, methods=['POST'])
@@ -267,6 +293,9 @@ def create_app(config_class=Config):
     except Exception:
         pass
 
+    # ==============================================================
+    # RUTA DEL DASHBOARD / MONITOREO GENERAL (CORREGIDA)
+    # ==============================================================
     @app.route('/sistema')
     @app.route('/dashboard')
     @app.route('/monitoreo')
@@ -277,7 +306,8 @@ def create_app(config_class=Config):
         from app.models.geomatica import MapaRiesgo
         from app.models.inventario import InventarioEquipo
 
-        actividades = Actividad.query.order_by(Actividad.creado_en.desc()).limit(5).all()
+        # 🌟 CORRECCIÓN: Ordenar por columnas reales del modelo
+        actividades = Actividad.query.order_by(Actividad.fecha_actividad.desc(), Actividad.id_actividad.desc()).limit(5).all()
         total_actividades = Actividad.query.count()
 
         mapa_estados = [
@@ -315,16 +345,11 @@ def create_app(config_class=Config):
             modulos_operativos=modulos_operativos,
         )
 
-
-    # ==============================================================
-    # ⏱️ FILTRO PERSONALIZADO PARA CALCULAR EL TIEMPO TRANSCURRIDO
-    # ==============================================================
     @app.template_filter('tiempo_atras')
     def tiempo_atras_filter(fecha):
         if not fecha:
             return "Ahora"
             
-        from datetime import datetime
         ahora = datetime.utcnow()
         diferencia = ahora - fecha
 

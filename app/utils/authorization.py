@@ -4,6 +4,16 @@ from flask_login import current_user
 
 
 SUPERUSER_ROLE_IDS = (1, 2)
+PERMISSION_ALIASES = {
+    'manage_users': 'gestionar_usuarios',
+    'manage_roles': 'gestionar_usuarios',
+}
+
+
+def _normalize_permission_name(permission_name):
+    if not permission_name:
+        return ''
+    return PERMISSION_ALIASES.get(permission_name, permission_name)
 
 
 def current_role_id(default=None):
@@ -22,7 +32,14 @@ def current_permission_names():
         return []
 
     try:
-        return list(getattr(current_user, 'permission_names', []))
+        permisos = []
+        for name in getattr(current_user, 'permission_names', []):
+            if name:
+                permisos.append(name)
+                alias = PERMISSION_ALIASES.get(name)
+                if alias:
+                    permisos.append(alias)
+        return list(dict.fromkeys(permisos))
     except Exception:
         return []
 
@@ -33,6 +50,8 @@ def has_permission(permission_name):
 
     if is_superuser():
         return True
+
+    permission_name = _normalize_permission_name(permission_name)
 
     try:
         return current_user.has_permission(permission_name)

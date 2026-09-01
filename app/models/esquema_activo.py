@@ -47,7 +47,7 @@ class NivelActivo(db.Model):
 
     id_nivel = db.Column(db.Integer, primary_key=True)
     nombre_nivel = db.Column(db.String(80), unique=True, nullable=False)
-    descripcion = db.Column(db.Text, nullable=False) #  ¡Limpio!
+    descripcion = db.Column(db.Text, nullable=False)
 
 
 class InstitucionActiva(db.Model):
@@ -65,6 +65,9 @@ class InstitucionActiva(db.Model):
     comunidad = db.relationship('ComunidadActiva', backref=db.backref('instituciones', lazy='dynamic'))
 
 
+# =========================================================================
+# MODELOS COMUNITARIOS
+# =========================================================================
 
 class FormacionActiva(db.Model):
     __tablename__ = 'formacion'
@@ -74,8 +77,15 @@ class FormacionActiva(db.Model):
     nombre_formacion = db.Column(db.Text, nullable=False)
     id_actividad = db.Column('id_actividad', db.Integer, db.ForeignKey('actividad.id_actividad'), nullable=False, unique=True)
     id_institucion = db.Column(db.Integer, db.ForeignKey('institucion.id_institucion'), nullable=False)
+    tipo_actividad = db.Column(db.String(50), nullable=False, default='FORMACION')
+    id_nivel = db.Column(db.Integer, db.ForeignKey('nivel.id_nivel'), nullable=False)
 
-    actividad = db.relationship('Actividad', backref=db.backref('formacion', uselist=False))
+    # 🌟 Nombres de backref únicos para no colisionar con Actividad
+    actividad = db.relationship(
+        'Actividad', 
+        foreign_keys=[id_actividad], 
+        backref=db.backref('formacion_activa_rel', uselist=False, cascade="all, delete-orphan")
+    )
     institucion = db.relationship('InstitucionActiva', backref=db.backref('formaciones', lazy='dynamic'))
 
     @property
@@ -118,7 +128,8 @@ class FormacionActiva(db.Model):
                 'fecha_actividad_cruda': actividad.fecha_actividad,
                 'fecha_formateada': fecha_lista,
                 'id_actividad': formacion.id_actividad,
-                'id_nivel': actividad.id_nivel,
+                'id_comunidad': actividad.id_comunidad,
+                'id_nivel': formacion.id_nivel or actividad.id_nivel,
                 'id_institucion': formacion.id_institucion
             })
         return formaciones_procesadas
@@ -131,23 +142,38 @@ class SensibilizacionActiva(db.Model):
     id_sensibilizacion = db.Column('id_sensibilizacion', db.Integer, primary_key=True)
     nombre_sensivilizacion = db.Column('nombre_sensibilizacion', db.Text, nullable=False)
     id_actividad = db.Column(db.Integer, db.ForeignKey('actividad.id_actividad'), nullable=False, unique=True)
+    tipo_actividad = db.Column(db.String(50), nullable=False, default='SENSIBILIZACION')
+    id_nivel = db.Column(db.Integer, db.ForeignKey('nivel.id_nivel'), nullable=False)
 
-    actividad = db.relationship('Actividad', backref=db.backref('sensibilizacion', uselist=False))
+    # 🌟 Nombres de backref únicos para no colisionar con Actividad
+    actividad = db.relationship(
+        'Actividad', 
+        foreign_keys=[id_actividad], 
+        backref=db.backref('sensibilizacion_activa_rel', uselist=False, cascade="all, delete-orphan")
+    )
 
     @property
     def id(self):
         return self.id_sensibilizacion
+
+    @property
+    def nombre_sensibilizacion(self):
+        return self.nombre_sensivilizacion
+
+    @nombre_sensibilizacion.setter
+    def nombre_sensibilizacion(self, value):
+        self.nombre_sensivilizacion = value
   
     @property
     def campana_real(self):
-        if "||" in self.nombre_sensivilizacion:
-            return self.nombre_sensivilizacion.split("||", 1)[0]
-        return self.nombre_sensivilizacion
+        if "||" in self.nombre_sensibilizacion:
+            return self.nombre_sensibilizacion.split("||", 1)[0]
+        return self.nombre_sensibilizacion
 
     @property
     def facilitador_real(self):
-        if "||" in self.nombre_sensivilizacion:
-            return self.nombre_sensivilizacion.split("||", 1)[1]
+        if "||" in self.nombre_sensibilizacion:
+            return self.nombre_sensibilizacion.split("||", 1)[1]
         return "No asignado"
 
     @classmethod
@@ -171,7 +197,7 @@ class SensibilizacionActiva(db.Model):
                 'nombre_comunidad': comunidad.nombre_comunidad,
                 'fecha_actividad': actividad.fecha_actividad,
                 'id_actividad': sensibilizacion.id_actividad,
-                'id_nivel': actividad.id_nivel,
+                'id_nivel': sensibilizacion.id_nivel or actividad.id_nivel,
                 'id_comunidad': actividad.id_comunidad
             })
         return sensibilizaciones_procesadas

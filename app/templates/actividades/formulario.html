@@ -1,24 +1,27 @@
 {% extends 'base.html' %}
 
-{% block title %}Nueva Actividad - ONCC{% endblock %}
+{% block title %}{% if actividad_obj %}Editar{% else %}Nueva{% endif %} Actividad - ONCC{% endblock %}
 
 {% block content %}
 <div class="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
     
     <div class="flex items-center justify-between mb-2">
         <div>
-            <h1 class="text-2xl font-bold dark:text-white text-gray-800">Reporte Oficial de Actividad</h1>
+            <h1 class="text-2xl font-bold dark:text-white text-gray-800">
+                {% if actividad_obj %}Modificar Reporte de Actividad{% else %}Reporte Oficial de Actividad{% endif %}
+            </h1>
             <p class="text-sm dark:text-gray-400 text-gray-500">Complete todos los parámetros mandatorios para la auditoría estadística regional</p>
         </div>
-        <a href="{{ url_for('actividad.index') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white transition-colors flex items-center text-sm font-medium">
+        <a href="{{ url_for('monitoreo.actividades_index') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white transition-colors flex items-center text-sm font-medium">
             <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i> Volver
         </a>
     </div>
 
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-        <form method="POST" action="{{ url_for('actividad.nueva') }}" enctype="multipart/form-data" class="p-8 space-y-8">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <form method="POST" action="{% if actividad_obj %}{{ url_for('monitoreo.editar', actividad_id=actividad_obj.id_actividad) }}{% else %}{{ url_for('monitoreo.nueva') }}{% endif %}" enctype="multipart/form-data" class="p-8 space-y-8">
+            {{ form.hidden_tag() }}
             
+            <!-- 1. DATOS GENERALES -->
             <div class="space-y-4">
                 <h3 class="text-sm font-bold uppercase tracking-wide flex items-center text-green-700 dark:text-green-400 border-b border-gray-100 dark:border-gray-700 pb-2">
                     <i data-lucide="activity" class="mr-2 w-4 h-4"></i> 1. Datos Generales de la Jornada
@@ -26,15 +29,15 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Nombre de la Actividad</label>
-                        <input type="text" name="actividad" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: Taller de sensibilización comunitaria" required>
+                        <!-- 🌟 SE CAMBIA A nombre_formulario PARA EVITAR EL ERROR DE PROPERTY SETTER -->
+                        <input type="text" name="actividad" value="{{ actividad_obj.nombre_formulario if actividad_obj and actividad_obj.nombre_formulario else '' }}" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none" placeholder="Ej: Taller de sensibilización comunitaria" required>
                     </div>
                     <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Área de Acción</label>
-                        <select name="area" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
-                            <option value="Monitoreo y seguridad">Monitoreo y seguridad</option>
-                            <option value="Investigación">Investigación</option>
-                            <option value="Divulgación">Divulgación</option>
-                            <option value="Formación y sensibilización">Formación y sensibilización</option>
+                        <select name="area" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none">
+                            <option value="MONITOREO" {% if actividad_obj and actividad_obj.tipo_actividad == 'MONITOREO' %}selected{% endif %}>Monitoreo y seguridad</option>
+                            <option value="FORMACION" {% if actividad_obj and actividad_obj.tipo_actividad == 'FORMACION' %}selected{% endif %}>Formación y capacitaciones</option>
+                            <option value="SENSIBILIZACION" {% if actividad_obj and actividad_obj.tipo_actividad == 'SENSIBILIZACION' %}selected{% endif %}>Sensibilización comunitaria</option>
                         </select>
                     </div>
                 </div>
@@ -42,53 +45,79 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estatus Operativo</label>
-                        <select name="estado" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
-                            <option value="Planificada">Planificada</option>
-                            <option value="En proceso">En proceso</option>
-                            <option value="Completado">Completado</option>
-                            <option value="Suspendida">Suspendida</option>
+                        <select name="estado_actividad" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none">
+                            <option value="Planificada" {% if actividad_obj and actividad_obj.estado == 'Planificada' %}selected{% endif %}>Planificada</option>
+                            <option value="En proceso" {% if actividad_obj and actividad_obj.estado == 'En proceso' %}selected{% endif %}>En proceso</option>
+                            <option value="Completado" {% if actividad_obj and actividad_obj.estado == 'Completado' %}selected{% endif %}>Completado</option>
+                            <option value="Suspendida" {% if actividad_obj and actividad_obj.estado == 'Suspendida' %}selected{% endif %}>Suspendida</option>
                         </select>
                     </div>
                     <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Técnico Responsable</label>
-                        <select name="responsable" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
-                            <option value="" disabled selected>Seleccione el analista...</option>
-                            {% for t in tecnicos_disponibles %}
-                                <option value="{{ t.nombre_usuario }}">{{ t.nombre_usuario }}</option>
-                            {% endfor %}
-                        </select>
+                        {{ form.tecnico_responsable(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none') }}
                     </div>
                     <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Fecha de Ejecución</label>
-                        <input type="date" name="fecha" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required>
+                        <input type="date" name="fecha" value="{{ actividad_obj.fecha_actividad.strftime('%Y-%m-%d') if actividad_obj and actividad_obj.fecha_actividad else '' }}" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none" required>
                     </div>
                 </div>
             </div>
 
+            <!-- 2. DESPLIEGUE TERRITORIAL Y CATÁLOGOS -->
             <div class="space-y-4">
                 <h3 class="text-sm font-bold uppercase tracking-wide flex items-center text-green-700 dark:text-green-400 border-b border-gray-100 dark:border-gray-700 pb-2">
-                    <i data-lucide="map-pin" class="mr-2 w-4 h-4"></i> 2. Despliegue Territorial
+                    <i data-lucide="map-pin" class="mr-2 w-4 h-4"></i> 2. Despliegue Territorial y Parametrización
                 </h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-1">
-                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estado</label>
-                        <select name="estado_geo" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
-                            <option value="Lara">Lara</option>
-                            <option value="Yaracuy">Yaracuy</option>
-                            <option value="Falcón">Falcón</option>
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Comunidad (Catálogo ONCC)</label>
+                        <select name="id_comunidad" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none">
+                            {% if comunidades %}
+                                {% for com in comunidades %}
+                                    <option value="{{ com.id_comunidad }}" {% if actividad_obj and actividad_obj.id_comunidad == com.id_comunidad %}selected{% endif %}>{{ com.nombre_comunidad }}</option>
+                                {% endfor %}
+                            {% else %}
+                                <option value="1">Comunidad Central Base</option>
+                            {% endif %}
+                        </select>
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Nivel Estratégico (Catálogo ONCC)</label>
+                        <select name="id_nivel" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none">
+                            {% if niveles %}
+                                {% for niv in niveles %}
+                                    <option value="{{ niv.id_nivel }}" {% if actividad_obj and actividad_obj.id_nivel == niv.id_nivel %}selected{% endif %}>{{ niv.nombre_nivel }}</option>
+                                {% endfor %}
+                            {% else %}
+                                <option value="1">Nivel Regional Base</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estado Geográfico</label>
+                        <select name="estado_geo" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none">
+                            <option value="Lara" {% if actividad_obj and actividad_obj.estado_geo == 'Lara' %}selected{% endif %}>Lara</option>
+                            <option value="Yaracuy" {% if actividad_obj and actividad_obj.estado_geo == 'Yaracuy' %}selected{% endif %}>Yaracuy</option>
+                            <option value="Falcón" {% if actividad_obj and actividad_obj.estado_geo == 'Falcón' %}selected{% endif %}>Falcón</option>
                         </select>
                     </div>
                     <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Municipio</label>
-                        <input type="text" name="municipio" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: Jiménez">
+                        <input type="text" name="municipio" value="{{ actividad_obj.municipio if actividad_obj and actividad_obj.municipio else 'Iribarren' }}" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none" placeholder="Ej: Iribarren">
                     </div>
                     <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Parroquia / Sector</label>
-                        <input type="text" name="parroquia" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: Juan de Villegas">
+                        <input type="text" name="parroquia" value="{{ actividad_obj.parroquia if actividad_obj and actividad_obj.parroquia else 'Catedral' }}" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none" placeholder="Ej: Catedral">
                     </div>
                 </div>
             </div>
 
+            <!-- 3. DESCRIPCIÓN Y ALCANCE -->
             <div class="space-y-4">
                 <h3 class="text-sm font-bold uppercase tracking-wide flex items-center text-green-700 dark:text-green-400 border-b border-gray-100 dark:border-gray-700 pb-2">
                     <i data-lucide="file-text" class="mr-2 w-4 h-4"></i> 3. Descripción y Alcance
@@ -96,17 +125,18 @@
                 <div class="space-y-4">
                     <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Resumen Detallado</label>
-                        <textarea name="descripcion" rows="3" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Describa los hitos y hallazgos principales observados en campo..."></textarea>
+                        <textarea name="descripcion" rows="3" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none" placeholder="Describa los hitos y hallazgos principales observados en campo...">{{ actividad_obj.descripcion if actividad_obj and actividad_obj.descripcion else '' }}</textarea>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="space-y-1">
-                            <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Población Beneficiada (NOT NULL)</label>
-                            <input type="number" name="poblacion" min="0" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Cantidad total de personas impactadas">
+                            <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Población Beneficiada</label>
+                            <input type="number" name="poblacion" value="{{ actividad_obj.poblacion if actividad_obj and actividad_obj.poblacion else '0' }}" min="0" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none" placeholder="Cantidad total de personas impactadas">
                         </div>
                     </div>
                 </div>
             </div>
 
+            <!-- 4. SOPORTES Y EVIDENCIAS -->
             <div class="space-y-4">
                 <h3 class="text-sm font-bold uppercase tracking-wide flex items-center text-green-700 dark:text-green-400 border-b border-gray-100 dark:border-gray-700 pb-2">
                     <i data-lucide="paperclip" class="mr-2 w-4 h-4"></i> 4. Soportes, Acuerdos y Archivos Vinculados
@@ -117,41 +147,55 @@
                             <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400 flex items-center">
                                 <i data-lucide="file-up" class="mr-1.5 w-4 h-4 text-green-600 dark:text-green-400"></i> Cargar Archivo Minuta (PDF)
                             </label>
-                            <input type="file" name="minuta_archivo" accept=".pdf" 
-                                   class="block w-full text-xs text-gray-500 dark:text-gray-400
-                                   file:mr-4 file:py-2 file:px-4
-                                   file:rounded-md file:border-0
-                                   file:text-xs file:font-bold
-                                   file:bg-green-50 file:text-green-700
-                                   hover:file:bg-green-100
-                                   dark:file:bg-green-900/30 dark:file:text-green-400 transition-colors">
+                            <input type="file" name="minuta_archivo" accept=".pdf" class="block w-full text-xs text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-green-50 file:text-green-700 dark:file:bg-green-900/30 dark:file:text-green-400">
+                            {% if actividad_obj and actividad_obj.minuta_archivo %}
+                                <a href="{{ url_for('static', filename=actividad_obj.minuta_archivo) }}" target="_blank" class="inline-flex items-center text-[11px] text-green-600 dark:text-green-400 mt-2 font-bold hover:underline">
+                                    <i data-lucide="file-text" class="w-3.5 h-3.5 mr-1"></i> Abrir Minuta PDF Actual
+                                </a>
+                            {% endif %}
                         </div>
                         
                         <div class="space-y-1">
-                            <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Acuerdos Institucionales Alcanzados</label>
-                            <textarea name="acuerdos" rows="3" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: Compromiso comunitario para resguardo física de estación climática..."></textarea>
+                            <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Acuerdos Alcanzados</label>
+                            <textarea name="acuerdos" rows="3" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none" placeholder="Ej: Compromiso comunitario para resguardo de estación climática...">{{ actividad_obj.acuerdos if actividad_obj and actividad_obj.acuerdos else '' }}</textarea>
                         </div>
                     </div>
 
                     <div class="p-5 rounded-xl border bg-gray-50/50 border-gray-100 dark:bg-gray-900/20 dark:border-gray-700 flex flex-col justify-between">
                         <div class="space-y-1">
                             <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400 flex items-center mb-2">
-                                <i data-lucide="camera" class="mr-1.5 w-4 h-4 text-blue-600 dark:text-blue-400"></i> Registro Fotográfico de Evidencias
+                                <i data-lucide="camera" class="mr-1.5 w-4 h-4 text-blue-600 dark:text-blue-400"></i> Evidencias Fotográficas
                             </label>
                             <div class="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-5 hover:bg-gray-100 dark:hover:bg-gray-700/40 transition-colors cursor-pointer relative group">
                                 <i data-lucide="upload-cloud" class="w-8 h-8 text-gray-400 mb-2 group-hover:text-green-500 transition-colors"></i>
-                                <p class="text-xs font-semibold text-gray-600 dark:text-gray-300 text-center">Seleccionar Imágenes de Campo</p>
-                                <p class="text-[10px] text-gray-400 mt-1 text-center">Formatos soportados: JPG, PNG (Máx. 4 archivos)</p>
-                                <input type="file" name="fotos_archivos" accept="image/*" multiple class="absolute inset-0 opacity-0 cursor-pointer">
+                                <p id="texto_fotos_estado" class="text-xs font-semibold text-gray-600 dark:text-gray-300 text-center">Seleccionar Imágenes</p>
+                                <p class="text-[10px] text-gray-400 mt-1 text-center">Formatos soportados: JPG, PNG</p>
+                                <input type="file" id="input_fotos" name="fotos_archivos" accept="image/*" multiple class="absolute inset-0 opacity-0 cursor-pointer" onchange="previsualizarFotos(this)">
                             </div>
+                            
+                            <!-- CONTENEDOR DE PREVISUALIZACIÓN DE NUEVAS FOTOS -->
+                            <div id="vista_previa_fotos" class="grid grid-cols-4 gap-2 pt-3 hidden"></div>
+
+                            <!-- MOSTRAR FOTOS PREVIAS DE LA BASE DE DATOS -->
+                            {% if actividad_obj and actividad_obj.fotos_archivos %}
+                                <div class="pt-3 border-t dark:border-gray-700 mt-3">
+                                    <p class="text-[10px] text-gray-500 font-bold uppercase mb-2">Fotos cargadas previamente:</p>
+                                    <div class="flex flex-wrap gap-1.5">
+                                        {% for foto in actividad_obj.fotos_archivos.split(', ') %}
+                                            <a href="{{ url_for('static', filename=foto) }}" target="_blank" title="Ver foto">
+                                                <img src="{{ url_for('static', filename=foto) }}" class="w-10 h-10 object-cover rounded border hover:scale-110 transition-transform shadow-sm">
+                                            </a>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
                         </div>
-                        <p class="text-[10px] text-gray-400 dark:text-gray-500 italic mt-3">* Las evidencias visuales son mandatorias para la validación automática del hito regional.</p>
                     </div>
                 </div>
             </div>
 
             <div class="flex justify-end pt-6 border-t border-gray-100 dark:border-gray-700">
-                <a href="{{ url_for('actividad.index') }}" class="mr-3 px-6 py-2 border rounded-md text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Cancelar</a>
+                <a href="{{ url_for('monitoreo.actividades_index') }}" class="mr-3 px-6 py-2 border rounded-md text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Cancelar</a>
                 <button type="submit" class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md text-sm shadow-sm transition-colors border border-transparent">
                     Guardar Actividad en Sistema
                 </button>
@@ -159,4 +203,31 @@
         </form>
     </div>
 </div>
+
+<script>
+function previsualizarFotos(input) {
+    const contenedor = document.getElementById('vista_previa_fotos');
+    const textoEstado = document.getElementById('texto_fotos_estado');
+    contenedor.innerHTML = '';
+
+    if (input.files && input.files.length > 0) {
+        contenedor.classList.remove('hidden');
+        textoEstado.textContent = `📷 ${input.files.length} imagen(es) seleccionada(s)`;
+        
+        Array.from(input.files).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.className = 'w-14 h-14 object-cover rounded-md border border-gray-200 shadow-sm';
+                contenedor.appendChild(img);
+            }
+            reader.readAsDataURL(file);
+        });
+    } else {
+        contenedor.classList.add('hidden');
+        textoEstado.textContent = 'Seleccionar Imágenes';
+    }
+}
+</script>
 {% endblock %}

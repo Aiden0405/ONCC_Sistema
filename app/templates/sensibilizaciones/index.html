@@ -26,65 +26,43 @@
     {% endif %} 
   {% endwith %}
 
-  <!-- FORMULARIO DE REGISTRO DIRECTO ESTILO FORMACIONES -->
+  <!-- FORMULARIO DE REGISTRO SUPERIOR DIRECTO -->
   <div class="rounded-xl shadow-sm border p-6 bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
     <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400 mb-4 flex items-center">
       <i data-lucide="megaphone" class="w-4 h-4 mr-2"></i> Registrar Nueva Campaña de Sensibilización
     </h3>
 
-    <form method="POST" action="{{ url_for('comunitario.sensibilizaciones_index') }}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
-      {{ form.csrf_token }}
+    <form method="POST" action="{{ url_for('sensibilizacion.nuevo') if 'sensibilizacion.nuevo' in url_map else url_for('comunitario.sensibilizacion_nuevo') }}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+      {{ form.hidden_tag() }}
 
       <div class="space-y-1">
         <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Técnico / Facilitador</label>
-        <input
-          type="text"
-          name="facilitador"
-          placeholder="Ej: Ing. María Pérez"
-          required
-          class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
-        />
+        {{ form.facilitador(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none', placeholder='Ej: Ing. María Pérez') }}
+        {% for error in form.facilitador.errors %}<p class="text-xs text-red-600 mt-1">{{ error }}</p>{% endfor %}
       </div>
 
       <div class="space-y-1">
-        <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Tema de Sensibilización</label>
-        <input
-          type="text"
-          name="nombre_sensibilizacion"
-          placeholder="Ej: Gestión de Desechos"
-          required
-          class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
-        />
+        <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Tema / Campaña</label>
+        {{ form.nombre_sensibilizacion(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none', placeholder='Ej: Gestión de Desechos Sólidos') }}
+        {% for error in form.nombre_sensibilizacion.errors %}<p class="text-xs text-red-600 mt-1">{{ error }}</p>{% endfor %}
       </div>
 
       <div class="space-y-1">
         <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Fecha Ejecución</label>
-        <input
-          type="date"
-          name="fecha"
-          required
-          class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
-        />
+        {{ form.fecha_actividad(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none') }}
+        {% for error in form.fecha_actividad.errors %}<p class="text-xs text-red-600 mt-1">{{ error }}</p>{% endfor %}
       </div>
 
       <div class="space-y-1">
         <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Nivel de Instrucción</label>
-        <select name="id_nivel" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
-          <option value="" disabled selected>Seleccione nivel...</option>
-          {% for id, nombre in form.id_nivel.choices %}
-          <option value="{{ id }}">{{ nombre }}</option>
-          {% endfor %}
-        </select>
+        {{ form.id_nivel(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none') }}
+        {% for error in form.id_nivel.errors %}<p class="text-xs text-red-600 mt-1">{{ error }}</p>{% endfor %}
       </div>
 
       <div class="space-y-1">
         <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Comunidad / Territorio</label>
-        <select name="id_comunidad" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
-          <option value="" disabled selected>Seleccione comunidad...</option>
-          {% for id, nombre in form.id_comunidad.choices %}
-          <option value="{{ id }}">{{ nombre }}</option>
-          {% endfor %}
-        </select>
+        {{ form.id_comunidad(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none') }}
+        {% for error in form.id_comunidad.errors %}<p class="text-xs text-red-600 mt-1">{{ error }}</p>{% endfor %}
       </div>
 
       <div class="md:col-span-2 lg:col-span-5 flex justify-end pt-2">
@@ -125,28 +103,38 @@
           {% for item in sensibilizaciones %}
           <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
             <td class="px-6 py-4 font-mono text-xs text-gray-400">
-              {{ item.id_sensibilizacion }}
+              #{{ item.id_sensibilizacion }}
             </td>
             <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-100">
-              {{ item.campana }}
+              {{ item.campana if item.campana is defined else item.nombre_sensibilizacion }}
             </td>
             <td class="px-6 py-4 text-gray-600 dark:text-gray-400">
-              {{ item.facilitador }}
+              {{ item.facilitador if item.facilitador is defined else (item.nombre_facilitador if item.nombre_facilitador is defined else 'No asignado') }}
             </td>
             <td class="px-6 py-4 text-gray-600 dark:text-gray-400 font-medium">
-              {{ item.nombre_comunidad }}
+              {{ item.nombre_comunidad if item.nombre_comunidad is defined else (item.actividad.comunidad.nombre_comunidad if item.actividad and item.actividad.comunidad else 'Comunidad General') }}
             </td>
             <td class="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-400">
-              {{ item.fecha_actividad.strftime('%d/%m/%Y') if item.fecha_actividad else 'N/D' }}
+              {{ item.fecha_actividad.strftime('%d/%m/%Y') if item.fecha_actividad else (item.fecha_formateada if item.fecha_formateada is defined else 'N/D') }}
             </td>
 
             <td class="px-6 py-4 text-center space-x-3">
               {% if current_user.id_rol in [1, 2] %}
-              <button onclick="abrirModalEdicion('{{ item.id_sensibilizacion }}', '{{ item.campana }}', '{{ item.facilitador }}', '{{ item.fecha_actividad }}', '{{ item.id_comunidad }}', '{{ item.id_nivel }}')" class="text-blue-600 hover:text-blue-800 transition-colors" title="Editar">
+              <!-- BOTÓN EDITAR CON DATA ATTRIBUTES SEGUROS -->
+              <button type="button"
+                      onclick="abrirModalEdicion(this)"
+                      data-id="{{ item.id_sensibilizacion }}"
+                      data-campana="{{ item.campana if item.campana is defined else item.nombre_sensibilizacion }}"
+                      data-facilitador="{{ item.facilitador if item.facilitador is defined else (item.nombre_facilitador if item.nombre_facilitador is defined else '') }}"
+                      data-fecha="{% if item.fecha_actividad_cruda is defined %}{{ item.fecha_actividad_cruda }}{% elif item.fecha_actividad %}{{ item.fecha_actividad.strftime('%Y-%m-%d') if item.fecha_actividad is not string else item.fecha_actividad }}{% else %}{% endif %}"
+                      data-comunidad="{% if item.id_comunidad is defined %}{{ item.id_comunidad }}{% elif item.actividad and item.actividad.id_comunidad %}{{ item.actividad.id_comunidad }}{% else %}{% endif %}"
+                      data-nivel="{{ item.id_nivel }}"
+                      class="text-blue-600 hover:text-blue-800 transition-colors" 
+                      title="Editar">
                 <i data-lucide="edit" class="w-4 h-4 inline"></i>
               </button>
 
-              <form action="{{ url_for('comunitario.sensibilizacion_eliminar', id_sensibilizacion=item.id_sensibilizacion) }}" method="POST" class="inline" onsubmit="return confirm('¿Estás completamente segura de eliminar esta sensibilización? Esta acción borrará la actividad asociada.');">
+              <form action="{{ url_for('sensibilizacion.eliminar', id_sensibilizacion=item.id_sensibilizacion) if 'sensibilizacion.eliminar' in url_map else url_for('comunitario.sensibilizacion_eliminar', id_sensibilizacion=item.id_sensibilizacion) }}" method="POST" class="inline" onsubmit="return confirm('¿Estás completamente seguro de eliminar esta sensibilización? Esta acción borrará la actividad asociada.');">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                 <button type="submit" class="text-red-600 hover:text-red-800 transition-colors" title="Eliminar">
                   <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
@@ -190,31 +178,31 @@
 
       <div class="space-y-1">
         <label class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Técnico / Facilitador</label>
-        <input type="text" id="edit_facilitador" name="edit_facilitador" required class="w-full border rounded-md p-2 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white outline-none" />
+        <input type="text" id="edit_facilitador" name="facilitador" required class="w-full border rounded-md p-2 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white outline-none" />
       </div>
 
       <div class="space-y-1">
         <label class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Tema de la Sensibilización</label>
-        <input type="text" id="edit_nombre_sensibilizacion" name="edit_nombre_sensibilizacion" required class="w-full border rounded-md p-2 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white outline-none" />
+        <input type="text" id="edit_nombre_sensibilizacion" name="nombre_sensibilizacion" required class="w-full border rounded-md p-2 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white outline-none" />
       </div>
 
       <div class="space-y-1">
         <label class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Fecha Ejecución</label>
-        <input type="date" id="edit_fecha" name="edit_fecha" required class="w-full border rounded-md p-2 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white outline-none" />
+        <input type="date" id="edit_fecha" name="fecha_actividad" required class="w-full border rounded-md p-2 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white outline-none" />
       </div>
 
       <div class="space-y-1">
         <label class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Nivel de Instrucción</label>
-        <select id="edit_id_nivel" name="edit_id_nivel" required class="w-full border rounded-md p-2 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white outline-none">
+        <select id="edit_id_nivel" name="id_nivel" required class="w-full border rounded-md p-2 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white outline-none">
           {% for id, nombre in form.id_nivel.choices %}
-          <option value="{{ id }}">{{ id }}</option>
+          <option value="{{ id }}">{{ nombre }}</option>
           {% endfor %}
         </select>
       </div>
 
       <div class="space-y-1">
         <label class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Comunidad / Territorio</label>
-        <select id="edit_id_comunidad" name="edit_id_comunidad" required class="w-full border rounded-md p-2 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white outline-none">
+        <select id="edit_id_comunidad" name="id_comunidad" required class="w-full border rounded-md p-2 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white outline-none">
           {% for id, nombre in form.id_comunidad.choices %}
           <option value="{{ id }}">{{ nombre }}</option>
           {% endfor %}
@@ -234,19 +222,18 @@
 </div>
 
 <script>
-  function abrirModalEdicion(id, campana, facilitador, fecha, idComunidad, idNivel) {
-    // Al usar el alias "sensibilizacion_editar as sensibilizacion_nuevo" en __init__.py,
-    // garantizamos que apunte a la lógica de edición correspondiente
-    document.getElementById("formEditar").action = "/sensibilizaciones/nuevo/" + id;
+  function abrirModalEdicion(boton) {
+    const id = boton.dataset.id;
+    document.getElementById("formEditar").action = "{{ url_for('sensibilizacion.editar', id_sensibilizacion=0) if 'sensibilizacion.editar' in url_map else (url_for('comunitario.sensibilizacion_editar', id_sensibilizacion=0) if 'comunitario.sensibilizacion_editar' in url_map else '/sensibilizaciones/editar/0') }}".replace('0', id);
 
-    // Cargamos la data procesada en los inputs correspondientes del modal
-    document.getElementById('edit_nombre_sensibilizacion').value = campana;
-    document.getElementById('edit_facilitador').value = facilitador;
-    document.getElementById('edit_fecha').value = fecha;
-    document.getElementById('edit_id_comunidad').value = idComunidad;
-    document.getElementById('edit_id_nivel').value = idNivel;
+    // Cargar datos limpios desde los data attributes
+    document.getElementById('edit_nombre_sensibilizacion').value = boton.dataset.campana || '';
+    document.getElementById('edit_facilitador').value = boton.dataset.facilitador || '';
+    document.getElementById('edit_fecha').value = boton.dataset.fecha || '';
+    document.getElementById('edit_id_comunidad').value = boton.dataset.comunidad || '';
+    document.getElementById('edit_id_nivel').value = boton.dataset.nivel || '';
 
-    // Removemos la clase 'hidden' para renderizar el modal
+    // Renderizar modal
     document.getElementById("modalEdicion").classList.remove("hidden");
   }
 

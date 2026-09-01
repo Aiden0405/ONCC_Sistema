@@ -1,66 +1,91 @@
 {% extends 'public/base_public.html' %}
 
-{% block title %}{{ publicacion.titulo }} - ONCC{% endblock %}
+{% block title %}{{ publicacion.titulo_publicacion if publicacion.titulo_publicacion else publicacion.titulo }} - ONCC{% endblock %}
 
 {% block content %}
 <div class="max-w-3xl mx-auto space-y-6 py-6 animate-in fade-in duration-500">
+    
+    <!-- ENCABEZADO Y METADATOS -->
     <div class="space-y-3">
         <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-700">
             <i data-lucide="file-text" class="w-4 h-4"></i>
             <span>Boletín Institucional / {{ publicacion.tipo }}</span>
         </div>
         <h1 class="text-3xl md:text-4xl font-black text-slate-900 leading-tight">
-            {{ publicacion.titulo }}
+            {{ publicacion.titulo_publicacion if publicacion.titulo_publicacion else publicacion.titulo }}
         </h1>
-        <p class="text-xs text-slate-500 font-mono">
-            Publicado el: {{ publicacion.publicado_en.strftime('%Y-%m-%d') if publicacion.publicado_en else 'Reciente' }}
-        </p>
-    </div>
-
-    <div class="w-full h-64 rounded-2xl flex flex-col items-center justify-center space-y-2 shadow-inner border
-        {% if publicacion.prioridad and publicacion.prioridad >= 8 %} bg-red-950 text-red-200 border-red-900
-        {% elif publicacion.prioridad and publicacion.prioridad >= 5 %} bg-orange-900 text-orange-100 border-orange-800
-        {% else %} bg-emerald-50 text-emerald-700/40 border-emerald-100 {% endif %}">
-        
-        {% if publicacion.prioridad and publicacion.prioridad >= 8 %}
-            <i data-lucide="alert-octagon" class="w-16 h-16 text-red-500 animate-pulse"></i>
-            <span class="text-xs font-black uppercase tracking-[0.2em] text-red-400">ALERTA CLIMÁTICA ACTIVA EN EL TERRITORIO</span>
-        {% else %}
-            <i data-lucide="layers" class="w-16 h-16"></i>
-            <span class="text-xs font-medium uppercase tracking-[0.2em] {% if publicacion.prioridad and publicacion.prioridad >= 5 %} text-orange-300 {% else %} text-emerald-800/60 {% endif %}">Observatorio Nacional de la Crisis Climática</span>
-        {% endif %}
-    </div>
-
-    <div class="bg-white rounded-2xl border border-gray-200 p-6 md:p-8 shadow-sm space-y-6">
-        {% if publicacion.resumen %}
-        <div class="p-4 rounded-xl bg-slate-50 border-l-4 border-emerald-600 italic text-slate-700 text-sm leading-relaxed">
-            <strong>Resumen Ejecutivo:</strong> {{ publicacion.resumen }}
-        </div>
-        {% endif %}
-
-        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 text-sm leading-relaxed space-y-2">
-            <p class="font-bold text-slate-900">Contenido publicado</p>
-            <p>Este detalle muestra el texto oficial de divulgación aprobado para el portal público. No publica fotos de actividad; si existe una actividad vinculada, se muestra como referencia de origen operativo.</p>
-        </div>
-
-        <div class="p-4 rounded-xl border border-slate-200 bg-white text-slate-700 text-sm leading-relaxed space-y-2">
-            <p class="font-bold text-slate-900">Actividad vinculada</p>
-            {% if actividad_vinculada %}
-            <p><strong>ID:</strong> {{ actividad_vinculada.id_actividad }}</p>
-            <p><strong>Actividad:</strong> {{ actividad_vinculada.tipo_actividad }}</p>
-            <p><strong>Fecha:</strong> {{ actividad_vinculada.fecha_actividad.strftime('%Y-%m-%d') if actividad_vinculada.fecha_actividad else 'No disponible' }}</p>
-            {% else %}
-            <p>No se encontró una actividad asociada a esta publicación.</p>
+        <div class="flex items-center gap-4 text-xs text-slate-500 font-mono">
+            <span>Publicado: {{ publicacion.publicado_en.strftime('%d/%m/%Y') if publicacion.publicado_en else (publicacion.fecha_publicacion.strftime('%d/%m/%Y') if publicacion.fecha_publicacion else 'Reciente') }}</span>
+            {% if publicacion.prioridad and publicacion.prioridad >= 8 %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-red-100 text-red-800 animate-pulse border border-red-300">
+                    ALERTA NIVEL {{ publicacion.prioridad }}
+                </span>
             {% endif %}
         </div>
-
-        <div class="text-slate-800 text-sm leading-relaxed whitespace-pre-line font-normal">
-            {{ publicacion.contenido }}
-        </div>
     </div>
 
+    <!-- IMAGEN DE PORTADA (FOTO DE CAMPO O BANNER INSTITUCIONAL) -->
+    {% if actividad_vinculada and actividad_vinculada.imagenes_asociadas and actividad_vinculada.imagenes_asociadas|length > 0 %}
+        <div class="w-full h-72 md:h-96 rounded-2xl overflow-hidden shadow-sm border border-gray-200">
+            <img src="{{ url_for('static', filename=actividad_vinculada.imagenes_asociadas[0].imagen.url_imagen) }}" 
+                 alt="{{ publicacion.titulo }}" 
+                 class="w-full h-full object-cover">
+        </div>
+    {% else %}
+        <div class="w-full h-56 rounded-2xl flex flex-col items-center justify-center space-y-2 shadow-inner border
+            {% if publicacion.prioridad and publicacion.prioridad >= 8 %} bg-red-950 text-red-200 border-red-900
+            {% elif publicacion.prioridad and publicacion.prioridad >= 5 %} bg-orange-900 text-orange-100 border-orange-800
+            {% else %} bg-emerald-900 text-emerald-100 border-emerald-800 {% endif %}">
+            
+            {% if publicacion.prioridad and publicacion.prioridad >= 8 %}
+                <i data-lucide="alert-octagon" class="w-12 h-12 text-red-400 animate-pulse"></i>
+                <span class="text-xs font-black uppercase tracking-[0.2em] text-red-300">Alerta Territorial Activa</span>
+            {% else %}
+                <i data-lucide="layers" class="w-12 h-12 text-emerald-400"></i>
+                <span class="text-xs font-medium uppercase tracking-[0.2em] text-emerald-200/80">Observatorio Nacional de la Crisis Climática</span>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <!-- CONTENIDO EDITORIAL -->
+    <div class="bg-white rounded-2xl border border-gray-200 p-6 md:p-8 shadow-sm space-y-6">
+        
+        <!-- RESUMEN EJECUTIVO -->
+        {% if publicacion.resumen %}
+        <div class="p-4 rounded-xl bg-slate-50 border-l-4 border-emerald-600 text-slate-700 text-sm leading-relaxed">
+            <strong class="text-slate-900 block mb-1">Resumen Ejecutivo:</strong>
+            {{ publicacion.resumen }}
+        </div>
+        {% endif %}
+
+        <!-- CUERPO PRINCIPAL DEL ARTÍCULO -->
+        <div class="text-slate-800 text-base leading-relaxed whitespace-pre-line font-normal">
+            {{ publicacion.contenido }}
+        </div>
+
+        <!-- FICHA DE AVAL TERRITORIAL (FORMATO INSTITUCIONAL LIMPIO) -->
+        {% if actividad_vinculada %}
+        <div class="mt-8 pt-6 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-slate-600 bg-slate-50 p-4 rounded-xl">
+            <div>
+                <p class="font-bold text-slate-900 uppercase tracking-wider text-[10px] mb-1">Ámbito Territorial</p>
+                <p>{{ actividad_vinculada.comunidad.nombre_comunidad if actividad_vinculada.comunidad else 'Territorio Local' }}</p>
+                <p class="text-slate-400">
+                    {{ actividad_vinculada.comunidad.parroquia.nombre_parroquia if actividad_vinculada.comunidad and actividad_vinculada.comunidad.parroquia else 'Catedral' }}, 
+                    {{ actividad_vinculada.comunidad.parroquia.municipio.nombre_municipio if actividad_vinculada.comunidad and actividad_vinculada.comunidad.parroquia and actividad_vinculada.comunidad.parroquia.municipio else 'Iribarren' }}
+                </p>
+            </div>
+            <div>
+                <p class="font-bold text-slate-900 uppercase tracking-wider text-[10px] mb-1">Fecha del Levantamiento</p>
+                <p>{{ actividad_vinculada.fecha_actividad.strftime('%d de %B de %Y') if actividad_vinculada.fecha_actividad else 'Fecha no disponible' }}</p>
+                <p class="text-emerald-700 font-semibold mt-0.5">Operación de Campo Verificada</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- BOTÓN DE RETORNO -->
     <div class="pt-4 flex justify-start">
-        <a href="{{ url_for('core.home') }}" class="inline-flex items-center text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors">
+        <a href="{{ url_for('public.home') }}" class="inline-flex items-center text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors">
             <i data-lucide="arrow-left" class="w-4 h-4 mr-1.5"></i> Volver al inicio
         </a>
     </div>

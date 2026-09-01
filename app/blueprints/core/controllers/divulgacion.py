@@ -4,26 +4,21 @@ from datetime import datetime
 from flask import render_template, session, request, redirect, url_for, flash, abort
 from flask_login import login_required, current_user
 
-from app.blueprints.core.forms import PublicacionForm
+from app import db
+from app.blueprints.core.forms import PublicacionForm # IMPORTACIÓN CORREGIDA
 from app.services.notificacion import ServicioNotificacion
 from app.services.auditoria import registrar_accion
 from sqlalchemy.exc import OperationalError
 
-from app import db
 from app.blueprints.core import core_bp
-from app.models.actividad import Actividad
-from app.models.divulgacion import Publicacion
+from app.models.esquema_activo import ActividadActiva as Actividad
+from app.models.divulgacion import Divulgacion, Publicacion
 from app.models.geomatica import MapaRiesgo
 from app.models.visita_portal import VisitaPortal
 from app.utils.authorization import current_permission_names, current_role_id, has_permission, is_superuser
 
 
-# 🛠️ FUNCIÓN AUXILIAR DE SEGURIDAD DINÁMICA (RBAC) CON BYPASS JERÁRQUICO
 def verificar_permiso_dinamico(nombre_permiso):
-    """
-    Comprueba en PostgreSQL si el rol del usuario autenticado posee el permiso
-    solicitado, aplicando bypass inmediato para los roles del Core administrativo (1 y 2).
-    """
     if not current_user.is_authenticated:
         abort(403)
 
@@ -35,23 +30,49 @@ def verificar_permiso_dinamico(nombre_permiso):
         abort(403)
 
 
-def _construir_opciones_actividad():
-    actividades = Actividad.query.order_by(Actividad.id_actividad.desc()).limit(300).all()
-    return [(a.id_actividad, f"#{a.id_actividad} - {a.tipo_actividad}") for a in actividades]
+def _cargar_formulario_divulgacion(form):
+    actividades = Actividad.query.order_by(Actividad.id_actividad.desc()).all()
+    if actividades:
+        form.id_actividad.choices = [
+            (a.id_actividad, f"Actividad #{a.id_actividad} - {a.tipo_actividad} ({a.fecha_actividad})") 
+            for a in actividades
+        ]
+    else:
+        form.id_actividad.choices = [(0, "No hay actividades registradas en la BD")]
 
 
-def _preparar_formulario_publicacion(form, seleccionado=None):
-    form.id_divulgacion.choices = _construir_opciones_actividad()
+def _crear_cascada_divulgacion(form, usuario_id_actual, permisos_del_rol):
+    actividad_padre = Actividad.query.get_or_404(form.id_actividad.data)
 
-    if not form.id_divulgacion.choices:
-        return False
+    nueva_divulgacion = Divulgacion(
+        id_actividad=actividad_padre.id_actividad,
+        nombre_divulgacion=form.nombre_divulgacion.data,
+        descripcion_divulgacion=form.descripcion_divulgacion.data,
+        permiso_divulgacion=form.permiso_divulgacion.data,
+    )
+    db.session.add(nueva_divulgacion)
+    db.session.flush()
 
-    if seleccionado is not None:
-        ids = {opcion_id for opcion_id, _ in form.id_divulgacion.choices}
-        if seleccionado not in ids:
-            form.id_divulgacion.choices.append((seleccionado, f"#{seleccionado} - Actividad existente"))
+    pub = Publicacion(
+        tipo=form.tipo.data,
+        titulo_publicacion=form.titulo.data,
+        resumen=form.resumen.data,
+        contenido=form.contenido.data,
+        prioridad=form.prioridad.data if form.prioridad.data else 1,
+        id_usuario=usuario_id_actual,
+        id_divulgacion=nueva_divulgacion.id_divulgacion,
+        fecha_publicacion=actividad_padre.fecha_actividad,
+    )
 
-    return True
+    if 'aprobar_divulgaciones' in permisos_del_rol or is_superuser():
+        pub.estado_publicacion = form.estado.data
+        if form.estado.data == 'publicado':
+            pub.publicado_en = datetime.utcnow()
+    else:
+        pub.estado_publicacion = 'borrador'
+
+    db.session.add(pub)
+    return actividad_padre, nueva_divulgacion, pub
 
 
 def _registrar_visita_mensual():
@@ -64,7 +85,7 @@ def _registrar_visita_mensual():
 
 
 # ==============================================================================
-# VISTAS PÚBLICAS (Abiertas para todo el mundo)
+# VISTAS PÚBLICAS
 # ==============================================================================
 
 @core_bp.route('/')
@@ -81,10 +102,10 @@ def home():
         rol_id_actual = current_role_id()
         usuario_id_actual = int(current_user.get_id())
 
-        if rol_id_actual == 3:  # Técnico operativo
+        if rol_id_actual == 3:
             cant_borradores = Publicacion.query.filter_by(id_usuario=usuario_id_actual, estado_publicacion='borrador').count()
             cant_publicados = Publicacion.query.filter_by(id_usuario=usuario_id_actual, estado_publicacion='publicado').count()
-        else:  # Roles administrativos
+        else:
             cant_borradores = Publicacion.query.filter_by(estado_publicacion='borrador').count()
             cant_publicados = Publicacion.query.filter_by(estado_publicacion='publicado').count()
 
@@ -120,7 +141,7 @@ def home():
 @core_bp.route('/publicaciones/<int:pub_id>')
 def divulgacion_detalle(pub_id):
     publicacion = Publicacion.query.filter_by(id_publicacion=pub_id, estado_publicacion='publicado').first_or_404()
-    actividad_vinculada = Actividad.query.get(publicacion.id_divulgacion) if publicacion.id_divulgacion else None
+    actividad_vinculada = publicacion.divulgacion.actividad if publicacion.divulgacion and publicacion.divulgacion.actividad else None
     return render_template('public/divulgacion_detalle.html', publicacion=publicacion, actividad_vinculada=actividad_vinculada)
 
 
@@ -140,14 +161,13 @@ def contacto():
 
 
 # ==============================================================================
-# PANEL ADMINISTRATIVO (Gobernanza de Métricas Dinámica)
+# PANEL ADMINISTRATIVO
 # ==============================================================================
 
 @core_bp.route('/admin/divulgacion/')
 @login_required
 def divulgacion_admin_index():
     usuario_id_actual = int(current_user.get_id())
-    rol_id_actual = current_role_id()
     permisos_del_rol = current_permission_names()
 
     if 'aprobar_divulgaciones' not in permisos_del_rol and not is_superuser():
@@ -178,50 +198,35 @@ def divulgacion_admin_nuevo():
     verificar_permiso_dinamico('crear_divulgaciones')
     
     form = PublicacionForm()
-    hay_origenes = _preparar_formulario_publicacion(form)
-    form.id_divulgacion.choices = [('0', '-- Vista de prueba (Sin actividades) --')]
+    _cargar_formulario_divulgacion(form)
 
     if form.validate_on_submit():
         usuario_id_actual = int(current_user.get_id())
         permisos_del_rol = current_permission_names()
 
-        pub = Publicacion(
-            tipo=form.tipo.data,
-            titulo_publicacion=form.titulo.data,
-            resumen=form.resumen.data,
-            contenido=form.contenido.data,
-            prioridad=form.prioridad.data if form.prioridad.data else 1,
-            id_usuario=usuario_id_actual,
-            id_divulgacion=form.id_divulgacion.data
-        )
-        
-        if 'aprobar_divulgaciones' in permisos_del_rol or is_superuser():
-            pub.estado_publicacion = form.estado.data
-            if form.estado.data == 'publicado':
-                pub.publicado_en = datetime.utcnow()
-        else:
-            pub.estado_publicacion = 'borrador'
-
-        db.session.add(pub)
-        db.session.commit()
-
-        # 🔔 ALERTA DE NUEVO CONTENIDO / BORRADOR
         try:
-            from app.models.notificacion import Notificacion
-            alerta = Notificacion(
-                categoria='Sistema',
-                mensaje=f"Divulgación: El operador {current_user.nombre_usuario} registró un nuevo contenido bajo estatus '{pub.estado_publicacion}': '{pub.titulo_publicacion[:35]}...'.",
-                usuario_id=None,  # 🌟 Forzado global
-                leido=False       # 🌟 Evita fallos de NULL
-            )
-            db.session.add(alerta)
+            _, _, pub = _crear_cascada_divulgacion(form, usuario_id_actual, permisos_del_rol)
             db.session.commit()
-        except Exception:
-            db.session.rollback()
 
-        registrar_accion('Divulgación', pub.id_publicacion, 'Crear', current_user.nombre_usuario, detalle=f'Creado contenido: {pub.titulo_publicacion[:40]}...', estado_nuevo=pub.estado_publicacion)
-        flash('Publicación guardada de forma exitosa.', 'success')
-        return redirect(url_for('core.divulgacion_admin_index'))
+            try:
+                from app.models.notificacion import Notificacion
+                alerta = Notificacion(
+                    categoria='Sistema',
+                    mensaje=f"Divulgación: El operador {getattr(current_user, 'nombre_usuario', 'Usuario')} registró un nuevo contenido bajo estatus '{pub.estado_publicacion}': '{pub.titulo_publicacion[:35]}...'.",
+                    usuario_id=None,
+                    leido=False
+                )
+                db.session.add(alerta)
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+
+            registrar_accion('Divulgación', pub.id_publicacion, 'Crear', getattr(current_user, 'nombre_usuario', 'Usuario'), detalle=f'Creado contenido: {pub.titulo_publicacion[:40]}...', estado_nuevo=pub.estado_publicacion)
+            flash('Publicación guardada de forma exitosa.', 'success')
+            return redirect(url_for('core.divulgacion_admin_index'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error al registrar la divulgación: {str(e)}', 'error')
         
     return render_template('divulgacion/admin_form.html', form=form, es_edicion=False)
 
@@ -237,41 +242,51 @@ def divulgacion_admin_editar(pub_id):
     usuario_id_actual = int(current_user.get_id())
     
     if rol_id_actual not in (1, 2) and int(pub.id_usuario) != usuario_id_actual:
-        flash('Acceso denegado: No posee los privilegios para modificar esta publicación de otro operador.', 'error')
+        flash('Acceso denegado: No posee los privilegios para modificar esta publicación.', 'error')
         return redirect(url_for('core.divulgacion_admin_index'))
     
     if pub.estado_publicacion == 'publicado' and 'aprobar_divulgaciones' not in permisos_del_rol and not is_superuser():
-        flash('No puedes modificar una publicación que ya está activa en la web.', 'error')
+        flash('No puedes modificar una publicación activa en la web.', 'error')
         return redirect(url_for('core.divulgacion_admin_index'))
 
     form = PublicacionForm(obj=pub)
-    _preparar_formulario_publicacion(form, seleccionado=pub.id_divulgacion)
+    divulgacion = pub.divulgacion
+    _cargar_formulario_divulgacion(form)
+
+    if divulgacion:
+        form.id_actividad.data = divulgacion.id_actividad
+        form.nombre_divulgacion.data = divulgacion.nombre_divulgacion
+        form.descripcion_divulgacion.data = divulgacion.descripcion_divulgacion
+        form.permiso_divulgacion.data = divulgacion.permiso_divulgacion
+
     if form.validate_on_submit():
-        form.populate_obj(pub)
-        pub.actualizado_en = datetime.utcnow()
-        
-        if 'aprobar_divulgaciones' not in permisos_del_rol and not is_superuser():
-            pub.estado_publicacion = 'borrador'
-
-        db.session.commit()
-
-        # 🔔 ALERTA DE MODIFICACIÓN DE CONTENIDO
         try:
-            from app.models.notificacion import Notificacion
-            alerta = Notificacion(
-                categoria='Sistema',
-                mensaje=f"Divulgación: El reporte '{pub.titulo_publicacion[:35]}...' fue editado por el operador {current_user.nombre_usuario}.",
-                usuario_id=None,
-                leido=False
-            )
-            db.session.add(alerta)
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
+            if divulgacion:
+                divulgacion.id_actividad = form.id_actividad.data
+                divulgacion.nombre_divulgacion = form.nombre_divulgacion.data
+                divulgacion.descripcion_divulgacion = form.descripcion_divulgacion.data
+                divulgacion.permiso_divulgacion = form.permiso_divulgacion.data
 
-        registrar_accion('Divulgación', pub.id_publicacion, 'Modificar', current_user.nombre_usuario, detalle=f'Actualizado ID: {pub.id_publicacion}', estado_nuevo=pub.estado_publicacion)
-        flash('Publicación actualizada correctamente.', 'success')
-        return redirect(url_for('core.divulgacion_admin_index'))
+            pub.tipo = form.tipo.data
+            pub.titulo_publicacion = form.titulo.data
+            pub.resumen = form.resumen.data
+            pub.contenido = form.contenido.data
+            pub.prioridad = form.prioridad.data if form.prioridad.data else 1
+            pub.actualizado_en = datetime.utcnow()
+
+            if 'aprobar_divulgaciones' not in permisos_del_rol and not is_superuser():
+                pub.estado_publicacion = 'borrador'
+            else:
+                pub.estado_publicacion = form.estado.data
+
+            db.session.commit()
+
+            registrar_accion('Divulgación', pub.id_publicacion, 'Modificar', getattr(current_user, 'nombre_usuario', 'Usuario'), detalle=f'Actualizado ID: {pub.id_publicacion}', estado_nuevo=pub.estado_publicacion)
+            flash('Publicación actualizada correctamente.', 'success')
+            return redirect(url_for('core.divulgacion_admin_index'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error al actualizar la publicación: {str(e)}', 'error')
         
     return render_template('divulgacion/admin_form.html', form=form, es_edicion=True)
 
@@ -291,28 +306,14 @@ def divulgacion_admin_eliminar(pub_id):
         return redirect(url_for('core.divulgacion_admin_index'))
     
     if pub.estado_publicacion == 'publicado' and 'aprobar_divulgaciones' not in permisos_del_rol and not is_superuser():
-        flash('No se permite la eliminación de un contenido activo en el portal institucional.', 'error')
+        flash('No se permite la eliminación de un contenido activo en el portal.', 'error')
         return redirect(url_for('core.divulgacion_admin_index'))
 
     titulo_eliminado = pub.titulo_publicacion
     db.session.delete(pub)
     db.session.commit()
 
-    # 🔔 ALERTA DE ELIMINACIÓN DE CONTENIDO
-    try:
-        from app.models.notificacion import Notificacion
-        alerta = Notificacion(
-            categoria='Seguridad',
-            mensaje=f"⚠️ REMOCIÓN: El boletín informativo '{titulo_eliminado[:35]}...' fue eliminado permanentemente por {current_user.nombre_usuario}.",
-            usuario_id=None,
-            leido=False
-        )
-        db.session.add(alerta)
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-
-    registrar_accion('Divulgación', pub_id, 'Eliminar', current_user.nombre_usuario, detalle=f'Eliminado permanentemente: {titulo_eliminado[:40]}...')
+    registrar_accion('Divulgación', pub_id, 'Eliminar', getattr(current_user, 'nombre_usuario', 'Usuario'), detalle=f'Eliminado permanentemente: {titulo_eliminado[:40]}...')
     flash('Publicación removida con éxito de la base de datos.', 'success')
     return redirect(url_for('core.divulgacion_admin_index'))
 
@@ -327,24 +328,8 @@ def divulgacion_admin_aprobar(pub_id):
     pub.publicado_en = datetime.utcnow()
     db.session.commit()
 
-    # 🔔 ALERTA CRÍTICA: CONTENIDO PUBLICADO OFICIALMENTE EN LA WEB
-    try:
-        from app.models.notificacion import Notificacion
-        # Si la prioridad de alerta es alta (ej: >= 7), lo mandamos como categoría Seguridad
-        cat = 'Seguridad' if pub.prioridad >= 7 else 'Sistema'
-        alerta = Notificacion(
-            categoria=cat,
-            mensaje=f"📢 PORTAL WEB: ¡Aprobado y publicado! El boletín '{pub.titulo_publicacion[:35]}...' ya es visible para el público (Prioridad: {pub.prioridad}).",
-            usuario_id=None,
-            leido=False
-        )
-        db.session.add(alerta)
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-
     ServicioNotificacion.disparar_a_main_page(pub)
-    registrar_accion('Divulgación', pub.id_publicacion, 'Modificar', current_user.nombre_usuario, detalle=f'Aprobada para la Web: {pub.titulo_publicacion[:40]}...', estado_nuevo='publicado')
+    registrar_accion('Divulgación', pub.id_publicacion, 'Modificar', getattr(current_user, 'nombre_usuario', 'Usuario'), detalle=f'Aprobada para la Web: {pub.titulo_publicacion[:40]}...', estado_nuevo='publicado')
     flash('Publicación aprobada y publicada exitosamente.', 'success')
     return redirect(url_for('core.divulgacion_admin_index'))
 
@@ -359,20 +344,6 @@ def divulgacion_admin_despublicar(pub_id):
     pub.publicado_en = None
     db.session.commit()
 
-    # 🔔 ALERTA DE RETIRO DE CONTENIDO
-    try:
-        from app.models.notificacion import Notificacion
-        alerta = Notificacion(
-            categoria='Sistema',
-            mensaje=f"🔍 CONTROL: El reporte '{pub.titulo_publicacion[:35]}...' fue bajado del portal público y devuelto a borradores por la administración.",
-            usuario_id=None,
-            leido=False
-        )
-        db.session.add(alerta)
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-
-    registrar_accion('Divulgación', pub.id_publicacion, 'Modificar', current_user.nombre_usuario, detalle=f'Retirada de la web (Devuelta a borrador): {pub.titulo_publicacion[:40]}...', estado_nuevo='borrador')
+    registrar_accion('Divulgación', pub.id_publicacion, 'Modificar', getattr(current_user, 'nombre_usuario', 'Usuario'), detalle=f'Retirada de la web: {pub.titulo_publicacion[:40]}...', estado_nuevo='borrador')
     flash('El contenido ha sido retirado de la web pública y devuelto a borrador.', 'success')
     return redirect(url_for('core.divulgacion_admin_index'))

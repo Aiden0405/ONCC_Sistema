@@ -3,14 +3,14 @@
 {% block title %}Gestión de Actividades - ONCC{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
+<div class="max-w-7xl mx-auto space-y-6 animate-in fade-in duration-500">
     
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-2">
         <div>
             <h1 class="text-2xl font-bold dark:text-white text-gray-800">Gestión de Actividades</h1>
-            <p class="text-sm dark:text-gray-400 text-gray-500">Registro operativo de jornadas, evidencias de campo y seguimiento institucional</p>
+            <p class="text-sm dark:text-gray-400 text-gray-500">Registro operativo de jornadas y seguimiento institucional ONCC</p>
         </div>
-        <a href="{{ url_for('actividad.nueva') }}" class="inline-flex items-center justify-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-medium shadow-sm transition-colors whitespace-nowrap">
+        <a href="{{ url_for('monitoreo.nueva') }}" class="inline-flex items-center justify-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-medium shadow-sm transition-colors whitespace-nowrap">
             <i data-lucide="plus" class="mr-2 w-4 h-4"></i> Registrar Actividad
         </a>
     </div>
@@ -18,17 +18,10 @@
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
-                {% if category == 'error' %}
-                    <div class="p-4 rounded-md bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800 flex items-center shadow-sm">
-                        <i data-lucide="alert-triangle" class="mr-2 w-5 h-5"></i> 
-                        <span class="text-sm font-medium">{{ message }}</span>
-                    </div>
-                {% else %}
-                    <div class="p-4 rounded-md bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800 flex items-center shadow-sm">
-                        <i data-lucide="check-circle" class="mr-2 w-5 h-5"></i> 
-                        <span class="text-sm font-medium">{{ message }}</span>
-                    </div>
-                {% endif %}
+                <div class="p-4 rounded-md shadow-sm border text-sm font-medium flex items-center {% if category == 'error' %}bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800{% else %}bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800{% endif %}">
+                    <i data-lucide="{% if category == 'error' %}alert-triangle{% else %}check-circle{% endif %}" class="mr-2 w-5 h-5"></i> 
+                    <span>{{ message }}</span>
+                </div>
             {% endfor %}
         {% endif %}
     {% endwith %}
@@ -37,7 +30,7 @@
         <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
             <div>
                 <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400">Historial de Despliegues</h3>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Control cronológico de operativos y técnicos responsables asignados</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Control de actividades y evidencias registradas</p>
             </div>
             <span class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ actividades|length }} registro(s)</span>
         </div>
@@ -46,62 +39,159 @@
             <table class="w-full text-sm text-left border-collapse">
                 <thead>
                     <tr class="text-xs uppercase tracking-wider bg-gray-50 text-gray-500 dark:bg-gray-700/40 dark:text-gray-400">
+                        <th class="px-6 py-3 font-semibold">ID</th>
                         <th class="px-6 py-3 font-semibold">Fecha</th>
-                        <th class="px-6 py-3 font-semibold">Área Operativa</th>
-                        <th class="px-6 py-3 font-semibold">Actividad / Eje</th>
-                        <th class="px-6 py-3 font-semibold">Técnico Responsable</th>
-                        <th class="px-6 py-3 font-semibold">Ubicación Territorial</th>
-                        <th class="px-6 py-3 text-right">Estado / Flujo</th>
+                        <th class="px-6 py-3 font-semibold">Nombre de la Actividad</th>
+                        <th class="px-6 py-3 font-semibold">Estatus Operativo</th>
+                        <th class="px-6 py-3 font-semibold">Técnico Asignado</th>
+                        <th class="px-6 py-3 font-semibold">Comunidad / Ubicación</th>
+                        <th class="px-6 py-3 font-semibold">Soportes</th>
+                        <th class="px-6 py-3 text-right">Acciones</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
                     {% for act in actividades %}
                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
-                        <td class="px-6 py-4 font-mono text-xs whitespace-nowrap">
-                            {{ act.fecha.strftime('%Y-%m-%d') if act.fecha else 'N/D' }}
-                        </td>
+                        <td class="px-6 py-4 font-mono text-xs font-bold text-gray-500">#{{ act.id_actividad }}</td>
+                        <td class="px-6 py-4 font-mono text-xs whitespace-nowrap">{{ act.fecha_actividad.strftime('%Y-%m-%d') if act.fecha_actividad else 'N/D' }}</td>
                         
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
-                                {{ act.area }}
-                            </span>
-                        </td>
-                        
-                        <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-100 max-w-xs truncate">
-                            {{ act.actividad }}
-                        </td>
-                        
-                        <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-600 dark:text-gray-400">
-                            {{ act.responsable }}
-                        </td>
-                        
-                        <td class="px-6 py-4 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                            <div class="flex items-center">
-                                <i data-lucide="map-pin" class="w-3 h-3 mr-1 text-gray-400"></i>
-                                {{ act.estado_geo }}, {{ act.municipio }}
+                        <!-- 🌟 NOMBRE REAL DE LA ACTIVIDAD + BADGE DEL MÓDULO DE ORIGEN -->
+                        <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-100 max-w-xs">
+                            <div class="font-bold text-gray-900 dark:text-white truncate">
+                                {% if act.monitoreo and act.monitoreo.nombre_monitoreo %}
+                                    {{ act.monitoreo.nombre_monitoreo }}
+                                {% elif act.formacion_activa_rel and act.formacion_activa_rel.tema_real %}
+                                    {{ act.formacion_activa_rel.tema_real }}
+                                {% elif act.sensibilizacion_activa_rel and act.sensibilizacion_activa_rel.campana_real %}
+                                    {{ act.sensibilizacion_activa_rel.campana_real }}
+                                {% elif act.descripcion %}
+                                    {{ act.descripcion|truncate(40) }}
+                                {% else %}
+                                    Jornada de {{ act.tipo_actividad|title }}
+                                {% endif %}
+                            </div>
+
+                            <!-- BADGE IDENTIFICADOR DE ORIGEN -->
+                            <div class="mt-1 flex items-center gap-1.5">
+                                {% set tipo = (act.tipo_actividad if act.tipo_actividad is defined else '')|upper %}
+                                
+                                {% if 'FORMACION' in tipo %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+                                        <i data-lucide="graduation-cap" class="w-3 h-3 mr-1"></i> Formación
+                                    </span>
+                                {% elif 'SENSIBILIZACION' in tipo %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
+                                        <i data-lucide="users" class="w-3 h-3 mr-1"></i> Sensibilización
+                                    </span>
+                                {% elif 'MONITOREO' in tipo %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                                        <i data-lucide="radio" class="w-3 h-3 mr-1"></i> Monitoreo
+                                    </span>
+                                {% elif 'MAPA' in tipo or 'RIESGO' in tipo %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300">
+                                        <i data-lucide="map" class="w-3 h-3 mr-1"></i> Mapa de Riesgo
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+                                        <i data-lucide="activity" class="w-3 h-3 mr-1"></i> General
+                                    </span>
+                                {% endif %}
                             </div>
                         </td>
-                        
-                        <td class="px-6 py-4 text-right whitespace-nowrap">
-                            <form method="POST" action="{{ url_for('actividad.cambiar_estado', actividad_id=act.id) }}" class="inline-flex items-center gap-1.5 bg-gray-50 dark:bg-gray-900/60 p-1 rounded-md border border-gray-100 dark:border-gray-700">
+
+                        <!-- ESTATUS OPERATIVO REAL DE BITÁCORA -->
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% set estatus_actual = act.estado_operativo_real|default('Completado', true) %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold uppercase tracking-tight
+                                {% if estatus_actual == 'Planificada' %}bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300
+                                {% elif estatus_actual == 'En proceso' %}bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300
+                                {% elif estatus_actual == 'Suspendida' %}bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300
+                                {% else %}bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300{% endif %}">
+                                {{ estatus_actual }}
+                            </span>
+                        </td>
+
+                        <!-- TÉCNICO ASIGNADO -->
+                        <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-600 dark:text-gray-400">
+                            {% if act.tecnicos_asociados %}
+                                {{ act.tecnicos_asociados[0].tecnico.nombres }} {{ act.tecnicos_asociados[0].tecnico.apellidos }}
+                            {% elif act.formacion_activa_rel and act.formacion_activa_rel.tecnico_real %}
+                                {{ act.formacion_activa_rel.tecnico_real }}
+                            {% elif act.sensibilizacion_activa_rel and act.sensibilizacion_activa_rel.facilitador_real %}
+                                {{ act.sensibilizacion_activa_rel.facilitador_real }}
+                            {% else %}
+                                <span class="text-gray-400 text-xs italic">Sin asignar</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- COMUNIDAD / UBICACIÓN -->
+                        <td class="px-6 py-4 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                            <div class="font-bold text-gray-700 dark:text-gray-200">{{ act.comunidad.nombre_comunidad if act.comunidad else 'Comunidad Central' }}</div>
+                            <div class="text-[10px] text-gray-400 font-mono">{{ act.municipio_nombre }} - {{ act.parroquia_nombre }}</div>
+                        </td>
+
+                        <!-- SOPORTES -->
+                        <td class="px-6 py-4 whitespace-nowrap text-xs">
+                            <div class="flex items-center space-x-2">
+                                {% if act.minuta_archivo %}
+                                    <a href="{{ url_for('static', filename=act.minuta_archivo) }}" target="_blank" class="inline-flex items-center px-2 py-1 bg-green-50 text-green-700 rounded font-bold hover:bg-green-100" title="Ver Minuta PDF">
+                                        📄 PDF
+                                    </a>
+                                {% endif %}
+
+                                {% if act.imagenes_asociadas %}
+                                    <div class="inline-flex space-x-1 border-l pl-2 dark:border-gray-700">
+                                        {% for img_rel in act.imagenes_asociadas %}
+                                            <a href="{{ url_for('static', filename=img_rel.imagen.url_imagen) }}" target="_blank">
+                                                <img src="{{ url_for('static', filename=img_rel.imagen.url_imagen) }}" class="w-7 h-7 object-cover rounded border hover:scale-125 transition-transform shadow-sm">
+                                            </a>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </td>
+
+                        <!-- ACCIONES (BOTÓN VER MODAL) -->
+                        <td class="px-6 py-4 text-right whitespace-nowrap space-x-1">
+                            <button type="button"
+                                    data-id="{{ act.id_actividad }}"
+                                    data-nombre="{% if act.monitoreo and act.monitoreo.nombre_monitoreo %}{{ act.monitoreo.nombre_monitoreo }}{% elif act.formacion_activa_rel and act.formacion_activa_rel.tema_real %}{{ act.formacion_activa_rel.tema_real }}{% elif act.sensibilizacion_activa_rel and act.sensibilizacion_activa_rel.campana_real %}{{ act.sensibilizacion_activa_rel.campana_real }}{% else %}{{ act.descripcion|default('Jornada de ' ~ act.tipo_actividad, true) }}{% endif %}"
+                                    data-area="{% if act.tipo_actividad == 'FORMACION' %}Formación y capacitaciones{% elif act.tipo_actividad == 'SENSIBILIZACION' %}Sensibilización comunitaria{% else %}Monitoreo y seguridad{% endif %}"
+                                    data-estatus="{{ act.estado_operativo_real }}"
+                                    data-tecnico="{% if act.tecnicos_asociados %}{{ act.tecnicos_asociados[0].tecnico.nombres }} {{ act.tecnicos_asociados[0].tecnico.apellidos }}{% elif act.formacion_activa_rel %}{{ act.formacion_activa_rel.tecnico_real }}{% elif act.sensibilizacion_activa_rel %}{{ act.sensibilizacion_activa_rel.facilitador_real }}{% else %}Sin asignar{% endif %}"
+                                    data-fecha="{{ act.fecha_actividad.strftime('%Y-%m-%d') if act.fecha_actividad else 'No especificada' }}"
+                                    data-comunidad="{{ act.comunidad.nombre_comunidad if act.comunidad else 'Comunidad Central' }}"
+                                    data-nivel="{{ act.nivel.nombre_nivel if act.nivel else 'Regional' }}"
+                                    data-estado-geo="{{ act.estado_geo_nombre|default('Lara', true) }}"
+                                    data-municipio="{{ act.municipio_nombre|default('Iribarren', true) }}"
+                                    data-parroquia="{{ act.parroquia_nombre|default('Catedral', true) }}"
+                                    data-poblacion="{{ act.poblacion|default(0) }}"
+                                    data-descripcion="{{ act.descripcion|default('Sin descripción registrada', true) }}"
+                                    data-acuerdos="{{ act.acuerdos|default('Sin acuerdos registrados', true) }}"
+                                    data-minuta="{{ url_for('static', filename=act.minuta_archivo) if act.minuta_archivo else '' }}"
+                                    data-fotos="{% if act.imagenes_asociadas %}{% for img_rel in act.imagenes_asociadas %}{{ url_for('static', filename=img_rel.imagen.url_imagen) }}{% if not loop.last %}||{% endif %}{% endfor %}{% endif %}"
+                                    onclick="verDetalleCompleto(this)" 
+                                    class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:text-emerald-300 dark:bg-emerald-900/20 transition-colors" 
+                                    title="Ver Ficha Completa">
+                                <i data-lucide="eye" class="w-3.5 h-3.5 mr-1"></i> Ver
+                            </button>
+
+                            <a href="{{ url_for('monitoreo.editar', actividad_id=act.id_actividad) }}" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 dark:text-blue-300 dark:bg-blue-900/20 transition-colors">
+                                <i data-lucide="edit" class="w-3.5 h-3.5 mr-1"></i> Editar
+                            </a>
+                            
+                            <form action="{{ url_for('monitoreo.eliminar', actividad_id=act.id_actividad) }}" method="post" class="inline" onsubmit="return confirm('¿Seguro que desea eliminar esta actividad?');">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <select name="estado" class="border rounded bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white px-2 py-0.5 text-xs focus:ring-1 focus:ring-green-500 outline-none">
-                                    {% for estado in estados_actividad %}
-                                        <option value="{{ estado }}" {% if estado == act.estado %}selected{% endif %}>{{ estado }}</option>
-                                    {% endfor %}
-                                </select>
-                                <button class="text-[11px] font-semibold px-2 py-0.5 rounded bg-green-600 text-white hover:bg-green-700 transition-colors shadow-2xs">Guardar</button>
+                                <button type="submit" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 dark:text-red-300 dark:bg-red-900/20 transition-colors">
+                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                </button>
                             </form>
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="6" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
-                            <div class="flex flex-col items-center justify-center space-y-2">
-                                <i data-lucide="calendar-x" class="w-8 h-8 text-gray-400"></i>
-                                <p class="text-sm font-medium">Aún no hay actividades registradas en el ecosistema.</p>
-                                <p class="text-xs text-gray-400">Puedes crear la primera haciendo uso del botón superior.</p>
-                            </div>
+                        <td colspan="8" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
+                            No hay actividades registradas en la base de datos relacional.
                         </td>
                     </tr>
                     {% endfor %}
@@ -110,4 +200,190 @@
         </div>
     </div>
 </div>
+
+<!-- MODAL ADAPTATIVO -->
+<div id="modalDetalleActividad" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl border border-gray-100 dark:border-gray-700 space-y-6">
+        
+        <!-- CABECERA -->
+        <div class="flex justify-between items-start border-b pb-3 dark:border-gray-700">
+            <div>
+                <span id="det_id_fecha" class="text-xs font-mono text-green-600 dark:text-green-400 font-bold uppercase"></span>
+                <h3 id="det_nombre_actividad_titulo" class="text-xl font-bold text-gray-800 dark:text-white"></h3>
+            </div>
+            <button onclick="cerrarModalDetalle()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-2xl font-bold">&times;</button>
+        </div>
+
+        <!-- 1. DATOS GENERALES -->
+        <div class="space-y-2">
+            <h4 class="text-xs font-bold uppercase text-green-700 dark:text-green-400 flex items-center tracking-wider">
+                <i data-lucide="activity" class="w-3.5 h-3.5 mr-1.5"></i> 1. Datos Generales de la Jornada
+            </h4>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+                <div class="bg-gray-50 dark:bg-gray-700/40 p-2.5 rounded-lg col-span-2 md:col-span-3">
+                    <span class="text-gray-400 block uppercase font-bold text-[10px]">Nombre de la Actividad</span>
+                    <span id="det_nombre_actividad" class="font-bold text-gray-800 dark:text-white text-sm"></span>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-700/40 p-2.5 rounded-lg">
+                    <span class="text-gray-400 block uppercase font-bold text-[10px]">Área de Acción</span>
+                    <span id="det_area" class="font-bold text-gray-700 dark:text-gray-200"></span>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-700/40 p-2.5 rounded-lg">
+                    <span class="text-gray-400 block uppercase font-bold text-[10px]">Estatus Operativo</span>
+                    <span id="det_estatus" class="font-bold text-blue-600 dark:text-blue-400"></span>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-700/40 p-2.5 rounded-lg">
+                    <span class="text-gray-400 block uppercase font-bold text-[10px]">Técnico Responsable</span>
+                    <span id="det_tecnico" class="font-bold text-gray-700 dark:text-gray-200"></span>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-700/40 p-2.5 rounded-lg col-span-2 md:col-span-3">
+                    <span class="text-gray-400 block uppercase font-bold text-[10px]">Fecha de Ejecución</span>
+                    <span id="det_fecha" class="font-bold text-gray-800 dark:text-white font-mono"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. DESPLIEGUE TERRITORIAL -->
+        <div class="space-y-2">
+            <h4 class="text-xs font-bold uppercase text-green-700 dark:text-green-400 flex items-center tracking-wider">
+                <i data-lucide="map-pin" class="w-3.5 h-3.5 mr-1.5"></i> 2. Despliegue Territorial y Parametrización
+            </h4>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+                <div class="bg-gray-50 dark:bg-gray-700/40 p-2.5 rounded-lg">
+                    <span class="text-gray-400 block uppercase font-bold text-[10px]">Comunidad</span>
+                    <span id="det_comunidad" class="font-bold text-gray-700 dark:text-gray-200"></span>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-700/40 p-2.5 rounded-lg">
+                    <span class="text-gray-400 block uppercase font-bold text-[10px]">Nivel Estratégico</span>
+                    <span id="det_nivel" class="font-bold text-gray-700 dark:text-gray-200"></span>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-700/40 p-2.5 rounded-lg">
+                    <span class="text-gray-400 block uppercase font-bold text-[10px]">Estado Geográfico</span>
+                    <span id="det_estado_geo" class="font-bold text-gray-700 dark:text-gray-200"></span>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-700/40 p-2.5 rounded-lg">
+                    <span class="text-gray-400 block uppercase font-bold text-[10px]">Municipio</span>
+                    <span id="det_municipio" class="font-bold text-gray-700 dark:text-gray-200"></span>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-700/40 p-2.5 rounded-lg col-span-2 md:col-span-2">
+                    <span class="text-gray-400 block uppercase font-bold text-[10px]">Parroquia / Sector</span>
+                    <span id="det_parroquia" class="font-bold text-gray-700 dark:text-gray-200"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. DESCRIPCIÓN Y ALCANCE -->
+        <div class="space-y-2">
+            <h4 class="text-xs font-bold uppercase text-green-700 dark:text-green-400 flex items-center tracking-wider">
+                <i data-lucide="file-text" class="w-3.5 h-3.5 mr-1.5"></i> 3. Descripción y Alcance
+            </h4>
+            <div class="space-y-2 text-xs">
+                <div class="bg-gray-50 dark:bg-gray-700/40 p-3 rounded-lg">
+                    <span class="text-gray-400 block uppercase font-bold text-[10px] mb-1">Resumen Detallado</span>
+                    <p id="det_descripcion" class="text-gray-700 dark:text-gray-200 leading-relaxed"></p>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-700/40 p-2.5 rounded-lg">
+                    <span class="text-gray-400 block uppercase font-bold text-[10px]">Población Beneficiada</span>
+                    <span id="det_poblacion" class="font-bold text-green-600 dark:text-green-400 text-sm"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. SOPORTES Y ARCHIVOS -->
+        <div class="space-y-2">
+            <h4 class="text-xs font-bold uppercase text-green-700 dark:text-green-400 flex items-center tracking-wider">
+                <i data-lucide="paperclip" class="w-3.5 h-3.5 mr-1.5"></i> 4. Soportes, Acuerdos y Archivos Vinculados
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                <div class="bg-gray-50 dark:bg-gray-700/40 p-3 rounded-lg space-y-2">
+                    <span class="text-gray-400 block uppercase font-bold text-[10px]">Minuta PDF</span>
+                    <div id="det_minuta_contenedor"></div>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-700/40 p-3 rounded-lg space-y-1">
+                    <span class="text-gray-400 block uppercase font-bold text-[10px]">Acuerdos Alcanzados</span>
+                    <p id="det_acuerdos" class="text-gray-700 dark:text-gray-200 leading-relaxed"></p>
+                </div>
+            </div>
+
+            <!-- FOTOS -->
+            <div class="bg-gray-50 dark:bg-gray-700/40 p-3 rounded-lg space-y-2 text-xs">
+                <span class="text-gray-400 block uppercase font-bold text-[10px]">Evidencias Fotográficas</span>
+                <div id="det_galeria_fotos" class="flex flex-wrap gap-2 pt-1"></div>
+            </div>
+        </div>
+
+        <!-- PIE DE MODAL -->
+        <div class="flex justify-end pt-3 border-t dark:border-gray-700">
+            <button onclick="cerrarModalDetalle()" class="px-5 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-md text-xs font-bold transition-colors">
+                Cerrar Ficha
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function verDetalleCompleto(btn) {
+    const id = btn.getAttribute('data-id');
+    const fecha = btn.getAttribute('data-fecha');
+    const nombre = btn.getAttribute('data-nombre');
+    const area = btn.getAttribute('data-area');
+    
+    // 1. Datos Generales
+    document.getElementById('det_id_fecha').textContent = `#${id}`;
+    document.getElementById('det_nombre_actividad_titulo').textContent = nombre;
+    document.getElementById('det_nombre_actividad').textContent = nombre;
+    document.getElementById('det_fecha').textContent = fecha;
+    document.getElementById('det_area').textContent = area;
+    document.getElementById('det_estatus').textContent = btn.getAttribute('data-estatus');
+    document.getElementById('det_tecnico').textContent = btn.getAttribute('data-tecnico');
+
+    // 2. Despliegue Territorial
+    document.getElementById('det_comunidad').textContent = btn.getAttribute('data-comunidad');
+    document.getElementById('det_nivel').textContent = btn.getAttribute('data-nivel');
+    document.getElementById('det_estado_geo').textContent = btn.getAttribute('data-estado-geo');
+    document.getElementById('det_municipio').textContent = btn.getAttribute('data-municipio');
+    document.getElementById('det_parroquia').textContent = btn.getAttribute('data-parroquia');
+
+    // 3. Descripción y Alcance
+    document.getElementById('det_descripcion').textContent = btn.getAttribute('data-descripcion');
+    document.getElementById('det_poblacion').textContent = `${btn.getAttribute('data-poblacion')} Personas Impactadas`;
+
+    // 4. Soportes y Acuerdos
+    document.getElementById('det_acuerdos').textContent = btn.getAttribute('data-acuerdos');
+
+    // Renderizar Minuta PDF
+    const minutaUrl = btn.getAttribute('data-minuta');
+    const contMinuta = document.getElementById('det_minuta_contenedor');
+    if (minutaUrl) {
+        contMinuta.innerHTML = `<a href="${minutaUrl}" target="_blank" class="inline-flex items-center px-3 py-1.5 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 rounded font-bold hover:underline">📄 Abrir Minuta PDF Adjunta</a>`;
+    } else {
+        contMinuta.innerHTML = `<span class="text-gray-400 italic">Sin minuta PDF cargada</span>`;
+    }
+
+    // Renderizar Fotos
+    const fotosRaw = btn.getAttribute('data-fotos');
+    const contFotos = document.getElementById('det_galeria_fotos');
+    contFotos.innerHTML = '';
+
+    if (fotosRaw) {
+        const listaFotos = fotosRaw.split('||');
+        listaFotos.forEach(urlFoto => {
+            const a = document.createElement('a');
+            a.href = urlFoto;
+            a.target = '_blank';
+            a.innerHTML = `<img src="${urlFoto}" class="w-14 h-14 object-cover rounded-md border hover:scale-110 transition-transform shadow-sm">`;
+            contFotos.appendChild(a);
+        });
+    } else {
+        contFotos.innerHTML = `<span class="text-gray-400 italic">No hay fotos vinculadas</span>`;
+    }
+
+    document.getElementById('modalDetalleActividad').classList.remove('hidden');
+    if (window.lucide) lucide.createIcons();
+}
+
+function cerrarModalDetalle() {
+    document.getElementById('modalDetalleActividad').classList.add('hidden');
+}
+</script>
 {% endblock %}

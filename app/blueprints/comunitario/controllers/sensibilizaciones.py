@@ -16,6 +16,33 @@ from app.models.esquema_activo import (
 )
 from app.models.actividad import Actividad
 
+
+def _cargar_sensibilizacion_choices(form):
+    comunidades = Comunidad.query.order_by(Comunidad.nombre_comunidad.asc()).all()
+    form.id_comunidad.choices = [(c.id_comunidad, c.nombre_comunidad) for c in comunidades]
+
+    niveles = Nivel.query.order_by(Nivel.nombre_nivel.asc()).all()
+    form.id_nivel.choices = [(niv.id_nivel, niv.nombre_nivel) for niv in niveles]
+
+
+def _registrar_sensibilizacion(form):
+    nueva_actividad = Actividad(
+        fecha_actividad=form.fecha_actividad.data,
+        tipo_actividad='SENSIBILIZACION',
+        id_comunidad=form.id_comunidad.data,
+        id_nivel=form.id_nivel.data,
+        id_usuario=current_user.id_usuario,
+    )
+    db.session.add(nueva_actividad)
+    db.session.flush()
+
+    nueva_sensibilizacion = Sensibilizacion(
+        nombre_sensibilizacion=f"{form.nombre_sensibilizacion.data}||{form.facilitador.data}",
+        id_actividad=nueva_actividad.id_actividad,
+        id_nivel=form.id_nivel.data,
+    )
+    db.session.add(nueva_sensibilizacion)
+
 # ==========================================
 # 1. LISTAR Y REGISTRAR (GET y POST)
 # ==========================================
@@ -27,43 +54,7 @@ def sensibilizaciones_index():
 
     form = SensibilizacionForm()
 
-    # Cargar menús desplegables
-    comunidades = Comunidad.query.all()
-    form.id_comunidad.choices = [(c.id_comunidad, c.nombre_comunidad) for c in comunidades]
-    
-    niveles = Nivel.query.all()
-    form.id_nivel.choices = [(niv.id_nivel, niv.nombre_nivel) for niv in niveles]
-
-    # CLICK EN "REGISTRAR"
-    if form.validate_on_submit():
-        try:
-            # 1. Registrar fila en la tabla 'actividad' (Padre)
-            nueva_actividad = Actividad(
-                fecha_actividad=form.fecha.data,
-                tipo_actividad=['sensibilizacion'],
-                id_comunidad=form.id_comunidad.data,
-                id_nivel=form.id_nivel.data
-            )
-            db.session.add(nueva_actividad)
-            db.session.flush() # Genera la id_actividad automáticamente
-
-            # Consolidamos el nombre con el facilitador usando tu formato original "||"
-            campana_consolidada = f"{form.nombre_sensibilizacion.data}||{form.facilitador.data}"
-
-            # 2. Registrar en la tabla 'sensibilizacion' (Hijo)
-            nueva_sensibilizacion = Sensibilizacion(
-                nombre_sensivilizacion=campana_consolidada,
-                id_actividad=nueva_actividad.id_actividad
-            )
-            db.session.add(nueva_sensibilizacion)
-            
-            db.session.commit()
-            flash('Taller de sensibilización registrado con éxito.', 'success')
-            return redirect(url_for('comunitario.sensibilizaciones_index'))
-
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Error al registrar la sensibilización: {str(e)}', 'error')
+    _cargar_sensibilizacion_choices(form)
 
     # LLAMADA AL MODELO: Dejamos el controlador flaco invocando la función del modelo
     sensibilizaciones_procesadas = Sensibilizacion.obtener_historial_completo()
@@ -73,6 +64,30 @@ def sensibilizaciones_index():
         form=form, 
         sensibilizaciones=sensibilizaciones_procesadas
     )
+
+
+@comunitario_bp.route('/sensibilizaciones/nuevo', methods=['GET', 'POST'])
+@login_required
+def sensibilizacion_nuevo():
+    verificar_permiso_dinamico('gestionar_sensibilizaciones')
+
+    form = SensibilizacionForm()
+    _cargar_sensibilizacion_choices(form)
+
+    if request.method == 'POST' and form.validate_on_submit():
+        try:
+            _registrar_sensibilizacion(form)
+            db.session.commit()
+            flash('Taller de sensibilización registrado con éxito.', 'success')
+            return redirect(url_for('comunitario.sensibilizaciones_index'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error al registrar la sensibilización: {str(e)}', 'error')
+
+    if request.method == 'GET':
+        return render_template('sensibilizaciones/crear_sensibilizacion.html', form=form)
+
+    return render_template('sensibilizaciones/crear_sensibilizacion.html', form=form)
 
 # ==========================================
 # 2. MODIFICAR / ACTUALIZAR (POST)
@@ -99,9 +114,10 @@ def sensibilizacion_editar(id_sensibilizacion):
             actividad.id_nivel = int(id_nivel_nuevo)
         if id_comunidad_nueva:
             actividad.id_comunidad = int(id_comunidad_nueva)
+        sensibilizacion.id_nivel = actividad.id_nivel
 
         # Empaquetamos con el formato original del sistema
-        sensibilizacion.nombre_sensivilizacion = f"{campana_nueva}||{facilitador_nuevo}"
+        sensibilizacion.nombre_sensibilizacion = f"{campana_nueva}||{facilitador_nuevo}"
 
         db.session.commit()
         flash('Sensibilización actualizada correctamente.', 'success')
