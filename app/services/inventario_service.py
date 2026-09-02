@@ -9,10 +9,12 @@ from reportlab.lib.units import inch
 
 from app import db
 from app.models.bitacora import BitacoraTransaccion
-from app.models.inventario import InventarioEquipo
+from app.models.inventario import InventarioEquipo, MovimientoEquipo
 
 
 class InventarioService:
+
+    CATEGORIA_DEFAULT = 'General'
 
     @staticmethod
     def listar_equipos():
@@ -32,29 +34,134 @@ class InventarioService:
         } for e in equipos]
 
     @staticmethod
+    def listar_movimientos():
+        return MovimientoEquipo.query.order_by(MovimientoEquipo.fecha_movimiento.desc(), MovimientoEquipo.id_movimiento.desc()).all()
+
+    @staticmethod
+    def serializar_movimientos(movimientos):
+        return [{
+            'id': m.id_movimiento,
+            'codigo': m.codigo,
+            'equipo': m.codigo_equipo,
+            'fecha': m.fecha_movimiento.strftime('%Y-%m-%d'),
+            'origen': m.ubicacion_origen,
+            'destino': m.ubicacion_destino,
+            'motivo': m.motivo_responsable,
+        } for m in movimientos]
+
+    @staticmethod
+    def _obtener_o_crear_modelo(nombre):
+        from app.models.inventario import CategoriaEquipo, ModeloEquipo
+
+        modelo = ModeloEquipo.query.filter_by(nombre_modelos_equipo=nombre).first()
+        if modelo:
+            return modelo
+
+        categoria = CategoriaEquipo.query.filter_by(nombre_categoria=InventarioService.CATEGORIA_DEFAULT).first()
+        if not categoria:
+            categoria = CategoriaEquipo(nombre_categoria=InventarioService.CATEGORIA_DEFAULT)
+            db.session.add(categoria)
+            db.session.flush()
+
+        modelo = ModeloEquipo(
+            id_categoria=categoria.id_categoria,
+            nombre_modelos_equipo=nombre,
+            modelo='N/D',
+            marca='N/D',
+        )
+        db.session.add(modelo)
+        db.session.flush()
+        return modelo
+
+    @staticmethod
+    def _obtener_o_crear_ubicacion(nombre):
+        from app.models.inventario import UbicacionEquipo
+
+        ubicacion = UbicacionEquipo.query.filter_by(nombre_ubicacion=nombre).first()
+        if ubicacion:
+            return ubicacion
+
+        ubicacion = UbicacionEquipo(
+            id_parroquia=InventarioService._obtener_parroquia_por_defecto(),
+            nombre_ubicacion=nombre,
+        )
+        db.session.add(ubicacion)
+        db.session.flush()
+        return ubicacion
+
+    @staticmethod
+    def _obtener_parroquia_por_defecto():
+        from app.models.esquema_activo import EstadoActivo, MunicipioActivo, ParroquiaActiva
+
+        parroquia = ParroquiaActiva.query.first()
+        if parroquia:
+            return parroquia.id_parroquia
+
+        estado = EstadoActivo.query.first()
+        if not estado:
+            estado = EstadoActivo(nombre_estado='Sin Estado')
+            db.session.add(estado)
+            db.session.flush()
+
+        municipio = MunicipioActivo.query.first()
+        if not municipio:
+            municipio = MunicipioActivo(id_estado=estado.id_estado, nombre_municipio='Sin Municipio')
+            db.session.add(municipio)
+            db.session.flush()
+
+        parroquia = ParroquiaActiva(id_municipio=municipio.id_municipio, nombre_parroquia='Sin Parroquia')
+        db.session.add(parroquia)
+        db.session.flush()
+        return parroquia.id_parroquia
+
+    @staticmethod
+    def _parsear_fecha(datos, campo='ultimo_mantenimiento'):
+        """Devuelve (fecha, error). Solo uno de los dos será distinto de None."""
+        fecha_str = (datos.get(campo) or '').strip()
+        if not fecha_str:
+            return None, None
+        try:
+            fecha = datetime.strptime(fecha_str, '%Y-%m-%d').date()
+        except ValueError:
+            return None, 'Formato de fecha inválido.'
+        if fecha > datetime.utcnow().date():
+            return None, 'La fecha no puede ser posterior a hoy.'
+        return fecha, None
+
+    @staticmethod
     def crear_equipo(datos, usuario):
         codigo = datos.get('codigo', '').strip()
         if not codigo:
             return {'ok': False, 'error': 'Debe indicar el codigo del equipo.'}
 
-        if InventarioEquipo.query.filter_by(codigo=codigo).first():
+        if InventarioEquipo.query.filter_by(codigo_interno=codigo).first():
             return {'ok': False, 'error': 'Ya existe un equipo con ese codigo.'}
 
-        fecha = None
-        fecha_str = datos.get('ultimo_mantenimiento')
-        if fecha_str:
-            fecha = datetime.strptime(fecha_str, '%Y-%m-%d').date()
-            if fecha > datetime.utcnow().date():
-                return {'ok': False, 'error': 'La fecha no puede ser posterior a hoy.'}
+        try:
+            ultimo_mantenimiento, error_fecha = InventarioService._parsear_fecha(datos)
+        except ValueError:
+            error_fecha = 'Formato de fecha inválido.'
+        if error_fecha:
+            return {'ok': False, 'error': error_fecha}
+
+        tipo = datos.get('tipo_equipo', '').strip() or 'Equipo Técnico'
+        nombre_ubicacion = datos.get('ubicacion', '').strip() or 'Sin Ubicación'
+        condicion = datos.get('estado_operativo', 'Operativo').strip() or 'Operativo'
+        estado_flujo = datos.get('estado', 'Disponible').strip() or 'Disponible'
+        responsable = datos.get('responsable', '').strip() or usuario.nombre
+
+        modelo = InventarioService._obtener_o_crear_modelo(tipo)
+        ubicacion = InventarioService._obtener_o_crear_ubicacion(nombre_ubicacion)
 
         equipo = InventarioEquipo(
-            tipo_equipo=datos.get('tipo_equipo', 'Equipo Tecnico').strip(),
-            codigo=codigo,
-            ubicacion=datos.get('ubicacion', 'Sin ubicacion').strip(),
-            estado_operativo=datos.get('estado_operativo', 'Operativo').strip(),
-            estado_flujo=datos.get('estado', 'Disponible').strip(),
-            ultimo_mantenimiento=fecha,
-            responsable=usuario.nombre,
+            id_modelos_equipos=modelo.id_modelos_equipo,
+            id_ubicacion_actual=ubicacion.id_ubicacion,
+            codigo_interno=codigo,
+            estado=estado_flujo,
+            condicion=condicion,
+            fecha_ingreso=datetime.utcnow().date(),
+            ultimo_mantenimiento=ultimo_mantenimiento,
+            responsable=responsable,
         )
         db.session.add(equipo)
         db.session.flush()
@@ -72,83 +179,116 @@ class InventarioService:
         return {'ok': True, 'equipo': equipo, 'mensaje': 'Equipo registrado exitosamente en el inventario.'}
 
     @staticmethod
-    def crear_movimiento(datos, usuario):
-        movimiento_id = datos.get('movimiento_id', '#MOV-000').strip()
-        equipo = datos.get('equipo', '').strip()
-        fecha_hora = datos.get('fecha_hora', '').strip()
-        ubicacion_origen = datos.get('ubicacion_origen', '').strip()
-        ubicacion_destino = datos.get('ubicacion_destino', '').strip()
-        motivo = datos.get('motivo_responsable', '').strip()
-
+    def _validar_datos_movimiento(datos):
+        """Devuelve (valores, error). Solo uno de los dos es distinto de None."""
+        codigo_equipo = datos.get('equipo', '').strip()
+        if not codigo_equipo:
+            return None, 'Debe seleccionar un equipo.'
+        equipo = InventarioEquipo.query.filter_by(codigo_interno=codigo_equipo).first()
         if not equipo:
-            return {'ok': False, 'error': 'Debe seleccionar un equipo.'}
-        if not fecha_hora:
-            return {'ok': False, 'error': 'Debe indicar la fecha y hora.'}
+            return None, 'El equipo seleccionado no existe en el inventario.'
+
+        fecha_str = datos.get('fecha_hora', '').strip()
+        if not fecha_str:
+            return None, 'Debe indicar la fecha y hora.'
         try:
-            fecha_dt = datetime.strptime(fecha_hora, '%Y-%m-%d').date()
-            if fecha_dt > datetime.utcnow().date():
-                return {'ok': False, 'error': 'La fecha no puede ser posterior a hoy.'}
+            fecha = datetime.strptime(fecha_str, '%Y-%m-%d').date()
         except ValueError:
-            return {'ok': False, 'error': 'Formato de fecha inválido.'}
-        if not ubicacion_origen:
-            return {'ok': False, 'error': 'Debe indicar la ubicación de origen.'}
-        if not ubicacion_destino:
-            return {'ok': False, 'error': 'Debe indicar la ubicación de destino.'}
+            return None, 'Formato de fecha inválido.'
+        if fecha > datetime.utcnow().date():
+            return None, 'La fecha no puede ser posterior a hoy.'
+
+        origen = datos.get('ubicacion_origen', '').strip()
+        if not origen:
+            return None, 'Debe indicar la ubicación de origen.'
+        destino = datos.get('ubicacion_destino', '').strip()
+        if not destino:
+            return None, 'Debe indicar la ubicación de destino.'
+        motivo = datos.get('motivo_responsable', '').strip()
         if not motivo:
-            return {'ok': False, 'error': 'Debe indicar el motivo y responsable.'}
+            return None, 'Debe indicar el motivo y responsable.'
+
+        return {'equipo': equipo, 'fecha': fecha, 'origen': origen, 'destino': destino, 'motivo': motivo}, None
+
+    @staticmethod
+    def crear_movimiento(datos, usuario):
+        valores, error = InventarioService._validar_datos_movimiento(datos)
+        if error:
+            return {'ok': False, 'error': error}
+
+        equipo = valores['equipo']
+        movimiento = MovimientoEquipo(
+            id_equipo=equipo.id,
+            fecha_movimiento=valores['fecha'],
+            ubicacion_origen=valores['origen'],
+            ubicacion_destino=valores['destino'],
+            motivo_responsable=valores['motivo'],
+        )
+        db.session.add(movimiento)
+
+        # La ubicación actual del equipo pasa a ser el destino del traslado
+        if valores['destino'] != equipo.ubicacion:
+            ubicacion_destino = InventarioService._obtener_o_crear_ubicacion(valores['destino'])
+            equipo.id_ubicacion_actual = ubicacion_destino.id_ubicacion
+
+        db.session.flush()
 
         db.session.add(BitacoraTransaccion(
             modulo='inventario',
-            registro_id=0,
+            registro_id=movimiento.id_movimiento,
             accion='movimiento',
             estado_nuevo='Transferencia',
             usuario=usuario.nombre,
-            detalle=f'{movimiento_id} | {equipo}: {ubicacion_origen} -> {ubicacion_destino} | {motivo}',
+            detalle=f'{movimiento.codigo} | {equipo.codigo}: {movimiento.ubicacion_origen} -> {movimiento.ubicacion_destino} | {movimiento.motivo_responsable}',
         ))
         db.session.commit()
 
-        return {'ok': True, 'mensaje': 'Movimiento registrado exitosamente.'}
+        return {'ok': True, 'movimiento': movimiento, 'mensaje': 'Movimiento registrado exitosamente.'}
 
     @staticmethod
     def actualizar_movimiento(movimiento_id, datos, usuario):
-        equipo = datos.get('equipo', '').strip()
-        fecha_hora = datos.get('fecha_hora', '').strip()
-        ubicacion_origen = datos.get('ubicacion_origen', '').strip()
-        ubicacion_destino = datos.get('ubicacion_destino', '').strip()
-        motivo = datos.get('motivo_responsable', '').strip()
+        movimiento = MovimientoEquipo.query.get(movimiento_id)
+        if not movimiento:
+            return {'ok': False, 'error': 'El movimiento no existe.'}
 
-        if not equipo:
-            return {'ok': False, 'error': 'Debe seleccionar un equipo.'}
-        if not fecha_hora:
-            return {'ok': False, 'error': 'Debe indicar la fecha.'}
-        if not ubicacion_origen:
-            return {'ok': False, 'error': 'Debe indicar la ubicación de origen.'}
-        if not ubicacion_destino:
-            return {'ok': False, 'error': 'Debe indicar la ubicación de destino.'}
-        if not motivo:
-            return {'ok': False, 'error': 'Debe indicar el motivo y responsable.'}
+        valores, error = InventarioService._validar_datos_movimiento(datos)
+        if error:
+            return {'ok': False, 'error': error}
+
+        movimiento.id_equipo = valores['equipo'].id
+        movimiento.fecha_movimiento = valores['fecha']
+        movimiento.ubicacion_origen = valores['origen']
+        movimiento.ubicacion_destino = valores['destino']
+        movimiento.motivo_responsable = valores['motivo']
 
         db.session.add(BitacoraTransaccion(
             modulo='inventario',
-            registro_id=movimiento_id,
+            registro_id=movimiento.id_movimiento,
             accion='movimiento_editado',
             estado_nuevo='Transferencia',
             usuario=usuario.nombre,
-            detalle=f'Movimiento #{movimiento_id} actualizado: {equipo} | {ubicacion_origen} -> {ubicacion_destino}',
+            detalle=f'Movimiento #{movimiento.id_movimiento:03d} actualizado: {valores["equipo"].codigo} | {valores["origen"]} -> {valores["destino"]}',
         ))
         db.session.commit()
 
-        return {'ok': True, 'mensaje': 'Movimiento actualizado exitosamente.'}
+        return {'ok': True, 'movimiento': movimiento, 'mensaje': 'Movimiento actualizado exitosamente.'}
 
     @staticmethod
     def eliminar_movimiento(movimiento_id, usuario):
+        movimiento = MovimientoEquipo.query.get(movimiento_id)
+        if not movimiento:
+            return {'ok': False, 'error': 'El movimiento no existe.'}
+
+        detalle = f'{movimiento.codigo} | {movimiento.codigo_equipo}: {movimiento.ubicacion_origen} -> {movimiento.ubicacion_destino}'
+        db.session.delete(movimiento)
+
         db.session.add(BitacoraTransaccion(
             modulo='inventario',
             registro_id=movimiento_id,
             accion='movimiento_eliminado',
             estado_nuevo='Eliminado',
             usuario=usuario.nombre,
-            detalle=f'Movimiento #{movimiento_id} eliminado del historial.',
+            detalle=f'{detalle} eliminado del historial.',
         ))
         db.session.commit()
 
@@ -162,24 +302,29 @@ class InventarioService:
         if not codigo:
             return {'ok': False, 'error': 'Debe indicar el codigo del equipo.'}
 
-        existe = InventarioEquipo.query.filter_by(codigo=codigo).first()
+        existe = InventarioEquipo.query.filter_by(codigo_interno=codigo).first()
         if existe and existe.id != equipo.id:
             return {'ok': False, 'error': 'Ya existe otro equipo con ese codigo.'}
 
-        fecha = None
-        fecha_str = datos.get('ultimo_mantenimiento')
-        if fecha_str:
-            fecha = datetime.strptime(fecha_str, '%Y-%m-%d').date()
-            if fecha > datetime.utcnow().date():
-                return {'ok': False, 'error': 'La fecha no puede ser posterior a hoy.'}
+        ultimo_mantenimiento, error_fecha = InventarioService._parsear_fecha(datos)
+        if error_fecha:
+            return {'ok': False, 'error': error_fecha}
 
-        equipo.tipo_equipo = datos.get('tipo_equipo', equipo.tipo_equipo).strip()
-        equipo.codigo = codigo
-        equipo.ubicacion = datos.get('ubicacion', equipo.ubicacion).strip()
-        equipo.estado_operativo = datos.get('estado_operativo', equipo.estado_operativo).strip()
-        equipo.estado_flujo = datos.get('estado', equipo.estado_flujo).strip()
-        equipo.ultimo_mantenimiento = fecha
-        equipo.responsable = datos.get('responsable', equipo.responsable).strip()
+        tipo = datos.get('tipo_equipo', '').strip() or equipo.tipo_equipo
+        nombre_ubicacion = datos.get('ubicacion', '').strip() or equipo.ubicacion
+
+        if tipo != equipo.tipo_equipo:
+            modelo = InventarioService._obtener_o_crear_modelo(tipo)
+            equipo.id_modelos_equipos = modelo.id_modelos_equipo
+        if nombre_ubicacion != equipo.ubicacion:
+            ubicacion = InventarioService._obtener_o_crear_ubicacion(nombre_ubicacion)
+            equipo.id_ubicacion_actual = ubicacion.id_ubicacion
+
+        equipo.codigo_interno = codigo
+        equipo.estado = datos.get('estado', equipo.estado_flujo).strip() or equipo.estado_flujo
+        equipo.condicion = datos.get('estado_operativo', equipo.condicion).strip() or equipo.condicion
+        equipo.ultimo_mantenimiento = ultimo_mantenimiento
+        equipo.responsable = datos.get('responsable', equipo.responsable).strip() or equipo.responsable
 
         db.session.add(BitacoraTransaccion(
             modulo='inventario',
@@ -196,6 +341,8 @@ class InventarioService:
     @staticmethod
     def eliminar_equipo(equipo_id, usuario):
         equipo = InventarioEquipo.query.get_or_404(equipo_id)
+
+        MovimientoEquipo.query.filter_by(id_equipo=equipo.id).delete()
 
         db.session.add(BitacoraTransaccion(
             modulo='inventario',
@@ -651,16 +798,18 @@ class InventarioService:
                 Paragraph(f'<font size=9 color="#111827">{valor2}</font>', estilo_info_valor),
             ]
 
-        movimientos = [
-            ['#MOV-001', '12345690', '2026-05-10', 'Almacén Central', 'La hacienda', 'Despliegue inicial / J. Pérez'],
-            ['#MOV-002', '1234567', '2026-05-15', 'Almacén Central', 'Bella Vista', 'Asignación / M. Reyes'],
-            ['#MOV-003', '12345690', '2026-07-06', 'La hacienda', 'Bella Vista', 'Traslado por Falla / Director Reg.'],
-        ]
+        movimientos_db = InventarioService.listar_movimientos()
 
         if ids:
             id_list = [int(x) for x in ids.split(',') if x.strip().isdigit()]
             if id_list:
-                movimientos = [m for i, m in enumerate(movimientos, start=1) if i in id_list]
+                movimientos_db = [m for m in movimientos_db if m.id_movimiento in id_list]
+
+        movimientos = [
+            [m.codigo, m.codigo_equipo, m.fecha_movimiento.strftime('%Y-%m-%d'),
+             m.ubicacion_origen, m.ubicacion_destino, m.motivo_responsable]
+            for m in movimientos_db
+        ]
 
         datos_reporte = [
             info_fila('Total Movimientos', str(len(movimientos)), 'Fecha Emisión', fecha_reporte),
