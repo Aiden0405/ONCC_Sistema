@@ -91,6 +91,7 @@ def create_app(config_class=Config):
         from app.models.esquema_activo import MunicipioActivo  # noqa: F401
         from app.models.esquema_activo import ParroquiaActiva  # noqa: F401
         from app.models.esquema_activo import SensibilizacionActiva  # noqa: F401
+        from app.models.divulgacion import Divulgacion  # noqa: F401
         from app.models.divulgacion import Publicacion  # noqa: F401
         from app.models.geomatica import MapaRiesgo  # noqa: F401
         from app.models.geomatica import ElementosMapaRiesgo  # noqa: F401
@@ -221,8 +222,8 @@ def create_app(config_class=Config):
 
     app.add_url_rule('/admin/usuarios/', endpoint='usuario.index', view_func=core_usuario_index)
     app.add_url_rule('/admin/usuarios/nuevo', endpoint='usuario.nuevo', view_func=core_usuario_nuevo, methods=['GET', 'POST'])
-    app.add_url_rule('/admin/usuarios/<int:id_usuario>/editar', endpoint='usuario.editar', view_func=core_usuario_editar, methods=['GET', 'POST'])
-    app.add_url_rule('/admin/usuarios/<int:id_usuario>/eliminar', endpoint='usuario.eliminar', view_func=core_usuario_eliminar, methods=['POST'])
+    app.add_url_rule('/admin/usuarios/<int:usuario_id>/editar', endpoint='usuario.editar', view_func=core_usuario_editar, methods=['GET', 'POST'])
+    app.add_url_rule('/admin/usuarios/<int:usuario_id>/eliminar', endpoint='usuario.eliminar', view_func=core_usuario_eliminar, methods=['POST'])
     app.add_url_rule('/admin/usuarios/perfil', endpoint='usuario.perfil', view_func=core_usuario_perfil, methods=['GET', 'POST'])
 
     app.add_url_rule('/admin/roles/', endpoint='rol.index', view_func=core_rol_index)

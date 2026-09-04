@@ -11,7 +11,7 @@ from app.services.auditoria import registrar_accion
 from sqlalchemy.exc import OperationalError
 
 from app.blueprints.core import core_bp
-from app.models.esquema_activo import ActividadActiva as Actividad
+from app.models.actividad import Actividad
 from app.models.divulgacion import Divulgacion, Publicacion
 from app.models.geomatica import MapaRiesgo
 from app.models.visita_portal import VisitaPortal

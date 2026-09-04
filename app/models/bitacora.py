@@ -4,6 +4,7 @@ from app import db
 
 
 class BitacoraTransaccion(db.Model):
+    __bind_key__ = 'seguridad'
     __tablename__ = 'bitacora_transacciones'
 
     id = db.Column(db.Integer, primary_key=True)

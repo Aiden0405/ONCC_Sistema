@@ -44,22 +44,6 @@ class Divulgacion(db.Model):
 
 
 
-class Divulgacion(db.Model):
-    __tablename__ = 'divulgacion'
-    __table_args__ = {'extend_existing': True}
-
-    id_divulgacion = db.Column(db.Integer, primary_key=True)
-    id_actividad = db.Column(db.Integer, db.ForeignKey('actividad.id_actividad'), nullable=False, unique=True)
-    nombre_divulgacion = db.Column(db.String(100), nullable=False)
-    descripcion_divulgacion = db.Column(db.Text, nullable=False)
-    permiso_divulgacion = db.Column(db.String(50), nullable=False)
-
-    # Relación con Actividad que permite eliminación en cascada limpia
-    actividad = db.relationship('Actividad', foreign_keys=[id_actividad], backref=db.backref('divulgacion', uselist=False, cascade="all, delete-orphan"))
-
-    def __repr__(self):
-        return f"<Divulgacion {self.id_divulgacion}: {self.nombre_divulgacion}>"
-
 
 class Publicacion(db.Model):
 

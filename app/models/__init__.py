@@ -6,6 +6,7 @@ from app.models.usuario import Usuario
 from app.models.actividad import Actividad
 from app.models.bitacora import BitacoraTransaccion
 from app.models.notificacion import Notificacion
+from app.models.divulgacion import Divulgacion
 from app.models.divulgacion import Publicacion
 from app.models.geomatica import MapaRiesgo
 from app.models.geomatica import Simbologia
@@ -14,7 +15,6 @@ from app.models.clima import MapaClimatico
 from app.models.clima import RegistroClimatico
 from app.models.inventario import InventarioEquipo
 from app.models.tecnico import Tecnico
-from app.models.esquema_activo import ActividadActiva
 from app.models.esquema_activo import ComunidadActiva
 from app.models.esquema_activo import EstadoActivo
 from app.models.esquema_activo import FormacionActiva

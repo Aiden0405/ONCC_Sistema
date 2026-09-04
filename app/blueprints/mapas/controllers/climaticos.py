@@ -83,7 +83,21 @@ def listar_mapas_climaticos():
     } for m in mapas]
     
     return jsonify(resultados), 200
+@login_required
+def actualizar_mapa_climatico(mapa_id):
+    mapa = MapaClimatico.query.get_or_404(mapa_id)
+    data = request.get_json() if request.is_json else request.form
 
+    try:
+        mapa.nombre = data.get('nombre', mapa.nombre)
+        mapa.descripcion = data.get('descripcion', mapa.descripcion)
+        # Añade aquí los demás campos requeridos de tu modelo
+        
+        db.session.commit()
+        return jsonify({'status': 'success', 'mensaje': 'Mapa climático actualizado correctamente.'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'status': 'error', 'mensaje': f'Error al actualizar: {str(e)}'}), 500
 @login_required
 def eliminar_mapa_climatico(mapa_id):
     """ Elimina el registro y el archivo físico del mapa climático """

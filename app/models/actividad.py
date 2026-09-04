@@ -1,5 +1,6 @@
 from datetime import datetime
 from app import db
+from sqlalchemy.orm import synonym
 
 class Actividad(db.Model):
     __tablename__ = 'actividad'
@@ -9,6 +10,7 @@ class Actividad(db.Model):
     fecha_actividad = db.Column(db.Date, nullable=False)
     tipo_actividad = db.Column(db.String(50), nullable=False)
     id_comunidad = db.Column(db.Integer, db.ForeignKey('comunidad.id_comunidad'), nullable=False)
+    id_nivel = db.Column(db.Integer, db.ForeignKey('nivel.id_nivel'), nullable=True) # 👈 Columna FK requerida
     divulgacion = db.relationship(
         'Divulgacion', 
         back_populates='actividad_obj', 
