@@ -1,12 +1,13 @@
 import os
 from datetime import datetime
 from flask import request, jsonify, current_app, render_template, redirect, url_for, flash
-from flask_login import login_required
+from flask_login import current_user, login_required
 from werkzeug.utils import secure_filename
 from app import db
 from app.models.clima import MapaClimatico, RegistroClimatico
+from app.models.bitacora import BitacoraTransaccion
+from app.services.notificacion import ServicioNotificacion
 
-# Extensiones exclusivas para mapas climáticos (imágenes)
 EXTENSIONES_MAPAS_CLIMATICOS = {'png', 'jpg', 'jpeg', 'svg', 'webp'}
 
 def archivo_permitido(filename, extensiones_validas):
@@ -18,7 +19,6 @@ def mapas_climaticos_index():
 
 @login_required
 def procesar_mapa_climatico():
-    """ Procesa y almacena un nuevo mapa climático enfocado en formato de imagen """
     tipo_mapa = request.form.get('tipo_mapa')
     id_estado = request.form.get('id_estado')
     archivo = request.files.get('archivo_mapa')
@@ -51,7 +51,22 @@ def procesar_mapa_climatico():
         )
         
         db.session.add(nuevo_mapa)
+        db.session.flush()
+
+        nombre_usr = getattr(current_user, 'nombre_usuario', None) or getattr(current_user, 'usuario', 'Administrador')
+        db.session.add(BitacoraTransaccion(
+            modulo='geomatica',
+            registro_id=nuevo_mapa.id_mapa_climatico,
+            accion='creacion',
+            estado_nuevo='Publicado',
+            usuario=nombre_usr,
+            detalle=f'Registrado mapa climático tipo "{tipo_mapa}" (Estado #{id_estado})'
+        ))
+
         db.session.commit()
+        mensaje = 'Se registró un nuevo mapa climático.'
+        ServicioNotificacion.notificar_por_permiso('gestionar_geomatica', mensaje, emisor_id=current_user.id_usuario)
+        ServicioNotificacion.crear_aviso(id_usuario=current_user.id_usuario, mensaje=mensaje, categoria='Mapas')
 
         msg = 'Mapa climático registrado exitosamente.'
         if es_ajax:
@@ -66,7 +81,6 @@ def procesar_mapa_climatico():
 
 @login_required
 def listar_mapas_climaticos():
-    """ Devuelve el listado de mapas climáticos para la tabla dinámica """
     estado_id = request.args.get('estado', type=int)
     
     query = db.session.query(MapaClimatico)
@@ -83,30 +97,59 @@ def listar_mapas_climaticos():
     } for m in mapas]
     
     return jsonify(resultados), 200
+
 @login_required
 def actualizar_mapa_climatico(mapa_id):
     mapa = MapaClimatico.query.get_or_404(mapa_id)
     data = request.get_json() if request.is_json else request.form
 
     try:
-        mapa.nombre = data.get('nombre', mapa.nombre)
-        mapa.descripcion = data.get('descripcion', mapa.descripcion)
-        # Añade aquí los demás campos requeridos de tu modelo
+        if hasattr(mapa, 'nombre') and 'nombre' in data:
+            mapa.nombre = data.get('nombre', mapa.nombre)
+        if hasattr(mapa, 'descripcion') and 'descripcion' in data:
+            mapa.descripcion = data.get('descripcion', mapa.descripcion)
         
+        nombre_usr = getattr(current_user, 'nombre_usuario', None) or getattr(current_user, 'usuario', 'Administrador')
+        db.session.add(BitacoraTransaccion(
+            modulo='geomatica',
+            registro_id=mapa_id,
+            accion='modificacion',
+            estado_nuevo='Publicado',
+            usuario=nombre_usr,
+            detalle=f'Actualizado mapa climático #{mapa_id} ({mapa.tipo_de_mapa})'
+        ))
+
         db.session.commit()
+        mensaje = f'Se actualizó el mapa climático #{mapa_id}.'
+        ServicioNotificacion.notificar_por_permiso('gestionar_geomatica', mensaje, emisor_id=current_user.id_usuario)
+        ServicioNotificacion.crear_aviso(id_usuario=current_user.id_usuario, mensaje=mensaje, categoria='Mapas')
         return jsonify({'status': 'success', 'mensaje': 'Mapa climático actualizado correctamente.'}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({'status': 'error', 'mensaje': f'Error al actualizar: {str(e)}'}), 500
+
 @login_required
 def eliminar_mapa_climatico(mapa_id):
-    """ Elimina el registro y el archivo físico del mapa climático """
     mapa = MapaClimatico.query.get_or_404(mapa_id)
     try:
         ruta_fisica = os.path.join(current_app.root_path, 'static', mapa.url_mapa)
+        tipo_previo = mapa.tipo_de_mapa
+
+        nombre_usr = getattr(current_user, 'nombre_usuario', None) or getattr(current_user, 'usuario', 'Administrador')
+        db.session.add(BitacoraTransaccion(
+            modulo='geomatica',
+            registro_id=mapa_id,
+            accion='eliminacion',
+            estado_nuevo=None,
+            usuario=nombre_usr,
+            detalle=f'Eliminado mapa climático #{mapa_id} ({tipo_previo})'
+        ))
         
         db.session.delete(mapa)
         db.session.commit()
+        mensaje = f'Se eliminó el mapa climático #{mapa_id}.'
+        ServicioNotificacion.notificar_por_permiso('gestionar_geomatica', mensaje, emisor_id=current_user.id_usuario)
+        ServicioNotificacion.crear_aviso(id_usuario=current_user.id_usuario, mensaje=mensaje, categoria='Mapas')
         
         if os.path.exists(ruta_fisica):
             try: os.remove(ruta_fisica)

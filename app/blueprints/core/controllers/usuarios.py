@@ -6,6 +6,7 @@ from app.blueprints.core import core_bp
 from app.models.role import Role
 from app.models.usuario import Usuario
 from app.services.auditoria import registrar_accion
+from app.services.notificacion import ServicioNotificacion
 from app.utils.authorization import current_role_id, has_permission, is_superuser
 
 
@@ -76,19 +77,9 @@ def usuario_nuevo():
 
         db.session.add(nuevo_usuario)
         db.session.commit()
-
-        # 🔔 ALERTA DE ALTA DE USUARIO (CON CORRECCIÓN DE LEIDO)
-        try:
-            from app.models.notificacion import Notificacion
-            alerta = Notificacion(
-                categoria='Usuarios',
-                mensaje=f"El operador {current_user.nombre_usuario} registró al nuevo usuario {nuevo_usuario.nombre_usuario} en la plataforma.",
-                leido=False # 🌟 Forzado para evitar fallos de NULL en la base de datos
-            )
-            db.session.add(alerta)
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
+        mensaje = f"Se registró al nuevo usuario {nuevo_usuario.nombre_usuario}."
+        ServicioNotificacion.notificar_por_permiso('gestionar_usuarios', mensaje, emisor_id=current_user.id_usuario)
+        ServicioNotificacion.crear_aviso(id_usuario=nuevo_usuario.id_usuario, mensaje=mensaje, categoria='Usuarios')
 
         registrar_accion('Usuarios', nuevo_usuario.id_usuario, 'Crear', current_user.nombre_usuario, detalle=f'Creado usuario {correo}', estado_nuevo=nuevo_usuario.rol)
 
@@ -146,19 +137,9 @@ def usuario_editar(usuario_id):
             usuario.set_password(nueva_pass)
 
         db.session.commit()
-
-        # 🔔 ALERTA DE MODIFICACIÓN DE DATOS (CON CORRECCIÓN DE LEIDO)
-        try:
-            from app.models.notificacion import Notificacion
-            alerta = Notificacion(
-                categoria='Seguridad',
-                mensaje=f"Perfil del usuario {usuario.nombre_usuario} fue actualizado por el operador {current_user.nombre_usuario}.",
-                leido=False # 🌟 Forzado para evitar fallos de NULL en la base de datos
-            )
-            db.session.add(alerta)
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
+        mensaje = f"Tu perfil fue actualizado por {current_user.nombre_usuario}."
+        ServicioNotificacion.notificar_por_permiso('gestionar_usuarios', f'Se actualizó el usuario {usuario.nombre_usuario}.', emisor_id=current_user.id_usuario)
+        ServicioNotificacion.crear_aviso(id_usuario=usuario.id_usuario, mensaje=mensaje, categoria='Usuarios')
         
         user_correo = getattr(usuario, 'correo', usuario.nombre_usuario)
         registrar_accion('Usuarios', usuario.id_usuario, 'Modificar', current_user.nombre_usuario, detalle=f'Editado usuario {user_correo}', estado_nuevo=usuario.rol)
@@ -197,19 +178,8 @@ def usuario_eliminar(usuario_id):
 
     db.session.delete(usuario)
     db.session.commit()
-
-    # 🔔 ALERTA DE ELIMINACIÓN CRÍTICA (CON CORRECCIÓN DE LEIDO)
-    try:
-        from app.models.notificacion import Notificacion
-        alerta = Notificacion(
-            categoria='Seguridad',
-            mensaje=f"¡CRÍTICO!: La cuenta de {nombre_eliminado} fue removida del sistema por el operador {current_user.nombre_usuario}.",
-            leido=False # 🌟 Forzado para evitar fallos de NULL en la base de datos
-        )
-        db.session.add(alerta)
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
+    mensaje = f"Se eliminó la cuenta de {nombre_eliminado}."
+    ServicioNotificacion.notificar_por_permiso('gestionar_usuarios', mensaje, emisor_id=current_user.id_usuario)
     
     registrar_accion('Usuarios', usuario_id, 'Eliminar', current_user.nombre_usuario, detalle=f'Eliminado usuario {user_correo}')
 
@@ -254,7 +224,7 @@ def marcar_notificaciones_leidas():
     try:
         # 🌟 CORRECCIÓN: Usamos .is_(None) para que PostgreSQL reconozca las alertas globales
         notificaciones_pendientes = Notificacion.query.filter(
-            (Notificacion.usuario_id == current_user.id_usuario) | (Notificacion.usuario_id.is_(None)),
+            (Notificacion.id_usuario == current_user.id_usuario) | (Notificacion.id_usuario.is_(None)),
             Notificacion.leido == False
         ).all()
 
@@ -281,7 +251,7 @@ def notificaciones_historial():
     # 🌟 CORRECCIÓN: Al entrar al historial, limpiamos usando la sintaxis correcta .is_(None)
     try:
         notificaciones_pendientes = Notificacion.query.filter(
-            (Notificacion.usuario_id == current_user.id_usuario) | (Notificacion.usuario_id.is_(None)),
+            (Notificacion.id_usuario == current_user.id_usuario) | (Notificacion.id_usuario.is_(None)),
             Notificacion.leido == False
         ).all()
 
@@ -294,7 +264,7 @@ def notificaciones_historial():
 
     # Consultamos todo el historial usando .is_(None)
     historial = Notificacion.query.filter(
-        (Notificacion.usuario_id == current_user.id_usuario) | (Notificacion.usuario_id.is_(None))
+        (Notificacion.id_usuario == current_user.id_usuario) | (Notificacion.id_usuario.is_(None))
     ).order_by(Notificacion.fecha_creacion.desc()).all()
 
     return render_template('usuarios/notificaciones_historial.html', historial=historial)

@@ -10,6 +10,7 @@ from reportlab.lib.units import inch
 from app import db
 from app.models.bitacora import BitacoraTransaccion
 from app.models.inventario import InventarioEquipo, MovimientoEquipo
+from app.services.notificacion import ServicioNotificacion
 
 
 class InventarioService:
@@ -176,6 +177,14 @@ class InventarioService:
         ))
         db.session.commit()
 
+        mensaje = f"Se registró el equipo {equipo.codigo} en el inventario."
+        ServicioNotificacion.notificar_por_permiso(
+            'gestionar_inventario', mensaje, emisor_id=usuario.id_usuario
+        )
+        ServicioNotificacion.crear_aviso(
+            id_usuario=usuario.id_usuario, mensaje=mensaje, categoria='Inventario'
+        )
+
         return {'ok': True, 'equipo': equipo, 'mensaje': 'Equipo registrado exitosamente en el inventario.'}
 
     @staticmethod
@@ -243,6 +252,17 @@ class InventarioService:
         ))
         db.session.commit()
 
+        mensaje = (
+            f"Se registró el movimiento {movimiento.codigo} del equipo {equipo.codigo}: "
+            f"{movimiento.ubicacion_origen} -> {movimiento.ubicacion_destino}."
+        )
+        ServicioNotificacion.notificar_por_permiso(
+            'gestionar_inventario', mensaje, emisor_id=usuario.id_usuario
+        )
+        ServicioNotificacion.crear_aviso(
+            id_usuario=usuario.id_usuario, mensaje=mensaje, categoria='Inventario'
+        )
+
         return {'ok': True, 'movimiento': movimiento, 'mensaje': 'Movimiento registrado exitosamente.'}
 
     @staticmethod
@@ -271,6 +291,14 @@ class InventarioService:
         ))
         db.session.commit()
 
+        mensaje = f"Se actualizó el movimiento #{movimiento.id_movimiento:03d} del inventario."
+        ServicioNotificacion.notificar_por_permiso(
+            'gestionar_inventario', mensaje, emisor_id=usuario.id_usuario
+        )
+        ServicioNotificacion.crear_aviso(
+            id_usuario=usuario.id_usuario, mensaje=mensaje, categoria='Inventario'
+        )
+
         return {'ok': True, 'movimiento': movimiento, 'mensaje': 'Movimiento actualizado exitosamente.'}
 
     @staticmethod
@@ -291,6 +319,14 @@ class InventarioService:
             detalle=f'{detalle} eliminado del historial.',
         ))
         db.session.commit()
+
+        mensaje = f"Se eliminó el movimiento {detalle} del inventario."
+        ServicioNotificacion.notificar_por_permiso(
+            'gestionar_inventario', mensaje, emisor_id=usuario.id_usuario
+        )
+        ServicioNotificacion.crear_aviso(
+            id_usuario=usuario.id_usuario, mensaje=mensaje, categoria='Inventario'
+        )
 
         return {'ok': True, 'mensaje': 'Movimiento eliminado del historial.'}
 
@@ -336,6 +372,14 @@ class InventarioService:
         ))
         db.session.commit()
 
+        mensaje = f"Se actualizaron los datos del equipo {equipo.codigo} en el inventario."
+        ServicioNotificacion.notificar_por_permiso(
+            'gestionar_inventario', mensaje, emisor_id=usuario.id_usuario
+        )
+        ServicioNotificacion.crear_aviso(
+            id_usuario=usuario.id_usuario, mensaje=mensaje, categoria='Inventario'
+        )
+
         return {'ok': True, 'equipo': equipo, 'mensaje': 'Equipo actualizado exitosamente.'}
 
     @staticmethod
@@ -352,8 +396,17 @@ class InventarioService:
             usuario=usuario.nombre,
             detalle=f'Equipo {equipo.codigo} eliminado del inventario',
         ))
+        codigo_equipo = equipo.codigo
         db.session.delete(equipo)
         db.session.commit()
+
+        mensaje = f"Se eliminó el equipo {codigo_equipo} del inventario."
+        ServicioNotificacion.notificar_por_permiso(
+            'gestionar_inventario', mensaje, emisor_id=usuario.id_usuario
+        )
+        ServicioNotificacion.crear_aviso(
+            id_usuario=usuario.id_usuario, mensaje=mensaje, categoria='Inventario'
+        )
 
         return {'ok': True, 'mensaje': 'Equipo eliminado del inventario.'}
 

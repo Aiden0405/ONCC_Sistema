@@ -33,14 +33,40 @@
 
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
+        /* Barra de desplazamiento fina y estilizada para el menú */
         .sidebar-scrollbar {
-            scrollbar-width: none;
-            -ms-overflow-style: none;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(34, 197, 94, 0.4) transparent;
         }
 
         .sidebar-scrollbar::-webkit-scrollbar {
-            width: 0;
-            height: 0;
+            width: 5px;
+        }
+
+        .sidebar-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .sidebar-scrollbar::-webkit-scrollbar-thumb {
+            background-color: rgba(34, 197, 94, 0.35);
+            border-radius: 9999px;
+            transition: background-color 0.2s ease;
+        }
+
+        .sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(22, 163, 74, 0.7);
+        }
+
+        .dark .sidebar-scrollbar {
+            scrollbar-color: rgba(74, 222, 128, 0.3) transparent;
+        }
+
+        .dark .sidebar-scrollbar::-webkit-scrollbar-thumb {
+            background-color: rgba(74, 222, 128, 0.25);
+        }
+
+        .dark .sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(74, 222, 128, 0.6);
         }
     </style>
 </head>
@@ -80,7 +106,6 @@
         {% endif %}
     {% endmacro %}
 
-    <!-- Reemplaza tu etiqueta <aside> con esta: -->
 <aside id="sidebar"
     class="absolute md:relative z-40 inset-y-0 left-0 transform -translate-x-full md:translate-x-0 w-64 border-r transition-all duration-300 flex flex-col shadow-sm bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700 overflow-hidden h-full">
         <div
@@ -117,7 +142,7 @@
             </a>
 
             <!-- 🎯 Roles y Permisos -->
-            <a href="{{ url_for('core.rol_index') }}"
+            <a href="{{ url_for('rol.index') }}"
                 class="w-full flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['rol', 'permiso']) }}">
                 <i data-lucide="shield-check" class="mr-3 w-5 h-5 flex-shrink-0"></i>
                 <span class="sidebar-text whitespace-nowrap">Roles y Permisos (RBAC)</span>
@@ -173,9 +198,11 @@
                 <i data-lucide="map-pinned" class="mr-3 w-5 h-5 flex-shrink-0"></i>
                 <span class="sidebar-text whitespace-nowrap">Mapas de Riesgo</span>
             </a>
-            <a href="{{ url_for('catalogo.index') }}" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
+            <!-- 🎯 Catálogo de Simbología -->
+            <a href="{{ url_for('catalogo.index') }}"
+                class="w-full flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['catalogo']) }}">
                 <i data-lucide="map-pin-pen" class="mr-3 w-5 h-5 flex-shrink-0"></i>
-                <span class="sidebar-text whitespace-nowrap">Catalogo Simbolos</span>
+                <span class="sidebar-text whitespace-nowrap">Catálogo Símbolos</span>
             </a>
             {% endif %}
 
@@ -234,11 +261,18 @@
                 class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">
                 Parametrización</p>
 
-            <!-- 🎯 Catálogos del Sistema -->
-            <a href="{{ url_for('core.catalogos_index') }}"
+            <!-- 🎯 Catálogos del Sistema (Comunidades, Instituciones, Niveles) -->
+            <a href="/admin/catalogos/"
                 class="w-full flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['catalogos', 'parametrizacion']) }}">
                 <i data-lucide="database" class="mr-3 w-5 h-5 flex-shrink-0 text-green-600 dark:text-green-400"></i>
                 <span class="sidebar-text whitespace-nowrap">Catálogos del Sistema</span>
+            </a>
+
+            <!-- 🌟 BITÁCORA DE TRANSACCIONES (Auditoría) -->
+            <a href="{{ url_for('core.bitacora_index') }}"
+                class="w-full flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['bitacora']) }}">
+                <i data-lucide="clipboard-list" class="mr-3 w-5 h-5 flex-shrink-0 text-violet-600 dark:text-violet-400"></i>
+                <span class="sidebar-text whitespace-nowrap">Bitácora del Sistema</span>
             </a>
             {% endif %}
 
@@ -247,11 +281,11 @@
                 class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">
                 Soporte</p>
 
-            <!-- 🎯 Módulo de Ayuda -->
+            <!-- 🎯 Centro de Ayuda interno -->
             <a href="{{ url_for('core.modulo_ayuda') }}"
                 class="w-full flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['ayuda']) }}">
                 <i data-lucide="help-circle" class="mr-3 w-5 h-5 flex-shrink-0 text-green-600 dark:text-green-400"></i>
-                <span class="sidebar-text whitespace-nowrap">Módulo de Ayuda</span>
+                <span class="sidebar-text whitespace-nowrap">Centro de Ayuda</span>
             </a>
         </nav>
 
@@ -334,10 +368,12 @@
                             {% endif %}
 
                         </div>
-                        <div class="p-2 text-center border-t border-gray-200 dark:border-gray-700">
-                            <a href="{{ url_for('core.notificaciones_historial') }}"
-                                class="text-xs font-bold text-green-600 dark:text-green-500 hover:underline">Ver todas
-                                las notificaciones</a>
+
+                        <!-- 🌟 ENLACE AL HISTORIAL COMPLETO -->
+                        <div class="px-4 py-2.5 border-t border-gray-200 dark:border-gray-700 text-center bg-gray-50 dark:bg-gray-800/50 rounded-b-xl">
+                            <a href="/admin/notificaciones" class="text-xs font-semibold text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 transition-colors">
+                                Ver historial completo →
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -421,6 +457,15 @@
             const circuloRojo = notifToggleBtn.querySelector('span.absolute');
             if (circuloRojo) {
                 circuloRojo.remove();
+                
+                // 🌟 Envía la petición para guardar el estado 'leido = True' en la BD de forma permanente
+                fetch('/api/notificaciones/marcar-leidas', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() if csrf_token is defined else "" }}'
+                    }
+                }).catch(err => console.error('Error al actualizar notificaciones:', err));
             }
         });
 

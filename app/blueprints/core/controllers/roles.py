@@ -5,6 +5,7 @@ from app import db
 from app.blueprints.core import core_bp
 from app.models.role import Permission, Role, Permiso
 from app.services.auditoria import registrar_accion
+from app.services.notificacion import ServicioNotificacion
 from app.utils.authorization import current_role_id, has_permission, is_superuser
 
 
@@ -57,20 +58,9 @@ def rol_nuevo():
         try:
             db.session.add(rol)
             db.session.commit()
-            
-            # 🔔 ALERTA: NUEVO ROL REGISTRADO
-            try:
-                from app.models.notificacion import Notificacion
-                alerta = Notificacion(
-                    categoria='Seguridad',
-                    mensaje=f"Estructura RBAC: El operador {current_user.nombre_usuario} creó el nuevo rango institucional '{rol.nombre_rol}'.",
-                    usuario_id=None,  # 🌟 Forzado para la correcta consulta de PostgreSQL
-                    leido=False 
-                )
-                db.session.add(alerta)
-                db.session.commit()
-            except Exception:
-                db.session.rollback()
+            mensaje = f"Se creó el rol institucional '{rol.nombre_rol}'."
+            ServicioNotificacion.notificar_por_permiso('gestionar_usuarios', mensaje, emisor_id=current_user.id_usuario)
+            ServicioNotificacion.crear_aviso(id_usuario=current_user.id_usuario, mensaje=mensaje, categoria='Seguridad')
 
             registrar_accion('Roles', rol.id_rol, 'Crear', current_user.nombre_usuario, detalle=f'Creado rol {rol.nombre_rol}')
             flash('Rol creado con éxito.', 'success')
@@ -100,20 +90,9 @@ def rol_editar(rol_id):
         
         try:
             db.session.commit()
-            
-            # 🔔 ALERTA: NOMBRE DE ROL MODIFICADO
-            try:
-                from app.models.notificacion import Notificacion
-                alerta = Notificacion(
-                    categoria='Seguridad',
-                    mensaje=f"Estructura RBAC: Rol institucional '{nombre_anterior}' renombrado a '{rol.nombre_rol}' por {current_user.nombre_usuario}.",
-                    usuario_id=None,  # 🌟 Forzado para la correcta consulta de PostgreSQL
-                    leido=False 
-                )
-                db.session.add(alerta)
-                db.session.commit()
-            except Exception:
-                db.session.rollback()
+            mensaje = f"El rol '{nombre_anterior}' fue renombrado a '{rol.nombre_rol}'."
+            ServicioNotificacion.notificar_por_permiso('gestionar_usuarios', mensaje, emisor_id=current_user.id_usuario)
+            ServicioNotificacion.crear_aviso(id_usuario=current_user.id_usuario, mensaje=mensaje, categoria='Seguridad')
 
             registrar_accion('Roles', rol.id_rol, 'Modificar', current_user.nombre_usuario, detalle=f'Actualizado rol {rol.nombre_rol}')
             flash('Rol actualizado con éxito.', 'success')
@@ -142,20 +121,9 @@ def rol_eliminar(rol_id):
     try:
         db.session.delete(rol)
         db.session.commit()
-        
-        # 🔔 ALERTA: DESTRUCCIÓN DE ROL INSTITUCIONAL
-        try:
-            from app.models.notificacion import Notificacion
-            alerta = Notificacion(
-                categoria='Seguridad',
-                mensaje=f"⚠️ MODIFICACIÓN CRÍTICA: El rol '{rol_nombre_temp}' fue eliminado del esquema de seguridad por {current_user.nombre_usuario}.",
-                usuario_id=None,  # 🌟 Forzado para la correcta consulta de PostgreSQL
-                leido=False 
-            )
-            db.session.add(alerta)
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
+        mensaje = f"El rol '{rol_nombre_temp}' fue eliminado del esquema de seguridad."
+        ServicioNotificacion.notificar_por_permiso('gestionar_usuarios', mensaje, emisor_id=current_user.id_usuario)
+        ServicioNotificacion.crear_aviso(id_usuario=current_user.id_usuario, mensaje=mensaje, categoria='Seguridad')
 
         registrar_accion('Roles', rol_id_temp, 'Eliminar', current_user.nombre_usuario, detalle=f'Eliminado rol {rol_nombre_temp}')
         flash('Rol eliminado con éxito.', 'success')
@@ -190,20 +158,9 @@ def rol_gestionar_permisos(rol_id):
                     db.session.add(nueva_relacion)
             
             db.session.commit()
-            
-            # 🔔 ALERTA: MATRIZ DE ACCESOS O PRIVILEGIOS CAMBIADA
-            try:
-                from app.models.notificacion import Notificacion
-                alerta = Notificacion(
-                    categoria='Seguridad',
-                    mensaje=f"🔒 SEGURIDAD: La matriz de accesos y capacidades para el rol '{rol.nombre_rol}' fue reconfigurada por {current_user.nombre_usuario}.",
-                    usuario_id=None,
-                    leido=False 
-                )
-                db.session.add(alerta)
-                db.session.commit()
-            except Exception:
-                db.session.rollback()
+            mensaje = f"Se actualizaron los permisos del rol '{rol.nombre_rol}'."
+            ServicioNotificacion.notificar_por_permiso('gestionar_usuarios', mensaje, emisor_id=current_user.id_usuario)
+            ServicioNotificacion.crear_aviso(id_usuario=current_user.id_usuario, mensaje=mensaje, categoria='Seguridad')
 
             registrar_accion('Roles', rol.id_rol, 'ActualizarPermisos', current_user.nombre_usuario, detalle=f'Permisos actualizados para {rol.nombre_rol}: {seleccion}')
             flash('Matriz de accesos actualizada con éxito.', 'success')
@@ -306,20 +263,9 @@ def permiso_nuevo():
             
             db.session.add(nuevo_p)
             db.session.commit()
-            
-            # 🔔 ALERTA: PRIVILEGIO ATÓMICO AGREGADO AL CATÁLOGO
-            try:
-                from app.models.notificacion import Notificacion
-                alerta = Notificacion(
-                    categoria='Seguridad',
-                    mensaje=f"Ecosistema: Se registró una nueva capacidad atómica en el catálogo global: '{nuevo_p.nombre_modulo}'.",
-                    usuario_id=None,
-                    leido=False 
-                )
-                db.session.add(alerta)
-                db.session.commit()
-            except Exception:
-                db.session.rollback()
+            mensaje = f"Se registró el permiso '{nuevo_p.nombre_modulo}'."
+            ServicioNotificacion.notificar_por_permiso('gestionar_usuarios', mensaje, emisor_id=current_user.id_usuario)
+            ServicioNotificacion.crear_aviso(id_usuario=current_user.id_usuario, mensaje=mensaje, categoria='Seguridad')
 
             registrar_accion('Permisos', nuevo_p.id_modulo, 'Crear', current_user.nombre_usuario, detalle=f'Creado el privilegio atómico: {nuevo_p.nombre_modulo}')
             flash(f'Capacidad atómica registrada con éxito para el módulo "{modulo_detectado}".', 'success')
@@ -358,20 +304,9 @@ def permiso_editar(permiso_id):
         
         try:
             db.session.commit()
-            
-            # 🔔 ALERTA: PRIVILEGIO EDITADO
-            try:
-                from app.models.notificacion import Notificacion
-                alerta = Notificacion(
-                    categoria='Seguridad',
-                    mensaje=f"Ecosistema: El privilegio técnico '{permiso.nombre_modulo}' fue actualizado en el catálogo por {current_user.nombre_usuario}.",
-                    usuario_id=None,
-                    leido=False 
-                )
-                db.session.add(alerta)
-                db.session.commit()
-            except Exception:
-                db.session.rollback()
+            mensaje = f"Se actualizó el permiso '{permiso.nombre_modulo}'."
+            ServicioNotificacion.notificar_por_permiso('gestionar_usuarios', mensaje, emisor_id=current_user.id_usuario)
+            ServicioNotificacion.crear_aviso(id_usuario=current_user.id_usuario, mensaje=mensaje, categoria='Seguridad')
 
             registrar_accion('Permisos', permiso.id_modulo, 'Modificar', current_user.nombre_usuario, detalle=f'Actualizado el privilegio técnico a: {permiso.nombre_modulo}')
             flash('Privilegio actualizado con éxito en el catálogo.', 'success')
@@ -397,20 +332,9 @@ def permiso_eliminar(permiso_id):
     try:
         db.session.delete(permiso)
         db.session.commit()
-        
-        # 🔔 ALERTA: PRIVILEGIO ELIMINADO DEL CATÁLOGO
-        try:
-            from app.models.notificacion import Notificacion
-            alerta = Notificacion(
-                categoria='Seguridad',
-                mensaje=f"⚠️ ATENCIÓN: El privilegio atómico '{nombre_temp}' fue revocado y removido permanentemente del catálogo global.",
-                usuario_id=None,
-                leido=False 
-                )
-            db.session.add(alerta)
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
+        mensaje = f"El permiso '{nombre_temp}' fue eliminado del catálogo."
+        ServicioNotificacion.notificar_por_permiso('gestionar_usuarios', mensaje, emisor_id=current_user.id_usuario)
+        ServicioNotificacion.crear_aviso(id_usuario=current_user.id_usuario, mensaje=mensaje, categoria='Seguridad')
 
         registrar_accion('Permisos', id_temp, 'Eliminar', current_user.nombre_usuario, detalle=f'Eliminado el privilegio atómico: {nombre_temp}')
         flash('Permiso removido correctamente del catálogo global.', 'success')

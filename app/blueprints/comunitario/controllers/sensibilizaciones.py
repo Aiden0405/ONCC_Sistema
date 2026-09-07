@@ -6,15 +6,15 @@ from flask_login import login_required, current_user
 from app import db
 from app.blueprints.comunitario import comunitario_bp
 from app.blueprints.comunitario.forms import SensibilizacionForm
-# 🌟 Importamos tu validador de seguridad dinámico del Core
 from app.blueprints.core.controllers.roles import verificar_permiso_dinamico
-# Importamos nuestro nuevo modelo independiente
 from app.models.esquema_activo import SensibilizacionActiva as Sensibilizacion
 from app.models.esquema_activo import (
     NivelActivo as Nivel,
     ComunidadActiva as Comunidad
 )
 from app.models.actividad import Actividad
+from app.models.bitacora import BitacoraTransaccion
+from app.services.notificacion import ServicioNotificacion
 
 
 def _cargar_sensibilizacion_choices(form):
@@ -30,8 +30,7 @@ def _registrar_sensibilizacion(form):
         fecha_actividad=form.fecha_actividad.data,
         tipo_actividad='SENSIBILIZACION',
         id_comunidad=form.id_comunidad.data,
-        id_nivel=form.id_nivel.data,
-        id_usuario=current_user.id_usuario,
+        id_nivel=form.id_nivel.data
     )
     db.session.add(nueva_actividad)
     db.session.flush()
@@ -42,6 +41,18 @@ def _registrar_sensibilizacion(form):
         id_nivel=form.id_nivel.data,
     )
     db.session.add(nueva_sensibilizacion)
+    db.session.flush()
+
+    # 🌟 REGISTRO EN BITÁCORA
+    nombre_usr = getattr(current_user, 'nombre_usuario', None) or getattr(current_user, 'usuario', 'Administrador')
+    db.session.add(BitacoraTransaccion(
+        modulo='sensibilizaciones',
+        registro_id=nueva_sensibilizacion.id_sensibilizacion,
+        accion='creacion',
+        estado_nuevo='Planificada',
+        usuario=nombre_usr,
+        detalle=f'Sensibilización registrada: {form.nombre_sensibilizacion.data} (Facilitador: {form.facilitador.data})'
+    ))
 
 # ==========================================
 # 1. LISTAR Y REGISTRAR (GET y POST)
@@ -49,14 +60,11 @@ def _registrar_sensibilizacion(form):
 @comunitario_bp.route('/sensibilizaciones', methods=['GET', 'POST'])
 @login_required  
 def sensibilizaciones_index():
-    # 🛡️ Blindaje Dinámico Ajustado al Slug de la Base de Datos
     verificar_permiso_dinamico('gestionar_sensibilizaciones')
 
     form = SensibilizacionForm()
-
     _cargar_sensibilizacion_choices(form)
 
-    # LLAMADA AL MODELO: Dejamos el controlador flaco invocando la función del modelo
     sensibilizaciones_procesadas = Sensibilizacion.obtener_historial_completo()
 
     return render_template(
@@ -78,6 +86,9 @@ def sensibilizacion_nuevo():
         try:
             _registrar_sensibilizacion(form)
             db.session.commit()
+            mensaje = 'Se registró una nueva sensibilización comunitaria.'
+            ServicioNotificacion.notificar_por_permiso('gestionar_sensibilizaciones', mensaje, emisor_id=current_user.id_usuario)
+            ServicioNotificacion.crear_aviso(id_usuario=current_user.id_usuario, mensaje=mensaje, categoria='Sensibilizaciones')
             flash('Taller de sensibilización registrado con éxito.', 'success')
             return redirect(url_for('comunitario.sensibilizaciones_index'))
         except Exception as e:
@@ -95,7 +106,6 @@ def sensibilizacion_nuevo():
 @comunitario_bp.route('/sensibilizaciones/editar/<int:id_sensibilizacion>', methods=['POST'])
 @login_required
 def sensibilizacion_editar(id_sensibilizacion):
-    # 🛡️ Blindaje Dinámico Ajustado al Slug de la Base de Datos
     verificar_permiso_dinamico('gestionar_sensibilizaciones')
 
     sensibilizacion = Sensibilizacion.query.get_or_404(id_sensibilizacion)
@@ -108,24 +118,37 @@ def sensibilizacion_editar(id_sensibilizacion):
     id_nivel_nuevo = request.form.get('edit_id_nivel')
 
     try:
-        if fecha_nueva:
+        if fecha_nueva and actividad:
             actividad.fecha_actividad = datetime.strptime(fecha_nueva, '%Y-%m-%d').date()
-        if id_nivel_nuevo:
+        if id_nivel_nuevo and actividad:
             actividad.id_nivel = int(id_nivel_nuevo)
-        if id_comunidad_nueva:
+        if id_comunidad_nueva and actividad:
             actividad.id_comunidad = int(id_comunidad_nueva)
-        sensibilizacion.id_nivel = actividad.id_nivel
+        if actividad:
+            sensibilizacion.id_nivel = actividad.id_nivel
 
-        # Empaquetamos con el formato original del sistema
         sensibilizacion.nombre_sensibilizacion = f"{campana_nueva}||{facilitador_nuevo}"
 
+        # 🌟 REGISTRO EN BITÁCORA
+        nombre_usr = getattr(current_user, 'nombre_usuario', None) or getattr(current_user, 'usuario', 'Administrador')
+        db.session.add(BitacoraTransaccion(
+            modulo='sensibilizaciones',
+            registro_id=id_sensibilizacion,
+            accion='modificacion',
+            estado_nuevo='Completado',
+            usuario=nombre_usr,
+            detalle=f'Sensibilización #{id_sensibilizacion} modificada: {campana_nueva}'
+        ))
+
         db.session.commit()
+        mensaje = f'Se actualizó la sensibilización #{id_sensibilizacion}.'
+        ServicioNotificacion.notificar_por_permiso('gestionar_sensibilizaciones', mensaje, emisor_id=current_user.id_usuario)
+        ServicioNotificacion.crear_aviso(id_usuario=current_user.id_usuario, mensaje=mensaje, categoria='Sensibilizaciones')
         flash('Sensibilización actualizada correctamente.', 'success')
     except Exception as e:
         db.session.rollback()
         flash(f'Error al modificar: {str(e)}', 'error')
 
-    # CORRECCIÓN DE ENDPOINT: Redirige de forma consistente al index del blueprint
     return redirect(url_for('comunitario.sensibilizaciones_index'))
 
 # ==========================================
@@ -134,18 +157,32 @@ def sensibilizacion_editar(id_sensibilizacion):
 @comunitario_bp.route('/sensibilizaciones/eliminar/<int:id_sensibilizacion>', methods=['POST'])
 @login_required
 def sensibilizacion_eliminar(id_sensibilizacion):
-    # 🛡️ Blindaje Dinámico Ajustado al Slug de la Base de Datos
     verificar_permiso_dinamico('gestionar_sensibilizaciones')
 
     sensibilizacion = Sensibilizacion.query.get_or_404(id_sensibilizacion)
     actividad = Actividad.query.get(sensibilizacion.id_actividad)
+    campana_previo = sensibilizacion.nombre_sensibilizacion.split('||')[0] if sensibilizacion.nombre_sensibilizacion else f"#{id_sensibilizacion}"
 
     try:
+        # 🌟 REGISTRO EN BITÁCORA ANTES DE ELIMINAR
+        nombre_usr = getattr(current_user, 'nombre_usuario', None) or getattr(current_user, 'usuario', 'Administrador')
+        db.session.add(BitacoraTransaccion(
+            modulo='sensibilizaciones',
+            registro_id=id_sensibilizacion,
+            accion='eliminacion',
+            estado_nuevo=None,
+            usuario=nombre_usr,
+            detalle=f'Sensibilización #{id_sensibilizacion} eliminada: {campana_previo}'
+        ))
+
         db.session.delete(sensibilizacion)
         if actividad:
             db.session.delete(actividad)
             
         db.session.commit()
+        mensaje = f'Se eliminó la sensibilización #{id_sensibilizacion}.'
+        ServicioNotificacion.notificar_por_permiso('gestionar_sensibilizaciones', mensaje, emisor_id=current_user.id_usuario)
+        ServicioNotificacion.crear_aviso(id_usuario=current_user.id_usuario, mensaje=mensaje, categoria='Sensibilizaciones')
         flash('Sensibilización eliminada del historial.', 'success')
     except Exception as e:
         db.session.rollback()
@@ -158,7 +195,6 @@ def sensibilizacion_eliminar(id_sensibilizacion):
 # ==========================================
 @login_required
 def sensibilizacion_cambiar_estado(sensibilizacion_id):
-    # 🛡️ Blindaje Dinámico Ajustado al Slug de la Base de Datos
     verificar_permiso_dinamico('gestionar_sensibilizaciones')
 
     flash('Funcionalidad de cambio de estado en desarrollo.', 'info')

@@ -29,7 +29,6 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Nombre de la Actividad</label>
-                        <!-- 🌟 SE CAMBIA A nombre_formulario PARA EVITAR EL ERROR DE PROPERTY SETTER -->
                         <input type="text" name="actividad" value="{{ actividad_obj.nombre_formulario if actividad_obj and actividad_obj.nombre_formulario else '' }}" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none" placeholder="Ej: Taller de sensibilización comunitaria" required>
                     </div>
                     <div class="space-y-1">
@@ -71,28 +70,30 @@
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-1">
-                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Comunidad (Catálogo ONCC)</label>
-                        <select name="id_comunidad" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none">
-                            {% if comunidades %}
-                                {% for com in comunidades %}
-                                    <option value="{{ com.id_comunidad }}" {% if actividad_obj and actividad_obj.id_comunidad == com.id_comunidad %}selected{% endif %}>{{ com.nombre_comunidad }}</option>
-                                {% endfor %}
-                            {% else %}
-                                <option value="1">Comunidad Central Base</option>
-                            {% endif %}
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Comunidad / Sector (Catálogo ONCC)</label>
+                        <select name="id_comunidad" id="select_comunidad" required onchange="actualizarTerritorioDesdeComunidad(this)" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none">
+                            <option value="" disabled {% if not actividad_obj %}selected{% endif %}>Seleccione comunidad...</option>
+                            {% for com in comunidades %}
+                                <option value="{{ com.id_comunidad }}" 
+                                        data-parroquia="{{ com.parroquia.nombre_parroquia if com.parroquia else '' }}"
+                                        data-municipio="{{ com.parroquia.municipio.nombre_municipio if com.parroquia and com.parroquia.municipio else 'Iribarren' }}"
+                                        data-estado="{{ com.parroquia.municipio.estado.nombre_estado if com.parroquia and com.parroquia.municipio and com.parroquia.municipio.estado else 'Lara' }}"
+                                        {% if actividad_obj and actividad_obj.id_comunidad == com.id_comunidad %}selected{% endif %}>
+                                    {{ com.nombre_comunidad }}
+                                </option>
+                            {% endfor %}
                         </select>
                     </div>
 
                     <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Nivel Estratégico (Catálogo ONCC)</label>
                         <select name="id_nivel" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none">
-                            {% if niveles %}
-                                {% for niv in niveles %}
-                                    <option value="{{ niv.id_nivel }}" {% if actividad_obj and actividad_obj.id_nivel == niv.id_nivel %}selected{% endif %}>{{ niv.nombre_nivel }}</option>
-                                {% endfor %}
-                            {% else %}
-                                <option value="1">Nivel Regional Base</option>
-                            {% endif %}
+                            <option value="" disabled {% if not actividad_obj %}selected{% endif %}>Seleccione nivel formativo...</option>
+                            {% for niv in niveles %}
+                                <option value="{{ niv.id_nivel }}" {% if actividad_obj and actividad_obj.id_nivel == niv.id_nivel %}selected{% endif %}>
+                                    {{ niv.nombre_nivel }}
+                                </option>
+                            {% endfor %}
                         </select>
                     </div>
                 </div>
@@ -100,19 +101,15 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
                     <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estado Geográfico</label>
-                        <select name="estado_geo" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none">
-                            <option value="Lara" {% if actividad_obj and actividad_obj.estado_geo == 'Lara' %}selected{% endif %}>Lara</option>
-                            <option value="Yaracuy" {% if actividad_obj and actividad_obj.estado_geo == 'Yaracuy' %}selected{% endif %}>Yaracuy</option>
-                            <option value="Falcón" {% if actividad_obj and actividad_obj.estado_geo == 'Falcón' %}selected{% endif %}>Falcón</option>
-                        </select>
+                        <input type="text" name="estado_geo" id="input_estado_auto" value="{{ actividad_obj.estado_geo if actividad_obj and actividad_obj.estado_geo else 'Lara' }}" readonly class="w-full border rounded-md p-2 text-sm bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-500 outline-none cursor-not-allowed">
                     </div>
                     <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Municipio</label>
-                        <input type="text" name="municipio" value="{{ actividad_obj.municipio if actividad_obj and actividad_obj.municipio else 'Iribarren' }}" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none" placeholder="Ej: Iribarren">
+                        <input type="text" name="municipio" id="input_municipio_auto" value="{{ actividad_obj.municipio if actividad_obj and actividad_obj.municipio else '' }}" readonly class="w-full border rounded-md p-2 text-sm bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-500 outline-none cursor-not-allowed" placeholder="Se asigna según la comunidad...">
                     </div>
                     <div class="space-y-1">
-                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Parroquia / Sector</label>
-                        <input type="text" name="parroquia" value="{{ actividad_obj.parroquia if actividad_obj and actividad_obj.parroquia else 'Catedral' }}" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none" placeholder="Ej: Catedral">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Parroquia</label>
+                        <input type="text" name="parroquia" id="input_parroquia_auto" value="{{ actividad_obj.parroquia if actividad_obj and actividad_obj.parroquia else '' }}" readonly class="w-full border rounded-md p-2 text-sm bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-500 outline-none cursor-not-allowed" placeholder="Se asigna según la comunidad...">
                     </div>
                 </div>
             </div>
@@ -173,10 +170,10 @@
                                 <input type="file" id="input_fotos" name="fotos_archivos" accept="image/*" multiple class="absolute inset-0 opacity-0 cursor-pointer" onchange="previsualizarFotos(this)">
                             </div>
                             
-                            <!-- CONTENEDOR DE PREVISUALIZACIÓN DE NUEVAS FOTOS -->
+                            <!-- CONTENEDOR PREVISUALIZACIÓN -->
                             <div id="vista_previa_fotos" class="grid grid-cols-4 gap-2 pt-3 hidden"></div>
 
-                            <!-- MOSTRAR FOTOS PREVIAS DE LA BASE DE DATOS -->
+                            <!-- FOTOS PREVIAS -->
                             {% if actividad_obj and actividad_obj.fotos_archivos %}
                                 <div class="pt-3 border-t dark:border-gray-700 mt-3">
                                     <p class="text-[10px] text-gray-500 font-bold uppercase mb-2">Fotos cargadas previamente:</p>
@@ -229,5 +226,29 @@ function previsualizarFotos(input) {
         textoEstado.textContent = 'Seleccionar Imágenes';
     }
 }
+
+function actualizarTerritorioDesdeComunidad(selectElement) {
+    const opt = selectElement.options[selectElement.selectedIndex];
+    if (!opt) return;
+
+    const parroquia = opt.getAttribute('data-parroquia') || '';
+    const municipio = opt.getAttribute('data-municipio') || '';
+    const estado = opt.getAttribute('data-estado') || 'Lara';
+
+    const inputParroquia = document.getElementById('input_parroquia_auto');
+    const inputMunicipio = document.getElementById('input_municipio_auto');
+    const inputEstado = document.getElementById('input_estado_auto');
+
+    if (inputParroquia) inputParroquia.value = parroquia;
+    if (inputMunicipio) inputMunicipio.value = municipio;
+    if (inputEstado) inputEstado.value = estado;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const selComunidad = document.getElementById('select_comunidad');
+    if (selComunidad && selComunidad.value) {
+        actualizarTerritorioDesdeComunidad(selComunidad);
+    }
+});
 </script>
 {% endblock %}

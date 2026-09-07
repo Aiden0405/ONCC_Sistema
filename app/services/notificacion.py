@@ -1,26 +1,46 @@
-from datetime import datetime
 from app import db
-
+from app.models.notificacion import Notificacion
+from app.models.usuario import Usuario
 
 class ServicioNotificacion:
-    """Servicio mínimo para simular notificaciones externas al publicar.
-
-    En producción esto invocaría colas, webhooks o integraciones con redes.
-    """
 
     @staticmethod
-    def disparar_a_main_page(publicacion):
-        # Aquí se podrían generar thumbnails, llamar a APIs externas, invalidar caches, etc.
-        # Por ahora sólo registramos la acción en la BD (si se requiere) o en logs.
+    def crear_aviso(id_usuario, mensaje, categoria="Sistema"):
+        """Guarda la notificación para un usuario individual."""
         try:
-            # ejemplo: podríamos agregar una fila en una tabla de auditoría
-            # db.session.add(LogEvento(...))
+            notif = Notificacion(
+                id_usuario=id_usuario,
+                mensaje=mensaje,
+                categoria=categoria,
+                leido=False
+            )
+            db.session.add(notif)
             db.session.commit()
+            return True
         except Exception:
             db.session.rollback()
-        return True
+            return False
 
     @staticmethod
-    def compartir_en_redes(publicacion):
-        # Implementación placeholder
-        return True
+    def notificar_por_permiso(permiso_requerido, mensaje, categoria="Sistema", emisor_id=None):
+        """Notifica a todos los usuarios que tengan el permiso dado, excluyendo al emisor."""
+        try:
+            usuarios = Usuario.query.all()
+            for u in usuarios:
+                # Usa tu sistema existente de permisos en el modelo Usuario
+                tiene_permiso = getattr(u, 'has_permission', lambda p: False)(permiso_requerido)
+                es_super = getattr(u, 'id_rol', None) in (1, 2)
+                
+                if (tiene_permiso or es_super) and u.id_usuario != emisor_id:
+                    notif = Notificacion(
+                        id_usuario=u.id_usuario,
+                        mensaje=mensaje,
+                        categoria=categoria,
+                        leido=False
+                    )
+                    db.session.add(notif)
+            db.session.commit()
+            return True
+        except Exception:
+            db.session.rollback()
+            return False

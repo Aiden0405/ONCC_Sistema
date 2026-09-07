@@ -1,8 +1,10 @@
 from flask import flash, jsonify, redirect, render_template, request, url_for, Response
-from flask_login import login_required
+from flask_login import login_required, current_user
 
+from app import db
 from app.blueprints.logistica import logistica_bp
 from app.services.tecnico_service import TecnicoService
+from app.models.bitacora import BitacoraTransaccion
 
 
 @logistica_bp.route('/tecnicos-campo')
@@ -22,6 +24,26 @@ def tecnicos_nuevo():
             return jsonify({'ok': False, 'error': resultado['error']})
         flash(resultado['error'], 'error')
         return redirect(url_for('logistica.tecnicos_campo_index'))
+
+    # 🌟 REGISTRO EN BITÁCORA
+    try:
+        nombre_usr = getattr(current_user, 'nombre_usuario', None) or getattr(current_user, 'usuario', 'Administrador')
+        nombres = request.form.get('nombres', '').strip()
+        apellidos = request.form.get('apellidos', '').strip()
+        nombre_completo = f"{nombres} {apellidos}".strip() or "Nuevo Técnico"
+
+        db.session.add(BitacoraTransaccion(
+            modulo='tecnicos',
+            registro_id=resultado.get('id_tecnico'),
+            accion='creacion',
+            estado_nuevo='Activo',
+            usuario=nombre_usr,
+            detalle=f'Registrado técnico de campo: {nombre_completo}'
+        ))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return jsonify({'ok': True, 'redirect': url_for('logistica.tecnicos_campo_index'), 'mensaje': resultado['mensaje']})
     flash(resultado['mensaje'], 'success')
@@ -37,6 +59,26 @@ def tecnicos_editar(tecnico_id):
             return jsonify({'ok': False, 'error': resultado['error']})
         flash(resultado['error'], 'error')
         return redirect(url_for('logistica.tecnicos_campo_index'))
+
+    # 🌟 REGISTRO EN BITÁCORA
+    try:
+        nombre_usr = getattr(current_user, 'nombre_usuario', None) or getattr(current_user, 'usuario', 'Administrador')
+        nombres = request.form.get('nombres', '').strip()
+        apellidos = request.form.get('apellidos', '').strip()
+        nombre_completo = f"{nombres} {apellidos}".strip() or f"ID #{tecnico_id}"
+
+        db.session.add(BitacoraTransaccion(
+            modulo='tecnicos',
+            registro_id=tecnico_id,
+            accion='modificacion',
+            estado_nuevo='Activo',
+            usuario=nombre_usr,
+            detalle=f'Actualizados datos del técnico de campo #{tecnico_id}: {nombre_completo}'
+        ))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return jsonify({'ok': True, 'redirect': url_for('logistica.tecnicos_campo_index'), 'mensaje': resultado['mensaje']})
     flash(resultado['mensaje'], 'success')
@@ -46,6 +88,21 @@ def tecnicos_editar(tecnico_id):
 @logistica_bp.route('/tecnicos-campo/<int:tecnico_id>/eliminar', methods=['POST'])
 @login_required
 def tecnicos_eliminar(tecnico_id):
+    # 🌟 REGISTRO EN BITÁCORA ANTES DE ELIMINAR
+    try:
+        nombre_usr = getattr(current_user, 'nombre_usuario', None) or getattr(current_user, 'usuario', 'Administrador')
+        db.session.add(BitacoraTransaccion(
+            modulo='tecnicos',
+            registro_id=tecnico_id,
+            accion='eliminacion',
+            estado_nuevo=None,
+            usuario=nombre_usr,
+            detalle=f'Eliminado técnico de campo #{tecnico_id}'
+        ))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
     TecnicoService.eliminar_tecnico(tecnico_id)
     flash('Técnico eliminado del sistema.', 'success')
     return redirect(url_for('logistica.tecnicos_campo_index'))

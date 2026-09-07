@@ -50,8 +50,6 @@
             <h2 class="text-2xl font-bold text-gray-800 dark:text-white text-center">ONCC</h2>
             <p class="text-sm text-gray-500 dark:text-gray-400 text-center mt-1">Región Nororiental<br/>Sistema de Gestión y Monitoreo</p>
         </div>
-
-       
         
         <!-- Mensajes Flash -->
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -86,6 +84,19 @@
                 {% if form.password.errors %}
                     <p class="mt-2 text-xs text-red-500">{{ form.password.errors[0] }}</p>
                 {% endif %}
+            </div>
+
+            <!-- Bloque de Verificación de Seguridad (Captcha Matemático) -->
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2 ml-1">
+                    Verificación de Seguridad
+                </label>
+                <div class="flex items-center space-x-3">
+                    <span class="px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-mono font-bold rounded-xl select-none border border-gray-200 dark:border-gray-600 whitespace-nowrap text-sm">
+                        {{ session.get('captcha_texto', '¿Cuánto es 4 + 3?') }}
+                    </span>
+                    <input type="number" name="captcha_login" class="block w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent dark:text-white transition-all outline-none font-mono text-sm" placeholder="Resultado" required />
+                </div>
             </div>
 
             <button type="submit" class="w-full flex items-center justify-center py-3 px-4 rounded-xl shadow-lg shadow-green-600/20 text-white bg-green-600 hover:bg-green-700 active:scale-[0.98] transition-all font-bold tracking-wide">

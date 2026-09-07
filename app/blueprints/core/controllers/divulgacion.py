@@ -207,19 +207,9 @@ def divulgacion_admin_nuevo():
         try:
             _, _, pub = _crear_cascada_divulgacion(form, usuario_id_actual, permisos_del_rol)
             db.session.commit()
-
-            try:
-                from app.models.notificacion import Notificacion
-                alerta = Notificacion(
-                    categoria='Sistema',
-                    mensaje=f"Divulgación: El operador {getattr(current_user, 'nombre_usuario', 'Usuario')} registró un nuevo contenido bajo estatus '{pub.estado_publicacion}': '{pub.titulo_publicacion[:35]}...'.",
-                    usuario_id=None,
-                    leido=False
-                )
-                db.session.add(alerta)
-                db.session.commit()
-            except Exception:
-                db.session.rollback()
+            mensaje = f"Se registró la divulgación '{pub.titulo_publicacion[:35]}'."
+            ServicioNotificacion.notificar_por_permiso('crear_divulgaciones', mensaje, emisor_id=current_user.id_usuario)
+            ServicioNotificacion.crear_aviso(id_usuario=current_user.id_usuario, mensaje=mensaje, categoria='Divulgación')
 
             registrar_accion('Divulgación', pub.id_publicacion, 'Crear', getattr(current_user, 'nombre_usuario', 'Usuario'), detalle=f'Creado contenido: {pub.titulo_publicacion[:40]}...', estado_nuevo=pub.estado_publicacion)
             flash('Publicación guardada de forma exitosa.', 'success')
@@ -280,6 +270,9 @@ def divulgacion_admin_editar(pub_id):
                 pub.estado_publicacion = form.estado.data
 
             db.session.commit()
+            mensaje = f'Se actualizó la divulgación #{pub.id_publicacion}.'
+            ServicioNotificacion.notificar_por_permiso('crear_divulgaciones', mensaje, emisor_id=current_user.id_usuario)
+            ServicioNotificacion.crear_aviso(id_usuario=current_user.id_usuario, mensaje=mensaje, categoria='Divulgación')
 
             registrar_accion('Divulgación', pub.id_publicacion, 'Modificar', getattr(current_user, 'nombre_usuario', 'Usuario'), detalle=f'Actualizado ID: {pub.id_publicacion}', estado_nuevo=pub.estado_publicacion)
             flash('Publicación actualizada correctamente.', 'success')
@@ -312,6 +305,9 @@ def divulgacion_admin_eliminar(pub_id):
     titulo_eliminado = pub.titulo_publicacion
     db.session.delete(pub)
     db.session.commit()
+    mensaje = f"Se eliminó la divulgación '{titulo_eliminado[:35]}'."
+    ServicioNotificacion.notificar_por_permiso('crear_divulgaciones', mensaje, emisor_id=current_user.id_usuario)
+    ServicioNotificacion.crear_aviso(id_usuario=current_user.id_usuario, mensaje=mensaje, categoria='Divulgación')
 
     registrar_accion('Divulgación', pub_id, 'Eliminar', getattr(current_user, 'nombre_usuario', 'Usuario'), detalle=f'Eliminado permanentemente: {titulo_eliminado[:40]}...')
     flash('Publicación removida con éxito de la base de datos.', 'success')
@@ -327,6 +323,9 @@ def divulgacion_admin_aprobar(pub_id):
     pub.estado_publicacion = 'publicado'
     pub.publicado_en = datetime.utcnow()
     db.session.commit()
+    mensaje = f"Se aprobó y publicó la divulgación '{pub.titulo_publicacion[:35]}'."
+    ServicioNotificacion.notificar_por_permiso('aprobar_divulgaciones', mensaje, emisor_id=current_user.id_usuario)
+    ServicioNotificacion.crear_aviso(id_usuario=current_user.id_usuario, mensaje=mensaje, categoria='Divulgación')
 
     ServicioNotificacion.disparar_a_main_page(pub)
     registrar_accion('Divulgación', pub.id_publicacion, 'Modificar', getattr(current_user, 'nombre_usuario', 'Usuario'), detalle=f'Aprobada para la Web: {pub.titulo_publicacion[:40]}...', estado_nuevo='publicado')
@@ -343,6 +342,9 @@ def divulgacion_admin_despublicar(pub_id):
     pub.estado_publicacion = 'borrador'
     pub.publicado_en = None
     db.session.commit()
+    mensaje = f"Se retiró de publicación la divulgación '{pub.titulo_publicacion[:35]}'."
+    ServicioNotificacion.notificar_por_permiso('aprobar_divulgaciones', mensaje, emisor_id=current_user.id_usuario)
+    ServicioNotificacion.crear_aviso(id_usuario=current_user.id_usuario, mensaje=mensaje, categoria='Divulgación')
 
     registrar_accion('Divulgación', pub.id_publicacion, 'Modificar', getattr(current_user, 'nombre_usuario', 'Usuario'), detalle=f'Retirada de la web: {pub.titulo_publicacion[:40]}...', estado_nuevo='borrador')
     flash('El contenido ha sido retirado de la web pública y devuelto a borrador.', 'success')

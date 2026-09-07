@@ -6,6 +6,7 @@ from app import db
 from app.models.role import Role
 from app.models.tecnico import Tecnico
 from app.models.usuario import Usuario
+from app.services.notificacion import ServicioNotificacion
 
 
 class TecnicoService:
@@ -136,6 +137,9 @@ class TecnicoService:
             )
             db.session.add(perfil)
             db.session.commit()
+            mensaje = f'Se registró el técnico {usuario.nombre_usuario}.'
+            ServicioNotificacion.notificar_por_permiso('gestionar_tecnicos', mensaje, emisor_id=usuario.id_usuario)
+            ServicioNotificacion.crear_aviso(id_usuario=usuario.id_usuario, mensaje=mensaje, categoria='Técnicos')
         except IntegrityError:
             db.session.rollback()
             return {'ok': False, 'error': 'No se pudo registrar el técnico. Verifique que los datos no estén duplicados.'}
@@ -185,6 +189,9 @@ class TecnicoService:
 
         try:
             db.session.commit()
+            mensaje = f'Se actualizó el técnico {usuario.nombre_usuario}.'
+            ServicioNotificacion.notificar_por_permiso('gestionar_tecnicos', mensaje, emisor_id=usuario.id_usuario)
+            ServicioNotificacion.crear_aviso(id_usuario=usuario.id_usuario, mensaje=mensaje, categoria='Técnicos')
         except IntegrityError:
             db.session.rollback()
             return {'ok': False, 'error': 'No se pudo actualizar el técnico. Verifique que los datos no estén duplicados.'}
@@ -194,9 +201,12 @@ class TecnicoService:
     @staticmethod
     def eliminar_tecnico(tecnico_id):
         usuario = Usuario.query.get_or_404(tecnico_id)
+        nombre_eliminado = usuario.nombre_usuario
         Tecnico.query.filter_by(id_usuario=usuario.id_usuario).delete()
         db.session.delete(usuario)
         db.session.commit()
+        mensaje = f'Se eliminó el técnico {nombre_eliminado}.'
+        ServicioNotificacion.notificar_por_permiso('gestionar_tecnicos', mensaje, emisor_id=usuario.id_usuario)
 
     @staticmethod
     def generar_reporte_pdf(tecnicos):

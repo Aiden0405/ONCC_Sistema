@@ -234,6 +234,7 @@ def create_app(config_class=Config):
 
     # 🗃️ RUTAS DE PARAMETRIZACIÓN Y TABLAS MAESTRAS (CREAR, EDITAR Y ELIMINAR)
     app.add_url_rule('/admin/catalogos/', endpoint='core.catalogos_index', view_func=core_catalogos_index)
+    app.add_url_rule('/admin/bitacora/', endpoint='core.bitacora_index', view_func=core_bitacora_index)
     
     app.add_url_rule('/admin/catalogos/institucion/nueva', endpoint='core.nueva_institucion', view_func=core_nueva_institucion, methods=['POST'])
     app.add_url_rule('/admin/catalogos/institucion/<int:id_inst>/editar', endpoint='core.editar_institucion', view_func=core_editar_institucion, methods=['POST'])
@@ -320,8 +321,9 @@ def create_app(config_class=Config):
         from app.models.divulgacion import Publicacion
         from app.models.geomatica import MapaRiesgo
         from app.models.inventario import InventarioEquipo
+        from app.models.esquema_activo import FormacionActiva, SensibilizacionActiva
 
-        # 🌟 CORRECCIÓN: Ordenar por columnas reales del modelo
+        # 🌟 ORDENAR POR COLUMNAS REALES DEL MODELO
         actividades = Actividad.query.order_by(Actividad.fecha_actividad.desc(), Actividad.id_actividad.desc()).limit(5).all()
         total_actividades = Actividad.query.count()
 
@@ -339,8 +341,8 @@ def create_app(config_class=Config):
             'divulgacion_publicadas': Publicacion.query.filter_by(estado_publicacion='publicado').count(),
             'divulgacion_borradores': Publicacion.query.filter_by(estado_publicacion='borrador').count(),
             'comunidades': 0,
-            'formaciones': 0,
-            'sensibilizaciones': 0,
+            'formaciones': FormacionActiva.query.count(),         # 👈 Consulta real
+            'sensibilizaciones': SensibilizacionActiva.query.count(), # 👈 Consulta real
         }
 
         resumen = {
@@ -407,6 +409,55 @@ def create_app(config_class=Config):
             return dict(alertas_sistema=alertas, conteo_alertas=conteo_alertas)
         
         return dict(alertas_sistema=[], conteo_alertas=0)
+
+    @app.route('/api/notificaciones/marcar-leidas', methods=['POST'])
+    @login_required
+    def marcar_notificaciones_leidas():
+        from app.models.notificacion import Notificacion
+        from flask_login import current_user
+        
+        Notificacion.query.filter(
+            (Notificacion.id_usuario == current_user.id_usuario) | (Notificacion.id_usuario.is_(None)),
+            Notificacion.leido == False
+        ).update({Notificacion.leido: True}, synchronize_session=False)
+        
+        db.session.commit()
+        return {'status': 'ok'}
+    
+
+    @app.route('/admin/notificaciones')
+    @login_required
+    def notificaciones_historial():
+        from app.models.notificacion import Notificacion
+        from flask_login import current_user
+        from flask import request
+        
+        page = request.args.get('page', 1, type=int)
+        query = Notificacion.query.filter(
+            (Notificacion.id_usuario == current_user.id_usuario) | (Notificacion.id_usuario.is_(None))
+        ).order_by(Notificacion.fecha_creacion.desc())
+        
+        pagination = query.paginate(page=page, per_page=10, error_out=False)
+        historial = pagination.items
+        
+        return render_template('usuarios/notificaciones_historial.html', historial=historial, pagination=pagination)
+
+    @app.route('/admin/notificaciones/limpiar', methods=['POST'])
+    @login_required
+    def limpiar_notificaciones():
+        from app.models.notificacion import Notificacion
+        from flask_login import current_user
+        from flask import redirect, url_for, flash
+        
+        Notificacion.query.filter(
+            (Notificacion.id_usuario == current_user.id_usuario) | (Notificacion.id_usuario.is_(None))
+        ).delete(synchronize_session=False)
+        
+        db.session.commit()
+        flash('La bandeja de notificaciones ha sido vaciada correctamente.', 'success')
+        return redirect(url_for('notificaciones_historial'))
+
+
     # Manejador global de errores URL (404)
     @app.errorhandler(404)
     def pagina_no_encontrada(e):

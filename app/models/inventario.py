@@ -20,10 +20,26 @@ class ModeloEquipo(db.Model):
     id_modelos_equipo = db.Column(db.Integer, primary_key=True)
     id_categoria = db.Column(db.Integer, db.ForeignKey('categoria.id_categoria'), nullable=False)
     nombre_modelos_equipo = db.Column(db.String(100), nullable=False)
-    modelo = db.Column(db.String(100), nullable=False, default='N/D')
-    marca = db.Column(db.String(50), nullable=False, default='N/D')
+    id_modelo = db.Column(db.Integer, nullable=True)
 
     categoria = db.relationship('CategoriaEquipo', backref=db.backref('modelos', lazy='dynamic'))
+
+    @property
+    def modelo(self):
+        return self.nombre_modelos_equipo
+
+    @modelo.setter
+    def modelo(self, valor):
+        if valor:
+            self.nombre_modelos_equipo = valor
+
+    @property
+    def marca(self):
+        return getattr(self, '_marca_virtual', 'N/D')
+
+    @marca.setter
+    def marca(self, valor):
+        self._marca_virtual = valor
 
 
 class UbicacionEquipo(db.Model):
@@ -58,33 +74,29 @@ class MovimientoEquipo(db.Model):
 
 
 class InventarioEquipo(db.Model):
-    __tablename__ = 'equipo'  # Nombre oficial en Postgres
+    __tablename__ = 'equipo'
     __table_args__ = {'extend_existing': True}
 
-    # Columnas REALES de la tabla equipo
     id_equipo = db.Column(db.Integer, primary_key=True)
     id_modelos_equipos = db.Column(db.Integer, db.ForeignKey('modelos_equipo.id_modelos_equipo'), nullable=False)
     id_ubicacion_actual = db.Column(db.Integer, db.ForeignKey('ubicacion.id_ubicacion'), nullable=True)
     codigo_interno = db.Column(db.String(50), nullable=False, unique=True)
     numero_serie = db.Column(db.String(250), nullable=True)
-    estado = db.Column(db.String(30), nullable=False)  # Estado de flujo: Disponible / En Uso / En Mantenimiento
-    condicion = db.Column(db.String(30), nullable=False, default='Operativo')  # Condición: Operativo / Requiere Mantenimiento / Dañado
+    estado = db.Column(db.String(30), nullable=False)
+    condicion = db.Column(db.String(30), nullable=False, default='Operativo')
     fecha_ingreso = db.Column(db.Date, nullable=False, default=datetime.utcnow)
     ultimo_mantenimiento = db.Column(db.Date, nullable=True)
     responsable = db.Column(db.String(120), nullable=True)
     observaciones = db.Column(db.Text, nullable=True)
 
-    # Relaciones
     modelo_rel = db.relationship('ModeloEquipo', backref=db.backref('equipos', lazy='dynamic'))
     ubicacion_rel = db.relationship('UbicacionEquipo', backref=db.backref('equipos', lazy='dynamic'))
 
-    # Sinónimos para compatibilidad con controladores y plantillas existentes
     id = synonym('id_equipo')
     codigo = synonym('codigo_interno')
     estado_operativo = synonym('condicion')
     creado_en = synonym('fecha_ingreso')
 
-    # Propiedades derivadas (lectura) que resuelven las vistas y reportes
     @property
     def tipo_equipo(self):
         return self.modelo_rel.nombre_modelos_equipo if self.modelo_rel else 'Sin Modelo'

@@ -38,6 +38,7 @@ class Divulgacion(db.Model):
     nombre_divulgacion = synonym('nombre')
     descripcion_divulgacion = synonym('descripcion')
     permiso_divulgacion = synonym('permiso')
+    actividad = synonym('actividad_obj')
 
     def __repr__(self):
         return f"<Divulgacion {self.nombre}>"

@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+
+{% block title %}Bitácora de Transacciones - ONCC{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-6 animate-in fade-in duration-500">
+    
+    <!-- CABECERA -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold dark:text-white text-gray-800">Bitácora de Transacciones</h1>
+            <p class="text-sm dark:text-gray-400 text-gray-500">Auditoría cronológica de operaciones y cambios de estado en el sistema</p>
+        </div>
+
+        <!-- FILTRO POR MÓDULO COMPLETO -->
+        <form method="GET" class="flex items-center gap-2">
+            <select name="modulo" onchange="this.form.submit()" class="border rounded-lg px-3 py-2 text-xs bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 dark:text-white outline-none focus:ring-2 focus:ring-green-500">
+                <option value="">Todos los módulos</option>
+                <option value="Usuarios" {% if modulo_actual == 'Usuarios' %}selected{% endif %}>Usuarios</option>
+                <option value="Roles" {% if modulo_actual == 'Roles' %}selected{% endif %}>Roles</option>
+                <option value="inventario" {% if modulo_actual == 'inventario' %}selected{% endif %}>Inventario</option>
+                <option value="tecnicos" {% if modulo_actual == 'tecnicos' %}selected{% endif %}>Técnicos de Campo</option>
+                <option value="Divulgación" {% if modulo_actual == 'Divulgación' %}selected{% endif %}>Divulgación</option>
+                <option value="actividades" {% if modulo_actual == 'actividades' %}selected{% endif %}>Actividades</option>
+                <option value="formaciones" {% if modulo_actual == 'formaciones' %}selected{% endif %}>Formaciones</option>
+                <option value="sensibilizaciones" {% if modulo_actual == 'sensibilizaciones' %}selected{% endif %}>Sensibilizaciones</option>
+                <option value="parametrizacion" {% if modulo_actual == 'parametrizacion' %}selected{% endif %}>Parametrización</option>
+                <option value="geomatica" {% if modulo_actual == 'geomatica' %}selected{% endif %}>Mapas</option>
+            </select>
+        </form>
+    </div>
+
+    <!-- TABLA DE AUDITORÍA -->
+    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm">
+        <div class="p-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between gap-4">
+            <div class="relative flex-1 max-w-xs">
+                <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                <input type="text" onkeyup="filtrarBitacora(this)" placeholder="Buscar en esta página..." class="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 dark:text-white outline-none focus:ring-2 focus:ring-green-500">
+            </div>
+            <span class="text-xs text-gray-400 font-mono">
+                {% if paginacion is defined %}
+                    {{ paginacion.total }} evento(s) auditado(s)
+                {% else %}
+                    {{ registros|length }} evento(s) auditado(s)
+                {% endif %}
+            </span>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table id="tabla-bitacora" class="w-full text-sm text-left">
+                <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-700/40 text-gray-500 dark:text-gray-400 border-b dark:border-gray-700">
+                    <tr>
+                        <th class="px-6 py-3 font-semibold">ID</th>
+                        <th class="px-6 py-3 font-semibold">Fecha / Hora</th>
+                        <th class="px-6 py-3 font-semibold">Usuario</th>
+                        <th class="px-6 py-3 font-semibold">Módulo</th>
+                        <th class="px-6 py-3 font-semibold">Operación</th>
+                        <th class="px-6 py-3 font-semibold">Estado Resultante</th>
+                        <th class="px-6 py-3 font-semibold">Detalle</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
+                    {% for reg in registros %}
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                        <td class="px-6 py-3.5 font-mono text-xs text-gray-400">#{{ reg.id }}</td>
+                        <td class="px-6 py-3.5 font-mono text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                            {{ reg.creado_en.strftime('%Y-%m-%d %H:%M') if reg.creado_en else 'N/D' }}
+                        </td>
+                        <td class="px-6 py-3.5 font-medium text-gray-900 dark:text-white whitespace-nowrap">
+                            <i data-lucide="user" class="w-3.5 h-3.5 inline mr-1 text-gray-400"></i>{{ reg.usuario }}
+                        </td>
+                        <td class="px-6 py-3.5 uppercase font-mono text-xs">
+                            <span class="px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                                {{ reg.modulo }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-3.5 whitespace-nowrap">
+                            {% set acc = reg.accion|lower %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold uppercase
+                                {% if 'crea' in acc %}bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300
+                                {% elif 'edi' in acc or 'mod' in acc %}bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300
+                                {% elif 'elim' in acc %}bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300
+                                {% elif 'mov' in acc or 'trans' in acc %}bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300
+                                {% else %}bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300{% endif %}">
+                                {{ reg.accion }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-3.5 whitespace-nowrap text-xs">
+                            {% if reg.estado_nuevo and reg.estado_nuevo not in ['-', 'None', ''] %}
+                                <span class="px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700 dark:bg-gray-700 dark:text-gray-300">
+                                    {{ reg.estado_nuevo }}
+                                </span>
+                            {% else %}
+                                <span class="text-[11px] text-gray-400 dark:text-gray-500 italic">No aplica</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-3.5 text-xs text-gray-600 dark:text-gray-400 max-w-sm truncate" title="{{ reg.detalle }}">
+                            {{ reg.detalle or 'Sin detalle registrado' }}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="px-6 py-10 text-center text-gray-400">No se registran transacciones en la bitácora todavía.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- BARRA DE PAGINACIÓN -->
+        {% if paginacion is defined and paginacion.pages > 1 %}
+        <div class="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <span class="text-xs text-gray-500 dark:text-gray-400">
+                Página <b class="font-bold text-gray-700 dark:text-white">{{ paginacion.page }}</b> de <b class="font-bold text-gray-700 dark:text-white">{{ paginacion.pages }}</b> ({{ paginacion.total }} registros)
+            </span>
+
+            <div class="inline-flex items-center gap-1">
+                <!-- Anterior -->
+                {% if paginacion.has_prev %}
+                <a href="{{ url_for('core.bitacora_index', page=paginacion.prev_num, modulo=modulo_actual) }}" 
+                   class="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                    &laquo; Anterior
+                </a>
+                {% else %}
+                <span class="px-3 py-1.5 rounded-lg border border-gray-100 dark:border-gray-800 text-xs text-gray-300 dark:text-gray-600 cursor-not-allowed">
+                    &laquo; Anterior
+                </span>
+                {% endif %}
+
+                <!-- Páginas Numéricas -->
+                {% for p in paginacion.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                    {% if p %}
+                        {% if p == paginacion.page %}
+                        <span class="px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-bold shadow-sm">
+                            {{ p }}
+                        </span>
+                        {% else %}
+                        <a href="{{ url_for('core.bitacora_index', page=p, modulo=modulo_actual) }}" 
+                           class="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                            {{ p }}
+                        </a>
+                        {% endif %}
+                    {% else %}
+                        <span class="px-2 py-1.5 text-xs text-gray-400">…</span>
+                    {% endif %}
+                {% endfor %}
+
+                <!-- Siguiente -->
+                {% if paginacion.has_next %}
+                <a href="{{ url_for('core.bitacora_index', page=paginacion.next_num, modulo=modulo_actual) }}" 
+                   class="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                    Siguiente &raquo;
+                </a>
+                {% else %}
+                <span class="px-3 py-1.5 rounded-lg border border-gray-100 dark:border-gray-800 text-xs text-gray-300 dark:text-gray-600 cursor-not-allowed">
+                    Siguiente &raquo;
+                </span>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+
+<script>
+function filtrarBitacora(input) {
+    const filtro = input.value.toLowerCase();
+    const filas = document.querySelectorAll('#tabla-bitacora tbody tr');
+    filas.forEach(fila => {
+        const texto = fila.textContent.toLowerCase();
+        fila.style.display = texto.includes(filtro) ? '' : 'none';
+    });
+}
+document.addEventListener('DOMContentLoaded', () => {
+    if (window.lucide) lucide.createIcons();
+});
+</script>
+{% endblock %}
