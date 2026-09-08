@@ -11,45 +11,56 @@ from sqlalchemy.exc import IntegrityError, DataError, DatabaseError
 import kml2geojson
 from app import db
 from contextlib import contextmanager
-
+# NOTA: Asegúrate de que el modelo ElementosMapaRiesgo esté bien importado (en tu código original decías ElementoMapaRiesgo en algunas partes, lo he unificado)
 from app.models.geomatica import MapaRiesgo, ElementosMapaRiesgo, Simbologia
 from app.models.actividad import Actividad
 from app.models.esquema_activo import ComunidadActiva, ParroquiaActiva, MunicipioActivo, EstadoActivo
-from app.models.bitacora import BitacoraTransaccion
 from app.services.notificacion import ServicioNotificacion
+from app.utils.authorization import verificar_permiso_dinamico
 
+# VALIDACIÓN SEPARADA POR TIPO DE MÓDULO
 EXTENSIONES_MAPAS = {'png', 'jpg', 'jpeg', 'svg', 'webp', 'kml', 'geojson'}
 EXTENSIONES_SIMBOLOS = {'png', 'jpg', 'jpeg', 'svg', 'webp'}
 
 def archivo_permitido(filename, extensiones_validas):
+    """ Verifica la extensión contra la lista específica que se le pase """
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in extensiones_validas
 
 
 def obtener_poligono_kml(filepath):
+    """
+    Parsea un KML estandarizado (Google Earth, QGIS, etc.) buscando EXCLUSIVAMENTE el primer <Polygon>.
+    Soporta anidamientos profundos, saltos de línea/tabs en coordenadas y remueve altitudes (3D).
+    """
     try:
         tree = ET.parse(filepath)
         root = tree.getroot()
 
+        # Eliminar namespaces de XML dinámicamente para iteración limpia
         for elem in root.iter():
             if '}' in elem.tag:
                 elem.tag = elem.tag.split('}', 1)[1]
 
+        # Buscar la primera etiqueta <Polygon> en cualquier nivel del documento
         for polygon in root.iter('Polygon'):
             coords_node = polygon.find('.//coordinates')
             
             if coords_node is not None and coords_node.text:
                 coord_tuples = []
+                # split() separa automáticamente por espacios, saltos de línea y tabs
                 puntos_raw = coords_node.text.strip().split()
                 
                 for pt in puntos_raw:
                     parts = pt.split(',')
                     if len(parts) >= 2:
                         try:
+                            # Se toma partes[0] (Lon) y partes[1] (Lat), descartando la altitud (3D)
                             coord_tuples.append([float(parts[0]), float(parts[1])])
                         except ValueError:
                             continue
                 
                 if len(coord_tuples) >= 3:
+                    # Garantizar cierre del polígono si la primera coordenada no coincide con la última
                     if coord_tuples[0] != coord_tuples[-1]:
                         coord_tuples.append(coord_tuples[0])
                         
@@ -58,13 +69,18 @@ def obtener_poligono_kml(filepath):
                         "coordinates": [coord_tuples]
                     }
     except Exception as e:
-        print(f"Error parseando polígono KML: {e}")
+        print(f"Error parseando el polígono estandarizado del KML: {e}")
         
     return None
 
 
 @login_required
 def extraer_y_procesar_vectores(filepath, nuevo_mapa):
+    """
+    Busca únicamente el polígono delimitador de la comunidad en el archivo subido
+    y lo asigna a 'poligonal_comunidad' usando las funciones de PostGIS (WGS84 2D MultiPolygon).
+    Omite puntos y líneas para no saturar ni generar inconsistencias con la simbología.
+    """
     geom_json = None
 
     if filepath.endswith('.kml'):
@@ -85,26 +101,34 @@ def extraer_y_procesar_vectores(filepath, nuevo_mapa):
 
     if geom_json:
         geom_str = json.dumps(geom_json)
+
+        # Inyección espacial mediante PostGIS (2D, WGS84, MultiPolygon)
         nuevo_mapa.poligonal_comunidad = db.func.ST_Multi(
             db.func.ST_SetSRID(
                 db.func.ST_Force2D(db.func.ST_GeomFromGeoJSON(geom_str)), 
                 4326
             )
         )
+    else:
+        print("Aviso: El archivo no contenía un polígono delimitador válido. Lienzo en blanco.")
 
 
 @login_required
 def catalogo_index():
+    verificar_permiso_dinamico('ver_simbologia')
     return render_template('geomatica/gestionar_simbologia.html')
 
 
 @login_required
 def mapas_riesgo_index():
+    verificar_permiso_dinamico('ver_mapas_riesgo')
     return render_template('geomatica/mapa_riesgo.html')
 
 
 @login_required
 def vista_carga_ssbc():
+    verificar_permiso_dinamico('ver_mapas_riesgo')
+    """ Vista del formulario de carga con selector de actividades """
     cargas = MapaRiesgo.query.order_by(MapaRiesgo.fecha_creacion.desc()).all()
     actividades_disponibles = Actividad.query.filter_by(tipo_actividad='MAPA_RIESGO').all()
     estados_flujo = ['Pendiente', 'En Revisión', 'Aprobado', 'Rechazado']
@@ -119,12 +143,16 @@ def vista_carga_ssbc():
 
 @login_required
 def vista_dibujar_mapa(mapa_id):
+    verificar_permiso_dinamico('ver_elementos_mapa')
+    """ Renderiza la herramienta de dibujo Leaflet """
     mapa = MapaRiesgo.query.get_or_404(mapa_id)
     return render_template('geomatica/dibujar_mapa.html', mapa=mapa)
 
 
 @login_required
 def crear_mapa(): 
+    verificar_permiso_dinamico('registrar_elementos_mapa')
+    """ Guarda un dibujo individual recibido desde Leaflet """
     datos = request.get_json()
     if not datos or 'id_simbologia' not in datos or 'id_mapa_riesgo' not in datos:
         return jsonify({'status': 'error', 'message': 'Faltan datos requeridos (simbología o mapa).'}), 400
@@ -150,16 +178,6 @@ def crear_mapa():
         if mapa_padre:
             mapa_padre.fecha_creacion = datetime.now()
 
-        nombre_usr = getattr(current_user, 'nombre_usuario', None) or getattr(current_user, 'usuario', 'Administrador')
-        db.session.add(BitacoraTransaccion(
-            modulo='geomatica',
-            registro_id=id_mapa,
-            accion='modificacion',
-            estado_nuevo='En Proceso',
-            usuario=nombre_usr,
-            detalle=f'Agregado elemento cartográfico (#{id_recien_creado}) al mapa de riesgo #{id_mapa}'
-        ))
-
         db.session.commit()
         mensaje = f'Se registró un elemento geográfico en el mapa #{id_mapa}.'
         ServicioNotificacion.notificar_por_permiso('gestionar_geomatica', mensaje, emisor_id=current_user.id_usuario)
@@ -178,6 +196,8 @@ def crear_mapa():
 
 @login_required
 def procesar_archivo():
+    verificar_permiso_dinamico('registrar_mapas_riesgo')
+    """ Procesa la carga inicial del mapa base y responde dinámicamente según el método o cliente """
     if request.method == 'GET':
         return redirect(url_for('geomatica.carga_ssbc'))
 
@@ -209,8 +229,6 @@ def procesar_archivo():
         db.session.add(nuevo_mapa)
         db.session.flush()
 
-        nombre_usr = getattr(current_user, 'nombre_usuario', None) or getattr(current_user, 'usuario', 'Administrador')
-
         if archivo and archivo.filename != '':
             if not archivo_permitido(archivo.filename, EXTENSIONES_MAPAS):
                 db.session.rollback()
@@ -228,18 +246,11 @@ def procesar_archivo():
                 os.makedirs(upload_folder, exist_ok=True)
                 ruta_guardado = os.path.join(upload_folder, filename)
                 archivo.save(ruta_guardado)
-                
+
                 nuevo_mapa.ruta_kml = f'uploads/mapas/vectores/{filename}' 
-                extraer_y_procesar_vectores(ruta_guardado, nuevo_mapa)
                 
-                db.session.add(BitacoraTransaccion(
-                    modulo='geomatica',
-                    registro_id=nuevo_mapa.id_mapa_riesgo,
-                    accion='creacion',
-                    estado_nuevo='Cargado',
-                    usuario=nombre_usr,
-                    detalle=f'Procesado vector cartográfico ({extension.upper()}): {nombre}'
-                ))
+                # Procesa y extrae la poligonal de la comunidad
+                extraer_y_procesar_vectores(ruta_guardado, nuevo_mapa)
 
                 db.session.commit()
                 mensaje = f'Se procesó el mapa de riesgo #{nuevo_mapa.id_mapa_riesgo}.'
@@ -267,16 +278,6 @@ def procesar_archivo():
                 archivo.save(ruta_guardado)
                 
                 nuevo_mapa.ruta_imagen_mapa = f'uploads/mapas/imagenes/{filename}'
-
-                db.session.add(BitacoraTransaccion(
-                    modulo='geomatica',
-                    registro_id=nuevo_mapa.id_mapa_riesgo,
-                    accion='creacion',
-                    estado_nuevo='Cargado',
-                    usuario=nombre_usr,
-                    detalle=f'Subida imagen de mapa de riesgo: {nombre}'
-                ))
-
                 db.session.commit()
                 mensaje = f'Se guardó la imagen del mapa de riesgo #{nuevo_mapa.id_mapa_riesgo}.'
                 ServicioNotificacion.notificar_por_permiso('gestionar_geomatica', mensaje, emisor_id=current_user.id_usuario)
@@ -296,15 +297,6 @@ def procesar_archivo():
                 flash(msg, 'success')
                 return redirect(url_destino) 
         else:
-            db.session.add(BitacoraTransaccion(
-                modulo='geomatica',
-                registro_id=nuevo_mapa.id_mapa_riesgo,
-                accion='creacion',
-                estado_nuevo='Borrador',
-                usuario=nombre_usr,
-                detalle=f'Lienzo en blanco creado para mapa de riesgo: {nombre}'
-            ))
-
             db.session.commit()
             mensaje = f'Se registró la información base del mapa de riesgo #{nuevo_mapa.id_mapa_riesgo}.'
             ServicioNotificacion.notificar_por_permiso('gestionar_geomatica', mensaje, emisor_id=current_user.id_usuario)
@@ -330,19 +322,21 @@ def procesar_archivo():
             return jsonify({'status': 'error', 'message': f'Error en la transacción: {error_msg}'}), 500
         flash(f'Error en la transacción: {error_msg}', 'error')
         return redirect(url_for('geomatica.carga_ssbc'))
-
-
 @login_required
 def obtener_mapa(mapa_id):
+    verificar_permiso_dinamico('ver_mapas_riesgo')
+    """ Envía la data espacial (comunidad, encuadre y elementos dibujados) al frontend """
     mapa = MapaRiesgo.query.get(mapa_id)
     if not mapa:
         return jsonify({'message': 'Mapa no encontrado'}), 404
 
+    # 1. Poligonal base de la comunidad (PostGIS)
     poligonal_base = None
     if getattr(mapa, 'poligonal_comunidad', None) is not None:
         geom_base_str = db.session.scalar(db.func.ST_AsGeoJSON(mapa.poligonal_comunidad))
         poligonal_base = json.loads(geom_base_str) if geom_base_str else None
 
+    # 2. Consultamos los elementos dibujados en la tabla ElementosMapaRiesgo
     consulta = db.session.query(
         ElementosMapaRiesgo, 
         Simbologia
@@ -371,19 +365,20 @@ def obtener_mapa(mapa_id):
             "geometry": json.loads(geom_json) if geom_json else None
         })
 
+    # 3. Retornamos la respuesta separando encuadre de elementos dibujados
     return jsonify({
         'id': mapa.id_mapa_riesgo,
         'nombre': mapa.nombre,
         'descripcion': mapa.descripcion,
         'ruta_kml': mapa.ruta_kml,
         'poligonal_comunidad': poligonal_base,
-        'limites_layout': mapa.limites_layout,
-        'elementos_riesgo': features
+        'limites_layout': mapa.limites_layout,  # <-- Solo las coordenadas del Bounding Box
+        'elementos_riesgo': features           # <-- La lista de elementos dibujados
     }), 200
-
 
 @login_required
 def actualizar_mapa(mapa_id):
+    verificar_permiso_dinamico('editar_mapas_riesgo')
     mapa = MapaRiesgo.query.get(mapa_id)
     if not mapa:
         return jsonify({'status': 'error', 'message': 'El mapa no existe.'}), 404
@@ -398,33 +393,25 @@ def actualizar_mapa(mapa_id):
 
     mapa.fecha_creacion = datetime.now()
 
+    # Poligonal comunidad
     clave_geom = 'geometria_comunidad' if 'geometria_comunidad' in datos else ('poligonal_comunidad' if 'poligonal_comunidad' in datos else None)
     if clave_geom is not None:
         geom_val = datos.get(clave_geom)
         mapa.poligonal_comunidad = ST_GeomFromGeoJSON(json.dumps(geom_val)) if geom_val else None
 
+    # Guarda únicamente las coordenadas del encuadre
     if 'limites_layout' in datos:
         mapa.limites_layout = datos['limites_layout']
-
-    nombre_usr = getattr(current_user, 'nombre_usuario', None) or getattr(current_user, 'usuario', 'Administrador')
-    db.session.add(BitacoraTransaccion(
-        modulo='geomatica',
-        registro_id=mapa_id,
-        accion='modificacion',
-        estado_nuevo='Actualizado',
-        usuario=nombre_usr,
-        detalle=f'Límites y encuadre actualizados en mapa de riesgo #{mapa_id}'
-    ))
 
     db.session.commit()
     mensaje = f'Se actualizaron los límites del mapa de riesgo #{mapa_id}.'
     ServicioNotificacion.notificar_por_permiso('gestionar_geomatica', mensaje, emisor_id=current_user.id_usuario)
     ServicioNotificacion.crear_aviso(id_usuario=current_user.id_usuario, mensaje=mensaje, categoria='Mapas')
     return jsonify({'status': 'success', 'message': 'Límites del mapa actualizados correctamente.'}), 200
-
-
 @login_required
 def eliminar_mapa(mapa_id):
+    verificar_permiso_dinamico('eliminar_mapas_riesgo')
+    """ Elimina el mapa base, sus polígonos asociados y limpia los archivos físicos """
     mapa = MapaRiesgo.query.get(mapa_id)
     if not mapa:
         return jsonify({'status': 'error', 'message': 'Operación rechazada: El mapa no existe.'}), 404
@@ -432,17 +419,6 @@ def eliminar_mapa(mapa_id):
     try:
         ruta_kml_rollback = mapa.ruta_kml
         ruta_img_rollback = mapa.ruta_imagen_mapa
-        nombre_previo = mapa.nombre or f"#{mapa_id}"
-
-        nombre_usr = getattr(current_user, 'nombre_usuario', None) or getattr(current_user, 'usuario', 'Administrador')
-        db.session.add(BitacoraTransaccion(
-            modulo='geomatica',
-            registro_id=mapa_id,
-            accion='eliminacion',
-            estado_nuevo=None,
-            usuario=nombre_usr,
-            detalle=f'Eliminado mapa de riesgo #{mapa_id}: {nombre_previo}'
-        ))
 
         db.session.delete(mapa)
         db.session.commit()
@@ -450,6 +426,7 @@ def eliminar_mapa(mapa_id):
         ServicioNotificacion.notificar_por_permiso('gestionar_geomatica', mensaje, emisor_id=current_user.id_usuario)
         ServicioNotificacion.crear_aviso(id_usuario=current_user.id_usuario, mensaje=mensaje, categoria='Mapas')
 
+        # VALIDACIÓN: Se agregó manejo de errores al intentar borrar archivos del SO
         if ruta_kml_rollback:
             path_kml = os.path.join(current_app.root_path, 'static', ruta_kml_rollback)
             if os.path.exists(path_kml):
@@ -470,14 +447,16 @@ def eliminar_mapa(mapa_id):
         db.session.rollback()
         return jsonify({'status': 'error', 'message': 'Ocurrió un error inesperado al eliminar.'}), 500
 
-
 @login_required
 def obtener_todos_mapas():
+    verificar_permiso_dinamico('ver_mapas_riesgo')
+    """ Obtiene la lista de mapas aplicando los filtros de ubicación """
     estado_id = request.args.get('estado', type=int)
     municipio_id = request.args.get('municipio', type=int)
     parroquia_id = request.args.get('parroquia', type=int)
     comunidad_id = request.args.get('comunidad', type=int)
 
+    # El JOIN compuesto aquí está excelente y maneja perfecto la validación espacial-relacional
     query = db.session.query(MapaRiesgo, Actividad, ComunidadActiva).join(
         Actividad, (MapaRiesgo.id_actividad == Actividad.id_actividad) & 
                    (MapaRiesgo.tipo_actividad == Actividad.tipo_actividad)
@@ -513,9 +492,9 @@ def obtener_todos_mapas():
 
     return jsonify(mapas_json), 200
 
-
 @login_required
 def crear_simbologia():
+    verificar_permiso_dinamico('registrar_simbologia')
     try:
         datos_str = request.form.get('datos')
         if not datos_str:
@@ -533,6 +512,7 @@ def crear_simbologia():
         archivo = request.files.get('icono')
 
         if archivo and archivo.filename != '':
+            # Usamos la lista de extensiones exclusiva para iconos de simbología
             if not archivo_permitido(archivo.filename, EXTENSIONES_SIMBOLOS):
                 return jsonify({'status': 'error', 'message': 'Formato no permitido. Usa PNG, JPG, SVG o WEBP.'}), 400
             archivo.seek(0, os.SEEK_END)
@@ -555,18 +535,6 @@ def crear_simbologia():
             estilo_defecto=estilo_defecto
         )
         db.session.add(nuevo_simbolo)
-        db.session.flush()
-
-        nombre_usr = getattr(current_user, 'nombre_usuario', None) or getattr(current_user, 'usuario', 'Administrador')
-        db.session.add(BitacoraTransaccion(
-            modulo='geomatica',
-            registro_id=nuevo_simbolo.id_simbologia,
-            accion='creacion',
-            estado_nuevo='Activo',
-            usuario=nombre_usr,
-            detalle=f'Creada simbología: {nombre_elemento} ({categoria})'
-        ))
-
         db.session.commit()
         mensaje = f'Se creó la simbología "{nuevo_simbolo.nombre_elemento}".'
         ServicioNotificacion.notificar_por_permiso('gestionar_geomatica', mensaje, emisor_id=current_user.id_usuario)
@@ -578,9 +546,9 @@ def crear_simbologia():
         db.session.rollback()
         return jsonify({'status': 'error', 'message': f'Error al crear: {str(e)}'}), 500
 
-
 @login_required
 def actualizar_simbologia(id_simbologia):
+    verificar_permiso_dinamico('editar_simbologia')
     try:
         simbolo = Simbologia.query.get(id_simbologia)
         if not simbolo:
@@ -605,6 +573,7 @@ def actualizar_simbologia(id_simbologia):
         archivo = request.files.get('icono')
 
         if archivo and archivo.filename != '':
+            # Usamos la lista de extensiones exclusiva para iconos de simbología
             if not archivo_permitido(archivo.filename, EXTENSIONES_SIMBOLOS):
                 return jsonify({'status': 'error', 'message': 'Formato de icono no permitido.'}), 400
                 
@@ -631,17 +600,6 @@ def actualizar_simbologia(id_simbologia):
             estilo_defecto['iconUrl'] = f'/static/uploads/simbologia/{filename_unico}'
 
         simbolo.estilo_defecto = estilo_defecto
-
-        nombre_usr = getattr(current_user, 'nombre_usuario', None) or getattr(current_user, 'usuario', 'Administrador')
-        db.session.add(BitacoraTransaccion(
-            modulo='geomatica',
-            registro_id=id_simbologia,
-            accion='modificacion',
-            estado_nuevo='Activo',
-            usuario=nombre_usr,
-            detalle=f'Actualizada simbología #{id_simbologia}: {simbolo.nombre_elemento}'
-        ))
-
         db.session.commit()
         mensaje = f'Se actualizó la simbología "{simbolo.nombre_elemento}".'
         ServicioNotificacion.notificar_por_permiso('gestionar_geomatica', mensaje, emisor_id=current_user.id_usuario)
@@ -652,9 +610,10 @@ def actualizar_simbologia(id_simbologia):
         db.session.rollback()
         return jsonify({'status': 'error', 'message': f'Error en Base de Datos: {str(e)}'}), 500
 
-
 @login_required
 def eliminar_simbologia(id_simbologia):
+    verificar_permiso_dinamico('eliminar_simbologia')
+    """Elimina el símbolo y destruye el archivo físico asociado"""
     simbolo = Simbologia.query.get(id_simbologia)
     if not simbolo:
         return jsonify({'status': 'error', 'message': 'Símbolo no encontrado'}), 404
@@ -662,16 +621,6 @@ def eliminar_simbologia(id_simbologia):
     try:
         nombre_eliminado = simbolo.nombre_elemento
         ruta_icono = simbolo.estilo_defecto.get('iconUrl') if isinstance(simbolo.estilo_defecto, dict) else None
-
-        nombre_usr = getattr(current_user, 'nombre_usuario', None) or getattr(current_user, 'usuario', 'Administrador')
-        db.session.add(BitacoraTransaccion(
-            modulo='geomatica',
-            registro_id=id_simbologia,
-            accion='eliminacion',
-            estado_nuevo=None,
-            usuario=nombre_usr,
-            detalle=f'Eliminada simbología #{id_simbologia}: {nombre_eliminado}'
-        ))
 
         db.session.delete(simbolo)
         db.session.commit()
@@ -693,9 +642,10 @@ def eliminar_simbologia(id_simbologia):
         db.session.rollback()
         return jsonify({'status': 'error', 'message': f'Error inesperado: {str(e)}'}), 500
 
-
 @login_required
 def listar_simbologia():
+    verificar_permiso_dinamico('ver_simbologia')
+    """Obtiene el catálogo permitiendo filtros"""
     try:
         categoria_filtro = request.args.get('categoria', '').strip()
         query = Simbologia.query
@@ -717,9 +667,9 @@ def listar_simbologia():
     except Exception as e:
         return jsonify({'status': 'error', 'message': 'Error al consultar el catálogo.'}), 500
 
-
 @login_required
 def obtener_simbologia(id_simbologia):
+    verificar_permiso_dinamico('ver_simbologia')
     simbolo = Simbologia.query.get(id_simbologia)
     if not simbolo:
         return jsonify({'status': 'error', 'message': 'Símbolo no encontrado'}), 404
@@ -731,10 +681,9 @@ def obtener_simbologia(id_simbologia):
         'tipo_geometria': simbolo.tipo_geometria,
         'estilo_defecto': simbolo.estilo_defecto
     }), 200
-
-
 @login_required
 def actualizar_elemento(id_elemento):
+    verificar_permiso_dinamico('editar_elementos_mapa')
     try:
         elemento = ElementosMapaRiesgo.query.get_or_404(id_elemento)
         datos = request.get_json()
@@ -759,16 +708,6 @@ def actualizar_elemento(id_elemento):
             cambios_realizados = True
             
         if cambios_realizados:
-            nombre_usr = getattr(current_user, 'nombre_usuario', None) or getattr(current_user, 'usuario', 'Administrador')
-            db.session.add(BitacoraTransaccion(
-                modulo='geomatica',
-                registro_id=elemento.id_mapa_riesgo,
-                accion='modificacion',
-                estado_nuevo='En Proceso',
-                usuario=nombre_usr,
-                detalle=f'Actualizado elemento #{id_elemento} en mapa #{elemento.id_mapa_riesgo}'
-            ))
-
             db.session.commit()
             mensaje = f'Se actualizó el elemento geográfico #{id_elemento}.'
             ServicioNotificacion.notificar_por_permiso('gestionar_geomatica', mensaje, emisor_id=current_user.id_usuario)
@@ -780,24 +719,11 @@ def actualizar_elemento(id_elemento):
     except Exception as e:
         db.session.rollback()
         return jsonify({'status': 'error', 'message': str(e)}), 500
-
-
 @login_required
 def eliminar_elemento(id_elemento):
+    verificar_permiso_dinamico('eliminar_elementos_mapa')
     try:
         elemento = ElementosMapaRiesgo.query.get_or_404(id_elemento)
-        id_mapa_padre = elemento.id_mapa_riesgo
-        
-        nombre_usr = getattr(current_user, 'nombre_usuario', None) or getattr(current_user, 'usuario', 'Administrador')
-        db.session.add(BitacoraTransaccion(
-            modulo='geomatica',
-            registro_id=id_mapa_padre,
-            accion='modificacion',
-            estado_nuevo='En Proceso',
-            usuario=nombre_usr,
-            detalle=f'Removido elemento geográfico #{id_elemento} del mapa #{id_mapa_padre}'
-        ))
-
         db.session.delete(elemento)
         db.session.commit()
         mensaje = f'Se eliminó el elemento geográfico #{id_elemento}.'

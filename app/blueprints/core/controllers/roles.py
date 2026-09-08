@@ -1,4 +1,4 @@
-from flask import flash, redirect, render_template, request, url_for, abort, current_app
+from flask import flash, redirect, render_template, request, url_for, abort
 from flask_login import current_user, login_required
 
 from app import db
@@ -6,23 +6,8 @@ from app.blueprints.core import core_bp
 from app.models.role import Permission, Role, Permiso
 from app.services.auditoria import registrar_accion
 from app.services.notificacion import ServicioNotificacion
-from app.utils.authorization import current_role_id, has_permission, is_superuser
-
-
-def verificar_permiso_dinamico(nombre_permiso):
-    """
-    Comprueba en la base de datos si el rol del usuario posee el permiso solicitado,
-    aplicando un bypass inmediato para los roles jerárquicos del Core (1 y 2).
-    """
-    if not current_user.is_authenticated:
-        abort(403)
-
-    if is_superuser():
-        return True
-
-    if not has_permission(nombre_permiso):
-        flash('No tiene privilegios institucionales para acceder a este módulo.', 'error')
-        abort(403)
+from app.constants import KNOWN_PERMISSION_SLUGS
+from app.utils.authorization import current_role_id, is_superuser, verificar_permiso_dinamico
 
 
 # =============================================================================
@@ -32,7 +17,7 @@ def verificar_permiso_dinamico(nombre_permiso):
 @core_bp.route('/admin/roles/')
 @login_required
 def rol_index():
-    verificar_permiso_dinamico('gestionar_usuarios')
+    verificar_permiso_dinamico('ver_roles')
     roles = Role.query.order_by(Role.id_rol).all()
     return render_template('roles/index.html', roles=roles)
 
@@ -40,7 +25,7 @@ def rol_index():
 @core_bp.route('/admin/roles/nuevo', methods=['GET', 'POST'])
 @login_required
 def rol_nuevo():
-    verificar_permiso_dinamico('gestionar_usuarios')
+    verificar_permiso_dinamico('registrar_roles')
     
     if request.method == 'POST':
         nombre = (request.form.get('nombre') or '').strip()
@@ -77,7 +62,7 @@ def rol_nuevo():
 @core_bp.route('/admin/roles/<int:rol_id>/editar', methods=['GET', 'POST'])
 @login_required
 def rol_editar(rol_id):
-    verificar_permiso_dinamico('gestionar_usuarios')
+    verificar_permiso_dinamico('editar_roles')
     
     if int(rol_id) == 1 and current_role_id() != 1:
         flash('No tiene jerarquía institucional para modificar el rol de Superusuario.', 'error')
@@ -108,7 +93,7 @@ def rol_editar(rol_id):
 @core_bp.route('/admin/roles/<int:rol_id>/eliminar', methods=['POST'])
 @login_required
 def rol_eliminar(rol_id):
-    verificar_permiso_dinamico('gestionar_usuarios')
+    verificar_permiso_dinamico('eliminar_roles')
     
     if int(rol_id) == 1 and current_role_id() != 1:
         flash('Acceso denegado: El rol de Superusuario está blindado por el sistema.', 'error')
@@ -137,7 +122,7 @@ def rol_eliminar(rol_id):
 @core_bp.route('/admin/roles/<int:rol_id>/permisos', methods=['GET', 'POST'])
 @login_required
 def rol_gestionar_permisos(rol_id):
-    verificar_permiso_dinamico('gestionar_usuarios')
+    verificar_permiso_dinamico('asignar_permisos_roles')
     
     if int(rol_id) == 1 and current_role_id() != 1:
         flash('No tiene jerarquía para alterar la matriz de accesos del Superusuario.', 'error')
@@ -185,70 +170,36 @@ def rol_gestionar_permisos(rol_id):
 @core_bp.route('/admin/permisos/')
 @login_required
 def permiso_index():
-    verificar_permiso_dinamico('gestionar_usuarios')
-    todos_los_permisos = Permission.query.order_by(Permission.id_modulo).all()
-    return render_template('roles/permisos_index.html', permisos=todos_los_permisos)
+    verificar_permiso_dinamico('ver_permisos')
+    
+    # Obtenemos la página actual desde la URL (por defecto la 1)
+    page = request.args.get('page', 1, type=int)
+    
+    # Paginamos de 10 en 10 registros
+    pagination = Permission.query.order_by(Permission.id_modulo).paginate(page=page, per_page=10)
+    
+    return render_template('roles/permisos_index.html', pagination=pagination, permisos=pagination.items)
 
 
 @core_bp.route('/admin/permisos/nuevo', methods=['GET', 'POST'])
 @login_required
 def permiso_nuevo():
-    verificar_permiso_dinamico('gestionar_usuarios')
+    verificar_permiso_dinamico('registrar_permisos')
     
     if request.method == 'POST':
         nombre = (request.form.get('nombre') or '').strip().lower().replace(' ', '_')
         descripcion = (request.form.get('descripcion') or '').strip()
         
-        # =====================================================================
-        # 🔍 INSPECCIÓN DINÁMICA DE ENDPOINTS (MÁXIMA FLEXIBILIDAD)
-        # =====================================================================
-        # 1. Recuperamos los nombres de todos los endpoints registrados en Flask en este momento
-        endpoints_reales = list(current_app.view_functions.keys())
-        
-        # 2. Extraemos los nombres de los módulos y blueprints activos (prefijos o nombres clave)
-        modulos_activos = set()
-        for ep in endpoints_reales:
-            if '.' in ep:
-                modulos_activos.add(ep.split('.')[0])
-            else:
-                modulos_activos.add(ep)
-        
-        # 3. Validamos si el slug ingresado tiene que ver con algún módulo o función real en el código
-        es_valido = False
-        modulo_detectado = None
-        
-        # Primero buscamos coincidencia con los nombres de los blueprints/módulos
-        for modulo in modulos_activos:
-            if modulo in nombre:
-                es_valido = True
-                modulo_detectado = modulo
-                break
-                
-        # Si no coincidió, buscamos si la palabra clave está dentro de algún endpoint completo (ej: "tecnicos" en "logistica.tecnicos_campo_index")
-        if not es_valido:
-            for ep in endpoints_reales:
-                # Limpiamos el endpoint para buscar palabras clave (ej: "tecnicos_campo_index" -> ["tecnicos", "campo", "index"])
-                partes_endpoint = ep.replace('.', '_').split('_')
-                for parte in partes_endpoint:
-                    if parte in nombre and len(parte) > 3: # Evitamos coincidencias con palabras muy cortas
-                        es_valido = True
-                        modulo_detectado = ep.split('.')[0] # Asocia el permiso al blueprint padre
-                        break
-                if es_valido:
-                    break
-        
-        # 🛡️ REDIRECCIÓN DIRECTA AL CATÁLOGO CON EL MENSAJE DE ERROR
-        if not es_valido:
-            flash(
-                f'¡Hey! El permiso técnico "{nombre}" no coincide con ningún módulo real cargado en el servidor. '
-                f'Asegúrate de que el módulo exista en el código antes de registrar su permiso en el catálogo.', 
-                'error'
-            )
-            return redirect(url_for('core.permiso_index'))
-        # =====================================================================
-
         if not nombre:
             flash('El nombre técnico del permiso es obligatorio.', 'error')
+            return redirect(url_for('core.permiso_index'))
+
+        if nombre not in KNOWN_PERMISSION_SLUGS:
+            flash(
+                f'No se puede crear el permiso técnico "{nombre}": '
+                'no existe en el catálogo de capacidades permitidas del sistema.',
+                'error'
+            )
             return redirect(url_for('core.permiso_index'))
 
         if Permission.query.filter_by(nombre_modulo=nombre).first():
@@ -268,7 +219,7 @@ def permiso_nuevo():
             ServicioNotificacion.crear_aviso(id_usuario=current_user.id_usuario, mensaje=mensaje, categoria='Seguridad')
 
             registrar_accion('Permisos', nuevo_p.id_modulo, 'Crear', current_user.nombre_usuario, detalle=f'Creado el privilegio atómico: {nuevo_p.nombre_modulo}')
-            flash(f'Capacidad atómica registrada con éxito para el módulo "{modulo_detectado}".', 'success')
+            flash(f'Permiso técnico "{nombre}" registrado correctamente.', 'success')
             return redirect(url_for('core.permiso_index'))
             
         except Exception as e:
@@ -282,7 +233,7 @@ def permiso_nuevo():
 @core_bp.route('/admin/permisos/<int:permiso_id>/editar', methods=['GET', 'POST'])
 @login_required
 def permiso_editar(permiso_id):
-    verificar_permiso_dinamico('gestionar_usuarios')
+    verificar_permiso_dinamico('editar_permisos')
     
     permiso = Permission.query.get_or_404(permiso_id)
     
@@ -292,6 +243,14 @@ def permiso_editar(permiso_id):
         
         if not nombre_form:
             flash('El nombre técnico es obligatorio.', 'error')
+            return render_template('roles/permiso_formulario.html', permiso=permiso)
+
+        if nombre_form not in KNOWN_PERMISSION_SLUGS:
+            flash(
+                f'No se puede guardar el permiso técnico "{nombre_form}": '
+                'no existe en el catálogo de capacidades permitidas del sistema.',
+                'error'
+            )
             return render_template('roles/permiso_formulario.html', permiso=permiso)
             
         if nombre_form != permiso.nombre_modulo:
@@ -323,7 +282,7 @@ def permiso_editar(permiso_id):
 @core_bp.route('/admin/permisos/<int:permiso_id>/eliminar', methods=['POST'])
 @login_required
 def permiso_eliminar(permiso_id):
-    verificar_permiso_dinamico('gestionar_usuarios')
+    verificar_permiso_dinamico('eliminar_permisos')
     
     permiso = Permission.query.get_or_404(permiso_id)
     id_temp = permiso.id_modulo

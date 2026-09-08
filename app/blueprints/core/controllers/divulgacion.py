@@ -15,19 +15,12 @@ from app.models.actividad import Actividad
 from app.models.divulgacion import Divulgacion, Publicacion
 from app.models.geomatica import MapaRiesgo
 from app.models.visita_portal import VisitaPortal
-from app.utils.authorization import current_permission_names, current_role_id, has_permission, is_superuser
-
-
-def verificar_permiso_dinamico(nombre_permiso):
-    if not current_user.is_authenticated:
-        abort(403)
-
-    if is_superuser():
-        return True
-
-    if not has_permission(nombre_permiso):
-        flash('No posee privilegios institucionales para ejecutar esta acción.', 'error')
-        abort(403)
+from app.utils.authorization import (
+    current_permission_names,
+    current_role_id,
+    is_superuser,
+    verificar_permiso_dinamico,
+)
 
 
 def _cargar_formulario_divulgacion(form):
@@ -167,6 +160,7 @@ def contacto():
 @core_bp.route('/admin/divulgacion/')
 @login_required
 def divulgacion_admin_index():
+    verificar_permiso_dinamico('ver_divulgaciones')
     usuario_id_actual = int(current_user.get_id())
     permisos_del_rol = current_permission_names()
 
@@ -195,7 +189,7 @@ def divulgacion_admin_index():
 @core_bp.route('/admin/divulgacion/nuevo', methods=['GET', 'POST'])
 @login_required
 def divulgacion_admin_nuevo():
-    verificar_permiso_dinamico('crear_divulgaciones')
+    verificar_permiso_dinamico('registrar_divulgaciones')
     
     form = PublicacionForm()
     _cargar_formulario_divulgacion(form)
@@ -224,7 +218,7 @@ def divulgacion_admin_nuevo():
 @core_bp.route('/admin/divulgacion/<int:pub_id>/editar', methods=['GET', 'POST'])
 @login_required
 def divulgacion_admin_editar(pub_id):
-    verificar_permiso_dinamico('crear_divulgaciones')
+    verificar_permiso_dinamico('editar_divulgaciones')
     
     pub = Publicacion.query.get_or_404(pub_id)
     permisos_del_rol = current_permission_names()
@@ -287,7 +281,7 @@ def divulgacion_admin_editar(pub_id):
 @core_bp.route('/admin/divulgacion/<int:pub_id>/eliminar', methods=['POST'])
 @login_required
 def divulgacion_admin_eliminar(pub_id):
-    verificar_permiso_dinamico('crear_divulgaciones')
+    verificar_permiso_dinamico('eliminar_divulgaciones')
     
     pub = Publicacion.query.get_or_404(pub_id)
     permisos_del_rol = current_permission_names()

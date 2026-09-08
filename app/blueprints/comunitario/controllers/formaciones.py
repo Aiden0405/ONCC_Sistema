@@ -6,6 +6,7 @@ from flask_login import login_required, current_user
 from app import db
 from app.blueprints.comunitario import comunitario_bp
 from app.blueprints.comunitario.forms import FormacionForm
+# 🌟 Importamos tu validador de seguridad dinámico del Core
 from app.blueprints.core.controllers.roles import verificar_permiso_dinamico
 from app.models.esquema_activo import (
     NivelActivo as Nivel,
@@ -14,7 +15,6 @@ from app.models.esquema_activo import (
 )
 from app.models.actividad import Actividad
 from app.models.esquema_activo import FormacionActiva as Formacion
-from app.models.bitacora import BitacoraTransaccion
 from app.services.notificacion import ServicioNotificacion
 
 
@@ -38,7 +38,8 @@ def _registrar_formacion(form):
         fecha_actividad=form.fecha_actividad.data,
         tipo_actividad='FORMACION',
         id_comunidad=form.id_comunidad.data,
-        id_nivel=form.id_nivel.data
+        id_nivel=form.id_nivel.data,
+        id_usuario=current_user.id_usuario,
     )
     db.session.add(nueva_actividad)
     db.session.flush()
@@ -50,18 +51,6 @@ def _registrar_formacion(form):
         id_nivel=form.id_nivel.data,
     )
     db.session.add(nueva_formacion)
-    db.session.flush()
-
-    # 🌟 REGISTRO EN BITÁCORA
-    nombre_usr = getattr(current_user, 'nombre_usuario', None) or getattr(current_user, 'usuario', 'Administrador')
-    db.session.add(BitacoraTransaccion(
-        modulo='formaciones',
-        registro_id=nueva_formacion.id_formacion,
-        accion='creacion',
-        estado_nuevo='Planificada',
-        usuario=nombre_usr,
-        detalle=f'Formación registrada: {form.nombre_formacion.data} (Técnico: {form.tecnico.data})'
-    ))
 
 # ==========================================
 # 1. LISTAR Y REGISTRAR (GET y POST)
@@ -69,13 +58,18 @@ def _registrar_formacion(form):
 @comunitario_bp.route('/formaciones', methods=['GET', 'POST'])
 @login_required  
 def formaciones_index():
-    verificar_permiso_dinamico('gestionar_formaciones')
+    # 🛡️ Blindaje Dinámico Ajustado al Slug de la Base de Datos
+    verificar_permiso_dinamico('ver_formaciones')
 
+    # 1. Instanciamos el formulario de Flask-WTF
     form = FormacionForm()
+
     _cargar_formacion_choices(form)
 
+    # 4. LISTAR HISTORIAL (Aquí se cumple el MVC: la consulta compleja la hace el Modelo)
     formaciones_procesadas = Formacion.obtener_historial_completo()
 
+    # 5. RENDERIZAR LA VISTA
     return render_template(
         'formaciones/index.html', 
         form=form, 
@@ -86,7 +80,7 @@ def formaciones_index():
 @comunitario_bp.route('/formaciones/nuevo', methods=['GET', 'POST'])
 @login_required
 def formacion_nuevo():
-    verificar_permiso_dinamico('gestionar_formaciones')
+    verificar_permiso_dinamico('registrar_formaciones')
 
     form = FormacionForm()
     _cargar_formacion_choices(form)
@@ -118,7 +112,8 @@ def formacion_nuevo():
 @comunitario_bp.route('/formaciones/editar/<int:id_formacion>', methods=['POST'])
 @login_required
 def formacion_editar(id_formacion):
-    verificar_permiso_dinamico('gestionar_formaciones')
+    # 🛡️ Blindaje Dinámico Ajustado al Slug de la Base de Datos
+    verificar_permiso_dinamico('editar_formaciones')
 
     formacion = Formacion.query.get_or_404(id_formacion)
     actividad = Actividad.query.get(formacion.id_actividad)
@@ -131,29 +126,17 @@ def formacion_editar(id_formacion):
     id_nivel_nuevo = request.form.get('edit_id_nivel')
 
     try:
-        if fecha_nueva and actividad:
+        if fecha_nueva:
             actividad.fecha_actividad = datetime.strptime(fecha_nueva, '%Y-%m-%d').date()
-        if id_comunidad_nueva and actividad:
+        if id_comunidad_nueva:
             actividad.id_comunidad = int(id_comunidad_nueva)
-        if id_nivel_nuevo and actividad:
+        if id_nivel_nuevo:
             actividad.id_nivel = int(id_nivel_nuevo)
 
         formacion.nombre_formacion = f"{tema_nuevo}||{tecnico_nuevo}"
-        if actividad:
-            formacion.id_nivel = actividad.id_nivel
+        formacion.id_nivel = actividad.id_nivel
         if id_inst_nueva:
             formacion.id_institucion = int(id_inst_nueva)
-
-        # 🌟 REGISTRO EN BITÁCORA
-        nombre_usr = getattr(current_user, 'nombre_usuario', None) or getattr(current_user, 'usuario', 'Administrador')
-        db.session.add(BitacoraTransaccion(
-            modulo='formaciones',
-            registro_id=id_formacion,
-            accion='modificacion',
-            estado_nuevo='Completado',
-            usuario=nombre_usr,
-            detalle=f'Formación #{id_formacion} actualizada: {tema_nuevo}'
-        ))
 
         db.session.commit()
         mensaje = f'Se actualizó la formación #{id_formacion}.'
@@ -173,24 +156,13 @@ def formacion_editar(id_formacion):
 @comunitario_bp.route('/formaciones/eliminar/<int:id_formacion>', methods=['POST'])
 @login_required
 def formacion_eliminar(id_formacion):
-    verificar_permiso_dinamico('gestionar_formaciones')
+    # 🛡️ Blindaje Dinámico Ajustado al Slug de la Base de Datos
+    verificar_permiso_dinamico('eliminar_formaciones')
  
     formacion = Formacion.query.get_or_404(id_formacion)
     actividad = Actividad.query.get(formacion.id_actividad)
-    nombre_formacion_previo = formacion.nombre_formacion.split('||')[0] if formacion.nombre_formacion else f"#{id_formacion}"
 
     try:
-        # 🌟 REGISTRO EN BITÁCORA ANTES DE ELIMINAR
-        nombre_usr = getattr(current_user, 'nombre_usuario', None) or getattr(current_user, 'usuario', 'Administrador')
-        db.session.add(BitacoraTransaccion(
-            modulo='formaciones',
-            registro_id=id_formacion,
-            accion='eliminacion',
-            estado_nuevo=None,
-            usuario=nombre_usr,
-            detalle=f'Formación #{id_formacion} eliminada: {nombre_formacion_previo}'
-        ))
-
         db.session.delete(formacion)
         if actividad:
             db.session.delete(actividad)
@@ -213,7 +185,8 @@ def formacion_eliminar(id_formacion):
 @comunitario_bp.route('/formaciones/cambiar_estado/<int:id_formacion>', methods=['POST'])
 @login_required
 def formacion_cambiar_estado(id_formacion):
-    verificar_permiso_dinamico('gestionar_formaciones')
+    # 🛡️ Blindaje Dinámico Ajustado al Slug de la Base de Datos
+    verificar_permiso_dinamico('cambiar_estado_formaciones')
         
     try:
         flash('Estado de la formación actualizado (Simulado).', 'success')
@@ -221,3 +194,8 @@ def formacion_cambiar_estado(id_formacion):
         flash(f'Error al cambiar estado: {str(e)}', 'error')
         
     return redirect(url_for('comunitario.formaciones_index'))
+
+
+# ==========================================
+# 5. RUTA NUEVO (Compatibilidad)
+# ==========================================

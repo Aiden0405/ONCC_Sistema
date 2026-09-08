@@ -129,36 +129,49 @@
             </a>
 
             {# BLOQUE CORE #}
-            {% if 'gestionar_usuarios' in permisos_activos or current_user.id_rol|int in (1, 2) %}
+            {% if 'ver_usuarios' in permisos_activos or 'ver_roles' in permisos_activos or 'ver_permisos' in permisos_activos or current_user.id_rol|int in (1, 2) %}
             <p
                 class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">
                 Core</p>
 
             <!-- 🎯 Usuarios -->
+            {% if 'ver_usuarios' in permisos_activos or current_user.id_rol|int in (1, 2) %}
             <a href="{{ url_for('usuario.index') }}"
                 class="w-full flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['usuario', 'users']) }}">
                 <i data-lucide="users" class="mr-3 w-5 h-5 flex-shrink-0"></i>
-                <span class="sidebar-text whitespace-nowrap">Usuarios y Autenticación</span>
-            </a>
-
-            <!-- 🎯 Roles y Permisos -->
-            <a href="{{ url_for('rol.index') }}"
-                class="w-full flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['rol', 'permiso']) }}">
-                <i data-lucide="shield-check" class="mr-3 w-5 h-5 flex-shrink-0"></i>
-                <span class="sidebar-text whitespace-nowrap">Roles y Permisos (RBAC)</span>
+                <span class="sidebar-text whitespace-nowrap">Usuarios</span>
             </a>
             {% endif %}
 
+            <!-- 🎯 Roles -->
+            {% if 'ver_roles' in permisos_activos or current_user.id_rol|int in (1, 2) %}
+            <a href="{{ url_for('core.rol_index') }}"
+                class="w-full flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['rol']) }}">
+                <i data-lucide="shield-check" class="mr-3 w-5 h-5 flex-shrink-0"></i>
+                <span class="sidebar-text whitespace-nowrap">Roles</span>
+            </a>
+            {% endif %}
+
+            <!-- 🎯 Catálogo de permisos -->
+{% if 'ver_permisos' in permisos_activos or current_user.id_rol|int in (1, 2) %}
+<a href="{{ url_for('core.permiso_index') }}"
+    class="w-full flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['permiso']) }}">
+    <i data-lucide="key-round" class="mr-3 w-5 h-5 flex-shrink-0"></i>
+    <span class="sidebar-text whitespace-nowrap">Permisos técnicos</span>
+</a>
+{% endif %}
+            {% endif %}
+
             {# SECCIÓN COMUNITARIO #}
-            {% if 'gestionar_formaciones' in permisos_activos or 'gestionar_sensibilizaciones' in permisos_activos or 
-                  'crear_divulgaciones' in permisos_activos or 'aprobar_divulgaciones' in permisos_activos or 
+            {% if 'ver_formaciones' in permisos_activos or 'ver_sensibilizaciones' in permisos_activos or
+                'ver_divulgaciones' in permisos_activos or 'registrar_divulgaciones' in permisos_activos or
                   current_user.id_rol|int in (1, 2) %}
             <p
                 class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">
                 Comunitario</p>
 
             <!-- 🎯 Divulgación -->
-            {% if 'crear_divulgaciones' in permisos_activos or 'aprobar_divulgaciones' in permisos_activos or current_user.id_rol|int in (1, 2) %}
+            {% if 'ver_divulgaciones' in permisos_activos or 'registrar_divulgaciones' in permisos_activos or 'aprobar_divulgaciones' in permisos_activos or current_user.id_rol|int in (1, 2) %}
             <a href="{{ url_for('core.divulgacion_admin_index') }}"
                 class="w-full flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['divulgacion']) }}">
                 <i data-lucide="newspaper" class="mr-3 w-5 h-5 flex-shrink-0"></i>
@@ -167,7 +180,7 @@
             {% endif %}
 
             <!-- 🎯 Formaciones -->
-            {% if 'gestionar_formaciones' in permisos_activos or current_user.id_rol|int in (1, 2) %}
+            {% if 'ver_formaciones' in permisos_activos or current_user.id_rol|int in (1, 2) %}
             <a href="{{ url_for('formacion.index') }}"
                 class="w-full flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['formacion', 'formaciones']) }}">
                 <i data-lucide="graduation-cap" class="mr-3 w-5 h-5 flex-shrink-0"></i>
@@ -176,7 +189,7 @@
             {% endif %}
 
             <!-- 🎯 Sensibilizaciones -->
-            {% if 'gestionar_sensibilizaciones' in permisos_activos or current_user.id_rol|int in (1, 2) %}
+            {% if 'ver_sensibilizaciones' in permisos_activos or current_user.id_rol|int in (1, 2) %}
             <a href="{{ url_for('sensibilizacion.index') }}"
                 class="w-full flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['sensibilizacion', 'sensibilizaciones']) }}">
                 <i data-lucide="megaphone" class="mr-3 w-5 h-5 flex-shrink-0"></i>
@@ -186,13 +199,13 @@
             {% endif %}
 
             {# SECCIÓN MAPAS #}
-            {% if 'gestionar_geomatica' in permisos_activos or 'ver_mapas' in permisos_activos or current_user.id_rol|int in (1, 2) %}
+            {% if 'ver_mapas_riesgo' in permisos_activos or 'ver_mapas_climaticos' in permisos_activos or current_user.id_rol|int in (1, 2) %}
             <p
                 class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">
                 Mapas</p>
 
             <!-- 🎯 Mapas de Riesgo -->
-            {% if 'gestionar_geomatica' in permisos_activos or current_user.id_rol|int in (1, 2) %}
+            {% if 'ver_mapas_riesgo' in permisos_activos or current_user.id_rol|int in (1, 2) %}
             <a href="{{ url_for('geomatica.index') }}"
                 class="w-full flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['geomatica', 'riesgo']) }}">
                 <i data-lucide="map-pinned" class="mr-3 w-5 h-5 flex-shrink-0"></i>
@@ -207,7 +220,7 @@
             {% endif %}
 
             <!-- 🎯 Mapas Climáticos -->
-            {% if 'ver_mapas' in permisos_activos or current_user.id_rol|int in (1, 2) %}
+            {% if 'ver_mapas_climaticos' in permisos_activos or current_user.id_rol|int in (1, 2) %}
             <a href="{{ url_for('mapas.mapas_climaticos_index') }}"
                 class="w-full flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['climaticos', 'mapas']) }}">
                 <i data-lucide="thermometer-sun" class="mr-3 w-5 h-5 flex-shrink-0"></i>
@@ -217,7 +230,7 @@
             {% endif %}
 
             {# SECCIÓN MONITOREO #}
-            {% if 'gestionar_monitoreo' in permisos_activos or current_user.id_rol|int in (1, 2) %}
+            {% if 'ver_actividades' in permisos_activos or current_user.id_rol|int in (1, 2) %}
             <p
                 class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">
                 Monitoreo</p>
@@ -231,13 +244,13 @@
             {% endif %}
 
             {# SECCIÓN LOGÍSTICA #}
-            {% if 'gestionar_tecnicos' in permisos_activos or 'gestionar_inventario' in permisos_activos or current_user.id_rol|int in (1, 2) %}
+            {% if 'ver_tecnicos' in permisos_activos or 'ver_inventario' in permisos_activos or current_user.id_rol|int in (1, 2) %}
             <p
                 class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">
                 Logística</p>
 
             <!-- 🎯 Técnicos de Campo -->
-            {% if 'gestionar_tecnicos' in permisos_activos or current_user.id_rol|int in (1, 2) %}
+            {% if 'ver_tecnicos' in permisos_activos or current_user.id_rol|int in (1, 2) %}
             <a href="{{ url_for('logistica.tecnicos_campo_index') }}"
                 class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['tecnico', 'campo']) }}">
                 <i data-lucide="hard-hat" class="mr-3 w-5 h-5 flex-shrink-0"></i>
@@ -246,7 +259,7 @@
             {% endif %}
 
             <!-- 🎯 Inventario de Equipos -->
-            {% if 'gestionar_inventario' in permisos_activos or current_user.id_rol|int in (1, 2) %}
+            {% if 'ver_inventario' in permisos_activos or current_user.id_rol|int in (1, 2) %}
             <a href="{{ url_for('inventario.index') }}"
                 class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['inventario']) }}">
                 <i data-lucide="box" class="mr-3 w-5 h-5 flex-shrink-0"></i>
@@ -256,7 +269,7 @@
             {% endif %}
 
             {# 🗃️ SECCIÓN PARAMETRIZACIÓN / TABLAS MAESTRAS #}
-            {% if 'gestionar_usuarios' in permisos_activos or current_user.id_rol|int in (1, 2) %}
+            {% if 'ver_catalogos' in permisos_activos or 'ver_instituciones' in permisos_activos or 'ver_comunidades' in permisos_activos or 'ver_niveles' in permisos_activos or current_user.id_rol|int in (1, 2) %}
             <p
                 class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">
                 Parametrización</p>

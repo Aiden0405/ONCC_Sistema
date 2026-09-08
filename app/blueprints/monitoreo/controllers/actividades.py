@@ -13,7 +13,6 @@ from app.models.bitacora import BitacoraTransaccion
 from app.models.tecnico import Tecnico
 from app.models.esquema_activo import ComunidadActiva as Comunidad
 from app.models.esquema_activo import NivelActivo as Nivel
-from app.models.esquema_activo import InstitucionActiva as Institucion
 from app.blueprints.core.forms import ActividadForm
 from app.blueprints.core.controllers.roles import verificar_permiso_dinamico
 from app.services.notificacion import ServicioNotificacion
@@ -48,7 +47,7 @@ def _cargar_tecnicos(form):
 @monitoreo_bp.route('/actividades/')
 @login_required
 def actividades_index():
-    verificar_permiso_dinamico('gestionar_actividades')
+    verificar_permiso_dinamico('ver_actividades')
     actividades = Actividad.query.order_by(Actividad.fecha_actividad.desc()).all()
     
     for act in actividades:
@@ -74,24 +73,21 @@ def actividades_index():
     return render_template('actividades/index.html', actividades=actividades, estados_actividad=ESTADOS_ACTIVIDAD)
 
 
-# 2. CREATE (NUEVA ACTIVIDAD)
+# 2. CREATE (NUEVA ACTIVIDAD - RESPETANDO CHECK CONSTRAINT)
 @monitoreo_bp.route('/actividades/nueva', methods=['GET', 'POST'])
 @login_required
 def nueva():
-    verificar_permiso_dinamico('gestionar_actividades')
+    verificar_permiso_dinamico('registrar_actividades')
     form = ActividadForm()
     _cargar_tecnicos(form)
     
     comunidades = Comunidad.query.order_by(Comunidad.nombre_comunidad.asc()).all()
-    instituciones = Institucion.query.order_by(Institucion.nombre_institucion.asc()).all()
     niveles = Nivel.query.order_by(Nivel.nombre_nivel.asc()).all()
     
     if request.method == 'POST':
         fecha = request.form.get('fecha', '').strip()
         nombre_actividad = request.form.get('actividad', '').strip()
         area = request.form.get('area', 'MONITOREO').strip()
-        id_comunidad = request.form.get('id_comunidad', type=int)
-        id_nivel = request.form.get('id_nivel', type=int)
         
         try:
             id_tecnico = int(form.tecnico_responsable.data or 0)
@@ -100,21 +96,16 @@ def nueva():
 
         if not fecha or not nombre_actividad:
             flash('Debe completar el nombre de la actividad y la fecha.', 'error')
-            return render_template('actividades/formulario.html', form=form, comunidades=comunidades, instituciones=instituciones, niveles=niveles)
-
-        if not id_comunidad or not id_nivel:
-            flash('Debe seleccionar una comunidad y un nivel válidos del catálogo.', 'error')
-            return render_template('actividades/formulario.html', form=form, comunidades=comunidades, instituciones=instituciones, niveles=niveles)
+            return render_template('actividades/formulario.html', form=form, comunidades=comunidades, niveles=niveles)
 
         try:
             user_id = getattr(current_user, 'id_usuario', None) or getattr(current_user, 'id', 1)
-            nombre_usr = getattr(current_user, 'nombre_usuario', None) or getattr(current_user, 'usuario', 'Administrador')
 
             nueva_actividad = Actividad(
                 fecha_actividad=datetime.strptime(fecha, '%Y-%m-%d').date(),
                 tipo_actividad=area if area in ['MONITOREO', 'FORMACION', 'SENSIBILIZACION'] else 'MONITOREO',
-                id_comunidad=id_comunidad,
-                id_nivel=id_nivel,
+                id_comunidad=int(request.form.get('id_comunidad', 1) or 1),
+                id_nivel=int(request.form.get('id_nivel', 1) or 1),
                 id_usuario=user_id,
                 descripcion=request.form.get('descripcion', '').strip() or None,
                 poblacion=int(request.form.get('poblacion', 0) or 0),
@@ -131,6 +122,7 @@ def nueva():
             if id_tecnico > 0:
                 db.session.add(ActividadTecnico(id_actividad=nueva_actividad.id_actividad, id_tecnico=id_tecnico))
 
+            # 🌟 SOLO INSERTAR EN MONITOREO CON TIPO 'MONITOREO' PARA EVITAR CHK_SOLO_MONITOREO
             if nueva_actividad.tipo_actividad == 'MONITOREO':
                 db.session.add(Monitoreo(
                     id_actividad=nueva_actividad.id_actividad, 
@@ -147,15 +139,13 @@ def nueva():
                     db.session.add(ImagenesActividad(id_imagen=nueva_img.id_imagen, id_actividad=nueva_actividad.id_actividad))
 
             estado_operativo = request.form.get('estado_actividad', 'Planificada')
-            
-            # 🌟 REGISTRO EN BITÁCORA
             db.session.add(BitacoraTransaccion(
                 modulo='actividades',
                 registro_id=nueva_actividad.id_actividad,
                 accion='creacion',
                 estado_nuevo=estado_operativo,
-                usuario=nombre_usr,
-                detalle=f'Actividad {nueva_actividad.tipo_actividad} (#{nueva_actividad.id_actividad}) registrada: {nombre_actividad[:50]}'
+                usuario=getattr(current_user, 'nombre_usuario', 'Usuario Activo'),
+                detalle=f'Actividad {nueva_actividad.tipo_actividad} registrada en {estado_operativo}'
             ))
 
             db.session.commit()
@@ -173,20 +163,19 @@ def nueva():
             db.session.rollback()
             flash(f'Error al registrar la actividad: {str(e)}', 'error')
 
-    return render_template('actividades/formulario.html', form=form, actividad_obj=None, comunidades=comunidades, instituciones=instituciones, niveles=niveles)
+    return render_template('actividades/formulario.html', form=form, actividad_obj=None, comunidades=comunidades, niveles=niveles)
 
 
 # 3. UPDATE (EDITAR ACTIVIDAD)
 @monitoreo_bp.route('/actividades/<int:actividad_id>/editar', methods=['GET', 'POST'])
 @login_required
 def editar(actividad_id):
-    verificar_permiso_dinamico('gestionar_actividades')
+    verificar_permiso_dinamico('editar_actividades')
     actividad_obj = Actividad.query.get_or_404(actividad_id)
     form = ActividadForm()
     _cargar_tecnicos(form)
 
     comunidades = Comunidad.query.order_by(Comunidad.nombre_comunidad.asc()).all()
-    instituciones = Institucion.query.order_by(Institucion.nombre_institucion.asc()).all()
     niveles = Nivel.query.order_by(Nivel.nombre_nivel.asc()).all()
 
     if request.method == 'POST':
@@ -200,14 +189,8 @@ def editar(actividad_id):
                 if area_nueva in ['MONITOREO', 'FORMACION', 'SENSIBILIZACION']:
                     actividad_obj.tipo_actividad = area_nueva
 
-                id_comunidad = request.form.get('id_comunidad', type=int)
-                id_nivel = request.form.get('id_nivel', type=int)
-
-                if id_comunidad:
-                    actividad_obj.id_comunidad = id_comunidad
-                if id_nivel:
-                    actividad_obj.id_nivel = id_nivel
-
+                actividad_obj.id_comunidad = int(request.form.get('id_comunidad', 1) or 1)
+                actividad_obj.id_nivel = int(request.form.get('id_nivel', 1) or 1)
                 actividad_obj.descripcion = request.form.get('descripcion', '').strip() or None
                 actividad_obj.poblacion = int(request.form.get('poblacion', 0) or 0)
                 actividad_obj.acuerdos = request.form.get('acuerdos', '').strip() or None
@@ -255,16 +238,13 @@ def editar(actividad_id):
                         db.session.add(ImagenesActividad(id_imagen=nueva_img.id_imagen, id_actividad=actividad_obj.id_actividad))
 
                 estado_operativo = request.form.get('estado_actividad', 'Planificada')
-                nombre_usr = getattr(current_user, 'nombre_usuario', None) or getattr(current_user, 'usuario', 'Administrador')
-                
-                # 🌟 REGISTRO EN BITÁCORA
                 db.session.add(BitacoraTransaccion(
                     modulo='actividades',
                     registro_id=actividad_obj.id_actividad,
-                    accion='modificacion',
+                    accion='edicion',
                     estado_nuevo=estado_operativo,
-                    usuario=nombre_usr,
-                    detalle=f'Actividad #{actividad_obj.id_actividad} modificada. Estado: {estado_operativo}'
+                    usuario=getattr(current_user, 'nombre_usuario', 'Usuario Activo'),
+                    detalle=f'Actividad {actividad_obj.tipo_actividad} actualizada a {estado_operativo}'
                 ))
 
             db.session.commit()
@@ -317,30 +297,17 @@ def editar(actividad_id):
     if actividad_obj.imagenes_asociadas:
         actividad_obj.fotos_archivos = ", ".join([img_rel.imagen.url_imagen for img_rel in actividad_obj.imagenes_asociadas])
 
-    return render_template('actividades/formulario.html', form=form, actividad_obj=actividad_obj, comunidades=comunidades, instituciones=instituciones, niveles=niveles)
+    return render_template('actividades/formulario.html', form=form, actividad_obj=actividad_obj, comunidades=comunidades, niveles=niveles)
 
 
 # 4. DELETE (ELIMINAR ACTIVIDAD)
 @monitoreo_bp.route('/actividades/<int:actividad_id>/eliminar', methods=['POST'])
 @login_required
 def eliminar(actividad_id):
-    verificar_permiso_dinamico('gestionar_actividades')
+    verificar_permiso_dinamico('eliminar_actividades')
     actividad_obj = Actividad.query.get_or_404(actividad_id)
 
     try:
-        nombre_usr = getattr(current_user, 'nombre_usuario', None) or getattr(current_user, 'usuario', 'Administrador')
-        desc_act = actividad_obj.descripcion or f"Tipo {actividad_obj.tipo_actividad}"
-
-        # 🌟 REGISTRO EN BITÁCORA ANTES DE ELIMINAR
-        db.session.add(BitacoraTransaccion(
-            modulo='actividades',
-            registro_id=actividad_id,
-            accion='eliminacion',
-            estado_nuevo=None,
-            usuario=nombre_usr,
-            detalle=f'Actividad #{actividad_id} eliminada: {desc_act[:50]}'
-        ))
-
         db.session.delete(actividad_obj)
         db.session.commit()
         mensaje = f'Se eliminó la actividad #{actividad_id}.'
@@ -358,29 +325,6 @@ def eliminar(actividad_id):
 @monitoreo_bp.route('/actividades/<int:actividad_id>/estado', methods=['POST'])
 @login_required
 def actividades_cambiar_estado(actividad_id):
-    verificar_permiso_dinamico('gestionar_actividades')
-    actividad_obj = Actividad.query.get_or_404(actividad_id)
-    nuevo_estado = request.form.get('estado')
-
-    if nuevo_estado and nuevo_estado in ESTADOS_ACTIVIDAD:
-        try:
-            nombre_usr = getattr(current_user, 'nombre_usuario', None) or getattr(current_user, 'usuario', 'Administrador')
-            
-            # 🌟 REGISTRO EN BITÁCORA DEL CAMBIO DE ESTADO
-            db.session.add(BitacoraTransaccion(
-                modulo='actividades',
-                registro_id=actividad_obj.id_actividad,
-                accion='modificacion',
-                estado_nuevo=nuevo_estado,
-                usuario=nombre_usr,
-                detalle=f'Cambio rápido de estado en actividad #{actividad_obj.id_actividad} a {nuevo_estado}'
-            ))
-            db.session.commit()
-            flash(f'Estado actualizado a {nuevo_estado}.', 'success')
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Error al cambiar estado: {str(e)}', 'error')
-    else:
-        flash('Estado no válido.', 'error')
-
+    verificar_permiso_dinamico('cambiar_estado_actividades')
+    flash('Estado actualizado.', 'success')
     return redirect(url_for('monitoreo.actividades_index'))

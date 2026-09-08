@@ -7,13 +7,12 @@ from app.services.notificacion import ServicioNotificacion
 from app.models.esquema_activo import ComunidadActiva as Comunidad
 from app.models.esquema_activo import NivelActivo as Nivel
 from app.models.esquema_activo import InstitucionActiva as Institucion
-from app.models.bitacora import BitacoraTransaccion
 from app.blueprints.core.controllers.roles import verificar_permiso_dinamico
 
 
 @login_required
 def catalogos_index():
-    verificar_permiso_dinamico('gestionar_usuarios')
+    verificar_permiso_dinamico('ver_catalogos')
     
     comunidades = Comunidad.query.order_by(Comunidad.id_comunidad.asc()).all()
     instituciones = Institucion.query.order_by(Institucion.id_institucion.asc()).all()
@@ -38,6 +37,7 @@ def catalogos_index():
 # ==============================================================================
 @login_required
 def nueva_institucion():
+    verificar_permiso_dinamico('registrar_instituciones')
     nombre = request.form.get('nombre_institucion', '').strip()
     id_comunidad = request.form.get('id_comunidad', type=int)
     
@@ -59,19 +59,6 @@ def nueva_institucion():
             correo_electronico='contacto@oncc.gob.ve'
         )
         db.session.add(nueva_inst)
-        db.session.flush()
-
-        # 🌟 REGISTRO EN BITÁCORA
-        nombre_usr = getattr(current_user, 'nombre_usuario', None) or getattr(current_user, 'usuario', 'Administrador')
-        db.session.add(BitacoraTransaccion(
-            modulo='parametrizacion',
-            registro_id=nueva_inst.id_institucion,
-            accion='creacion',
-            estado_nuevo='Activo',
-            usuario=nombre_usr,
-            detalle=f'Registrada institución: {nombre}'
-        ))
-
         db.session.commit()
         mensaje = f'Se registró la institución "{nombre}".'
         ServicioNotificacion.notificar_por_permiso('gestionar_usuarios', mensaje, emisor_id=current_user.id_usuario)
@@ -86,6 +73,7 @@ def nueva_institucion():
 
 @login_required
 def editar_institucion(id_inst):
+    verificar_permiso_dinamico('editar_instituciones')
     inst = Institucion.query.get_or_404(id_inst)
     nombre = request.form.get('nombre_institucion', '').strip()
     
@@ -94,20 +82,7 @@ def editar_institucion(id_inst):
         return redirect(url_for('core.catalogos_index'))
 
     try:
-        nombre_anterior = inst.nombre_institucion
         inst.nombre_institucion = nombre
-
-        # 🌟 REGISTRO EN BITÁCORA
-        nombre_usr = getattr(current_user, 'nombre_usuario', None) or getattr(current_user, 'usuario', 'Administrador')
-        db.session.add(BitacoraTransaccion(
-            modulo='parametrizacion',
-            registro_id=id_inst,
-            accion='modificacion',
-            estado_nuevo='Activo',
-            usuario=nombre_usr,
-            detalle=f'Institución #{id_inst} actualizada de "{nombre_anterior}" a "{nombre}"'
-        ))
-
         db.session.commit()
         mensaje = f'Se actualizó la institución "{nombre}".'
         ServicioNotificacion.notificar_por_permiso('gestionar_usuarios', mensaje, emisor_id=current_user.id_usuario)
@@ -122,20 +97,10 @@ def editar_institucion(id_inst):
 
 @login_required
 def eliminar_institucion(id_inst):
+    verificar_permiso_dinamico('eliminar_instituciones')
     inst = Institucion.query.get_or_404(id_inst)
     nombre_eliminado = inst.nombre_institucion
     try:
-        # 🌟 REGISTRO EN BITÁCORA ANTES DE ELIMINAR
-        nombre_usr = getattr(current_user, 'nombre_usuario', None) or getattr(current_user, 'usuario', 'Administrador')
-        db.session.add(BitacoraTransaccion(
-            modulo='parametrizacion',
-            registro_id=id_inst,
-            accion='eliminacion',
-            estado_nuevo=None,
-            usuario=nombre_usr,
-            detalle=f'Institución #{id_inst} eliminada: {nombre_eliminado}'
-        ))
-
         db.session.delete(inst)
         db.session.commit()
         mensaje = f'Se eliminó la institución "{nombre_eliminado}".'
@@ -153,6 +118,7 @@ def eliminar_institucion(id_inst):
 # ==============================================================================
 @login_required
 def nueva_comunidad():
+    verificar_permiso_dinamico('registrar_comunidades')
     nombre = request.form.get('nombre_comunidad', '').strip()
     id_parroquia = request.form.get('id_parroquia', type=int)
     
@@ -170,19 +136,6 @@ def nueva_comunidad():
             id_parroquia=id_parroquia
         )
         db.session.add(com)
-        db.session.flush()
-
-        # 🌟 REGISTRO EN BITÁCORA
-        nombre_usr = getattr(current_user, 'nombre_usuario', None) or getattr(current_user, 'usuario', 'Administrador')
-        db.session.add(BitacoraTransaccion(
-            modulo='parametrizacion',
-            registro_id=com.id_comunidad,
-            accion='creacion',
-            estado_nuevo='Activo',
-            usuario=nombre_usr,
-            detalle=f'Registrada comunidad territorial: {nombre}'
-        ))
-
         db.session.commit()
         mensaje = f'Se registró la comunidad "{nombre}".'
         ServicioNotificacion.notificar_por_permiso('gestionar_usuarios', mensaje, emisor_id=current_user.id_usuario)
@@ -197,6 +150,7 @@ def nueva_comunidad():
 
 @login_required
 def editar_comunidad(id_com):
+    verificar_permiso_dinamico('editar_comunidades')
     com = Comunidad.query.get_or_404(id_com)
     nombre = request.form.get('nombre_comunidad', '').strip()
 
@@ -205,20 +159,7 @@ def editar_comunidad(id_com):
         return redirect(url_for('core.catalogos_index'))
 
     try:
-        nombre_anterior = com.nombre_comunidad
         com.nombre_comunidad = nombre
-
-        # 🌟 REGISTRO EN BITÁCORA
-        nombre_usr = getattr(current_user, 'nombre_usuario', None) or getattr(current_user, 'usuario', 'Administrador')
-        db.session.add(BitacoraTransaccion(
-            modulo='parametrizacion',
-            registro_id=id_com,
-            accion='modificacion',
-            estado_nuevo='Activo',
-            usuario=nombre_usr,
-            detalle=f'Comunidad #{id_com} actualizada de "{nombre_anterior}" a "{nombre}"'
-        ))
-
         db.session.commit()
         mensaje = f'Se actualizó la comunidad "{nombre}".'
         ServicioNotificacion.notificar_por_permiso('gestionar_usuarios', mensaje, emisor_id=current_user.id_usuario)
@@ -233,20 +174,10 @@ def editar_comunidad(id_com):
 
 @login_required
 def eliminar_comunidad(id_com):
+    verificar_permiso_dinamico('eliminar_comunidades')
     com = Comunidad.query.get_or_404(id_com)
     nombre_eliminado = com.nombre_comunidad
     try:
-        # 🌟 REGISTRO EN BITÁCORA ANTES DE ELIMINAR
-        nombre_usr = getattr(current_user, 'nombre_usuario', None) or getattr(current_user, 'usuario', 'Administrador')
-        db.session.add(BitacoraTransaccion(
-            modulo='parametrizacion',
-            registro_id=id_com,
-            accion='eliminacion',
-            estado_nuevo=None,
-            usuario=nombre_usr,
-            detalle=f'Comunidad #{id_com} eliminada: {nombre_eliminado}'
-        ))
-
         db.session.delete(com)
         db.session.commit()
         mensaje = f'Se eliminó la comunidad "{nombre_eliminado}".'
@@ -264,6 +195,7 @@ def eliminar_comunidad(id_com):
 # ==============================================================================
 @login_required
 def nuevo_nivel():
+    verificar_permiso_dinamico('registrar_niveles')
     nombre = request.form.get('nombre_nivel', '').strip()
     descripcion = request.form.get('descripcion', '').strip() or f"Nivel formativo e institucional: {nombre}"
     
@@ -277,19 +209,6 @@ def nuevo_nivel():
             descripcion=descripcion
         )
         db.session.add(niv)
-        db.session.flush()
-
-        # 🌟 REGISTRO EN BITÁCORA
-        nombre_usr = getattr(current_user, 'nombre_usuario', None) or getattr(current_user, 'usuario', 'Administrador')
-        db.session.add(BitacoraTransaccion(
-            modulo='parametrizacion',
-            registro_id=niv.id_nivel,
-            accion='creacion',
-            estado_nuevo='Activo',
-            usuario=nombre_usr,
-            detalle=f'Registrado nivel formativo: {nombre}'
-        ))
-
         db.session.commit()
         mensaje = f'Se registró el nivel "{nombre}".'
         ServicioNotificacion.notificar_por_permiso('gestionar_usuarios', mensaje, emisor_id=current_user.id_usuario)
@@ -304,6 +223,7 @@ def nuevo_nivel():
 
 @login_required
 def editar_nivel(id_niv):
+    verificar_permiso_dinamico('editar_niveles')
     niv = Nivel.query.get_or_404(id_niv)
     nombre = request.form.get('nombre_nivel', '').strip()
     descripcion = request.form.get('descripcion', '').strip()
@@ -313,22 +233,9 @@ def editar_nivel(id_niv):
         return redirect(url_for('core.catalogos_index'))
 
     try:
-        nombre_anterior = niv.nombre_nivel
         niv.nombre_nivel = nombre
         if descripcion:
             niv.descripcion = descripcion
-
-        # 🌟 REGISTRO EN BITÁCORA
-        nombre_usr = getattr(current_user, 'nombre_usuario', None) or getattr(current_user, 'usuario', 'Administrador')
-        db.session.add(BitacoraTransaccion(
-            modulo='parametrizacion',
-            registro_id=id_niv,
-            accion='modificacion',
-            estado_nuevo='Activo',
-            usuario=nombre_usr,
-            detalle=f'Nivel #{id_niv} actualizado de "{nombre_anterior}" a "{nombre}"'
-        ))
-
         db.session.commit()
         mensaje = f'Se actualizó el nivel "{nombre}".'
         ServicioNotificacion.notificar_por_permiso('gestionar_usuarios', mensaje, emisor_id=current_user.id_usuario)
@@ -343,20 +250,10 @@ def editar_nivel(id_niv):
 
 @login_required
 def eliminar_nivel(id_niv):
+    verificar_permiso_dinamico('eliminar_niveles')
     niv = Nivel.query.get_or_404(id_niv)
     nombre_eliminado = niv.nombre_nivel
     try:
-        # 🌟 REGISTRO EN BITÁCORA ANTES DE ELIMINAR
-        nombre_usr = getattr(current_user, 'nombre_usuario', None) or getattr(current_user, 'usuario', 'Administrador')
-        db.session.add(BitacoraTransaccion(
-            modulo='parametrizacion',
-            registro_id=id_niv,
-            accion='eliminacion',
-            estado_nuevo=None,
-            usuario=nombre_usr,
-            detalle=f'Nivel #{id_niv} eliminado: {nombre_eliminado}'
-        ))
-
         db.session.delete(niv)
         db.session.commit()
         mensaje = f'Se eliminó el nivel "{nombre_eliminado}".'

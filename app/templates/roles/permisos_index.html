@@ -35,9 +35,9 @@
         <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
             <div>
                 <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400">Permisos del Sistema</h3>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Lista de privilegios evaluados dinámicamente en los controladores</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Mostrando bloques de 10 registros por página</p>
             </div>
-            <span class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ permisos|length }} registro(s)</span>
+            <span class="text-xs text-gray-500 dark:text-gray-400 font-mono">Total: {{ pagination.total }} registro(s)</span>
         </div>
 
         <div class="overflow-x-auto">
@@ -66,16 +66,14 @@
                         </td>
                         
                         <td class="px-6 py-4 text-right whitespace-nowrap">
-                            <!-- Botón de Editar -->
                             <a href="{{ url_for('core.permiso_editar', permiso_id=p.id) }}" class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 dark:text-blue-300 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 transition-colors mr-2">
                                 <i data-lucide="edit" class="w-3.5 h-3.5 mr-1"></i> Editar
                             </a>
 
-                            <!-- Botón de Eliminar -->
                             <form action="{{ url_for('core.permiso_eliminar', permiso_id=p.id) }}" method="post" class="inline" onsubmit="return confirm('¿Seguro que desea remover este privilegio del catálogo global?');">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <button type="submit" class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 dark:text-red-300 dark:bg-red-900/20 dark:hover:bg-red-900/30 transition-colors">
-                                    <i data-lucide="trash-2" class="w-3.5 h-3.5 mr-1"></i> Quitar
+                                    <i data-lucide="trash-2" class="w-3.5 h-3.5 mr-1">EN QUITAR</i>
                                 </button>
                             </form>
                         </td>
@@ -90,6 +88,45 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- 🌟 CONTROLES DE PAGINACIÓN (Parte 1, 2, 3...) -->
+        {% if pagination.pages > 1 %}
+        <div class="px-6 py-4 bg-gray-50 dark:bg-gray-700/30 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
+            <span class="text-xs text-gray-500 dark:text-gray-400">
+                Página <span class="font-bold text-gray-700 dark:text-gray-200">{{ pagination.page }}</span> de <span class="font-bold text-gray-700 dark:text-gray-200">{{ pagination.pages }}</span>
+            </span>
+            <div class="flex space-x-1">
+                {% if pagination.has_prev %}
+                <a href="{{ url_for('core.permiso_index', page=pagination.prev_num) }}" class="px-3 py-1 rounded bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100">
+                    Anterior
+                </a>
+                {% endif %}
+
+                {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                    {% if page_num %}
+                        {% if page_num == pagination.page %}
+                        <span class="px-3 py-1 rounded bg-green-600 text-white text-xs font-bold">
+                            {{ page_num }}
+                        </span>
+                        {% else %}
+                        <a href="{{ url_for('core.permiso_index', page=page_num) }}" class="px-3 py-1 rounded bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100">
+                            {{ page_num }}
+                        </a>
+                        {% endif %}
+                    {% else %}
+                        <span class="px-2 py-1 text-xs text-gray-400">...</span>
+                    {% endif %}
+                {% endfor %}
+
+                {% if pagination.has_next %}
+                <a href="{{ url_for('core.permiso_index', page=pagination.next_num) }}" class="px-3 py-1 rounded bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100">
+                    Siguiente
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
     </div>
 </div>
 {% endblock %}

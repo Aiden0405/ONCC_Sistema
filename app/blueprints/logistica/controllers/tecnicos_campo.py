@@ -5,11 +5,13 @@ from app import db
 from app.blueprints.logistica import logistica_bp
 from app.services.tecnico_service import TecnicoService
 from app.models.bitacora import BitacoraTransaccion
+from app.utils.authorization import verificar_permiso_dinamico
 
 
 @logistica_bp.route('/tecnicos-campo')
 @login_required
 def tecnicos_campo_index():
+    verificar_permiso_dinamico('ver_tecnicos')
     usuarios_tecnicos = TecnicoService.listar_tecnicos()
     tecnicos = TecnicoService.serializar(usuarios_tecnicos)
     return render_template('logistica/tecnicos_campo.html', tecnicos=tecnicos, tecnicos_json=TecnicoService.serializar(usuarios_tecnicos))
@@ -18,6 +20,7 @@ def tecnicos_campo_index():
 @logistica_bp.route('/tecnicos-campo/nuevo', methods=['POST'])
 @login_required
 def tecnicos_nuevo():
+    verificar_permiso_dinamico('registrar_tecnicos')
     resultado = TecnicoService.crear_tecnico(request.form)
     if not resultado['ok']:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -53,6 +56,7 @@ def tecnicos_nuevo():
 @logistica_bp.route('/tecnicos-campo/<int:tecnico_id>/editar', methods=['POST'])
 @login_required
 def tecnicos_editar(tecnico_id):
+    verificar_permiso_dinamico('editar_tecnicos')
     resultado = TecnicoService.actualizar_tecnico(tecnico_id, request.form)
     if not resultado['ok']:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -88,6 +92,7 @@ def tecnicos_editar(tecnico_id):
 @logistica_bp.route('/tecnicos-campo/<int:tecnico_id>/eliminar', methods=['POST'])
 @login_required
 def tecnicos_eliminar(tecnico_id):
+    verificar_permiso_dinamico('eliminar_tecnicos')
     # 🌟 REGISTRO EN BITÁCORA ANTES DE ELIMINAR
     try:
         nombre_usr = getattr(current_user, 'nombre_usuario', None) or getattr(current_user, 'usuario', 'Administrador')
@@ -111,6 +116,7 @@ def tecnicos_eliminar(tecnico_id):
 @logistica_bp.route('/tecnicos-campo/<int:tecnico_id>/movimientos')
 @login_required
 def tecnicos_movimientos(tecnico_id):
+    verificar_permiso_dinamico('ver_movimientos_tecnicos')
     movimientos = TecnicoService.serializar_movimientos_tecnico(tecnico_id)
     return jsonify({'movimientos': movimientos})
 
@@ -118,6 +124,7 @@ def tecnicos_movimientos(tecnico_id):
 @logistica_bp.route('/tecnicos-campo/reporte', methods=['GET'])
 @login_required
 def reporte_tecnicos():
+    verificar_permiso_dinamico('ver_reportes_tecnicos')
     usuarios_tecnicos = TecnicoService.listar_tecnicos()
     tecnicos = TecnicoService.serializar(usuarios_tecnicos)
     ids = request.args.get('ids')

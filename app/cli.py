@@ -37,14 +37,102 @@ def do_seed():
             tecnico_role = Role(nombre='Técnico', descripcion='Operativo de campo')
             db.session.add(tecnico_role)
 
-        # Permisos canónicos usados por controladores y plantillas
+        # Catálogo técnico único. Los roles solo agrupan estos permisos.
         permisos_base = [
-            ('gestionar_usuarios', 'Crear, editar y eliminar usuarios, roles y accesos'),
-            ('gestionar_monitoreo', 'Administrar actividades y monitoreo'),
-            ('gestionar_formaciones', 'Administrar formaciones comunitarias'),
-            ('gestionar_sensibilizaciones', 'Administrar sensibilizaciones comunitarias'),
-            ('crear_divulgaciones', 'Crear contenido de divulgación'),
-            ('aprobar_divulgaciones', 'Aprobar y publicar contenido de divulgación'),
+            ('ver_usuarios', 'Consultar usuarios'),
+            ('registrar_usuarios', 'Registrar usuarios'),
+            ('editar_usuarios', 'Editar usuarios'),
+            ('eliminar_usuarios', 'Eliminar usuarios'),
+            ('ver_roles', 'Consultar roles'),
+            ('registrar_roles', 'Registrar roles'),
+            ('editar_roles', 'Editar roles'),
+            ('eliminar_roles', 'Eliminar roles'),
+            ('asignar_permisos_roles', 'Asignar permisos a roles'),
+            ('ver_permisos', 'Consultar catálogo de permisos'),
+            ('registrar_permisos', 'Registrar permisos'),
+            ('editar_permisos', 'Editar permisos'),
+            ('eliminar_permisos', 'Eliminar permisos'),
+            ('ver_bitacora', 'Consultar bitácora'),
+            ('ver_catalogos', 'Consultar tablas maestras'),
+            ('ver_actividades', 'Consultar actividades'),
+            ('registrar_actividades', 'Registrar actividades'),
+            ('editar_actividades', 'Editar actividades'),
+            ('eliminar_actividades', 'Eliminar actividades'),
+            ('cambiar_estado_actividades', 'Cambiar estado de actividades'),
+            ('ver_formaciones', 'Consultar formaciones'),
+            ('registrar_formaciones', 'Registrar formaciones'),
+            ('editar_formaciones', 'Editar formaciones'),
+            ('eliminar_formaciones', 'Eliminar formaciones'),
+            ('cambiar_estado_formaciones', 'Cambiar estado de formaciones'),
+            ('ver_sensibilizaciones', 'Consultar sensibilizaciones'),
+            ('registrar_sensibilizaciones', 'Registrar sensibilizaciones'),
+            ('editar_sensibilizaciones', 'Editar sensibilizaciones'),
+            ('eliminar_sensibilizaciones', 'Eliminar sensibilizaciones'),
+            ('cambiar_estado_sensibilizaciones', 'Cambiar estado de sensibilizaciones'),
+            ('ver_divulgaciones', 'Consultar divulgaciones'),
+            ('registrar_divulgaciones', 'Registrar divulgaciones'),
+            ('editar_divulgaciones', 'Editar divulgaciones'),
+            ('eliminar_divulgaciones', 'Eliminar divulgaciones'),
+            ('aprobar_divulgaciones', 'Aprobar divulgaciones'),
+            ('publicar_divulgaciones', 'Publicar divulgaciones'),
+            ('despublicar_divulgaciones', 'Retirar divulgaciones publicadas'),
+            ('ver_instituciones', 'Consultar instituciones'),
+            ('registrar_instituciones', 'Registrar instituciones'),
+            ('editar_instituciones', 'Editar instituciones'),
+            ('eliminar_instituciones', 'Eliminar instituciones'),
+            ('ver_comunidades', 'Consultar comunidades'),
+            ('registrar_comunidades', 'Registrar comunidades'),
+            ('editar_comunidades', 'Editar comunidades'),
+            ('eliminar_comunidades', 'Eliminar comunidades'),
+            ('ver_niveles', 'Consultar niveles'),
+            ('registrar_niveles', 'Registrar niveles'),
+            ('editar_niveles', 'Editar niveles'),
+            ('eliminar_niveles', 'Eliminar niveles'),
+            ('ver_mapas_riesgo', 'Consultar mapas de riesgo'),
+            ('registrar_mapas_riesgo', 'Registrar mapas de riesgo'),
+            ('editar_mapas_riesgo', 'Editar mapas de riesgo'),
+            ('eliminar_mapas_riesgo', 'Eliminar mapas de riesgo'),
+            ('ver_elementos_mapa', 'Consultar elementos de mapas'),
+            ('registrar_elementos_mapa', 'Registrar elementos de mapas'),
+            ('editar_elementos_mapa', 'Editar elementos de mapas'),
+            ('eliminar_elementos_mapa', 'Eliminar elementos de mapas'),
+            ('ver_simbologia', 'Consultar simbología'),
+            ('registrar_simbologia', 'Registrar simbología'),
+            ('editar_simbologia', 'Editar simbología'),
+            ('eliminar_simbologia', 'Eliminar simbología'),
+            ('ver_mapas_climaticos', 'Consultar mapas climáticos'),
+            ('registrar_mapas_climaticos', 'Registrar mapas climáticos'),
+            ('editar_mapas_climaticos', 'Editar mapas climáticos'),
+            ('eliminar_mapas_climaticos', 'Eliminar mapas climáticos'),
+            ('ver_inventario', 'Consultar inventario'),
+            ('registrar_inventario', 'Registrar equipos de inventario'),
+            ('editar_inventario', 'Editar equipos de inventario'),
+            ('eliminar_inventario', 'Eliminar equipos de inventario'),
+            ('ver_movimientos_inventario', 'Consultar movimientos de inventario'),
+            ('registrar_movimientos_inventario', 'Registrar movimientos de inventario'),
+            ('editar_movimientos_inventario', 'Editar movimientos de inventario'),
+            ('eliminar_movimientos_inventario', 'Eliminar movimientos de inventario'),
+            ('ver_reportes_inventario', 'Generar reportes de inventario'),
+            ('ver_actas_inventario', 'Consultar actas de responsabilidad'),
+            ('ver_tecnicos', 'Consultar técnicos de campo'),
+            ('registrar_tecnicos', 'Registrar técnicos de campo'),
+            ('editar_tecnicos', 'Editar técnicos de campo'),
+            ('eliminar_tecnicos', 'Eliminar técnicos de campo'),
+            ('ver_movimientos_tecnicos', 'Consultar movimientos de técnicos'),
+            ('ver_reportes_tecnicos', 'Generar reportes de técnicos'),
+            ('consultar_geografia', 'Consultar catálogos geográficos'),
+            # Compatibilidad con instalaciones anteriores.
+            ('gestionar_usuarios', 'Compatibilidad: administrar seguridad'),
+            ('gestionar_monitoreo', 'Compatibilidad: administrar monitoreo'),
+            ('gestionar_actividades', 'Compatibilidad: administrar actividades'),
+            ('gestionar_formaciones', 'Compatibilidad: administrar formaciones'),
+            ('gestionar_sensibilizaciones', 'Compatibilidad: administrar sensibilizaciones'),
+            ('crear_divulgaciones', 'Compatibilidad: crear divulgaciones'),
+            ('aprobar_divulgaciones', 'Compatibilidad: aprobar divulgaciones'),
+            ('gestionar_geomatica', 'Compatibilidad: administrar geomática'),
+            ('ver_mapas', 'Compatibilidad: consultar mapas'),
+            ('gestionar_inventario', 'Compatibilidad: administrar inventario'),
+            ('gestionar_tecnicos', 'Compatibilidad: administrar técnicos'),
         ]
 
         permisos_creados = {}
@@ -57,13 +145,15 @@ def do_seed():
 
         db.session.commit()
 
-        # Asociar permisos a roles base
-        for permiso_nombre in ('gestionar_usuarios', 'gestionar_monitoreo', 'gestionar_formaciones', 'gestionar_sensibilizaciones', 'crear_divulgaciones'):
+        # Administrador conserva la separación operativa: no aprueba publicaciones.
+        admin_permisos = [nombre for nombre, _ in permisos_base
+                          if nombre not in ('aprobar_divulgaciones', 'publicar_divulgaciones', 'despublicar_divulgaciones')]
+        for permiso_nombre in admin_permisos:
             permiso = permisos_creados[permiso_nombre]
             if permiso not in admin_role.permissions:
                 admin_role.permissions.append(permiso)
 
-        for permiso_nombre in ('gestionar_usuarios', 'gestionar_monitoreo', 'gestionar_formaciones', 'gestionar_sensibilizaciones', 'crear_divulgaciones', 'aprobar_divulgaciones'):
+        for permiso_nombre, _ in permisos_base:
             permiso = permisos_creados[permiso_nombre]
             if permiso not in director_role.permissions:
                 director_role.permissions.append(permiso)

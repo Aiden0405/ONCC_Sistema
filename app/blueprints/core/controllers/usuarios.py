@@ -7,29 +7,13 @@ from app.models.role import Role
 from app.models.usuario import Usuario
 from app.services.auditoria import registrar_accion
 from app.services.notificacion import ServicioNotificacion
-from app.utils.authorization import current_role_id, has_permission, is_superuser
-
-
-def verificar_permiso_dinamico(nombre_permiso):
-    """
-    Comprueba dinámicamente si el rol del usuario logueado tiene asignado el permiso 
-    solicitado, aplicando un bypass inmediato para los roles jerárquicos del Core (1 y 2).
-    """
-    if not current_user.is_authenticated:
-        abort(403)
-
-    if is_superuser():
-        return True
-
-    if not has_permission(nombre_permiso):
-        flash('No tiene privilegios institucionales para acceder a este módulo.', 'error')
-        abort(403)
+from app.utils.authorization import current_role_id, is_superuser, verificar_permiso_dinamico
 
 
 @core_bp.route('/admin/usuarios/')
 @login_required
 def usuario_index():
-    verificar_permiso_dinamico('gestionar_usuarios')
+    verificar_permiso_dinamico('ver_usuarios')
     usuarios = Usuario.query.order_by(Usuario.nombre_usuario).all()
     return render_template('usuarios/index.html', whitespaces=True, usuarios=usuarios)
 
@@ -37,7 +21,7 @@ def usuario_index():
 @core_bp.route('/admin/usuarios/nuevo', methods=['GET', 'POST'])
 @login_required
 def usuario_nuevo():
-    verificar_permiso_dinamico('gestionar_usuarios')
+    verificar_permiso_dinamico('registrar_usuarios')
     
     if request.method == 'POST':
         nombre = (request.form.get('nombre_usuario') or '').strip()
@@ -93,7 +77,7 @@ def usuario_nuevo():
 @core_bp.route('/admin/usuarios/<int:usuario_id>/editar', methods=['GET', 'POST'])
 @login_required
 def usuario_editar(usuario_id):
-    verificar_permiso_dinamico('gestionar_usuarios')
+    verificar_permiso_dinamico('editar_usuarios')
     
     usuario = Usuario.query.get_or_404(usuario_id)
 
@@ -154,7 +138,7 @@ def usuario_editar(usuario_id):
 @core_bp.route('/admin/usuarios/<int:usuario_id>/eliminar', methods=['POST'])
 @login_required
 def usuario_eliminar(usuario_id):
-    verificar_permiso_dinamico('gestionar_usuarios')
+    verificar_permiso_dinamico('eliminar_usuarios')
     
     usuario = Usuario.query.get_or_404(usuario_id)
     

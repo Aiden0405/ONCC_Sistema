@@ -1,14 +1,14 @@
 from flask import render_template, request
 from flask_login import login_required
 from app.blueprints.core import core_bp
-from app.blueprints.core.controllers.roles import verificar_permiso_dinamico
+from app.utils.authorization import verificar_permiso_dinamico
 from app.models.bitacora import BitacoraTransaccion
 
 
 @core_bp.route('/bitacora')
 @login_required
 def bitacora_index():
-    verificar_permiso_dinamico('gestionar_usuarios')
+    verificar_permiso_dinamico('ver_bitacora')
 
     pagina = request.args.get('page', 1, type=int)
     modulo_filtro = request.args.get('modulo', '').strip()

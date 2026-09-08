@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 from flask import request, jsonify, render_template, redirect, url_for
 from flask_login import current_user, login_required
+from app.utils.authorization import verificar_permiso_dinamico
 
 from app import db
 # Ajusta estas importaciones según la ubicación exacta de tus modelos geográficos
@@ -19,11 +20,13 @@ from app.models.esquema_activo import EstadoActivo, MunicipioActivo, ParroquiaAc
 #          API REST - AJAX Y FILTROS
 # ==========================================
 
+@login_required
 def obtener_estados():
     """
     Devuelve la lista completa de estados ordenados alfabéticamente.
     Diseñado para cargar el primer selector jerárquico.
     """
+    verificar_permiso_dinamico('consultar_geografia')
     try:
         resultados = EstadoActivo.query.order_by(EstadoActivo.nombre_estado).all()
         
@@ -39,11 +42,13 @@ def obtener_estados():
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 
+@login_required
 def obtener_municipios(id_estado):
     """
     Devuelve los municipios correspondientes a un estado específico.
     Escucha el parámetro dinámico 'id_estado' desde la URL.
     """
+    verificar_permiso_dinamico('consultar_geografia')
     try:
         resultados = MunicipioActivo.query.filter_by(id_estado=id_estado).order_by(MunicipioActivo.nombre_municipio).all()
         
@@ -60,11 +65,13 @@ def obtener_municipios(id_estado):
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 
+@login_required
 def obtener_parroquias(id_municipio):
     """
     Devuelve las parroquias correspondientes a un municipio específico.
     Escucha el parámetro dinámico 'id_municipio' desde la URL.
     """
+    verificar_permiso_dinamico('consultar_geografia')
     try:
         resultados = ParroquiaActiva.query.filter_by(id_municipio=id_municipio).order_by(ParroquiaActiva.nombre_parroquia).all()
         
@@ -81,11 +88,13 @@ def obtener_parroquias(id_municipio):
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 
+@login_required
 def obtener_comunidades(id_parroquia):
     """
     Devuelve las comunidades correspondientes a una parroquia específica.
     Escucha el parámetro dinámico 'id_' desde la URL.
     """
+    verificar_permiso_dinamico('consultar_geografia')
     try:
         resultados = ComunidadActiva.query.filter_by(id_parroquia=id_parroquia).order_by(ComunidadActiva.nombre_comunidad).all()
         
