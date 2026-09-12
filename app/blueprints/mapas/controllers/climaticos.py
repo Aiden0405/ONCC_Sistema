@@ -9,6 +9,7 @@ from app.models.clima import MapaClimatico, RegistroClimatico
 from app.services.notificacion import ServicioNotificacion
 from sqlalchemy.exc import SQLAlchemyError
 from app.utils.authorization import verificar_permiso_dinamico
+from app.services.reportes import respuesta_csv
 
 # Extensiones exclusivas para mapas climáticos (imágenes)
 EXTENSIONES_MAPAS_CLIMATICOS = {'png', 'jpg', 'jpeg', 'svg', 'webp'}
@@ -93,6 +94,21 @@ def listar_mapas_climaticos():
     } for m in mapas]
     
     return jsonify(resultados), 200
+
+
+@login_required
+def reporte_mapas_climaticos():
+    verificar_permiso_dinamico('reportes_mapas_climaticos')
+    mapas = MapaClimatico.query.order_by(MapaClimatico.fecha_creacion.desc()).all()
+    filas = [
+        (mapa.id_mapa_climatico, mapa.id_estado, mapa.tipo_de_mapa, mapa.url_mapa, mapa.fecha_creacion)
+        for mapa in mapas
+    ]
+    return respuesta_csv(
+        'reporte_mapas_climaticos.csv',
+        ('ID', 'Estado', 'Tipo de mapa', 'Archivo / URL', 'Fecha de creación'),
+        filas,
+    )
 @login_required
 def actualizar_mapa_climatico(mapa_id):
     verificar_permiso_dinamico('editar_mapas_climaticos')

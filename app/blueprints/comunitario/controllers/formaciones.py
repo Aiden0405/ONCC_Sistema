@@ -16,6 +16,7 @@ from app.models.esquema_activo import (
 from app.models.actividad import Actividad
 from app.models.esquema_activo import FormacionActiva as Formacion
 from app.services.notificacion import ServicioNotificacion
+from app.services.reportes import respuesta_csv
 
 
 def _cargar_formacion_choices(form):
@@ -48,6 +49,7 @@ def _registrar_formacion(form):
         nombre_formacion=f"{form.nombre_formacion.data}||{form.tecnico.data}",
         id_institucion=form.id_institucion.data,
         id_actividad=nueva_actividad.id_actividad,
+        tipo_actividad='FORMACION',
         id_nivel=form.id_nivel.data,
     )
     db.session.add(nueva_formacion)
@@ -74,6 +76,25 @@ def formaciones_index():
         'formaciones/index.html', 
         form=form, 
         formaciones=formaciones_procesadas
+    )
+
+
+@comunitario_bp.route('/formaciones/reporte')
+@login_required
+def formaciones_reporte():
+    verificar_permiso_dinamico('reportes_formaciones')
+    filas = [
+        (
+            registro['id_formacion'], registro['tema'], registro['tecnico'],
+            registro['nombre_institucion'], registro['fecha_formateada'],
+            registro['id_comunidad'], registro['id_nivel'],
+        )
+        for registro in Formacion.obtener_historial_completo()
+    ]
+    return respuesta_csv(
+        'reporte_formaciones.csv',
+        ('ID', 'Tema', 'Técnico / Facilitador', 'Institución', 'Fecha', 'Comunidad', 'Nivel'),
+        filas,
     )
 
 
@@ -116,7 +137,10 @@ def formacion_editar(id_formacion):
     verificar_permiso_dinamico('editar_formaciones')
 
     formacion = Formacion.query.get_or_404(id_formacion)
-    actividad = Actividad.query.get(formacion.id_actividad)
+    actividad = Actividad.query.filter_by(
+        id_actividad=formacion.id_actividad,
+        tipo_actividad='FORMACION',
+    ).first_or_404()
 
     tema_nuevo = request.form.get('edit_nombre_formacion')
     tecnico_nuevo = request.form.get('edit_tecnico')
@@ -160,7 +184,10 @@ def formacion_eliminar(id_formacion):
     verificar_permiso_dinamico('eliminar_formaciones')
  
     formacion = Formacion.query.get_or_404(id_formacion)
-    actividad = Actividad.query.get(formacion.id_actividad)
+    actividad = Actividad.query.filter_by(
+        id_actividad=formacion.id_actividad,
+        tipo_actividad='FORMACION',
+    ).first_or_404()
 
     try:
         db.session.delete(formacion)

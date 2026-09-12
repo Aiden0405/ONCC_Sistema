@@ -9,6 +9,7 @@ class Actividad(db.Model):
     id_actividad = db.Column(db.Integer, primary_key=True)
     fecha_actividad = db.Column(db.Date, nullable=False)
     tipo_actividad = db.Column(db.String(50), nullable=False)
+    id_usuario = db.Column(db.Integer, nullable=True)
     id_comunidad = db.Column(db.Integer, db.ForeignKey('comunidad.id_comunidad'), nullable=False)
     id_nivel = db.Column(db.Integer, db.ForeignKey('nivel.id_nivel'), nullable=True) # 👈 Columna FK requerida
     divulgacion = db.relationship(

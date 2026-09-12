@@ -11,6 +11,7 @@ from app import db
 from app.models.bitacora import BitacoraTransaccion
 from app.models.inventario import InventarioEquipo, MovimientoEquipo
 from app.services.notificacion import ServicioNotificacion
+from app.utils.validation import normalize_text
 
 
 class InventarioService:
@@ -131,9 +132,13 @@ class InventarioService:
 
     @staticmethod
     def crear_equipo(datos, usuario):
-        codigo = datos.get('codigo', '').strip()
+        codigo = (datos.get('codigo') or '').strip()
         if not codigo:
             return {'ok': False, 'error': 'Debe indicar el codigo del equipo.'}
+        try:
+            codigo = normalize_text(codigo, max_length=50, field='El código')
+        except ValueError as error:
+            return {'ok': False, 'error': str(error)}
 
         if InventarioEquipo.query.filter_by(codigo_interno=codigo).first():
             return {'ok': False, 'error': 'Ya existe un equipo con ese codigo.'}
@@ -145,11 +150,19 @@ class InventarioService:
         if error_fecha:
             return {'ok': False, 'error': error_fecha}
 
-        tipo = datos.get('tipo_equipo', '').strip() or 'Equipo Técnico'
-        nombre_ubicacion = datos.get('ubicacion', '').strip() or 'Sin Ubicación'
-        condicion = datos.get('estado_operativo', 'Operativo').strip() or 'Operativo'
-        estado_flujo = datos.get('estado', 'Disponible').strip() or 'Disponible'
-        responsable = datos.get('responsable', '').strip() or usuario.nombre
+        tipo = (datos.get('tipo_equipo') or '').strip() or 'Equipo Técnico'
+        nombre_ubicacion = (datos.get('ubicacion') or '').strip() or 'Sin Ubicación'
+        condicion = (datos.get('estado_operativo') or 'Operativo').strip() or 'Operativo'
+        estado_flujo = (datos.get('estado') or 'Disponible').strip() or 'Disponible'
+        responsable = (datos.get('responsable') or '').strip() or usuario.nombre
+        try:
+            tipo = normalize_text(tipo, max_length=120, field='El tipo de equipo')
+            nombre_ubicacion = normalize_text(nombre_ubicacion, max_length=180, field='La ubicación')
+            condicion = normalize_text(condicion, max_length=50, field='La condición')
+            estado_flujo = normalize_text(estado_flujo, max_length=50, field='El estado')
+            responsable = normalize_text(responsable, max_length=120, field='El responsable')
+        except ValueError as error:
+            return {'ok': False, 'error': str(error)}
 
         modelo = InventarioService._obtener_o_crear_modelo(tipo)
         ubicacion = InventarioService._obtener_o_crear_ubicacion(nombre_ubicacion)
@@ -207,15 +220,21 @@ class InventarioService:
         if fecha > datetime.utcnow().date():
             return None, 'La fecha no puede ser posterior a hoy.'
 
-        origen = datos.get('ubicacion_origen', '').strip()
+        origen = (datos.get('ubicacion_origen') or '').strip()
         if not origen:
             return None, 'Debe indicar la ubicación de origen.'
-        destino = datos.get('ubicacion_destino', '').strip()
+        destino = (datos.get('ubicacion_destino') or '').strip()
         if not destino:
             return None, 'Debe indicar la ubicación de destino.'
-        motivo = datos.get('motivo_responsable', '').strip()
+        motivo = (datos.get('motivo_responsable') or '').strip()
         if not motivo:
             return None, 'Debe indicar el motivo y responsable.'
+        try:
+            origen = normalize_text(origen, max_length=180, field='La ubicación de origen')
+            destino = normalize_text(destino, max_length=180, field='La ubicación de destino')
+            motivo = normalize_text(motivo, max_length=500, field='El motivo')
+        except ValueError as error:
+            return None, str(error)
 
         return {'equipo': equipo, 'fecha': fecha, 'origen': origen, 'destino': destino, 'motivo': motivo}, None
 

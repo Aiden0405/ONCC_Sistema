@@ -14,7 +14,7 @@ class PasswordReset(db.Model):
     
     token = db.Column(db.String(128), unique=True, nullable=False)
     creado_en = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    expiracion = db.Column(db.DateTime, nullable=False, default=lambda: datetime.utcnow() + timedelta(hours=2))
+    expiracion = db.Column(db.DateTime, nullable=False, default=lambda: datetime.utcnow() + timedelta(minutes=10))
     usado = db.Column(db.Boolean, nullable=False, default=False)
 
     # 2. CORRECCIÓN DEFINITIVA: Quitamos el lazy='dynamic' en conflicto

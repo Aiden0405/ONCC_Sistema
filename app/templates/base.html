@@ -78,12 +78,9 @@
     {% set permisos_activos = [] %}
     {% if current_user.is_authenticated and current_user.role %}
         {% set lista_temporal = [] %}
-        {% for p in current_user.role.permissions %}
-            {% if p.nombre_modulo %}
-                {% set _ = lista_temporal.append(p.nombre_modulo) %}
-            {% endif %}
-            {% if p.nombre %}
-                {% set _ = lista_temporal.append(p.nombre) %}
+        {% for permiso in current_user.permission_names %}
+            {% if permiso %}
+                {% set _ = lista_temporal.append(permiso) %}
             {% endif %}
         {% endfor %}
         {% set permisos_activos = lista_temporal %}

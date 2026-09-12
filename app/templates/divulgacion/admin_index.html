@@ -11,11 +11,10 @@
             <p class="text-sm dark:text-gray-400 text-gray-500">Crear, revisar y publicar contenidos informativos destinados al portal público institucional</p>
         </div>
         
-        {% if 'registrar_divulgaciones' in permisos_activos or current_user.id_rol|int in (1, 2) %}
-        <a href="{{ url_for('core.divulgacion_admin_nuevo') }}" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md shadow-sm hover:bg-green-700 transition-colors text-sm font-medium">
-            <i data-lucide="plus" class="w-4 h-4 mr-2"></i> Nueva Publicación
-        </a>
-        {% endif %}
+        <div class="flex items-center gap-2">
+            {% if current_user.id_rol|int in (1, 2) or current_user.has_permission('reportes_divulgaciones') or current_user.rol == config.SUPER_ROLE_NAME %}<a href="{{ url_for('core.divulgacion_reporte') }}" class="inline-flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-100 text-sm font-medium"><i data-lucide="download" class="w-4 h-4 mr-1"></i> Reporte</a>{% endif %}
+            {% if 'registrar_divulgaciones' in permisos_activos or current_user.id_rol|int in (1, 2) %}<a href="{{ url_for('core.divulgacion_admin_nuevo') }}" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md shadow-sm hover:bg-green-700 transition-colors text-sm font-medium"><i data-lucide="plus" class="w-4 h-4 mr-2"></i> Nueva Publicación</a>{% endif %}
+        </div>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}

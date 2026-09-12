@@ -40,7 +40,19 @@ class Usuario(UserMixin, db.Model):
             return []
 
         try:
-            return [permiso.nombre_modulo for permiso in self.role.permissions]
+            names = {permiso.nombre_modulo for permiso in self.role.permissions}
+            from app.models.role import UserPermissionOverride
+
+            overrides = UserPermissionOverride.query.filter_by(id_usuario=self.id_usuario).all()
+            for override in overrides:
+                permission = override.permission_obj
+                if not permission:
+                    continue
+                if override.concedido:
+                    names.add(permission.nombre_modulo)
+                else:
+                    names.discard(permission.nombre_modulo)
+            return list(names)
         except Exception:
             return []
 

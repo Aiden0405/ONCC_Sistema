@@ -17,6 +17,7 @@ from app.models.actividad import Actividad
 from app.models.esquema_activo import ComunidadActiva, ParroquiaActiva, MunicipioActivo, EstadoActivo
 from app.services.notificacion import ServicioNotificacion
 from app.utils.authorization import verificar_permiso_dinamico
+from app.services.reportes import respuesta_csv
 
 # VALIDACIÓN SEPARADA POR TIPO DE MÓDULO
 EXTENSIONES_MAPAS = {'png', 'jpg', 'jpeg', 'svg', 'webp', 'kml', 'geojson'}
@@ -123,6 +124,40 @@ def catalogo_index():
 def mapas_riesgo_index():
     verificar_permiso_dinamico('ver_mapas_riesgo')
     return render_template('geomatica/mapa_riesgo.html')
+
+
+@login_required
+def reporte_mapas_riesgo():
+    verificar_permiso_dinamico('reportes_mapas_riesgo')
+    mapas = MapaRiesgo.query.order_by(MapaRiesgo.fecha_creacion.desc()).all()
+    filas = [
+        (
+            mapa.id_mapa_riesgo, mapa.nombre, mapa.fecha_creacion,
+            mapa.id_actividad, mapa.tipo_actividad,
+            len(mapa.elementos), mapa.ruta_imagen_mapa or '', mapa.ruta_kml or '',
+        )
+        for mapa in mapas
+    ]
+    return respuesta_csv(
+        'reporte_mapas_riesgo.csv',
+        ('ID', 'Nombre', 'Fecha', 'Actividad', 'Tipo de actividad', 'Elementos', 'Imagen', 'KML'),
+        filas,
+    )
+
+
+@login_required
+def reporte_simbologia():
+    verificar_permiso_dinamico('reportes_mapas_riesgo')
+    simbolos = Simbologia.query.order_by(Simbologia.categoria, Simbologia.nombre_elemento).all()
+    filas = [
+        (simbolo.id_simbologia, simbolo.categoria, simbolo.nombre_elemento, simbolo.tipo_geometria)
+        for simbolo in simbolos
+    ]
+    return respuesta_csv(
+        'reporte_simbologia.csv',
+        ('ID', 'Categoría', 'Elemento', 'Tipo de geometría'),
+        filas,
+    )
 
 
 @login_required

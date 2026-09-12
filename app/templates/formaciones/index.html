@@ -12,6 +12,7 @@
       <p class="text-sm dark:text-gray-400 text-gray-500">
         Planificación, vinculación institucional y seguimiento pedagógico de jornadas climáticas
       </p>
+      {% if current_user.id_rol|int in (1, 2) or current_user.has_permission('reportes_formaciones') or current_user.rol == config.SUPER_ROLE_NAME %}<a href="{{ url_for('comunitario.formaciones_reporte') }}" class="inline-flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-100 text-sm font-medium"><i data-lucide="download" class="w-4 h-4 mr-1"></i> Reporte</a>{% endif %}
     </div>
   </div>
 

@@ -3,11 +3,15 @@ from flask_login import current_user, login_required
 
 from app import db
 from app.blueprints.core import core_bp
-from app.models.role import Role
+from app.models.role import Permission, Role, UserPermissionOverride
 from app.models.usuario import Usuario
+from app.models.notificacion import Notificacion
+from app.models.password_reset import PasswordReset
 from app.services.auditoria import registrar_accion
 from app.services.notificacion import ServicioNotificacion
 from app.utils.authorization import current_role_id, is_superuser, verificar_permiso_dinamico
+from app.services.reportes import respuesta_csv
+from app.utils.validation import parse_positive_int, validate_password, validate_person_text
 
 
 @core_bp.route('/admin/usuarios/')
@@ -15,7 +19,38 @@ from app.utils.authorization import current_role_id, is_superuser, verificar_per
 def usuario_index():
     verificar_permiso_dinamico('ver_usuarios')
     usuarios = Usuario.query.order_by(Usuario.nombre_usuario).all()
-    return render_template('usuarios/index.html', whitespaces=True, usuarios=usuarios)
+    permisos = Permission.query.order_by(Permission.nombre_modulo).all()
+    excepciones = {
+        usuario.id_usuario: {
+            override.id_modulo: override
+            for override in UserPermissionOverride.query.filter_by(id_usuario=usuario.id_usuario).all()
+        }
+        for usuario in usuarios
+    }
+    return render_template(
+        'usuarios/index.html',
+        whitespaces=True,
+        usuarios=usuarios,
+        permisos=permisos,
+        excepciones=excepciones,
+        puede_gestionar_excepciones=is_superuser() or current_role_id() in (1, 2),
+    )
+
+
+@core_bp.route('/admin/usuarios/reporte')
+@login_required
+def usuario_reporte():
+    verificar_permiso_dinamico('reportes_usuarios')
+    usuarios = Usuario.query.order_by(Usuario.nombre_usuario).all()
+    filas = [
+        (u.id_usuario, u.nombre_usuario, u.correo, u.rol, 'Activo' if u.estatus else 'Inactivo')
+        for u in usuarios
+    ]
+    return respuesta_csv(
+        'reporte_usuarios.csv',
+        ('ID', 'Nombre', 'Correo', 'Rol', 'Estatus'),
+        filas,
+    )
 
 
 @core_bp.route('/admin/usuarios/nuevo', methods=['GET', 'POST'])
@@ -27,7 +62,7 @@ def usuario_nuevo():
         nombre = (request.form.get('nombre_usuario') or '').strip()
         correo = (request.form.get('correo') or '').strip().lower()
         id_rol_form = request.form.get('id_rol')
-        password = (request.form.get('password') or '').strip()
+        password = request.form.get('password') or ''
         estatus_form = request.form.get('estatus')
 
         if not nombre or not correo or not password or not id_rol_form:
@@ -35,9 +70,19 @@ def usuario_nuevo():
             roles = Role.query.order_by(Role.id_rol).all()
             return render_template('usuarios/formulario.html', roles=roles)
             
+        try:
+            nombre = validate_person_text(nombre, field='El nombre')
+            if len(correo) > 50 or '@' not in correo:
+                raise ValueError('El correo no es válido.')
+            validate_password(password)
+            rol_destino = parse_positive_int(id_rol_form, field='El rol')
+        except ValueError as error:
+            flash(str(error), 'error')
+            roles = Role.query.order_by(Role.id_rol).all()
+            return render_template('usuarios/formulario.html', roles=roles)
+
         # 🛡️ CONTROL DE JERARQUÍA ABSOLUTO EN CREACIÓN
         rol_creador = current_role_id()
-        rol_destino = int(id_rol_form)
         
         if rol_creador != 1 and rol_destino <= rol_creador:
             flash('Acceso denegado: No posee el rango jerárquico para asignar este nivel de privilegio.', 'error')
@@ -105,7 +150,11 @@ def usuario_editar(usuario_id):
 
         # 🛡️ CONTROL DE ESCALADA Y ANTI AUTO-DEGRADACIÓN
         if id_rol_form and usuario.id_usuario != current_user.id_usuario:
-            rol_destino = int(id_rol_form)
+            try:
+                rol_destino = parse_positive_int(id_rol_form, field='El rol')
+            except ValueError as error:
+                flash(str(error), 'error')
+                return redirect(url_for('usuario.index'))
             if rol_operador != 1 and rol_destino < rol_operador:
                 flash('No puede asignar un nivel de privilegio superior al suyo.', 'error')
                 return redirect(url_for('usuario.index'))
@@ -114,10 +163,20 @@ def usuario_editar(usuario_id):
         if estatus_form is not None and usuario.id_usuario != current_user.id_usuario:
             usuario.estatus = (estatus_form == '1')
 
-        usuario.nombre_usuario = nombre or usuario.nombre_usuario
+        if nombre:
+            try:
+                usuario.nombre_usuario = validate_person_text(nombre, field='El nombre')
+            except ValueError as error:
+                flash(str(error), 'error')
+                return redirect(url_for('usuario.index'))
 
-        nueva_pass = (request.form.get('password') or '').strip()
+        nueva_pass = request.form.get('password') or ''
         if nueva_pass:
+            try:
+                validate_password(nueva_pass)
+            except ValueError as error:
+                flash(str(error), 'error')
+                return redirect(url_for('usuario.index'))
             usuario.set_password(nueva_pass)
 
         db.session.commit()
@@ -160,6 +219,9 @@ def usuario_eliminar(usuario_id):
     user_correo = getattr(usuario, 'correo', usuario.nombre_usuario)
     nombre_eliminado = usuario.nombre_usuario
 
+    # Estas filas pertenecen a la cuenta y no pueden quedar con id_usuario NULL.
+    Notificacion.query.filter_by(id_usuario=usuario.id_usuario).delete(synchronize_session=False)
+    PasswordReset.query.filter_by(user_id=usuario.id_usuario).delete(synchronize_session=False)
     db.session.delete(usuario)
     db.session.commit()
     mensaje = f"Se eliminó la cuenta de {nombre_eliminado}."
@@ -177,10 +239,19 @@ def usuario_perfil():
     usuario = Usuario.query.get_or_404(current_user.id_usuario)
     if request.method == 'POST':
         nombre = (request.form.get('nombre_usuario') or usuario.nombre_usuario).strip()
-        usuario.nombre_usuario = nombre
+        try:
+            usuario.nombre_usuario = validate_person_text(nombre, field='El nombre')
+        except ValueError as error:
+            flash(str(error), 'error')
+            return redirect(url_for('usuario.index'))
 
-        nueva_pass = (request.form.get('password') or '').strip()
+        nueva_pass = request.form.get('password') or ''
         if nueva_pass:
+            try:
+                validate_password(nueva_pass)
+            except ValueError as error:
+                flash(str(error), 'error')
+                return redirect(url_for('usuario.index'))
             usuario.set_password(nueva_pass)
 
         db.session.add(usuario)

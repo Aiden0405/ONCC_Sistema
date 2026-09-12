@@ -4,12 +4,13 @@ import logging
 import os
 from logging.handlers import RotatingFileHandler
 
-from flask import Flask, render_template, session 
+from flask import Flask, render_template, session
 from flask_login import LoginManager, login_required
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import CSRFProtect
 from flask_mail import Mail 
+from sqlalchemy import or_
 
 from config import Config
 
@@ -26,6 +27,7 @@ login_manager.login_message = "Por favor, inicie sesión para acceder al sistema
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
+    app.config.setdefault('MAX_CONTENT_LENGTH', 10 * 1024 * 1024)
 
     # 🌟 CONFIGURACIÓN CON MAILTRAP PARA DESARROLLO (SIN BLOQUEOS)
     app.config['MAIL_SERVER'] = 'sandbox.smtp.mailtrap.io'
@@ -33,9 +35,9 @@ def create_app(config_class=Config):
     app.config['MAIL_USE_TLS'] = True
     app.config['MAIL_USE_SSL'] = False
     
-    # 🔑 Credenciales de desarrollo de tu Inbox virtual en Mailtrap
-    app.config['MAIL_USERNAME'] = 'e4f11f28a9ae86'
-    app.config['MAIL_PASSWORD'] = '7b85444a15b2a5'
+    # Credenciales del Inbox de prueba. Se pueden sobrescribir mediante .env.
+    app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', 'e4f11f28a9ae86')
+    app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', '7b85444a15b2a5')
     
     app.config['MAIL_DEFAULT_SENDER'] = ('ONCC Sistema', 'soporte@oncc.gob.ve')
 
@@ -104,7 +106,7 @@ def create_app(config_class=Config):
         from app.models.visita_portal import VisitaPortal  # noqa: F401
         from app.models.password_reset import PasswordReset  # noqa: F401
         from app.models.usuario import Usuario  # noqa: F401
-        from app.models.role import Role, Permission  # noqa: F401
+        from app.models.role import Role, Permission, UserPermissionOverride  # noqa: F401
         from app.models.notificacion import Notificacion  # noqa: F401
 
     from app.blueprints.core.controllers.auth import login as core_login
@@ -180,6 +182,8 @@ def create_app(config_class=Config):
     from app.blueprints.mapas.controllers.climaticos import mapas_climaticos_index
     from app.blueprints.mapas.controllers.climaticos import procesar_mapa_climatico
     from app.blueprints.mapas.controllers.climaticos import listar_mapas_climaticos
+    from app.blueprints.mapas.controllers.climaticos import reporte_mapas_climaticos
+    from app.blueprints.mapas.controllers.riesgo import reporte_mapas_riesgo, reporte_simbologia
     from app.blueprints.mapas.controllers.climaticos import eliminar_mapa_climatico
     from app.blueprints.mapas.controllers.climaticos import actualizar_mapa_climatico
     from app.blueprints.mapas.controllers.climaticos import registrar_mes_climatico
@@ -294,6 +298,9 @@ def create_app(config_class=Config):
     app.add_url_rule('/mapas-climaticos', endpoint='mapas.mapas_climaticos_index', view_func=mapas_climaticos_index, methods=['GET'])
     app.add_url_rule('/mapas-climaticos/procesar', endpoint='mapas.procesar_mapa_climatico', view_func=procesar_mapa_climatico, methods=['POST'])
     app.add_url_rule('/mapas-climaticos/lista', endpoint='mapas.listar_mapas_climaticos', view_func=listar_mapas_climaticos, methods=['GET'])
+    app.add_url_rule('/mapas-climaticos/reporte', endpoint='mapas.reporte_mapas_climaticos', view_func=reporte_mapas_climaticos, methods=['GET'])
+    app.add_url_rule('/geomatica/mapas-riesgo/reporte', endpoint='mapas.reporte_mapas_riesgo', view_func=reporte_mapas_riesgo, methods=['GET'])
+    app.add_url_rule('/geomatica/simbologia/reporte', endpoint='mapas.reporte_simbologia', view_func=reporte_simbologia, methods=['GET'])
     app.add_url_rule('/mapas-climaticos/<int:mapa_id>', endpoint='mapas.eliminar_mapa_climatico', view_func=eliminar_mapa_climatico, methods=['DELETE'])
     app.add_url_rule('/mapas-climaticos/<int:mapa_id>/actualizar', endpoint='geomatica.actualizar_mapa_climatico', view_func=actualizar_mapa_climatico, methods=['POST', 'PUT'])
     app.add_url_rule('/mapas-climaticos/cargar-mes', endpoint='mapas.cargar_mes_climatico', view_func=cargar_mes_climatico, methods=['GET'])
@@ -331,10 +338,39 @@ def create_app(config_class=Config):
         from app.models.geomatica import MapaRiesgo
         from app.models.inventario import InventarioEquipo
         from app.models.esquema_activo import FormacionActiva, SensibilizacionActiva
+        from flask_login import current_user
+        from app.utils.authorization import is_superuser
 
-        # 🌟 ORDENAR POR COLUMNAS REALES DEL MODELO
-        actividades = Actividad.query.order_by(Actividad.fecha_actividad.desc(), Actividad.id_actividad.desc()).limit(5).all()
-        total_actividades = Actividad.query.count()
+        alcance_global = is_superuser() or current_user.id_rol in (1, 2)
+        if alcance_global:
+            actividades_query = Actividad.query
+            publicaciones_query = Publicacion.query
+            formaciones_query = FormacionActiva.query
+            sensibilizaciones_query = SensibilizacionActiva.query
+            mapas_query = MapaRiesgo.query
+            inventario_query = InventarioEquipo.query
+        else:
+            usuario_id = current_user.id_usuario
+            actividades_query = Actividad.query.filter(Actividad.id_usuario == usuario_id)
+            publicaciones_query = Publicacion.query.filter(Publicacion.id_usuario == usuario_id)
+            actividad_ids = actividades_query.with_entities(Actividad.id_actividad).scalar_subquery()
+            formaciones_query = FormacionActiva.query.filter(FormacionActiva.id_actividad.in_(actividad_ids))
+            sensibilizaciones_query = SensibilizacionActiva.query.filter(SensibilizacionActiva.id_actividad.in_(actividad_ids))
+            mapas_query = MapaRiesgo.query.filter(MapaRiesgo.id_actividad.in_(actividad_ids))
+            # Inventario no tiene FK de propietario; solo se muestran equipos
+            # cuyo responsable coincide con el usuario conectado.
+            responsable = (current_user.nombre_usuario or '').strip()
+            inventario_query = InventarioEquipo.query.filter(
+                or_(
+                    InventarioEquipo.responsable.ilike(f'%{responsable}%'),
+                    InventarioEquipo.responsable.ilike(f'%{current_user.correo}%'),
+                )
+            )
+
+        actividades = actividades_query.order_by(
+            Actividad.fecha_actividad.desc(), Actividad.id_actividad.desc()
+        ).limit(5).all()
+        total_actividades = actividades_query.count()
 
         mapa_estados = [
             {'nombre': 'Lara', 'lat': 10.073, 'lng': -69.322, 'color': '#16a34a', 'conteo': 0},
@@ -343,15 +379,15 @@ def create_app(config_class=Config):
         ]
 
         modulos_operativos = {
-            'inventario': InventarioEquipo.query.count(),
-            'mapas': MapaRiesgo.query.count(),
+            'inventario': inventario_query.count(),
+            'mapas': mapas_query.count(),
             'actividades': total_actividades,
-            'divulgacion': Publicacion.query.count(),
-            'divulgacion_publicadas': Publicacion.query.filter_by(estado_publicacion='publicado').count(),
-            'divulgacion_borradores': Publicacion.query.filter_by(estado_publicacion='borrador').count(),
+            'divulgacion': publicaciones_query.count(),
+            'divulgacion_publicadas': publicaciones_query.filter_by(estado_publicacion='publicado').count(),
+            'divulgacion_borradores': publicaciones_query.filter_by(estado_publicacion='borrador').count(),
             'comunidades': 0,
-            'formaciones': FormacionActiva.query.count(),         # 👈 Consulta real
-            'sensibilizaciones': SensibilizacionActiva.query.count(), # 👈 Consulta real
+            'formaciones': formaciones_query.count(),
+            'sensibilizaciones': sensibilizaciones_query.count(),
         }
 
         resumen = {
@@ -369,6 +405,7 @@ def create_app(config_class=Config):
             actividades_recientes=actividades,
             mapa_estados=mapa_estados,
             modulos_operativos=modulos_operativos,
+            alcance_global=alcance_global,
         )
 
     @app.template_filter('tiempo_atras')
@@ -404,18 +441,28 @@ def create_app(config_class=Config):
     def inject_notifications():
         from app.models.notificacion import Notificacion
         from flask_login import current_user
+        from sqlalchemy.exc import SQLAlchemyError
 
         if current_user.is_authenticated:
-            alertas = Notificacion.query.filter(
-                (Notificacion.id_usuario == current_user.id_usuario) | (Notificacion.id_usuario.is_(None))
-            ).order_by(Notificacion.fecha_creacion.desc()).limit(5).all()
-            
-            conteo_alertas = Notificacion.query.filter(
-                (Notificacion.id_usuario == current_user.id_usuario) | (Notificacion.id_usuario.is_(None)),
-                Notificacion.leido == False
-            ).count()
-            
-            return dict(alertas_sistema=alertas, conteo_alertas=conteo_alertas)
+            try:
+                filtro = (
+                    (Notificacion.id_usuario == current_user.id_usuario)
+                    | (Notificacion.id_usuario.is_(None))
+                )
+                alertas = Notificacion.query.filter(filtro).order_by(
+                    Notificacion.fecha_creacion.desc()
+                ).limit(5).all()
+                conteo_alertas = Notificacion.query.filter(
+                    filtro,
+                    Notificacion.leido.is_(False),
+                ).count()
+                return dict(alertas_sistema=alertas, conteo_alertas=conteo_alertas)
+            except SQLAlchemyError:
+                # Una excepción anterior puede dejar la sesión PostgreSQL abortada.
+                # Las notificaciones no deben impedir cargar el módulo solicitado.
+                db.session.rollback()
+                app.logger.exception('No se pudieron cargar las notificaciones del usuario.')
+                return dict(alertas_sistema=[], conteo_alertas=0)
         
         return dict(alertas_sistema=[], conteo_alertas=0)
 

@@ -1,26 +1,27 @@
 from flask_wtf import FlaskForm
 from wtforms import FileField, HiddenField, PasswordField, SelectField, StringField, TextAreaField, IntegerField, DateField
 from wtforms.validators import DataRequired, Email, Length, Optional, AnyOf, NumberRange, EqualTo, InputRequired
+from app.utils.validation import password_policy
 
 class LoginForm(FlaskForm):
     correo = StringField(
         'Correo institucional',
-        validators=[DataRequired(message='Debe ingresar su correo institucional.'), Email(message='Ingrese un correo válido.'), Length(max=120)],
+        validators=[DataRequired(message='Debe ingresar su correo institucional.'), Email(message='Ingrese un correo válido.'), Length(max=50)],
     )
     password = PasswordField(
         'Contraseña',
-        validators=[DataRequired(message='Debe ingresar su contraseña.'), Length(min=6, max=128)],
+        validators=[DataRequired(message='Debe ingresar su contraseña.'), password_policy],
     )
     next = HiddenField()
 
 
 class ResetRequestForm(FlaskForm):
-    correo = StringField('Correo institucional', validators=[DataRequired(), Email(), Length(max=120)])
+    correo = StringField('Correo institucional', validators=[DataRequired(), Email(), Length(max=50)])
 
 
 class ResetPasswordForm(FlaskForm):
-    password = PasswordField('Nueva contraseña', validators=[DataRequired(), Length(min=6, max=128)])
-    confirm = PasswordField('Confirmar contraseña', validators=[DataRequired(), Length(min=6, max=128), EqualTo('password', message='Las contraseñas no coinciden.')])
+    password = PasswordField('Nueva contraseña', validators=[DataRequired(), password_policy])
+    confirm = PasswordField('Confirmar contraseña', validators=[DataRequired(), password_policy, EqualTo('password', message='Las contraseñas no coinciden.')])
 
 
 class PublicacionForm(FlaskForm):
@@ -66,7 +67,7 @@ class PublicacionForm(FlaskForm):
     )
     contenido = TextAreaField(
         'Contenido',
-        validators=[DataRequired(message='El contenido es obligatorio.')],
+        validators=[DataRequired(message='El contenido es obligatorio.'), Length(max=20000)],
     )
     estado = SelectField(
         'Estado',
@@ -97,7 +98,7 @@ class MapaRiesgoForm(FlaskForm):
     )
     descripcion = TextAreaField(
         'Descripción',
-        validators=[DataRequired(message='La descripción del mapa es obligatoria.')],
+        validators=[DataRequired(message='La descripción del mapa es obligatoria.'), Length(max=5000)],
     )
     archivo_mapa = FileField('Archivo cartográfico')
 

@@ -106,7 +106,11 @@ def current_role_id(default=None):
 
 
 def is_superuser():
-    return current_role_id() in SUPERUSER_ROLE_IDS
+    if current_role_id() in SUPERUSER_ROLE_IDS:
+        return True
+    configured_name = (current_app.config.get('SUPER_ROLE_NAME') or '').strip().lower()
+    current_name = (getattr(current_user, 'rol', '') or '').strip().lower()
+    return bool(configured_name and current_name == configured_name)
 
 
 def current_permission_names():
