@@ -143,6 +143,7 @@ def create_app(config_class=Config):
     from app.blueprints.logistica.controllers.inventario import eliminar as logistica_inventario_eliminar
     from app.blueprints.logistica.controllers.inventario import inventario_index as logistica_inventario_index
     from app.blueprints.logistica.controllers.inventario import nuevo as logistica_inventario_nuevo
+    from app.blueprints.logistica.controllers.inventario import listar_equipos_json as logistica_listar_equipos_json    
     from app.blueprints.logistica.controllers.inventario import nuevo_movimiento as logistica_nuevo_movimiento
     from app.blueprints.logistica.controllers.inventario import editar_movimiento as logistica_editar_movimiento
     from app.blueprints.logistica.controllers.inventario import eliminar_movimiento as logistica_eliminar_movimiento
@@ -181,6 +182,10 @@ def create_app(config_class=Config):
     from app.blueprints.mapas.controllers.climaticos import listar_mapas_climaticos
     from app.blueprints.mapas.controllers.climaticos import eliminar_mapa_climatico
     from app.blueprints.mapas.controllers.climaticos import actualizar_mapa_climatico
+    from app.blueprints.mapas.controllers.climaticos import registrar_mes_climatico
+    from app.blueprints.mapas.controllers.climaticos import cargar_mes_climatico
+    from app.blueprints.mapas.controllers.climaticos import actualizar_mes_climatico
+    from app.blueprints.mapas.controllers.climaticos import eliminar_mes_climatico
 
     from app.blueprints.monitoreo.controllers.actividades import actividades_cambiar_estado as monitoreo_actividad_cambiar_estado
     from app.blueprints.monitoreo.controllers.actividades import actividades_index as monitoreo_actividad_index
@@ -257,11 +262,12 @@ def create_app(config_class=Config):
     app.add_url_rule('/inventario/nuevo', endpoint='inventario.nuevo', view_func=logistica_inventario_nuevo, methods=['POST'])
     app.add_url_rule('/inventario/<int:equipo_id>/editar', endpoint='inventario.editar', view_func=logistica_inventario_editar, methods=['POST'])
     app.add_url_rule('/inventario/<int:equipo_id>/eliminar', endpoint='inventario.eliminar', view_func=logistica_inventario_eliminar, methods=['POST'])
+
     # 🔄 RUTAS INTERNAS PARA MOVIMIENTOS DE INVENTARIO
     app.add_url_rule('/inventario/nuevo-movimiento', endpoint='inventario.nuevo_movimiento', view_func=logistica_nuevo_movimiento, methods=['POST'])
     app.add_url_rule('/inventario/movimiento/<int:movimiento_id>/editar', endpoint='inventario.editar_movimiento', view_func=logistica_editar_movimiento, methods=['POST'])
     app.add_url_rule('/inventario/movimiento/<int:movimiento_id>/eliminar', endpoint='inventario.eliminar_movimiento', view_func=logistica_eliminar_movimiento, methods=['POST'])
-    
+    app.add_url_rule('/inventario/equipos-json', endpoint='inventario.listar_equipos_json', view_func=logistica_listar_equipos_json, methods=['GET'])
     app.add_url_rule('/inventario/reporte', endpoint='inventario.reporte_inventario', view_func=logistica_reporte_inventario, methods=['GET'])
     app.add_url_rule('/inventario/reporte-movimientos', endpoint='inventario.reporte_movimientos', view_func=logistica_reporte_movimientos, methods=['GET'])
     app.add_url_rule('/inventario/<int:equipo_id>/acta', endpoint='inventario.acta_responsabilidad', view_func=logistica_acta_responsabilidad, methods=['GET'])
@@ -290,7 +296,10 @@ def create_app(config_class=Config):
     app.add_url_rule('/mapas-climaticos/lista', endpoint='mapas.listar_mapas_climaticos', view_func=listar_mapas_climaticos, methods=['GET'])
     app.add_url_rule('/mapas-climaticos/<int:mapa_id>', endpoint='mapas.eliminar_mapa_climatico', view_func=eliminar_mapa_climatico, methods=['DELETE'])
     app.add_url_rule('/mapas-climaticos/<int:mapa_id>/actualizar', endpoint='geomatica.actualizar_mapa_climatico', view_func=actualizar_mapa_climatico, methods=['POST', 'PUT'])
-    
+    app.add_url_rule('/mapas-climaticos/cargar-mes', endpoint='mapas.cargar_mes_climatico', view_func=cargar_mes_climatico, methods=['GET'])
+    app.add_url_rule('/mapas-climaticos/registrar-mes', endpoint='mapas.registrar_mes_climatico', view_func=registrar_mes_climatico, methods=['POST'])
+    app.add_url_rule('/mapas-climaticos/actualizar-mes', endpoint='mapas.actualizar_mes_climatico', view_func=actualizar_mes_climatico, methods=['POST', 'PUT'])
+    app.add_url_rule('/mapas-climaticos/eliminar-mes', endpoint='mapas.eliminar_mes_climatico', view_func=eliminar_mes_climatico, methods=['POST', 'DELETE'])
     app.add_url_rule('/catalogo/', endpoint='catalogo.index', view_func=catalogo_simbolos_index, methods=['GET'])
     app.add_url_rule('/catalogo/crear', endpoint='catalogo.crear_simbologia', view_func=crear_simbologia, methods=['POST'])
     app.add_url_rule('/catalogo/listar', endpoint='catalogo.listar_simbologia', view_func=listar_simbologia, methods=['GET'])

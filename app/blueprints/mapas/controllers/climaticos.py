@@ -1,11 +1,13 @@
 import os
-from datetime import datetime
+import calendar
+from datetime import datetime,date
 from flask import request, jsonify, current_app, render_template, redirect, url_for, flash
 from flask_login import current_user, login_required
 from werkzeug.utils import secure_filename
 from app import db
 from app.models.clima import MapaClimatico, RegistroClimatico
 from app.services.notificacion import ServicioNotificacion
+from sqlalchemy.exc import SQLAlchemyError
 from app.utils.authorization import verificar_permiso_dinamico
 
 # Extensiones exclusivas para mapas climáticos (imágenes)
@@ -129,6 +131,483 @@ def eliminar_mapa_climatico(mapa_id):
             except OSError: pass
             
         return jsonify({'status': 'success', 'message': 'Mapa climático eliminado.'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+def registrar_mes_climatico():
+  try:
+    # 1. Extracción y validación de parámetros principales
+    id_equipo = request.form.get('id_equipo', type=int)
+    anio = request.form.get('anio', type=int)
+    mes = request.form.get('mes', type=int)
+    id_mapa_climatico = request.form.get(
+        'id_mapa_climatico', type=int, default=None
+    )
+
+    if not id_equipo or not anio or not mes:
+      return (
+          jsonify({
+              'status': 'error',
+              'message': 'Debe seleccionar un equipo, año y mes válidos.',
+          }),
+          400,
+      )
+
+    if not (1 <= mes <= 12):
+      return (
+          jsonify({
+              'status': 'error',
+              'message': 'El mes ingresado no es válido.',
+          }),
+          400,
+      )
+
+    hoy = date.today()
+
+    # 2. Días exactos del mes (calendar.monthrange calcula bisiestos automáticamente)
+    _, total_dias = calendar.monthrange(anio, mes)
+
+    # 3. Procesar día por día
+    for dia in range(1, total_dias + 1):
+      # Construcción del objeto fecha
+      fecha_actual = date(anio, mes, dia)
+
+      # Validación: No permitir guardar días futuros
+      if fecha_actual > hoy:
+        db.session.rollback()
+        return (
+            jsonify({
+                'status': 'error',
+                'message': (
+                    f'El día {dia}/{mes}/{anio} es una fecha futura y no se'
+                    ' puede registrar.'
+                ),
+            }),
+            400,
+        )
+
+      # Extraer valores del formulario
+      temp_raw = request.form.get(f'temp_{dia}')
+      prec_raw = request.form.get(f'prec_{dia}')
+      viento_raw = request.form.get(f'viento_{dia}')
+      hum_raw = request.form.get(f'hum_{dia}')
+
+      # Validación de campos requeridos (Garantiza nullable=False)
+      if any(
+          v is None or str(v).strip() == ''
+          for v in [temp_raw, prec_raw, viento_raw, hum_raw]
+      ):
+        db.session.rollback()
+        return (
+            jsonify({
+                'status': 'error',
+                'message': (
+                    f'Faltan datos en el día {dia}. Todos los campos son'
+                    ' obligatorios.'
+                ),
+            }),
+            400,
+        )
+
+      # Conversión a flotantes y comprobación de tipo
+      try:
+        temp = float(temp_raw)
+        prec = float(prec_raw)
+        viento = float(viento_raw)
+        hum = float(hum_raw)
+      except ValueError:
+        db.session.rollback()
+        return (
+            jsonify({
+                'status': 'error',
+                'message': (
+                    f'Los valores ingresados para el día {dia} deben ser'
+                    ' numéricos.'
+                ),
+            }),
+            400,
+        )
+
+      # Validaciones de rangos meteorológicos lógicos
+      if not (-60.0 <= temp <= 60.0):
+        db.session.rollback()
+        return (
+            jsonify({
+                'status': 'error',
+                'message': (
+                    f'Temperatura fuera de rango el día {dia} ({temp}°C).'
+                ),
+            }),
+            400,
+        )
+
+      if prec < 0 or viento < 0:
+        db.session.rollback()
+        return (
+            jsonify({
+                'status': 'error',
+                'message': (
+                    f'Precipitaciones o vientos no pueden ser negativos en el'
+                    f' día {dia}.'
+                ),
+            }),
+            400,
+        )
+
+      if not (0.0 <= hum <= 100.0):
+        db.session.rollback()
+        return (
+            jsonify({
+                'status': 'error',
+                'message': (
+                    f'La humedad del día {dia} ({hum}%) debe estar entre 0 y'
+                    ' 100.'
+                ),
+            }),
+            400,
+        )
+
+      # 4. Upsert: Insertar o Actualizar según la clave (fecha_registro + id_equipo)
+      registro = RegistroClimatico.query.filter_by(
+          fecha_registro=fecha_actual, id_equipo=id_equipo
+      ).first()
+
+      if registro:
+        registro.temperatura = temp
+        registro.precipitaciones = prec
+        registro.vientos = viento
+        registro.humedad = hum
+        if id_mapa_climatico:
+          registro.id_mapa_climatico = id_mapa_climatico
+      else:
+        nuevo_registro = RegistroClimatico(
+            fecha_registro=fecha_actual,
+            id_equipo=id_equipo,
+            id_mapa_climatico=id_mapa_climatico,
+            temperatura=temp,
+            precipitaciones=prec,
+            vientos=viento,
+            humedad=hum,
+        )
+        db.session.add(nuevo_registro)
+
+    db.session.commit()
+    return jsonify({
+        'status': 'success',
+        'message': (
+            f'Se registraron correctamente los {total_dias} días del mes'
+            f' {mes}/{anio}.'
+        ),
+    })
+
+  except SQLAlchemyError as e:
+    db.session.rollback()
+    print(f'Error BD: {str(e)}')
+    return (
+        jsonify({
+            'status': 'error',
+            'message': (
+                'Error de base de datos al intentar procesar los registros.'
+            ),
+        }),
+        500,
+    )
+  except Exception as e:
+    db.session.rollback()
+    print(f'Error no controlado: {str(e)}')
+    return (
+        jsonify(
+            {'status': 'error', 'message': f'Error interno del servidor: {str(e)}'}
+        ),
+        500,
+    )
+  try:
+    # 1. Extracción y validación de parámetros principales
+    id_equipo = request.form.get('id_equipo', type=int)
+    anio = request.form.get('anio', type=int)
+    mes = request.form.get('mes', type=int)
+    id_mapa_climatico = request.form.get(
+        'id_mapa_climatico', type=int, default=None
+    )
+
+    if not id_equipo or not anio or not mes:
+      return (
+          jsonify({
+              'status': 'error',
+              'message': 'Debe seleccionar un equipo, año y mes válidos.',
+          }),
+          400,
+      )
+
+    if not (1 <= mes <= 12):
+      return (
+          jsonify({
+              'status': 'error',
+              'message': 'El mes ingresado no es válido.',
+          }),
+          400,
+      )
+
+    hoy = date.today()
+
+    # 2. Días exactos del mes (calendar.monthrange calcula bisiestos automáticamente)
+    _, total_dias = calendar.monthrange(anio, mes)
+
+    # 3. Procesar día por día
+    for dia in range(1, total_dias + 1):
+      # Construcción del objeto fecha
+      fecha_actual = date(anio, mes, dia)
+
+      # Validación: No permitir guardar días futuros
+      if fecha_actual > hoy:
+        db.session.rollback()
+        return (
+            jsonify({
+                'status': 'error',
+                'message': (
+                    f'El día {dia}/{mes}/{anio} es una fecha futura y no se'
+                    ' puede registrar.'
+                ),
+            }),
+            400,
+        )
+
+      # Extraer valores del formulario
+      temp_raw = request.form.get(f'temp_{dia}')
+      prec_raw = request.form.get(f'prec_{dia}')
+      viento_raw = request.form.get(f'viento_{dia}')
+      hum_raw = request.form.get(f'hum_{dia}')
+
+      # Validación de campos requeridos (Garantiza nullable=False)
+      if any(
+          v is None or str(v).strip() == ''
+          for v in [temp_raw, prec_raw, viento_raw, hum_raw]
+      ):
+        db.session.rollback()
+        return (
+            jsonify({
+                'status': 'error',
+                'message': (
+                    f'Faltan datos en el día {dia}. Todos los campos son'
+                    ' obligatorios.'
+                ),
+            }),
+            400,
+        )
+
+      # Conversión a flotantes y comprobación de tipo
+      try:
+        temp = float(temp_raw)
+        prec = float(prec_raw)
+        viento = float(viento_raw)
+        hum = float(hum_raw)
+      except ValueError:
+        db.session.rollback()
+        return (
+            jsonify({
+                'status': 'error',
+                'message': (
+                    f'Los valores ingresados para el día {dia} deben ser'
+                    ' numéricos.'
+                ),
+            }),
+            400,
+        )
+
+      # Validaciones de rangos meteorológicos lógicos
+      if not (-60.0 <= temp <= 60.0):
+        db.session.rollback()
+        return (
+            jsonify({
+                'status': 'error',
+                'message': (
+                    f'Temperatura fuera de rango el día {dia} ({temp}°C).'
+                ),
+            }),
+            400,
+        )
+
+      if prec < 0 or viento < 0:
+        db.session.rollback()
+        return (
+            jsonify({
+                'status': 'error',
+                'message': (
+                    f'Precipitaciones o vientos no pueden ser negativos en el'
+                    f' día {dia}.'
+                ),
+            }),
+            400,
+        )
+
+      if not (0.0 <= hum <= 100.0):
+        db.session.rollback()
+        return (
+            jsonify({
+                'status': 'error',
+                'message': (
+                    f'La humedad del día {dia} ({hum}%) debe estar entre 0 y'
+                    ' 100.'
+                ),
+            }),
+            400,
+        )
+
+      # 4. Upsert: Insertar o Actualizar según la clave (fecha_registro + id_equipo)
+      registro = RegistroClimatico.query.filter_by(
+          fecha_registro=fecha_actual, id_equipo=id_equipo
+      ).first()
+
+      if registro:
+        registro.temperatura = temp
+        registro.precipitaciones = prec
+        registro.vientos = viento
+        registro.humedad = hum
+        if id_mapa_climatico:
+          registro.id_mapa_climatico = id_mapa_climatico
+      else:
+        nuevo_registro = RegistroClimatico(
+            fecha_registro=fecha_actual,
+            id_equipo=id_equipo,
+            id_mapa_climatico=id_mapa_climatico,
+            temperatura=temp,
+            precipitaciones=prec,
+            vientos=viento,
+            humedad=hum,
+        )
+        db.session.add(nuevo_registro)
+
+    db.session.commit()
+    return jsonify({
+        'status': 'success',
+        'message': (
+            f'Se registraron correctamente los {total_dias} días del mes'
+            f' {mes}/{anio}.'
+        ),
+    })
+
+  except SQLAlchemyError as e:
+    db.session.rollback()
+    print(f'Error BD: {str(e)}')
+    return (
+        jsonify({
+            'status': 'error',
+            'message': (
+                'Error de base de datos al intentar procesar los registros.'
+            ),
+        }),
+        500,
+    )
+  except Exception as e:
+    db.session.rollback()
+    print(f'Error no controlado: {str(e)}')
+    return (
+        jsonify(
+            {'status': 'error', 'message': f'Error interno del servidor: {str(e)}'}
+        ),
+        500,
+    )
+# 1. READ (Cargar / Consultar datos guardados de un mes)
+@login_required
+def cargar_mes_climatico():
+  id_equipo = request.args.get('id_equipo', type=int)
+  anio = request.args.get('anio', type=int)
+  mes = request.args.get('mes', type=int)
+
+  if not all([id_equipo, anio, mes]):
+    return (
+        jsonify({'status': 'error', 'message': 'Faltan datos de consulta.'}),
+        400,
+    )
+
+  # Calcular rango de fechas del mes
+  _, total_dias = calendar.monthrange(anio, mes)
+  fecha_inicio = date(anio, mes, 1)
+  fecha_fin = date(anio, mes, total_dias)
+
+  # Buscar registros existentes
+  registros = (
+      RegistroClimatico.query.filter(
+          RegistroClimatico.id_equipo == id_equipo,
+          RegistroClimatico.fecha_registro.between(fecha_inicio, fecha_fin),
+      )
+      .order_by(RegistroClimatico.fecha_registro.asc())
+      .all()
+  )
+
+  # Mapear resultado para el frontend
+  datos = [
+      {
+          'dia': r.fecha_registro.day,
+          'temperatura': float(r.temperatura),
+          'precipitaciones': float(r.precipitaciones),
+          'vientos': float(r.vientos),
+          'humedad': float(r.humedad),
+      }
+      for r in registros
+  ]
+
+  return jsonify({'status': 'success', 'registros': datos})
+
+# 2. UPDATE (Actualizar registros existentes de un mes)
+@login_required
+def actualizar_mes_climatico():
+    try:
+        id_equipo = request.form.get('id_equipo', type=int)
+        anio = request.form.get('anio', type=int)
+        mes = request.form.get('mes', type=int)
+
+        if not all([id_equipo, anio, mes]):
+            return jsonify({'status': 'error', 'message': 'Faltan datos obligatorios.'}), 400
+
+        _, total_dias = calendar.monthrange(anio, mes)
+
+        for dia in range(1, total_dias + 1):
+            temp = request.form.get(f'temp_{dia}', type=float)
+            prec = request.form.get(f'prec_{dia}', type=float)
+            viento = request.form.get(f'viento_{dia}', type=float)
+            hum = request.form.get(f'hum_{dia}', type=float)
+
+            fecha = date(anio, mes, dia)
+            registro = RegistroClimatico.query.filter_by(
+                id_equipo=id_equipo,
+                fecha_registro=fecha
+            ).first()
+
+            if registro:
+                registro.temperatura = temp
+                registro.precipitaciones = prec
+                registro.vientos = viento
+                registro.humedad = hum
+
+        db.session.commit()
+        return jsonify({'status': 'success', 'message': 'Registros actualizados correctamente.'}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+# 3. DELETE (Eliminar todo el mes registrado de un equipo)
+@login_required
+def eliminar_mes_climatico():
+    try:
+        id_equipo = request.values.get('id_equipo', type=int)
+        anio = request.values.get('anio', type=int)
+        mes = request.values.get('mes', type=int)
+
+        if not all([id_equipo, anio, mes]):
+            return jsonify({'status': 'error', 'message': 'Faltan parámetros para eliminar.'}), 400
+
+        borrados = RegistroClimatico.query.filter(
+            RegistroClimatico.id_equipo == id_equipo,
+            db.extract('year', RegistroClimatico.fecha_registro) == anio,
+            db.extract('month', RegistroClimatico.fecha_registro) == mes
+        ).delete(synchronize_session=False)
+
+        db.session.commit()
+        return jsonify({'status': 'success', 'message': f'Se eliminaron {borrados} registros del mes.'}), 200
+
     except Exception as e:
         db.session.rollback()
         return jsonify({'status': 'error', 'message': str(e)}), 500

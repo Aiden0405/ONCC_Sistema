@@ -142,3 +142,16 @@ def acta_responsabilidad(equipo_id):
                     headers={'Content-Disposition': f'inline; filename=acta_{equipo_id}.pdf'})
 
 
+@logistica_bp.route('/equipos/lista-json', methods=['GET'])
+@login_required
+def listar_equipos_json():
+    verificar_permiso_dinamico('ver_inventario')
+    try:
+        equipos = InventarioService.listar_equipos()
+        # Reutiliza el serializador que ya tienes en InventarioService
+        return jsonify({
+            'ok': True,
+            'equipos': InventarioService.serializar(equipos)
+        }), 200
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
