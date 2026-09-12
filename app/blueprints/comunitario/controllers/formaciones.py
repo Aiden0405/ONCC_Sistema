@@ -5,7 +5,7 @@ from flask_login import login_required, current_user
 
 from app import db
 from app.blueprints.comunitario import comunitario_bp
-from app.blueprints.comunitario.forms import FormacionForm
+from app.blueprints.comunitario.forms import FormacionForm, SensibilizacionForm
 # 🌟 Importamos tu validador de seguridad dinámico del Core
 from app.blueprints.core.controllers.roles import verificar_permiso_dinamico
 from app.models.esquema_activo import (
@@ -15,6 +15,8 @@ from app.models.esquema_activo import (
 )
 from app.models.actividad import Actividad
 from app.models.esquema_activo import FormacionActiva as Formacion
+from app.models.esquema_activo import SensibilizacionActiva as Sensibilizacion
+from app.models.tecnico import Tecnico
 from app.services.notificacion import ServicioNotificacion
 
 
@@ -28,11 +30,39 @@ def _cargar_formacion_choices(form):
     instituciones = Institucion.query.order_by(Institucion.nombre_institucion.asc()).all()
     form.id_institucion.choices = [(inst.id_institucion, inst.nombre_institucion) for inst in instituciones]
 
+    tecnicos = (
+        Tecnico.query
+        .filter(Tecnico.id_usuario.isnot(None))
+        .order_by(Tecnico.apellidos.asc(), Tecnico.nombres.asc())
+        .all()
+    )
+    form.tecnico.choices = [(t.id_tecnico, f"{t.nombres} {t.apellidos}") for t in tecnicos]
+
+
+def _cargar_sensibilizacion_choices(form):
+    comunidades = Comunidad.query.order_by(Comunidad.nombre_comunidad.asc()).all()
+    form.id_comunidad.choices = [(com.id_comunidad, com.nombre_comunidad) for com in comunidades]
+
+    niveles = Nivel.query.order_by(Nivel.nombre_nivel.asc()).all()
+    form.id_nivel.choices = [(niv.id_nivel, niv.nombre_nivel) for niv in niveles]
+
+    tecnicos = (
+        Tecnico.query
+        .filter(Tecnico.id_usuario.isnot(None))
+        .order_by(Tecnico.apellidos.asc(), Tecnico.nombres.asc())
+        .all()
+    )
+    form.facilitador.choices = [(t.id_tecnico, f"{t.nombres} {t.apellidos}") for t in tecnicos]
+
 
 def _registrar_formacion(form):
     institucion_seleccionada = Institucion.query.get(form.id_institucion.data)
     if institucion_seleccionada is None:
         raise ValueError('La institución seleccionada no existe.')
+
+    tecnico = Tecnico.query.get(form.tecnico.data)
+    if tecnico is None:
+        raise ValueError('El técnico seleccionado no existe o no está activo.')
 
     nueva_actividad = Actividad(
         fecha_actividad=form.fecha_actividad.data,
@@ -44,8 +74,9 @@ def _registrar_formacion(form):
     db.session.add(nueva_actividad)
     db.session.flush()
 
+    nombre_tecnico = f"{tecnico.nombres} {tecnico.apellidos}".strip()
     nueva_formacion = Formacion(
-        nombre_formacion=f"{form.nombre_formacion.data}||{form.tecnico.data}",
+        nombre_formacion=f"{form.nombre_formacion.data}||{nombre_tecnico}",
         id_institucion=form.id_institucion.data,
         id_actividad=nueva_actividad.id_actividad,
         id_nivel=form.id_nivel.data,
@@ -61,19 +92,24 @@ def formaciones_index():
     # 🛡️ Blindaje Dinámico Ajustado al Slug de la Base de Datos
     verificar_permiso_dinamico('ver_formaciones')
 
-    # 1. Instanciamos el formulario de Flask-WTF
+    # 1. Instanciamos los formularios de Flask-WTF
     form = FormacionForm()
+    sensibilizacion_form = SensibilizacionForm()
 
     _cargar_formacion_choices(form)
+    _cargar_sensibilizacion_choices(sensibilizacion_form)
 
     # 4. LISTAR HISTORIAL (Aquí se cumple el MVC: la consulta compleja la hace el Modelo)
     formaciones_procesadas = Formacion.obtener_historial_completo()
+    sensibilizaciones_procesadas = Sensibilizacion.obtener_historial_completo()
 
     # 5. RENDERIZAR LA VISTA
     return render_template(
         'formaciones/index.html', 
-        form=form, 
-        formaciones=formaciones_procesadas
+        form=form,
+        sensibilizacion_form=sensibilizacion_form,
+        formaciones=formaciones_procesadas,
+        sensibilizaciones=sensibilizaciones_procesadas,
     )
 
 
@@ -83,7 +119,9 @@ def formacion_nuevo():
     verificar_permiso_dinamico('registrar_formaciones')
 
     form = FormacionForm()
+    sensibilizacion_form = SensibilizacionForm()
     _cargar_formacion_choices(form)
+    _cargar_sensibilizacion_choices(sensibilizacion_form)
 
     if request.method == 'POST' and form.validate_on_submit():
         try:
@@ -99,10 +137,13 @@ def formacion_nuevo():
             flash(f'Error al registrar la formación: {str(e)}', 'error')
 
     formaciones_procesadas = Formacion.obtener_historial_completo()
+    sensibilizaciones_procesadas = Sensibilizacion.obtener_historial_completo()
     return render_template(
         'formaciones/index.html',
         form=form,
+        sensibilizacion_form=sensibilizacion_form,
         formaciones=formaciones_procesadas,
+        sensibilizaciones=sensibilizaciones_procesadas,
     )
 
 
@@ -119,13 +160,20 @@ def formacion_editar(id_formacion):
     actividad = Actividad.query.get(formacion.id_actividad)
 
     tema_nuevo = request.form.get('edit_nombre_formacion')
-    tecnico_nuevo = request.form.get('edit_tecnico')
+    id_tecnico_nuevo = request.form.get('edit_tecnico')
     fecha_nueva = request.form.get('edit_fecha')
     id_comunidad_nueva = request.form.get('edit_id_comunidad')
     id_inst_nueva = request.form.get('edit_id_institucion')
     id_nivel_nuevo = request.form.get('edit_id_nivel')
 
     try:
+        tecnico_nuevo = None
+        if id_tecnico_nuevo:
+            tecnico_selected = Tecnico.query.get(int(id_tecnico_nuevo))
+            if tecnico_selected is None:
+                raise ValueError('El técnico seleccionado no existe.')
+            tecnico_nuevo = f"{tecnico_selected.nombres} {tecnico_selected.apellidos}".strip()
+
         if fecha_nueva:
             actividad.fecha_actividad = datetime.strptime(fecha_nueva, '%Y-%m-%d').date()
         if id_comunidad_nueva:
@@ -133,7 +181,7 @@ def formacion_editar(id_formacion):
         if id_nivel_nuevo:
             actividad.id_nivel = int(id_nivel_nuevo)
 
-        formacion.nombre_formacion = f"{tema_nuevo}||{tecnico_nuevo}"
+        formacion.nombre_formacion = f"{tema_nuevo}||{tecnico_nuevo or formacion.tecnico_real}"
         formacion.id_nivel = actividad.id_nivel
         if id_inst_nueva:
             formacion.id_institucion = int(id_inst_nueva)

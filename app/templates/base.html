@@ -179,21 +179,12 @@
             </a>
             {% endif %}
 
-            <!-- 🎯 Formaciones -->
-            {% if 'ver_formaciones' in permisos_activos or current_user.id_rol|int in (1, 2) %}
+            <!-- 🎯 Formaciones y Sensibilizaciones -->
+            {% if ('ver_formaciones' in permisos_activos or 'ver_sensibilizaciones' in permisos_activos or current_user.id_rol|int in (1, 2)) %}
             <a href="{{ url_for('formacion.index') }}"
-                class="w-full flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['formacion', 'formaciones']) }}">
+                class="w-full flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['formacion', 'formaciones', 'sensibilizacion', 'sensibilizaciones']) }}">
                 <i data-lucide="graduation-cap" class="mr-3 w-5 h-5 flex-shrink-0"></i>
-                <span class="sidebar-text whitespace-nowrap">Formaciones</span>
-            </a>
-            {% endif %}
-
-            <!-- 🎯 Sensibilizaciones -->
-            {% if 'ver_sensibilizaciones' in permisos_activos or current_user.id_rol|int in (1, 2) %}
-            <a href="{{ url_for('sensibilizacion.index') }}"
-                class="w-full flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['sensibilizacion', 'sensibilizaciones']) }}">
-                <i data-lucide="megaphone" class="mr-3 w-5 h-5 flex-shrink-0"></i>
-                <span class="sidebar-text whitespace-nowrap">Sensibilizaciones</span>
+                <span class="sidebar-text whitespace-nowrap">Formaciones y Sensibilizaciones</span>
             </a>
             {% endif %}
             {% endif %}
