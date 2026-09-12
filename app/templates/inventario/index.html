@@ -1,0 +1,1119 @@
+{% extends 'base.html' %}
+
+{% block title %}Inventario Físico - ONCC{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto space-y-6">
+
+    <div class="flex justify-between items-center mb-2">
+        <div>
+            <h1 class="text-2xl font-bold dark:text-white text-gray-800">Gestión de Inventario de Equipos</h1>
+            <p class="text-sm dark:text-gray-400 text-gray-500">Expediente, custodia y estatus operativo de equipos tecnológicos (EMAs, Pluviómetros, GPS)</p>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="abrirModalConfirmarReporte(exportarReporte)" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center shadow-sm transition-colors">
+                <i data-lucide="file-text" class="mr-2 w-4 h-4"></i> Generar reporte
+            </button>
+            <button onclick="limpiarErrorModal('modal-inventario'); document.getElementById('modal-inventario').classList.remove('hidden')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center shadow-sm transition-colors">
+                <i data-lucide="plus" class="mr-2 w-4 h-4"></i> Nuevo Equipo
+            </button>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="sticky top-0 z-40 p-4 rounded-md {% if category == 'error' %}bg-red-600 text-white border-red-700{% else %}bg-emerald-600 text-white border-emerald-700{% endif %} border flex items-center shadow-lg">
+                    <i data-lucide="{% if category == 'error' %}alert-triangle{% else %}check-circle{% endif %}" class="mr-3 w-5 h-5"></i> 
+                    <span class="text-sm font-semibold flex-1">{{ message }}</span>
+                    <button onclick="this.parentElement.remove()" class="ml-3 text-white/80 hover:text-white transition-colors">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="rounded-xl shadow-sm border bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+        <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+            <div>
+                <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400">Detalles de equipos</h3>
+            </div>
+            <span id="contador-registros" class="text-xs text-gray-500 dark:text-gray-400">{{ inventario|length }} registro(s)</span>
+        </div>
+
+        <div class="overflow-x-auto scrollbar-hide">
+            <table class="w-full text-left border-collapse text-sm">
+                <thead>
+                    <tr class="text-xs uppercase tracking-wider bg-gray-50 text-gray-500 dark:bg-gray-700/40 dark:text-gray-400">
+                        <th class="px-6 py-3 font-semibold">ID Equipo</th>
+                        <th class="px-6 py-3 font-semibold">Nombre del Equipo</th>
+                        <th class="px-6 py-3 font-semibold hidden md:table-cell">Ubicación Actual</th>
+                        <th class="px-6 py-3 font-semibold hidden lg:table-cell">Responsable</th>
+                        <th class="px-6 py-3 font-semibold hidden sm:table-cell">Últ. Modificación</th>
+                        <th class="px-6 py-3 font-semibold hidden sm:table-cell">Condición</th>
+                        <th class="px-6 py-3 hidden md:table-cell">Estado</th>
+                        <th class="px-6 py-3 text-center">Acciones</th>
+                    </tr>
+                    <tr class="bg-gray-50/50 dark:bg-gray-700/20 hidden sm:table-row">
+                        <th class="px-6 py-2">
+                            <input type="text" data-col="0" class="filtro-tabla w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="ID..." oninput="filtrarTabla()">
+                        </th>
+                        <th class="px-6 py-2">
+                            <input type="text" data-col="1" class="filtro-tabla w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="Nombre..." oninput="filtrarTabla()">
+                        </th>
+                        <th class="px-6 py-2 hidden md:table-cell">
+                            <input type="text" data-col="2" class="filtro-tabla w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="Ubicación..." oninput="filtrarTabla()">
+                        </th>
+                        <th class="px-6 py-2 hidden lg:table-cell">
+                            <input type="text" data-col="3" class="filtro-tabla w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="Responsable..." oninput="filtrarTabla()">
+                        </th>
+                        <th class="px-6 py-2 hidden sm:table-cell">
+                            <input type="text" data-col="4" class="filtro-tabla w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="Fecha..." oninput="filtrarTabla()">
+                        </th>
+                        <th class="px-6 py-2 hidden sm:table-cell">
+                            <select data-col="5" class="filtro-tabla w-full text-xs border rounded px-1 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" onchange="filtrarTabla()">
+                                <option value="" disabled selected hidden>Condición</option>
+                                <option>Operativo</option>
+                                <option>Requiere Mantenimiento</option>
+                                <option>Dañado / Inoperativo</option>
+                            </select>
+                        </th>
+                        <th class="px-6 py-2 hidden md:table-cell">
+                            <select data-col="6" class="filtro-tabla w-full text-xs border rounded px-1 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" onchange="filtrarTabla()">
+                                <option value="" disabled selected hidden>Estado</option>
+                                <option>Disponible</option>
+                                <option>En Uso (Asignado)</option>
+                                <option>En Mantenimiento</option>
+                            </select>
+                        </th>
+                        <th class="px-6 py-2"></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
+                    {% for inv in inventario %}
+                    <tr data-id="{{ inv.id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                        <td class="px-6 py-4 font-mono font-bold text-green-700 dark:text-green-400" data-label="ID Equipo">{{ inv.codigo }}</td>
+                        <td class="px-6 py-4 font-medium" data-label="Nombre del Equipo">
+                            <div class="flex items-center">
+                                <i data-lucide="layers" class="mr-2 w-4 h-4 text-gray-400 dark:text-gray-500"></i>
+                                {{ inv.tipo_equipo }}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400 hidden md:table-cell" data-label="Ubicación">{{ inv.ubicacion }}</td>
+                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400 font-medium hidden lg:table-cell" data-label="Responsable">{{ inv.responsable }}</td>
+                        <td class="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-400 hidden sm:table-cell" data-label="Últ. Modificación">
+                            {{ inv.ultimo_mantenimiento.strftime('%Y-%m-%d') if inv.ultimo_mantenimiento else 'N/D' }}
+                        </td>
+                        <td class="px-6 py-4 hidden sm:table-cell" data-label="Condición">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider 
+                            {% if inv.estado_operativo == 'Operativo' %} bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300
+                            {% elif inv.estado_operativo == 'Requierre Mantenimiento' or inv.estado_operativo == 'Requiere Mantenimiento' %} bg-yellow-50 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300
+                            {% else %} bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300 {% endif %}">
+                                {{ inv.estado_operativo }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 hidden md:table-cell" data-label="Estado">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider
+                            {% if inv.estado_flujo == 'Disponible' %} bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300
+                            {% elif inv.estado_flujo == 'En Uso (Asignado)' %} bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300
+                            {% elif inv.estado_flujo == 'En Mantenimiento' %} bg-yellow-50 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300
+                            {% else %} bg-gray-50 text-gray-700 dark:bg-gray-700 dark:text-gray-300 {% endif %}">
+                                {{ inv.estado_flujo }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4" data-label="Acciones">
+                            <div class="flex items-center justify-center gap-2">
+                                <button onclick="abrirModalEditar({{ inv.id }})" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors" title="Editar equipo">
+                                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="abrirModalEliminar({{ inv.id }})" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors" title="Eliminar equipo">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="abrirModalActa({{ inv.id }})" class="text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 transition-colors" title="Generar acta de responsabilidad">
+                                    <i data-lucide="file-text" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
+                            No hay equipos registrados en el inventario de la institución.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    <tr id="fila-sin-resultados" class="hidden">
+                        <td colspan="8" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
+                            No se encontraron equipos que coincidan con los filtros aplicados.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación Tabla Equipos -->
+        <div class="px-6 py-3 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
+            <span id="contador-registros-tabla" class="text-xs text-gray-500 dark:text-gray-400">{{ inventario|length }} registro(s)</span>
+            <div class="flex items-center gap-3">
+                <span id="info-paginacion-equipos" class="text-xs text-gray-500 dark:text-gray-400">Página 1 de 1</span>
+                <div class="flex items-center gap-2">
+                    <button id="btn-prev-equipos" onclick="cambiarPagina('equipos', -1)" class="px-4 py-2 text-sm font-medium border rounded-md transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 disabled:opacity-40 disabled:pointer-events-none">Anterior</button>
+                    <button id="btn-next-equipos" onclick="cambiarPagina('equipos', 1)" class="px-4 py-2 text-sm font-medium bg-green-600 hover:bg-green-700 text-white rounded-md shadow-sm transition-colors disabled:opacity-40 disabled:pointer-events-none">Siguiente</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="rounded-xl shadow-sm border bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700">
+        <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+            <div>
+                <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400">Historial de movimientos</h3>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="abrirModalConfirmarReporte(exportarReporteMovimientos)" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center shadow-sm transition-colors">
+                    <i data-lucide="file-text" class="mr-2 w-4 h-4"></i> Generar reporte
+                </button>
+                <button onclick="document.getElementById('modal-movimiento').classList.remove('hidden')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center shadow-sm transition-colors">
+                    <i data-lucide="plus" class="mr-2 w-4 h-4"></i> Registrar Movimiento
+                </button>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto scrollbar-hide">
+            <table class="w-full text-left border-collapse text-sm">
+                <thead>
+                    <tr class="text-xs uppercase tracking-wider bg-gray-50 text-gray-500 dark:bg-gray-700/40 dark:text-gray-400">
+                        <th class="px-6 py-3 font-semibold">Movimiento ID</th>
+                        <th class="px-6 py-3 font-semibold">Equipo</th>
+                        <th class="px-6 py-3 font-semibold hidden sm:table-cell">Fecha</th>
+                        <th class="px-6 py-3 font-semibold hidden lg:table-cell">Ubicación Origen</th>
+                        <th class="px-6 py-3 font-semibold hidden lg:table-cell">Ubicación Destino</th>
+                        <th class="px-6 py-3 font-semibold">Motivo / Responsable</th>
+                        <th class="px-6 py-3 text-center">Acciones</th>
+                    </tr>
+                    <tr class="bg-gray-50/50 dark:bg-gray-700/20 hidden sm:table-row">
+                        <th class="px-6 py-2">
+                            <input type="text" data-col="0" class="filtro-movimientos w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="ID..." oninput="filtrarMovimientos()">
+                        </th>
+                        <th class="px-6 py-2">
+                            <input type="text" data-col="1" class="filtro-movimientos w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="Equipo..." oninput="filtrarMovimientos()">
+                        </th>
+                        <th class="px-6 py-2 hidden sm:table-cell">
+                            <input type="text" data-col="2" class="filtro-movimientos w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="Fecha..." oninput="filtrarMovimientos()">
+                        </th>
+                        <th class="px-6 py-2 hidden lg:table-cell">
+                            <input type="text" data-col="3" class="filtro-movimientos w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="Origen..." oninput="filtrarMovimientos()">
+                        </th>
+                        <th class="px-6 py-2 hidden lg:table-cell">
+                            <input type="text" data-col="4" class="filtro-movimientos w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="Destino..." oninput="filtrarMovimientos()">
+                        </th>
+                        <th class="px-6 py-2">
+                            <input type="text" data-col="5" class="filtro-movimientos w-full text-xs border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-green-500 outline-none" placeholder="Motivo..." oninput="filtrarMovimientos()">
+                        </th>
+                        <th class="px-6 py-2"></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
+                    {% for mov in movimientos %}
+                    <tr data-id="{{ mov.id_movimiento }}" class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                        <td class="px-6 py-4 font-mono font-bold text-green-700 dark:text-green-400" data-label="Movimiento ID">{{ mov.codigo }}</td>
+                        <td class="px-6 py-4 font-medium" data-label="Equipo">
+                            <div class="flex items-center">
+                                <i data-lucide="layers" class="mr-2 w-4 h-4 text-gray-400 dark:text-gray-500"></i>
+                                {{ mov.codigo_equipo }}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-400 hidden sm:table-cell" data-label="Fecha">{{ mov.fecha_movimiento.strftime('%Y-%m-%d') }}</td>
+                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400 hidden lg:table-cell" data-label="Ubicación Origen">{{ mov.ubicacion_origen }}</td>
+                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400 hidden lg:table-cell" data-label="Ubicación Destino">{{ mov.ubicacion_destino }}</td>
+                        <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-200" data-label="Motivo / Responsable">{{ mov.motivo_responsable }}</td>
+                        <td class="px-6 py-4" data-label="Acciones">
+                            <div class="flex items-center justify-center gap-2">
+                                <button onclick="abrirModalEditarMovimiento({{ mov.id_movimiento }})" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors" title="Editar movimiento">
+                                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="abrirModalEliminarMovimiento({{ mov.id_movimiento }})" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors" title="Eliminar movimiento">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="abrirModalReporteMovimiento({{ mov.id_movimiento }})" class="text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 transition-colors" title="Generar reporte del movimiento">
+                                    <i data-lucide="file-text" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
+                            No hay movimientos registrados en el historial.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    <tr id="fila-sin-resultados-mov" class="hidden">
+                        <td colspan="7" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
+                            No se encontraron movimientos que coincidan con los filtros aplicados.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="px-6 py-3 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
+            <span class="text-xs text-gray-500 dark:text-gray-400">{{ movimientos|length }} registro(s)</span>
+            <div class="flex items-center gap-3">
+                <span id="info-paginacion-movimientos" class="text-xs text-gray-500 dark:text-gray-400">Página 1 de 1</span>
+                <div class="flex items-center gap-2">
+                    <button id="btn-prev-movimientos" onclick="cambiarPagina('movimientos', -1)" class="px-4 py-2 text-sm font-medium border rounded-md transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 disabled:opacity-40 disabled:pointer-events-none">Anterior</button>
+                    <button id="btn-next-movimientos" onclick="cambiarPagina('movimientos', 1)" class="px-4 py-2 text-sm font-medium bg-green-600 hover:bg-green-700 text-white rounded-md shadow-sm transition-colors disabled:opacity-40 disabled:pointer-events-none">Siguiente</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Crear Equipo -->
+<div id="modal-inventario" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+        <div class="flex justify-between items-center p-6 border-b sticky top-0 z-10 border-gray-100 bg-white dark:border-gray-700 dark:bg-gray-800">
+            <div>
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white">Aperturar Expediente de Equipo</h2>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Todos los campos son mandatorios según el inventario patrimonial</p>
+            </div>
+            <button onclick="document.getElementById('modal-inventario').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        
+        <form method="POST" action="{{ url_for('inventario.nuevo') }}" class="p-6 space-y-5" onsubmit="enviarFormulario(event, this, 'modal-inventario')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Nombre del Equipo</label>
+                        <select name="tipo_equipo" required oninvalid="this.setCustomValidity('Seleccione un tipo de equipo')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                            <option value="">Seleccione...</option>
+                            <option>Estación Meteorológica (EMA)</option>
+                            <option>Pluviómetro de Campo</option>
+                            <option>Aparato Transmisor Data (SSBC)</option>
+                            <option>Equipo Tecnológico (GPS/Drone)</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">ID Equipo</label>
+                        <input type="text" name="codigo" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: EMA-005" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación Actual</label>
+                        <input type="text" name="ubicacion" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Lugar o comunidad de instalación" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                    </div>
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Responsable</label>
+                    <input type="text" name="responsable" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Nombre del funcionario a cargo" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Condición</label>
+                        <select name="estado_operativo" required oninvalid="this.setCustomValidity('Seleccione una condición')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                            <option value="">Seleccione...</option>
+                            <option>Operativo</option>
+                            <option>Requiere Mantenimiento</option>
+                            <option>Dañado / Inoperativo</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estado</label>
+                    <select name="estado" required oninvalid="this.setCustomValidity('Seleccione un estado')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                        <option value="">Seleccione...</option>
+                        <option value="Disponible">Disponible</option>
+                        <option value="En Uso (Asignado)">En Uso (Asignado)</option>
+                        <option value="En Mantenimiento">En Mantenimiento</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="space-y-1">
+                <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Últ. Modificación</label>
+                <div class="relative">
+                    <i data-lucide="calendar" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
+                    <input type="date" name="ultimo_mantenimiento" id="fecha-mantenimiento" class="w-full border rounded-md pl-9 p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Seleccione una fecha')" oninput="this.setCustomValidity('')" />
+                </div>
+                <p class="text-[10px] text-gray-500 dark:text-gray-400 italic">El sistema auditará la vigencia en base a este registro cronológico.</p>
+            </div>
+
+            <div class="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-700">
+                <button type="button" onclick="document.getElementById('modal-inventario').classList.add('hidden')" class="mr-3 px-4 py-2 border rounded-md text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Cancelar</button>
+                <button type="submit" class="px-4 py-2 bg-green-600 rounded-md text-sm font-medium text-white hover:bg-green-700 transition-colors shadow-sm">Guardar Equipo</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Editar Equipo -->
+<div id="modal-editar-inventario" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+        <div class="flex justify-between items-center p-6 border-b sticky top-0 z-10 border-gray-100 bg-white dark:border-gray-700 dark:bg-gray-800">
+            <div>
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white">Editar Equipo</h2>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Actualiza los datos del equipo seleccionado</p>
+            </div>
+            <button onclick="document.getElementById('modal-editar-inventario').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        
+        <form id="form-editar-equipo" method="POST" class="p-6 space-y-5" onsubmit="enviarFormulario(event, this, 'modal-editar-inventario')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Nombre del Equipo</label>
+                        <select id="edit-tipo_equipo" name="tipo_equipo" required oninvalid="this.setCustomValidity('Seleccione un tipo de equipo')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                            <option value="">Seleccione...</option>
+                            <option>Estación Meteorológica (EMA)</option>
+                            <option>Pluviómetro de Campo</option>
+                            <option>Aparato Transmisor Data (SSBC)</option>
+                            <option>Equipo Tecnológico (GPS/Drone)</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">ID Equipo</label>
+                    <input type="text" id="edit-codigo" name="codigo" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: EMA-005" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación Actual</label>
+                        <input type="text" id="edit-ubicacion" name="ubicacion" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Lugar o comunidad de instalación" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                    </div>
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Responsable</label>
+                    <input type="text" id="edit-responsable" name="responsable" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Nombre del funcionario a cargo" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Condición</label>
+                        <select id="edit-estado_operativo" name="estado_operativo" required oninvalid="this.setCustomValidity('Seleccione una condición')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                            <option value="">Seleccione...</option>
+                            <option>Operativo</option>
+                            <option>Requiere Mantenimiento</option>
+                            <option>Dañado / Inoperativo</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estado</label>
+                    <select id="edit-estado" name="estado" required oninvalid="this.setCustomValidity('Seleccione un estado')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                        <option value="">Seleccione...</option>
+                        <option value="Disponible">Disponible</option>
+                        <option value="En Uso (Asignado)">En Uso (Asignado)</option>
+                        <option value="En Mantenimiento">En Mantenimiento</option>
+                    </select>
+                </div>
+                <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Últ. Modificación</label>
+                    <div class="relative">
+                        <i data-lucide="calendar" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
+                        <input type="date" id="edit-ultimo_mantenimiento" name="ultimo_mantenimiento" class="w-full border rounded-md pl-9 p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-700">
+                <button type="button" onclick="document.getElementById('modal-editar-inventario').classList.add('hidden')" class="mr-3 px-4 py-2 border rounded-md text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Cancelar</button>
+                <button type="submit" class="px-4 py-2 bg-blue-600 rounded-md text-sm font-medium text-white hover:bg-blue-700 transition-colors shadow-sm">Guardar Cambios</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Confirmar Eliminacion -->
+<div id="modal-eliminar-inventario" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="rounded-xl shadow-xl w-full max-w-md bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-6 text-center">
+        <div class="w-14 h-14 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
+            <i data-lucide="alert-triangle" class="w-7 h-7 text-red-600 dark:text-red-400"></i>
+        </div>
+        <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-2">¿Estás seguro de eliminar este equipo?</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Esta acción no se puede deshacer. El registro será eliminado permanentemente.</p>
+        <form id="form-eliminar-equipo" method="POST" class="flex justify-center gap-3">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="button" onclick="document.getElementById('modal-eliminar-inventario').classList.add('hidden')" class="px-5 py-2.5 border rounded-lg text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Cancelar</button>
+            <button type="submit" class="px-5 py-2.5 bg-red-600 rounded-lg text-sm font-medium text-white hover:bg-red-700 transition-colors shadow-sm">Eliminar</button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Acta de Responsabilidad -->
+<div id="modal-acta-inventario" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="rounded-xl shadow-xl w-full max-w-md bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-6 text-center relative">
+        <button onclick="document.getElementById('modal-acta-inventario').classList.add('hidden')" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+            <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+        <div class="w-14 h-14 mx-auto mb-4 rounded-full bg-amber-100 dark:bg-amber-900/20 flex items-center justify-center">
+            <i data-lucide="file-text" class="w-7 h-7 text-amber-600 dark:text-amber-400"></i>
+        </div>
+        <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-2">Generar Acta de Responsabilidad</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">¿Desea exportar el acta de responsabilidad del equipo seleccionado?</p>
+        <form id="form-acta-equipo" method="GET" target="_blank" class="flex justify-center gap-3">
+            <button type="button" onclick="document.getElementById('modal-acta-inventario').classList.add('hidden')" class="px-5 py-2.5 border rounded-lg text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Volver</button>
+            <button type="submit" class="px-5 py-2.5 bg-amber-600 rounded-lg text-sm font-medium text-white hover:bg-amber-700 transition-colors shadow-sm">Continuar</button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Confirmar Generar Reporte -->
+<div id="modal-confirmar-reporte" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="rounded-xl shadow-xl w-full max-w-md bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-6 text-center relative">
+        <button onclick="document.getElementById('modal-confirmar-reporte').classList.add('hidden')" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+            <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+        <div class="w-14 h-14 mx-auto mb-4 rounded-full bg-amber-100 dark:bg-amber-900/20 flex items-center justify-center">
+            <i data-lucide="file-text" class="w-7 h-7 text-amber-600 dark:text-amber-400"></i>
+        </div>
+        <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-2">¿Estás seguro de generar este reporte?</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Estás a punto de generar el reporte. Ten en cuenta que los filtros que hayas aplicado actualmente en la selección modificarán y definirán los datos que incluirá el archivo final.</p>
+        <div class="flex justify-center gap-3">
+            <button type="button" onclick="document.getElementById('modal-confirmar-reporte').classList.add('hidden')" class="px-5 py-2.5 border rounded-lg text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Cancelar</button>
+            <button type="button" onclick="confirmarGenerarReporte()" class="px-5 py-2.5 bg-amber-600 rounded-lg text-sm font-medium text-white hover:bg-amber-700 transition-colors shadow-sm">Sí, generar reporte</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Reporte de Movimiento -->
+<div id="modal-reporte-movimiento" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="rounded-xl shadow-xl w-full max-w-md bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-6 text-center relative">
+        <button onclick="document.getElementById('modal-reporte-movimiento').classList.add('hidden')" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+            <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+        <div class="w-14 h-14 mx-auto mb-4 rounded-full bg-amber-100 dark:bg-amber-900/20 flex items-center justify-center">
+            <i data-lucide="file-text" class="w-7 h-7 text-amber-600 dark:text-amber-400"></i>
+        </div>
+        <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-2">Generar Reporte de Movimiento</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">¿Desea generar el reporte PDF del movimiento seleccionado?</p>
+        <form id="form-reporte-movimiento" method="GET" target="_blank" class="flex justify-center gap-3">
+            <button type="button" onclick="document.getElementById('modal-reporte-movimiento').classList.add('hidden')" class="px-5 py-2.5 border rounded-lg text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Volver</button>
+            <button type="submit" class="px-5 py-2.5 bg-amber-600 rounded-lg text-sm font-medium text-white hover:bg-amber-700 transition-colors shadow-sm">Continuar</button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Registrar Movimiento -->
+<div id="modal-movimiento" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+        <div class="flex justify-between items-center p-6 border-b sticky top-0 z-10 border-gray-100 bg-white dark:border-gray-700 dark:bg-gray-800">
+            <div>
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white">Registrar Movimiento</h2>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Registre el movimiento del equipo en el inventario</p>
+            </div>
+            <button onclick="document.getElementById('modal-movimiento').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        
+        <form method="POST" action="{{ url_for('inventario.nuevo_movimiento') }}" class="p-6 space-y-5" onsubmit="enviarFormulario(event, this, 'modal-movimiento')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Movimiento ID</label>
+                    <input type="text" name="movimiento_id" value="#MOV-{{ '%03d' % ((movimientos | map(attribute='id_movimiento') | list | max) + 1 if movimientos else 1) }}" readonly class="w-full border rounded-md p-2 text-sm bg-gray-50 border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none" />
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Equipo</label>
+                    <select name="equipo" id="equipo-movimiento" required onchange="cargarDatosEquipo(this.value)" oninvalid="this.setCustomValidity('Seleccione un equipo')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                        <option value="">Seleccione...</option>
+                        {% for inv in inventario %}
+                        <option value="{{ inv.codigo }}">{{ inv.codigo }} - {{ inv.tipo_equipo }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div id="datos-equipo-movimiento" class="hidden md:col-span-2 rounded-lg border bg-gray-50 border-gray-200 dark:bg-gray-700/40 dark:border-gray-600 p-4">
+                    <p class="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3 flex items-center">
+                        <i data-lucide="info" class="mr-2 w-4 h-4"></i> Datos del equipo seleccionado
+                    </p>
+                    <dl class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3 text-sm">
+                        <div>
+                            <dt class="text-[10px] font-semibold uppercase text-gray-400 dark:text-gray-500">Tipo de Equipo</dt>
+                            <dd id="dato-equipo-tipo" class="font-medium text-gray-800 dark:text-gray-100 mt-0.5">—</dd>
+                        </div>
+                        <div>
+                            <dt class="text-[10px] font-semibold uppercase text-gray-400 dark:text-gray-500">Ubicación Actual</dt>
+                            <dd id="dato-equipo-ubicacion" class="font-medium text-gray-800 dark:text-gray-100 mt-0.5">—</dd>
+                        </div>
+                        <div>
+                            <dt class="text-[10px] font-semibold uppercase text-gray-400 dark:text-gray-500">Responsable</dt>
+                            <dd id="dato-equipo-responsable" class="font-medium text-gray-800 dark:text-gray-100 mt-0.5">—</dd>
+                        </div>
+                        <div>
+                            <dt class="text-[10px] font-semibold uppercase text-gray-400 dark:text-gray-500">Estado Operativo</dt>
+                            <dd id="dato-equipo-estado-operativo" class="font-medium text-gray-800 dark:text-gray-100 mt-0.5">—</dd>
+                        </div>
+                        <div>
+                            <dt class="text-[10px] font-semibold uppercase text-gray-400 dark:text-gray-500">Estado de Flujo</dt>
+                            <dd id="dato-equipo-estado-flujo" class="font-medium text-gray-800 dark:text-gray-100 mt-0.5">—</dd>
+                        </div>
+                        <div>
+                            <dt class="text-[10px] font-semibold uppercase text-gray-400 dark:text-gray-500">Últ. Mantenimiento</dt>
+                            <dd id="dato-equipo-mantenimiento" class="font-medium text-gray-800 dark:text-gray-100 mt-0.5">—</dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+            
+            <div class="space-y-1">
+                <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Fecha</label>
+                <div class="relative">
+                    <i data-lucide="calendar" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
+                    <input type="date" name="fecha_hora" id="fecha-hora-movimiento" class="w-full border rounded-md pl-9 p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Seleccione una fecha')" oninput="this.setCustomValidity('')" />
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación Origen</label>
+                    <input type="text" name="ubicacion_origen" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ubicación actual" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación Destino</label>
+                    <input type="text" name="ubicacion_destino" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Nueva ubicación" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                </div>
+            </div>
+
+            <div class="space-y-1">
+                <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Motivo / Responsable</label>
+                <input type="text" name="motivo_responsable" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: Despliegue inicial / J. Pérez" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+            </div>
+
+            <div class="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-700">
+                <button type="button" onclick="document.getElementById('modal-movimiento').classList.add('hidden')" class="mr-3 px-4 py-2 border rounded-md text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Cancelar</button>
+                <button type="submit" class="px-4 py-2 bg-green-600 rounded-md text-sm font-medium text-white hover:bg-green-700 transition-colors shadow-sm">Registrar Movimiento</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Editar Movimiento -->
+<div id="modal-editar-movimiento" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+        <div class="flex justify-between items-center p-6 border-b sticky top-0 z-10 border-gray-100 bg-white dark:border-gray-700 dark:bg-gray-800">
+            <div>
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white">Editar Movimiento</h2>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Actualice los datos del movimiento seleccionado</p>
+            </div>
+            <button onclick="document.getElementById('modal-editar-movimiento').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        
+        <form id="form-editar-movimiento" method="POST" action="{{ url_for('inventario.editar_movimiento', movimiento_id=0) }}" class="p-6 space-y-5" onsubmit="enviarFormulario(event, this, 'modal-editar-movimiento')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" id="edit-mov-id" name="movimiento_id_hidden" value="0">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Movimiento ID</label>
+                    <input type="text" id="edit-mov-codigo" name="movimiento_id" readonly class="w-full border rounded-md p-2 text-sm bg-gray-50 border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none" />
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Equipo</label>
+                    <select id="edit-mov-equipo" name="equipo" required oninvalid="this.setCustomValidity('Seleccione un equipo')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                        <option value="">Seleccione...</option>
+                        {% for inv in inventario %}
+                        <option value="{{ inv.codigo }}">{{ inv.codigo }} - {{ inv.tipo_equipo }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="space-y-1">
+                <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Fecha</label>
+                <div class="relative">
+                    <i data-lucide="calendar" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
+                    <input type="date" id="edit-mov-fecha" name="fecha_hora" class="w-full border rounded-md pl-9 p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Seleccione una fecha')" oninput="this.setCustomValidity('')" />
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación Origen</label>
+                    <input type="text" id="edit-mov-origen" name="ubicacion_origen" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación Destino</label>
+                    <input type="text" id="edit-mov-destino" name="ubicacion_destino" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                </div>
+            </div>
+
+            <div class="space-y-1">
+                <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Motivo / Responsable</label>
+                <input type="text" id="edit-mov-motivo" name="motivo_responsable" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+            </div>
+
+            <div class="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-700">
+                <button type="button" onclick="document.getElementById('modal-editar-movimiento').classList.add('hidden')" class="mr-3 px-4 py-2 border rounded-md text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Cancelar</button>
+                <button type="submit" class="px-4 py-2 bg-blue-600 rounded-md text-sm font-medium text-white hover:bg-blue-700 transition-colors shadow-sm">Guardar Cambios</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Eliminar Movimiento -->
+<div id="modal-eliminar-movimiento" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="rounded-xl shadow-xl w-full max-w-md bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-6 text-center">
+        <div class="w-14 h-14 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
+            <i data-lucide="alert-triangle" class="w-7 h-7 text-red-600 dark:text-red-400"></i>
+        </div>
+        <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-2">¿Estás seguro de eliminar este movimiento?</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Esta acción no se puede deshacer. El registro será eliminado permanentemente.</p>
+        <form id="form-eliminar-movimiento" method="POST" action="{{ url_for('inventario.eliminar_movimiento', movimiento_id=0) }}" class="flex justify-center gap-3">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="button" onclick="document.getElementById('modal-eliminar-movimiento').classList.add('hidden')" class="px-5 py-2.5 border rounded-lg text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Cancelar</button>
+            <button type="submit" class="px-5 py-2.5 bg-red-600 rounded-lg text-sm font-medium text-white hover:bg-red-700 transition-colors shadow-sm">Eliminar</button>
+        </form>
+    </div>
+</div>
+
+<script>
+const equiposData = {{ inventario_json | tojson | safe }};
+
+(function() {
+    const hoy = new Date().toISOString().split('T')[0];
+    document.querySelectorAll('input[type="date"]').forEach(el => el.setAttribute('max', hoy));
+
+})();
+
+function limpiarErrorModal(modalId) {
+    const error = document.getElementById(modalId).querySelector('.modal-error');
+    if (error) error.remove();
+}
+
+function mostrarErrorModal(modalId, mensaje) {
+    const modal = document.getElementById(modalId);
+    let existing = modal.querySelector('.modal-error');
+    if (!existing) {
+        existing = document.createElement('div');
+        existing.className = 'modal-error p-3 rounded-md bg-red-600 text-white text-sm font-semibold flex items-center shadow-lg';
+        existing.innerHTML = '<i data-lucide="alert-triangle" class="mr-2 w-4 h-4"></i> <span></span>';
+        modal.querySelector('.p-6.space-y-5').prepend(existing);
+    }
+    existing.querySelector('span').textContent = mensaje;
+    if (window.lucide) lucide.createIcons();
+}
+
+function mostrarLoading(btn, activo) {
+    if (activo) {
+        btn._originalHTML = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Guardando...';
+    } else {
+        btn.disabled = false;
+        btn.innerHTML = btn._originalHTML || 'Guardar';
+    }
+}
+
+function mostrarExitoModal(modalId, mensaje) {
+    limpiarErrorModal(modalId);
+    const modal = document.getElementById(modalId);
+    const exito = document.createElement('div');
+    exito.className = 'modal-exito p-3 rounded-md bg-emerald-600 text-white text-sm font-semibold flex items-center shadow-lg';
+    exito.innerHTML = '<i data-lucide="check-circle" class="mr-2 w-4 h-4"></i> <span>' + mensaje + '</span>';
+    modal.querySelector('.p-6.space-y-5').prepend(exito);
+    if (window.lucide) lucide.createIcons();
+}
+
+function enviarFormulario(event, form, modalId) {
+    event.preventDefault();
+
+    const errorDiv = form.querySelector('.modal-error');
+    if (errorDiv) errorDiv.remove();
+    const exitoDiv = form.querySelector('.modal-exito');
+    if (exitoDiv) exitoDiv.remove();
+
+    if (!form.reportValidity()) {
+        return;
+    }
+
+    const btn = form.querySelector('button[type="submit"]');
+    mostrarLoading(btn, true);
+
+    const formData = new FormData(form);
+    formData.append('csrf_token', form.querySelector('[name=csrf_token]').value);
+
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        mostrarLoading(btn, false);
+        if (data.ok) {
+            mostrarExitoModal(modalId, data.mensaje || 'Registro guardado exitosamente.');
+            setTimeout(function() {
+                window.location.href = data.redirect;
+            }, 1500);
+        } else {
+            mostrarErrorModal(modalId, data.error);
+        }
+    })
+    .catch(function() {
+        mostrarLoading(btn, false);
+        form.submit();
+    });
+}
+
+function abrirModalEditar(id) {
+    const equipo = equiposData.find(e => e.id === id);
+    if (!equipo) return;
+
+    limpiarErrorModal('modal-editar-inventario');
+
+    function asegurarOpcion(selectId, valor) {
+        const select = document.getElementById(selectId);
+        const v = (valor || '').trim();
+        let existe = false;
+        Array.from(select.options).forEach(function(op) {
+            if (op.value === v) existe = true;
+        });
+        if (v && !existe) {
+            const nuevo = document.createElement('option');
+            nuevo.value = v;
+            nuevo.textContent = v;
+            select.appendChild(nuevo);
+        }
+        select.value = v;
+    }
+
+    asegurarOpcion('edit-tipo_equipo', equipo.tipo_equipo);
+    asegurarOpcion('edit-estado_operativo', equipo.estado_operativo);
+    asegurarOpcion('edit-estado', equipo.estado_flujo);
+
+    document.getElementById('edit-codigo').value = equipo.codigo || '';
+    document.getElementById('edit-ubicacion').value = equipo.ubicacion || '';
+    document.getElementById('edit-responsable').value = equipo.responsable || '';
+    document.getElementById('edit-ultimo_mantenimiento').value = equipo.ultimo_mantenimiento || '';
+
+    document.getElementById('form-editar-equipo').action = "{{ url_for('inventario.editar', equipo_id=0) }}".replace('/0', '/' + id);
+    document.getElementById('modal-editar-inventario').classList.remove('hidden');
+}
+
+function abrirModalActa(id) {
+    document.getElementById('form-acta-equipo').action = "{{ url_for('inventario.acta_responsabilidad', equipo_id=0) }}".replace('/0', '/' + id);
+    document.getElementById('modal-acta-inventario').classList.remove('hidden');
+}
+
+function abrirModalEliminar(id) {
+    document.getElementById('form-eliminar-equipo').action = "{{ url_for('inventario.eliminar', equipo_id=0) }}".replace('/0', '/' + id);
+    document.getElementById('modal-eliminar-inventario').classList.remove('hidden');
+}
+
+function filtrarTabla() {
+    const inputs = document.querySelectorAll('.filtro-tabla');
+    const filas = document.querySelectorAll('table:has(.filtro-tabla) tbody tr');
+    let visibles = 0;
+
+    filas.forEach(function(fila) {
+        if (fila.id === 'fila-sin-resultados') return;
+        if (fila.querySelector('td[colspan]')) return;
+
+        let mostrar = true;
+        inputs.forEach(function(input) {
+            const valor = input.value.toLowerCase().trim();
+            if (!valor) return;
+
+            const col = parseInt(input.dataset.col);
+            const celdas = fila.querySelectorAll('td');
+            if (col < celdas.length) {
+                const texto = celdas[col].textContent.toLowerCase().trim();
+                if (!texto.includes(valor)) {
+                    mostrar = false;
+                }
+            }
+        });
+
+        fila.style.display = mostrar ? '' : 'none';
+        if (mostrar) visibles++;
+    });
+
+    const sinResultados = document.getElementById('fila-sin-resultados');
+    if (sinResultados) {
+        sinResultados.classList.toggle('hidden', visibles > 0);
+    }
+
+    const contador = document.getElementById('contador-registros');
+    if (contador) {
+        contador.textContent = visibles + ' registro(s)';
+    }
+
+    const contadorTabla = document.getElementById('contador-registros-tabla');
+    if (contadorTabla) {
+        contadorTabla.textContent = visibles + ' registro(s)';
+    }
+
+    paginaActual.equipos = 1;
+    paginarTabla('equipos');
+}
+
+function limpiarFiltros() {
+    document.querySelectorAll('.filtro-tabla').forEach(function(el) {
+        if (el.tagName === 'SELECT') {
+            el.selectedIndex = 0;
+        } else {
+            el.value = '';
+        }
+    });
+    filtrarTabla();
+}
+
+const REGISTROS_POR_PAGINA = 5;
+const paginaActual = { equipos: 1, movimientos: 1 };
+
+function paginarTabla(clave) {
+    const selector = clave === 'equipos' ? 'table:has(.filtro-tabla)' : 'table:has(.filtro-movimientos)';
+    const visibles = Array.from(document.querySelectorAll(selector + ' tbody tr[data-id]'))
+        .filter(function(fila) { return fila.style.display !== 'none'; })
+        .map(function(fila) { return fila.dataset.id; });
+
+    const totalPaginas = Math.max(1, Math.ceil(visibles.length / REGISTROS_POR_PAGINA));
+    if (paginaActual[clave] > totalPaginas) paginaActual[clave] = totalPaginas;
+    if (paginaActual[clave] < 1) paginaActual[clave] = 1;
+
+    const inicio = (paginaActual[clave] - 1) * REGISTROS_POR_PAGINA;
+    const enPagina = new Set(visibles.slice(inicio, inicio + REGISTROS_POR_PAGINA));
+
+    document.querySelectorAll(selector + ' tbody tr[data-id]').forEach(function(fila) {
+        fila.classList.toggle('hidden', !enPagina.has(fila.dataset.id));
+    });
+
+    const info = document.getElementById('info-paginacion-' + clave);
+    if (info) info.textContent = 'Página ' + paginaActual[clave] + ' de ' + totalPaginas;
+
+    const btnPrev = document.getElementById('btn-prev-' + clave);
+    if (btnPrev) btnPrev.disabled = paginaActual[clave] <= 1;
+
+    const btnNext = document.getElementById('btn-next-' + clave);
+    if (btnNext) btnNext.disabled = paginaActual[clave] >= totalPaginas;
+}
+
+function cambiarPagina(clave, delta) {
+    paginaActual[clave] += delta;
+    paginarTabla(clave);
+}
+
+function cargarDatosEquipo(codigo) {
+    const panel = document.getElementById('datos-equipo-movimiento');
+    const origen = document.querySelector('#modal-movimiento input[name="ubicacion_origen"]');
+    const equipo = equiposData.find(function(e) { return e.codigo === codigo; });
+
+    if (!equipo) {
+        panel.classList.add('hidden');
+        if (origen) origen.value = '';
+        return;
+    }
+
+    document.getElementById('dato-equipo-tipo').textContent = equipo.tipo_equipo || '—';
+    document.getElementById('dato-equipo-ubicacion').textContent = equipo.ubicacion || 'N/D';
+    document.getElementById('dato-equipo-responsable').textContent = equipo.responsable || 'N/D';
+    document.getElementById('dato-equipo-estado-operativo').textContent = equipo.estado_operativo || 'N/D';
+    document.getElementById('dato-equipo-estado-flujo').textContent = equipo.estado_flujo || 'N/D';
+    document.getElementById('dato-equipo-mantenimiento').textContent = equipo.ultimo_mantenimiento || 'N/D';
+
+    panel.classList.remove('hidden');
+
+    if (origen && equipo.ubicacion) {
+        origen.value = equipo.ubicacion;
+    }
+}
+
+function filtrarMovimientos() {
+    const inputs = document.querySelectorAll('.filtro-movimientos');
+    const filas = document.querySelectorAll('table:has(.filtro-movimientos) tbody tr');
+    let visibles = 0;
+
+    filas.forEach(function(fila) {
+        if (fila.id === 'fila-sin-resultados-mov') return;
+        if (fila.querySelector('td[colspan]')) return;
+
+        let mostrar = true;
+        inputs.forEach(function(input) {
+            const valor = input.value.toLowerCase().trim();
+            if (!valor) return;
+
+            const col = parseInt(input.dataset.col);
+            const celdas = fila.querySelectorAll('td');
+            if (col < celdas.length) {
+                const texto = celdas[col].textContent.toLowerCase().trim();
+                if (!texto.includes(valor)) {
+                    mostrar = false;
+                }
+            }
+        });
+
+        fila.style.display = mostrar ? '' : 'none';
+        if (mostrar) visibles++;
+    });
+
+    const sinResultados = document.getElementById('fila-sin-resultados-mov');
+    if (sinResultados) {
+        sinResultados.classList.toggle('hidden', visibles > 0);
+    }
+
+    paginaActual.movimientos = 1;
+    paginarTabla('movimientos');
+}
+
+const movimientosData = {{ movimientos_json | tojson | safe }};
+
+function abrirModalEditarMovimiento(id) {
+    const mov = movimientosData.find(m => m.id === id);
+    if (!mov) return;
+    limpiarErrorModal('modal-editar-movimiento');
+    document.getElementById('edit-mov-id').value = id;
+    document.getElementById('edit-mov-codigo').value = mov.codigo;
+    document.getElementById('edit-mov-equipo').value = mov.equipo;
+    document.getElementById('edit-mov-fecha').value = mov.fecha;
+    document.getElementById('edit-mov-origen').value = mov.origen;
+    document.getElementById('edit-mov-destino').value = mov.destino;
+    document.getElementById('edit-mov-motivo').value = mov.motivo;
+    document.getElementById('form-editar-movimiento').action = "{{ url_for('inventario.editar_movimiento', movimiento_id=0) }}".replace('/0', '/' + id);
+    document.getElementById('modal-editar-movimiento').classList.remove('hidden');
+}
+
+function abrirModalEliminarMovimiento(id) {
+    const mov = movimientosData.find(m => m.id === id);
+    if (!mov) return;
+    document.getElementById('form-eliminar-movimiento').action = "{{ url_for('inventario.eliminar_movimiento', movimiento_id=0) }}".replace('/0', '/' + id);
+    document.getElementById('modal-eliminar-movimiento').classList.remove('hidden');
+}
+
+function abrirModalReporteMovimiento(id) {
+    document.getElementById('form-reporte-movimiento').action = "{{ url_for('inventario.reporte_movimientos') }}?ids=" + id;
+    document.getElementById('modal-reporte-movimiento').classList.remove('hidden');
+}
+
+function exportarReporteMovimientos() {
+    const filas = document.querySelectorAll('table:has(.filtro-movimientos) tbody tr[data-id]');
+    const ids = [];
+    filas.forEach(function(fila) {
+        if (fila.style.display !== 'none') {
+            ids.push(fila.dataset.id);
+        }
+    });
+    const baseUrl = "{{ url_for('inventario.reporte_movimientos') }}";
+    const url = ids.length > 0 ? baseUrl + '?ids=' + ids.join(',') : baseUrl;
+    window.open(url, '_blank');
+}
+
+function exportarReporte() {
+    const filas = document.querySelectorAll('table:has(.filtro-tabla) tbody tr[data-id]');
+    const ids = [];
+    filas.forEach(function(fila) {
+        if (fila.style.display !== 'none') {
+            ids.push(fila.dataset.id);
+        }
+    });
+    const baseUrl = "{{ url_for('inventario.reporte_inventario') }}";
+    const url = ids.length > 0 ? baseUrl + '?ids=' + ids.join(',') : baseUrl;
+    window.open(url, '_blank');
+}
+
+let accionReportePendiente = null;
+
+function abrirModalConfirmarReporte(accion) {
+    accionReportePendiente = accion;
+    document.getElementById('modal-confirmar-reporte').classList.remove('hidden');
+}
+
+function confirmarGenerarReporte() {
+    document.getElementById('modal-confirmar-reporte').classList.add('hidden');
+    if (typeof accionReportePendiente === 'function') {
+        accionReportePendiente();
+        accionReportePendiente = null;
+    }
+}
+
+paginarTabla('equipos');
+paginarTabla('movimientos');
+</script>
+
+<style>
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+@media (max-width: 639px) {
+    table, thead, tbody, tr, td, th {
+        display: block;
+    }
+    thead tr:first-child {
+        display: none;
+    }
+    .filtro-tabla,
+    .filtro-movimientos {
+        display: none;
+    }
+    tr[data-id] {
+        border: 1px solid #e5e7eb;
+        border-radius: 0.75rem;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        background: white;
+    }
+    .dark tr[data-id] {
+        border-color: #374151;
+        background: #1f2937;
+    }
+    tr[data-id] td {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border: none;
+    }
+    tr[data-id] td:not(:last-child) {
+        border-bottom: 1px dashed #e5e7eb;
+    }
+    .dark tr[data-id] td:not(:last-child) {
+        border-bottom-color: #374151;
+    }
+    td[data-label]::before {
+        content: attr(data-label);
+        font-weight: 600;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #6b7280;
+    }
+    .dark td[data-label]::before {
+        color: #9ca3af;
+    }
+    td[data-label="Acciones"]::before {
+        content: attr(data-label);
+    }
+    td[data-label="Acciones"] {
+        justify-content: space-between;
+    }
+    td[data-label="Nombre del Equipo"] div,
+    td[data-label="Equipo"] div {
+        margin-left: auto;
+    }
+    td[data-label="Movimiento ID"],
+    td[data-label="Motivo / Responsable"] {
+        text-align: right;
+    }
+    tbody > tr:not([data-id]) td[colspan] {
+        padding: 2rem 1rem;
+    }
+}
+</style>
+{% endblock %}

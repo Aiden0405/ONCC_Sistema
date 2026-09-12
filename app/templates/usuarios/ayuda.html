@@ -1,0 +1,280 @@
+{% extends 'base.html' %}
+
+{% block title %}Centro de Ayuda - ONCC{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <!-- Encabezado -->
+    <div class="border-b border-gray-200 dark:border-gray-700 pb-5">
+        <h1 class="text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+            <i data-lucide="help-circle" class="text-green-600 w-6 h-6"></i>
+            Centro de Ayuda
+        </h1>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Manual operacional, guías de módulos y documentación integral del Sistema de Gestión de la ONCC.
+        </p>
+    </div>
+
+    <!-- Bloques Informativos de Perfiles -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="p-4 bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 shadow-sm space-y-2">
+            <div class="flex items-center gap-2 text-purple-600 dark:text-purple-400 font-bold text-sm">
+                <i data-lucide="key" class="w-4 h-4"></i>
+                <span>Superusuario</span>
+            </div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Control total del ecosistema, parametrización de catálogos maestros, asignación de permisos RBAC y supervisión de la bitácora de auditoría.</p>
+        </div>
+        <div class="p-4 bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 shadow-sm space-y-2">
+            <div class="flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold text-sm">
+                <i data-lucide="shield-check" class="w-4 h-4"></i>
+                <span>Administrador</span>
+            </div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Supervisión operativa de cuentas de usuarios, aprobación de boletines informativos y control de flujo en los módulos institucionales.</p>
+        </div>
+        <div class="p-4 bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 shadow-sm space-y-2">
+            <div class="flex items-center gap-2 text-green-600 dark:text-green-400 font-bold text-sm">
+                <i data-lucide="user" class="w-4 h-4"></i>
+                <span>Técnico de Campo</span>
+            </div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Registro de actividades operativas, talleres de formación, sensibilizaciones comunitarias, inventario de equipos y digitalización de mapas.</p>
+        </div>
+    </div>
+
+    <!-- Sección de Preguntas Frecuentes (FAQ) y Documentación -->
+    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm p-6 space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 dark:border-gray-700 pb-4">
+            <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <i data-lucide="book-open" class="w-4 h-4 text-green-600"></i>
+                Documentación y Guías por Módulos
+            </h3>
+            
+            <!-- 🔍 BARRA DE BÚSQUEDA INTERACTIVA -->
+            <div class="relative w-full sm:w-72">
+                <i data-lucide="search" class="absolute left-3 top-2.5 h-4 w-4 text-gray-400"></i>
+                <input type="text" id="faq-search" placeholder="Buscar módulo, proceso o duda..." 
+                       class="w-full pl-9 pr-4 py-2 border text-xs rounded-lg bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all">
+            </div>
+        </div>
+
+        <!-- Contenedor general de elementos filtrables -->
+        <div id="faq-container" class="divide-y divide-gray-100 dark:divide-gray-700/50 space-y-1">
+            
+            <!-- CATEGORÍA 1 -->
+            <div class="faq-section-header py-2 bg-gray-50 dark:bg-gray-700/20 px-3 rounded text-xs font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                Seguridad, Roles y Auditoría (Core)
+            </div>
+
+            <div class="faq-item py-3.5 transition-all duration-200">
+                <button type="button" class="faq-btn w-full flex items-center justify-between text-left font-semibold text-sm text-slate-800 dark:text-slate-200 outline-none">
+                    <span>¿Cómo funciona la matriz de control de accesos (RBAC) y los permisos?</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 transition-transform duration-200"></i>
+                </button>
+                <div class="faq-content hidden mt-2 text-xs text-slate-500 dark:text-slate-400 leading-relaxed space-y-1">
+                    <p>El sistema utiliza un Control de Accesso Basado en Roles (RBAC). Los privilegios son capacidades atómicas vinculadas a los perfiles institucionales. Desde la sección de Roles y Permisos, el operador autorizado puede habilitar o restringir el acceso a cada módulo del sistema en tiempo real.</p>
+                </div>
+            </div>
+
+            <div class="faq-item py-3.5 transition-all duration-200">
+                <button type="button" class="faq-btn w-full flex items-center justify-between text-left font-semibold text-sm text-slate-800 dark:text-slate-200 outline-none">
+                    <span>¿Cómo se consultan las operaciones en la Bitácora del Sistema?</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 transition-transform duration-200"></i>
+                </button>
+                <div class="faq-content hidden mt-2 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                    <p>Cada cambio, creación, modificación o eliminación realizado en cualquier módulo genera automáticamente una traza inmutable en la bitácora. Puedes utilizar el selector superior para filtrar por módulos específicos (Usuarios, Inventario, Técnicos, Actividades, Mapas, etc.) y revisar el usuario responsable y los detalles de la transacción.</p>
+                </div>
+            </div>
+
+            <!-- CATEGORÍA 2 -->
+            <div class="faq-section-header py-2 bg-gray-50 dark:bg-gray-700/20 px-3 rounded text-xs font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 pt-4">
+                Operaciones de Campo y Monitoreo
+            </div>
+
+            <div class="faq-item py-3.5 transition-all duration-200">
+                <button type="button" class="faq-btn w-full flex items-center justify-between text-left font-semibold text-sm text-slate-800 dark:text-slate-200 outline-none">
+                    <span>¿Cómo se registran y gestionan las Actividades de Monitoreo?</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 transition-transform duration-200"></i>
+                </button>
+                <div class="faq-content hidden mt-2 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                    <p>En la sección de Actividades, el personal puede planificar o registrar jornadas indicando la fecha, área operativa, comunidad y nivel institucional asociado. Permite adjuntar minutas en PDF, registros fotográficos y asignar técnicos responsables para el seguimiento operativo.</p>
+                </div>
+            </div>
+
+            <div class="faq-item py-3.5 transition-all duration-200">
+                <button type="button" class="faq-btn w-full flex items-center justify-between text-left font-semibold text-sm text-slate-800 dark:text-slate-200 outline-none">
+                    <span>¿Cómo se administran los Técnicos de Campo y sus asignaciones?</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 transition-transform duration-200"></i>
+                </button>
+                <div class="faq-content hidden mt-2 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                    <p>El módulo de Técnicos de Campo permite registrar al personal especializado, vincularlos con cuentas de usuario y revisar su historial de actividades o movimientos asignados, contando además con la opción de generar reportes oficiales en formato PDF.</p>
+                </div>
+            </div>
+
+            <div class="faq-item py-3.5 transition-all duration-200">
+                <button type="button" class="faq-btn w-full flex items-center justify-between text-left font-semibold text-sm text-slate-800 dark:text-slate-200 outline-none">
+                    <span>¿Cuál es el procedimiento para el control del Inventario de Equipos?</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 transition-transform duration-200"></i>
+                </button>
+                <div class="faq-content hidden mt-2 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                    <p>El módulo de inventario registra los equipos tecnológicos y herramientas de campo disponibles, controlando su estado de asignación, movimientos logísticos y disponibilidad operativa para las misiones institucionales.</p>
+                </div>
+            </div>
+
+            <!-- CATEGORÍA 3 -->
+            <div class="faq-section-header py-2 bg-gray-50 dark:bg-gray-700/20 px-3 rounded text-xs font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 pt-4">
+                Módulos Comunitarios (Formaciones y Sensibilizaciones)
+            </div>
+
+            <div class="faq-item py-3.5 transition-all duration-200">
+                <button type="button" class="faq-btn w-full flex items-center justify-between text-left font-semibold text-sm text-slate-800 dark:text-slate-200 outline-none">
+                    <span>¿Cómo se registran las Formaciones y Talleres Comunitarios?</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 transition-transform duration-200"></i>
+                </button>
+                <div class="faq-content hidden mt-2 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                    <p>El módulo de formaciones permite llevar el control de los talleres impartidos a las comunidades e instituciones educativas, registrando el tema formativo, el técnico a cargo y la vinculación con las tablas maestras de ubicación.</p>
+                </div>
+            </div>
+
+            <div class="faq-item py-3.5 transition-all duration-200">
+                <button type="button" class="faq-btn w-full flex items-center justify-between text-left font-semibold text-sm text-slate-800 dark:text-slate-200 outline-none">
+                    <span>¿Cómo se gestionan las campañas de Sensibilización?</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 transition-transform duration-200"></i>
+                </button>
+                <div class="faq-content hidden mt-2 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                    <p>Permite registrar campañas informativas y de concientización social desarrolladas en campo, especificando el facilitador, la comunidad participante y los alcances informativos logrados en la jornada.</p>
+                </div>
+            </div>
+
+            <!-- CATEGORÍA 4 -->
+            <div class="faq-section-header py-2 bg-gray-50 dark:bg-gray-700/20 px-3 rounded text-xs font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 pt-4">
+                Geomática y Mapas (Riesgo y Climáticos)
+            </div>
+
+            <div class="faq-item py-3.5 transition-all duration-200">
+                <button type="button" class="faq-btn w-full flex items-center justify-between text-left font-semibold text-sm text-slate-800 dark:text-slate-200 outline-none">
+                    <span>¿Cómo se cargan y digitalizan los Mapas de Riesgo?</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 transition-transform duration-200"></i>
+                </button>
+                <div class="faq-content hidden mt-2 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                    <p>El módulo de geomática permite cargar archivos vectoriales (.kml, .geojson) o imágenes cartográficas asociadas a una actividad. A través de la herramienta interactiva en Leaflet, es posible digitalizar poligonales comunitarias y ubicar elementos geográficos utilizando el catálogo de simbología oficial.</p>
+                </div>
+            </div>
+
+            <div class="faq-item py-3.5 transition-all duration-200">
+                <button type="button" class="faq-btn w-full flex items-center justify-between text-left font-semibold text-sm text-slate-800 dark:text-slate-200 outline-none">
+                    <span>¿Cómo funciona el módulo de Mapas Climáticos?</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 transition-transform duration-200"></i>
+                </button>
+                <div class="faq-content hidden mt-2 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                    <p>Permite almacenar y visualizar imágenes cartográficas climáticas organizadas por estados y tipos de mapas para el análisis meteorológico y de pronósticos regionales.</p>
+                </div>
+            </div>
+
+            <!-- CATEGORÍA 5 -->
+            <div class="faq-section-header py-2 bg-gray-50 dark:bg-gray-700/20 px-3 rounded text-xs font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 pt-4">
+                Divulgación Pública y Notificaciones
+            </div>
+
+            <div class="faq-item py-3.5 transition-all duration-200">
+                <button type="button" class="faq-btn w-full flex items-center justify-between text-left font-semibold text-sm text-slate-800 dark:text-slate-200 outline-none">
+                    <span>¿Cómo opera el flujo de revisión y publicación de boletines?</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 transition-transform duration-200"></i>
+                </button>
+                <div class="faq-content hidden mt-2 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                    <p>Los reportes generados por el personal técnico ingresan inicialmente como "Borradores". Tras la validación administrativa, se aprueban y publican de forma automatizada para reflejarse en el portal público institucional.</p>
+                </div>
+            </div>
+
+            <div class="faq-item py-3.5 transition-all duration-200">
+                <button type="button" class="faq-btn w-full flex items-center justify-between text-left font-semibold text-sm text-slate-800 dark:text-slate-200 outline-none">
+                    <span>¿Cómo opera el sistema de notificaciones y alertas internas?</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 transition-transform duration-200"></i>
+                </button>
+                <div class="faq-content hidden mt-2 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                    <p>El sistema notifica automáticamente al personal sobre asignaciones, cambios de estado o avisos prioritarios clasificados por categorías (Seguridad, Usuarios, Actividades y Sistema), garantizando la trazabilidad y comunicación interna.</p>
+                </div>
+            </div>
+            
+            <!-- ⚠️ MENSAJE DE SIN RESULTADOS -->
+            <div id="no-results" class="hidden text-center py-8 text-xs text-gray-400 dark:text-gray-500 italic">
+                <i data-lucide="search-code" class="w-6 h-6 mx-auto mb-2 text-gray-300 dark:text-gray-600"></i>
+                No se encontraron dudas o apartados que coincidan con la búsqueda.
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const faqButtons = document.querySelectorAll('.faq-btn');
+        const searchInput = document.getElementById('faq-search');
+        const faqItems = document.querySelectorAll('.faq-item');
+        const sectionHeaders = document.querySelectorAll('.faq-section-header');
+        const noResultsMessage = document.getElementById('no-results');
+
+        // Lógica de apertura del acordeón
+        faqButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const content = btn.nextElementSibling;
+                const icon = btn.querySelector('[data-lucide="chevron-down"]');
+                
+                content.classList.toggle('hidden');
+                
+                if (icon) {
+                    icon.style.transform = content.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+                }
+            });
+        });
+
+        // Filtro en tiempo real (Client-side)
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase().trim();
+                let matchesGlobal = 0;
+
+                faqItems.forEach(item => {
+                    const textContent = item.textContent.toLowerCase();
+                    
+                    if (textContent.includes(query)) {
+                        item.classList.remove('hidden');
+                        matchesGlobal++;
+                    } else {
+                        item.classList.add('hidden');
+                        const content = item.querySelector('.faq-content');
+                        const icon = item.querySelector('[data-lucide="chevron-down"]');
+                        if (content) content.classList.add('hidden');
+                        if (icon) icon.style.transform = 'rotate(0deg)';
+                    }
+                });
+
+                sectionHeaders.forEach(header => {
+                    let next = header.nextElementSibling;
+                    let hasVisibleItems = false;
+                    
+                    while (next && !next.classList.contains('faq-section-header')) {
+                        if (next.classList.contains('faq-item') && !next.classList.contains('hidden')) {
+                            hasVisibleItems = true;
+                            break;
+                        }
+                        next = next.nextElementSibling;
+                    }
+
+                    if (hasVisibleItems || query === "") {
+                        header.classList.remove('hidden');
+                    } else {
+                        header.classList.add('hidden');
+                    }
+                });
+
+                if (matchesGlobal === 0 && query !== "") {
+                    noResultsMessage.classList.remove('hidden');
+                } else {
+                    noResultsMessage.classList.add('hidden');
+                }
+            });
+        }
+
+        if (window.lucide) lucide.createIcons();
+    });
+</script>
+{% endblock %}

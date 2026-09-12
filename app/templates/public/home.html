@@ -1,0 +1,370 @@
+{% extends 'public/base_public.html' %}
+
+{% block title %}ONCC - Plataforma Institucional de Monitoreo Climático{% endblock %}
+
+{% block content %}
+<!-- ==========================================
+     1. SECCIÓN HERO / INTRODUCCIÓN INSTITUCIONAL
+     ========================================== -->
+<section id="inicio" class="relative grid lg:grid-cols-12 gap-12 items-center py-12 overflow-hidden">
+    <div class="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:16px_16px] opacity-70 pointer-events-none -z-10"></div>
+    <div class="absolute top-0 right-1/4 w-96 h-96 bg-emerald-100/40 rounded-full blur-3xl pointer-events-none -z-10"></div>
+
+    <div class="lg:col-span-7 space-y-6">
+        <p class="inline-flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-emerald-700 font-bold bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100">
+            <i data-lucide="radar" class="w-4 h-4"></i> Portal Órgano Técnico ONCC
+        </p>
+        
+        <h1 class="text-4xl md:text-5xl font-black tracking-tight text-slate-900 leading-tight">
+            Monitoreo climático avanzado, gestión territorial y <span class="bg-gradient-to-r from-emerald-600 to-teal-700 bg-clip-text text-transparent">acceso seguro</span> a datos operativos.
+        </h1>
+        
+        <p class="text-base text-slate-700 max-w-xl leading-relaxed">
+            Centralizamos la difusión de información meteorológica pública, la cartografía de vulnerabilidad comunitaria y las herramientas de auditoría interna para personal técnico homologado y tomadores de decisiones.
+        </p>
+        
+        <div class="pt-2 flex flex-wrap gap-4">
+            <a href="#clima" class="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 transition-all transform hover:-translate-y-0.5">
+                Ver Mapa de Monitoreo
+            </a>
+            <a href="{{ url_for('auth.login') }}" class="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl border-2 border-emerald-700/20 text-emerald-800 bg-emerald-50/40 font-semibold hover:bg-emerald-50 shadow-sm transition-all">
+                Ingresar al Sistema
+            </a>
+        </div>
+    </div>
+
+    <!-- TARJETA ARQUITECTURA TRANSVERSAL -->
+    <div class="lg:col-span-5 rounded-3xl border border-slate-200/80 bg-white/90 backdrop-blur-xs p-6 shadow-xl shadow-slate-100/50">
+        <div class="flex items-center justify-between mb-5 pb-3 border-b border-slate-100">
+            <h2 class="text-base font-bold text-slate-900">Ejes del Ecosistema</h2>
+            <span class="text-xs uppercase tracking-[0.2em] text-emerald-700 font-semibold">Macrodominios</span>
+        </div>
+        
+        <div class="grid sm:grid-cols-2 gap-3 text-sm">
+            <div class="p-4 rounded-xl bg-emerald-50/50 border border-emerald-100/60 transition-all hover:bg-emerald-50 group">
+                <p class="text-emerald-700 text-[10px] uppercase tracking-wider font-bold mb-1">Logística Operativa</p>
+                <p class="font-bold text-slate-900 group-hover:text-emerald-800 transition-colors">Gestión de Campo</p>
+            </div>
+            
+            <div class="p-4 rounded-xl bg-emerald-50/50 border border-emerald-100/60 transition-all hover:bg-emerald-50 group">
+                <p class="text-emerald-700 text-[10px] uppercase tracking-wider font-bold mb-1">Geomática Aplicada</p>
+                <p class="font-bold text-slate-900 group-hover:text-emerald-800 transition-colors">Riesgo y Territorio</p>
+            </div>
+            
+            <div class="p-4 rounded-xl bg-emerald-50/50 border border-emerald-100/60 transition-all hover:bg-emerald-50 group">
+                <p class="text-emerald-700 text-[10px] uppercase tracking-wider font-bold mb-1">Divulgación Técnica</p>
+                <p class="font-bold text-slate-900 group-hover:text-emerald-800 transition-colors">Boletines Oficiales</p>
+            </div>
+            
+            <div class="p-4 rounded-xl bg-emerald-50/50 border border-emerald-100/60 transition-all hover:bg-emerald-50 group">
+                <p class="text-emerald-700 text-[10px] uppercase tracking-wider font-bold mb-1">Seguridad de Datos</p>
+                <p class="font-bold text-slate-900 group-hover:text-emerald-800 transition-colors">Control de Accesos RBAC</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ==========================================
+     2. FILOSOFÍA INSTITUCIONAL Y ESTRUCTURA DE COMPONENTES
+     ========================================== -->
+<section id="nosotros" class="mt-24 space-y-6">
+    <div class="space-y-1">
+        <p class="text-xs uppercase tracking-[0.3em] text-emerald-700 font-bold">Reseña Institucional</p>
+    </div>
+    <div class="grid lg:grid-cols-3 gap-6 text-sm">
+        <div class="p-6 rounded-2xl border border-slate-200 bg-white shadow-xs hover:shadow-md transition-all">
+            <h3 class="font-bold text-base mb-3 text-slate-900 flex items-center gap-2">
+                <span class="w-1.5 h-4 bg-emerald-600 rounded-xs"></span> Misión Estratégica
+            </h3>
+            <p class="text-slate-700 leading-relaxed">
+                Procesamos variables hidrometeorológicas y geoespaciales para convertirlas en mecanismos de prevención temprana. Salvaguardamos la infraestructura y la vida humana mediante un diagnóstico oportuno y científico del territorio.
+            </p>
+        </div>
+        <div class="p-6 rounded-2xl border border-slate-200 bg-white shadow-xs hover:shadow-md transition-all">
+            <h3 class="font-bold text-base mb-3 text-slate-900 flex items-center gap-2">
+                <span class="w-1.5 h-4 bg-emerald-600 rounded-xs"></span> Interconexión Territorial
+            </h3>
+            <p class="text-slate-700 leading-relaxed">
+                Establecemos el canal técnico oficial entre las mesas ciudadanas organizadas, las unidades operativas de despliegue y las entidades estatales, asegurando la transferencia de conocimiento científico aplicable a la contingencia.
+            </p>
+        </div>
+        <div class="p-6 rounded-2xl border border-slate-200 bg-white shadow-xs hover:shadow-md transition-all">
+            <h3 class="font-bold text-base mb-3 text-slate-900 flex items-center gap-2">
+                <span class="w-1.5 h-4 bg-emerald-600 rounded-xs"></span> Arquitectura Tecnológica
+            </h3>
+            <p class="text-slate-700 leading-relaxed">
+                La plataforma opera mediante 5 macrodominios transversales y 10 módulos de software dedicados. Centraliza el control atómico de usuarios, repositorios formativos, capas vectoriales cartográficas e inventarios telemétricos en tiempo real.
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- ==========================================
+     3. VISUALIZACIÓN GEOGRÁFICA INTERACTIVA (MAPA)
+     ========================================== -->
+<section id="clima" class="mt-24 bg-slate-900 rounded-3xl p-6 lg:p-8 text-white space-y-6 shadow-2xl">
+    <div class="flex items-end justify-between gap-4 flex-wrap border-b border-slate-800 pb-6">
+        <div>
+            <p class="text-xs uppercase tracking-[0.3em] text-emerald-400 font-bold mb-1">Análisis Espacial</p>
+            <h2 class="text-3xl font-black tracking-tight">Mapa de Monitoreo Climático Regional</h2>
+        </div>
+        <div class="text-xs text-slate-400 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 flex items-center gap-2">
+            <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span> Datos consolidados en producción
+        </div>
+    </div>
+    
+    <div class="grid lg:grid-cols-[2fr_1fr] gap-6">
+        <!-- Contenedor del Mapa Leaflet -->
+        <div class="rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 min-h-[520px] relative shadow-inner">
+            <div id="mapaMonitoreo" class="h-full w-full opacity-95"></div>
+        </div>
+        
+        <!-- Panel Lateral de Lecturas por Estado -->
+        <div class="space-y-3 max-h-[520px] overflow-y-auto pr-2 custom-scrollbar">
+            {% for item in monitoreo %}
+            <div class="rounded-xl bg-slate-950 border border-slate-800/80 p-4 hover:border-emerald-500/40 transition-all duration-200">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-bold text-base text-slate-100 tracking-wide">{{ item.estado }}</h3>
+                    <span class="text-[11px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider {% if item.riesgo == 'Alto' %}bg-red-500/10 text-red-400 border border-red-500/20{% elif item.riesgo == 'Medio' %}bg-amber-500/10 text-amber-400 border border-amber-500/20{% else %}bg-emerald-500/10 text-emerald-400 border border-emerald-500/20{% endif %}">
+                        Riesgo {{ item.riesgo }}
+                    </span>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3 text-xs">
+                    <div class="bg-slate-900/50 p-2.5 rounded-lg border border-slate-800/40">
+                        <span class="text-slate-500 block text-[10px] uppercase font-bold mb-0.5">Temperatura</span>
+                        <span class="text-slate-100 font-bold text-sm">{{ item.temperatura }}°C</span>
+                    </div>
+                    <div class="bg-slate-900/50 p-2.5 rounded-lg border border-slate-800/40">
+                        <span class="text-slate-500 block text-[10px] uppercase font-bold mb-0.5">Precipitación</span>
+                        <span class="text-slate-100 font-bold text-sm">{{ item.lluvia }} mm</span>
+                    </div>
+                    <div class="bg-slate-900/50 p-2.5 rounded-lg border border-slate-800/40">
+                        <span class="text-slate-500 block text-[10px] uppercase font-bold mb-0.5">Humedad Relativa</span>
+                        <span class="text-slate-100 font-bold text-sm">{{ item.humedad }}%</span>
+                    </div>
+                    <div class="bg-slate-900/50 p-2.5 rounded-lg border border-slate-800/40">
+                        <span class="text-slate-500 block text-[10px] uppercase font-bold mb-0.5">Sectores Críticos</span>
+                        <span class="text-slate-100 font-bold text-sm">{{ item.comunidades }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- ==========================================
+     4. CAPACIDADES OPERATIVAS
+     ========================================== -->
+<section id="capacidades" class="mt-24 space-y-6">
+    <p class="text-xs uppercase tracking-[0.3em] text-emerald-700 font-semibold">Capacidades Operativas del Ecosistema</p>
+    <div class="grid md:grid-cols-3 gap-6 text-sm">
+        <div class="p-6 rounded-2xl border border-slate-200 bg-white hover:shadow-xs transition-all space-y-2">
+            <div class="text-emerald-600 mb-2"><i data-lucide="shield-alert" class="w-6 h-6"></i></div>
+            <p class="font-bold text-slate-900">Protocolos de Alerta Temprana</p>
+            <p class="text-slate-700 leading-relaxed text-xs">Emisión analítica de boletines meteorológicos públicos y alertas preventivas ante anomalías térmicas o frentes de pluviosidad crítica, optimizando los tiempos de respuesta civil.</p>
+        </div>
+        <div class="p-6 rounded-2xl border border-slate-200 bg-white hover:shadow-xs transition-all space-y-2">
+            <div class="text-emerald-600 mb-2"><i data-lucide="layers" class="w-6 h-6"></i></div>
+            <p class="font-bold text-slate-900">Análisis Matricial de Vulnerabilidad</p>
+            <p class="text-slate-700 leading-relaxed text-xs">Levantamiento de expedientes cartográficos territoriales y capas vectoriales que determinan el nivel de resiliencia estructural y geo-riesgo de los asentamientos vulnerables.</p>
+        </div>
+        <div class="p-6 rounded-2xl border border-slate-200 bg-white hover:shadow-xs transition-all space-y-2">
+            <div class="text-emerald-600 mb-2"><i data-lucide="radio" class="w-6 h-6"></i></div>
+            <p class="font-bold text-slate-900">Trazabilidad Telemétrica de Activos</p>
+            <p class="text-slate-700 leading-relaxed text-xs">Administración sistémica del instrumental meteorológico desplegado en campo (sensores y pluviómetros), garantizando ciclos rigurosos de calibración y reportes operativos.</p>
+        </div>
+    </div>
+</section>
+
+<!-- ==========================================
+     5. REPOSITORIO DIGITAL DE PUBLICACIONES Y DIVULGACIÓN (MEJORADO CON FOTO)
+     ========================================== -->
+<section id="publicaciones" class="mt-24 space-y-6">
+    <div class="flex items-center justify-between">
+        <div>
+            <p class="text-xs uppercase tracking-[0.3em] text-emerald-700 font-bold">Biblioteca Digital</p>
+            <h2 class="text-2xl font-black text-slate-900 tracking-tight">Publicaciones y Boletines Oficiales</h2>
+        </div>
+    </div>
+    
+    {% if publicaciones %}
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 text-sm">
+        {% for publicacion in publicaciones %}
+        <article class="group flex flex-col justify-between rounded-3xl border border-slate-200 bg-white overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 {% if publicacion.prioridad and publicacion.prioridad >= 8 %} ring-2 ring-red-500/50 {% endif %}">
+            
+            <div class="space-y-4">
+                <!-- 📸 IMAGEN DESTACADA DE LA TARJETA (FOTO REAL O BANNER) -->
+                <div class="relative w-full h-48 overflow-hidden bg-slate-100 border-b border-slate-100">
+                    {% if publicacion.divulgacion and publicacion.divulgacion.actividad and publicacion.divulgacion.actividad.imagenes_asociadas and publicacion.divulgacion.actividad.imagenes_asociadas|length > 0 %}
+                        <!-- FOTO REAL CARGADA EN LA ACTIVIDAD -->
+                        <img src="{{ url_for('static', filename=publicacion.divulgacion.actividad.imagenes_asociadas[0].imagen.url_imagen) }}" 
+                             alt="{{ publicacion.titulo }}" 
+                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                    {% else %}
+                        <!-- BANNER DINÁMICO POR PRIORIDAD SI NO HAY FOTO -->
+                        <div class="w-full h-full flex flex-col items-center justify-center 
+                            {% if publicacion.prioridad and publicacion.prioridad >= 8 %} bg-gradient-to-br from-red-600 to-amber-700 text-white
+                            {% elif publicacion.prioridad and publicacion.prioridad >= 5 %} bg-gradient-to-br from-emerald-800 to-teal-950 text-emerald-100
+                            {% else %} bg-gradient-to-br from-slate-800 to-slate-900 text-slate-300 {% endif %}">
+                            
+                            {% if publicacion.prioridad and publicacion.prioridad >= 8 %}
+                                <i data-lucide="alert-triangle" class="w-10 h-10 animate-bounce text-amber-300"></i>
+                                <span class="text-[9px] font-black uppercase tracking-[0.2em] mt-2">Alerta Crítica</span>
+                            {% else %}
+                                <i data-lucide="newspaper" class="w-10 h-10 text-emerald-400/80 stroke-[1.5]"></i>
+                                <span class="text-[9px] uppercase tracking-[0.2em] text-slate-400 mt-2">ONCC Boletín</span>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                    <!-- BADGE SUPERIOR DE TIPO DE BOLETÍN -->
+                    <div class="absolute top-3 left-3">
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/90 text-slate-900 shadow-sm backdrop-blur-xs">
+                            {{ publicacion.tipo }}
+                        </span>
+                    </div>
+
+                    <!-- BADGE DE PRIORIDAD -->
+                    <div class="absolute top-3 right-3">
+                        <span class="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full font-bold shadow-xs
+                            {% if publicacion.prioridad and publicacion.prioridad >= 8 %} bg-red-600 text-white
+                            {% elif publicacion.prioridad and publicacion.prioridad >= 5 %} bg-amber-500 text-white
+                            {% else %} bg-emerald-600 text-white {% endif %}">
+                            Nivel {{ publicacion.prioridad|default(1) }}
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- CUERPO DE LA TARJETA -->
+                <div class="px-6 space-y-2">
+                    <p class="text-[11px] font-mono text-slate-400">
+                        {{ publicacion.publicado_en.strftime('%d/%m/%Y') if publicacion.publicado_en else (publicacion.fecha_publicacion.strftime('%d/%m/%Y') if publicacion.fecha_publicacion else 'Reciente') }}
+                    </p>
+                    
+                    <h3 class="font-bold text-base text-slate-900 group-hover:text-emerald-700 transition-colors leading-snug line-clamp-2">
+                        {{ publicacion.titulo_publicacion if publicacion.titulo_publicacion else publicacion.titulo }}
+                    </h3>
+                    
+                    <p class="text-slate-600 text-xs leading-relaxed line-clamp-3">
+                        {{ publicacion.resumen if publicacion.resumen else (publicacion.contenido|truncate(120) if publicacion.contenido else 'Documento técnico oficial para consulta ciudadana.') }}
+                    </p>
+                </div>
+            </div>
+            
+            <!-- PIE DE TARJETA CON ENLACE DIRECTO -->
+            <div class="px-6 pb-6 pt-4 mt-2 border-t border-slate-100 flex items-center justify-between">
+                <span class="text-[11px] text-slate-400 font-medium">Lectura abierta</span>
+                <a href="{{ url_for('core.divulgacion_detalle', pub_id=publicacion.id_publicacion if publicacion.id_publicacion else publicacion.id) }}" class="inline-flex items-center text-xs font-bold text-emerald-700 hover:text-emerald-800 group/link transition-colors">
+                    Consultar Documento 
+                    <i data-lucide="arrow-right" class="w-3.5 h-3.5 ml-1 transform group-hover/link:translate-x-1 transition-transform"></i>
+                </a>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="grid md:grid-cols-2 gap-5 text-sm">
+        <div class="p-5 rounded-2xl border border-slate-200 bg-white shadow-xs">
+            <p class="font-bold text-slate-900 mb-2">Balances e Informes Técnicos Extendidos</p>
+            <p class="text-slate-700 text-xs leading-relaxed">Reportes anuales consolidados sobre variables hidrometeorológicas e impacto de contingencias geográficas históricas en la región.</p>
+        </div>
+        <div class="p-5 rounded-2xl border border-slate-200 bg-white shadow-xs">
+            <p class="font-bold text-slate-900 mb-2">Hitos de Gestión e Inclusión de Capacidades</p>
+            <p class="text-slate-700 text-xs leading-relaxed">Síntesis formativas de los programas de capacitación comunitaria y mapas zonales validados por las unidades operacionales.</p>
+        </div>
+    </div>
+    {% endif %}
+</section>
+
+<!-- ==========================================
+     6. PEDESTAL DE ADAPTACIÓN Y CAPACITACIÓN LOCAL
+     ========================================== -->
+<section id="adaptacion" class="mt-24 space-y-4">
+    <p class="text-xs uppercase tracking-[0.3em] text-emerald-700 font-semibold">Adaptación y Mitigación Comunitaria</p>
+    <div class="grid md:grid-cols-3 gap-5 text-sm">
+        <div class="p-5 rounded-2xl border border-slate-200 bg-white hover:border-slate-300 transition-colors shadow-xs">
+            <p class="font-bold text-slate-900 mb-2">Capacitación Técnica Local</p>
+            <p class="text-slate-700 leading-relaxed text-xs">Transferencia metodológica mediante talleres estructurados y planes formativos certificados para la autogestión de riesgos en sectores vulnerables.</p>
+        </div>
+        <div class="p-5 rounded-2xl border border-slate-200 bg-white hover:border-slate-300 transition-colors shadow-xs">
+            <p class="font-bold text-slate-900 mb-2">Codiseño de Contingencias</p>
+            <p class="text-slate-700 leading-relaxed text-xs">Asesoramiento analítico continuo para la estructuración de planes de contingencia comunitarios basados en modelos climáticos predictivos.</p>
+        </div>
+        <div class="p-5 rounded-2xl border border-slate-200 bg-white hover:border-slate-300 transition-colors shadow-xs">
+            <p class="font-bold text-slate-900 mb-2">Auditoría de Impacto Estructural</p>
+            <p class="text-slate-700 leading-relaxed text-xs">Evaluación constante e inspección del comportamiento de las obras civiles y medidas físicas destinadas a la mitigación del cambio climático.</p>
+        </div>
+    </div>
+</section>
+
+<!-- ==========================================
+     7. BANNER CONSOLA INTERNA OPERATIVA
+     ========================================== -->
+<section class="my-24 relative rounded-3xl overflow-hidden bg-gradient-to-br from-slate-900 via-slate-950 to-emerald-950 p-8 md:p-12 text-white shadow-2xl flex flex-col md:flex-row md:items-center md:justify-between gap-8">
+    <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none"></div>
+    <div class="space-y-2 relative z-10">
+        <p class="text-xs uppercase tracking-[0.3em] text-emerald-400 font-semibold">Autenticación de Operadores</p>
+        <h2 class="text-3xl font-black tracking-tight">Acceso Restringido para Personal Homologado</h2>
+        <p class="text-slate-400 text-sm max-w-xl leading-relaxed">Entorno de autenticación cifrado y seguro para analistas operacionales, administradores de bases vectoriales y técnicos encargados del control de la plataforma.</p>
+    </div>
+    <a href="{{ url_for('auth.login') }}" class="relative z-10 inline-flex items-center gap-2 px-7 py-4 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-500 shadow-xl shadow-emerald-600/20 transition-all transform hover:-translate-y-0.5 whitespace-nowrap">
+        Iniciar Sesión Operativa
+    </a>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+    const monitoreo = JSON.parse('{{ monitoreo | tojson | safe }}');
+    const mapa = L.map('mapaMonitoreo', { scrollWheelZoom: false }).setView([10.35, -68.95], 7);
+    
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 18,
+        attribution: '&copy; OpenStreetMap &copy; CARTO'
+    }).addTo(mapa);
+
+    monitoreo.forEach((item) => {
+        const color = item.riesgo === 'Bajo' ? '#10b981' : item.riesgo === 'Medio' ? '#f59e0b' : '#ef4444';
+        L.circleMarker([item.lat, item.lng], {
+            radius: 11,
+            color: color,
+            weight: 2,
+            fillColor: color,
+            fillOpacity: 0.4
+        }).addTo(mapa).bindPopup(`
+            <div style="font-family: system-ui, -apple-system, sans-serif; font-size:12px; color: #f1f5f9; background:#0f172a; padding: 4px; border-radius:8px;">
+                <strong style="font-size:13px; text-transform: uppercase; color:#fff; display:block; margin-bottom:4px;">${item.estado}</strong>
+                <span style="display:block; width:100%; height:1px; background:#334155; margin-bottom:6px;"></span>
+                <b>Temperatura:</b> ${item.temperatura}°C<br>
+                <b>Precipitación:</b> ${item.lluvia} mm<br>
+                <b>Humedad Relativa:</b> ${item.humedad}%<br>
+                <b>Nivel de Riesgo:</b> <span style="color:${color}; font-weight:bold;">${item.riesgo}</span>
+            </div>
+        `);
+    });
+</script>
+<style>
+    .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+        background: #0f172a !important;
+        border: 1px solid #334155 !important;
+        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.5) !important;
+    }
+    .leaflet-popup-close-button {
+        color: #94a3b8 !important;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 5px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: #0f172a;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #334155;
+        border-radius: 9999px;
+    }
+</style>
+{% endblock %}

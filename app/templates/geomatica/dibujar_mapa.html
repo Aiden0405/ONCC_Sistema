@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+
+{% block title %}Digitalizar Mapa - ONCC{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-measure@3.1.0/dist/leaflet-measure.css" />
+<link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6.5.0/turf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet-measure@3.1.0/dist/leaflet-measure.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tokml@0.4.0/tokml.js"></script>
+<style>
+    /* Uso de aspect-ratio para mantener la proporción geométrica y evitar que colapse en móviles */
+    #map { 
+        width: 100%; 
+        aspect-ratio: 1 / 1; /* Cuadrado en teléfonos para asegurar espacio a los botones */
+        max-height: 55vh; 
+        border-radius: 0.5rem; 
+        z-index: 10; 
+    }
+    @media (min-width: 768px) {
+        #map { aspect-ratio: 4 / 3; max-height: 65vh; }
+    }
+    @media (min-width: 1024px) {
+        #map { aspect-ratio: 16 / 9; height: 75vh; max-height: 800px; }
+    }
+    
+    .swal2-container { z-index: 9999 !important; }
+    .leaflet-bar a { text-decoration: none !important; }
+    .leaflet-container img.leaflet-tile { max-width: none !important; max-height: none !important; margin: 0 !important; padding: 0 !important; }
+    .leaflet-control-container .leaflet-bar { box-shadow: 0 1px 5px rgba(0,0,0,0.65) !important; border-radius: 4px !important; border: none !important; }
+    .leaflet-control-container .leaflet-bar a, .leaflet-control-container .leaflet-bar button { background-color: #fff !important; color: #333 !important; border-bottom: 1px solid #ccc !important; display: block !important; }
+    
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+</style>
+
+<div class="max-w-7xl mx-auto space-y-6 px-2 sm:px-4 lg:px-0 mt-4">
+    <!-- Encabezado y Barra de Herramientas -->
+    <div class="flex flex-col gap-4 mb-2 bg-white dark:bg-gray-800 p-4 sm:p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+        
+        <!-- Título e Información -->
+        <div class="w-full border-b border-gray-100 dark:border-gray-700 pb-3">
+            <h1 class="text-xl sm:text-2xl font-bold dark:text-white text-gray-800">Digitalización Interactiva de Riesgos</h1>
+            <p class="text-xs sm:text-sm dark:text-gray-400 text-gray-500 mt-1">
+                Mapa Base: <span class="font-semibold text-red-600 dark:text-red-400">{{ mapa.nombre }}</span>
+            </p>
+        </div>
+        
+        <!-- Botonera Principal: Separada en Izquierda y Derecha -->
+        <div class="flex flex-col lg:flex-row justify-between items-center gap-4 w-full">
+            
+            <!-- BLOQUE IZQUIERDO: Layout e Historial -->
+            <div class="flex flex-wrap items-center justify-start gap-3 w-full lg:w-auto">
+                <!-- Controles del Marco -->
+                <div class="flex flex-col sm:flex-row border border-red-300 dark:border-red-800 rounded-md overflow-hidden bg-white dark:bg-gray-800 shadow-sm h-10">
+                    <select id="select-formato-layout" class="px-3 py-2 text-xs sm:text-sm text-gray-700 bg-white dark:bg-gray-800 dark:text-gray-200 border-b sm:border-b-0 sm:border-r border-red-200 dark:border-red-800 outline-none cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors h-full">
+                        <option value="1.414">DIN A4 / A3 (Apaisado)</option>
+                        <option value="1.294">Carta (11" x 8.5")</option>
+                        <option value="1.647">Oficio / Legal (14" x 8.5")</option>
+                        <option value="1.777">Pantalla Panorámica (16:9)</option>
+                    </select>
+                    <div class="flex h-full">
+                        <button id="btn-insertar-layout" class="bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-900/30 dark:hover:bg-red-900/50 transition-colors text-xs font-medium px-3 flex items-center justify-center space-x-1 border-r border-red-200 dark:border-red-800">
+                            <i data-lucide="scan-line" class="w-4 h-4"></i>
+                            <span>Insertar</span>
+                        </button>
+                        <button id="btn-agrandar-layout" class="bg-red-50 hover:bg-red-100 text-red-700 px-3 flex items-center justify-center border-r border-red-200 dark:border-red-800" title="Agrandar">
+                            <i data-lucide="zoom-in" class="w-4 h-4"></i>
+                        </button>
+                        <button id="btn-reducir-layout" class="bg-red-50 hover:bg-red-100 text-red-700 px-3 flex items-center justify-center" title="Reducir">
+                            <i data-lucide="zoom-out" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Botones de Historial -->
+                <div class="flex border border-gray-300 dark:border-gray-600 rounded-md overflow-hidden bg-white dark:bg-gray-800 shadow-sm h-10">
+                    <button id="btn-deshacer" class="px-3 text-gray-500 hover:bg-gray-100 hover:text-blue-600 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors border-r border-gray-200 dark:border-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center" disabled>
+                        <i data-lucide="undo" class="w-4 h-4"></i>
+                    </button>
+                    <button id="btn-descartar" class="px-3 text-gray-500 hover:bg-gray-100 hover:text-orange-500 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors border-r border-gray-200 dark:border-gray-700 flex items-center justify-center">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                    </button>
+                    <button id="btn-limpiar-todo" class="px-3 text-gray-500 hover:bg-red-50 hover:text-red-600 dark:text-gray-400 dark:hover:bg-red-900/30 transition-colors flex items-center justify-center">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- BLOQUE DERECHO: Herramientas SIG y Acciones -->
+            <div class="flex flex-wrap items-center justify-end gap-3 w-full lg:w-auto">
+                
+                <!-- Menú Desplegable -->
+                <div class="relative inline-block text-left z-[1000]">
+                    <button id="btn-menu-herramientas" type="button" class="flex items-center justify-between h-10 px-4 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none transition-colors gap-2">
+                        <i data-lucide="wrench" class="w-4 h-4 text-blue-600"></i>
+                        <span>Herramientas SIG</span>
+                        <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-500"></i>
+                    </button>
+
+                    <!-- Submenú -->
+                    <div id="menu-herramientas-contenido" class="hidden absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 border border-gray-100 dark:border-gray-700 p-1 space-y-1 z-[1050]">
+                        <button onclick="exportarCapaSIG('geojson'); cerrarMenuHerramientas()" class="w-full flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-gray-700 hover:text-green-600 rounded-md transition-colors">
+                            <i data-lucide="download" class="w-4 h-4 mr-2 text-green-500"></i> Exportar GeoJSON
+                        </button>
+                        <button onclick="obtenerUbicacionActual(); cerrarMenuHerramientas()" class="w-full flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-gray-700 hover:text-blue-600 rounded-md transition-colors">
+                            <i data-lucide="locate-fixed" class="w-4 h-4 mr-2 text-blue-500"></i> Mi Ubicación Actual (GPS)
+                        </button>
+                        <button onclick="exportarCapaSIG('kml'); cerrarMenuHerramientas()" class="w-full flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-gray-700 hover:text-green-600 rounded-md transition-colors">
+                            <i data-lucide="map-pin" class="w-4 h-4 mr-2 text-green-500"></i> Exportar KML
+                        </button>
+                        <button onclick="activarMedicionAvanzada('linea'); cerrarMenuHerramientas()" class="w-full flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-gray-700 hover:text-blue-600 rounded-md transition-colors">
+                            <i data-lucide="ruler" class="w-4 h-4 mr-2 text-blue-500"></i> Medir Línea (Regla)
+                        </button>
+                        <button onclick="activarMedicionAvanzada('poligono'); cerrarMenuHerramientas()" class="w-full flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-gray-700 hover:text-blue-600 rounded-md transition-colors">
+                            <i data-lucide="square" class="w-4 h-4 mr-2 text-indigo-500"></i> Medir Polígono y Área
+                        </button>
+                        <button onclick="activarVerCoordenadas(); cerrarMenuHerramientas()" class="w-full flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-gray-700 hover:text-blue-600 rounded-md transition-colors">
+                            <i data-lucide="map-pin" class="w-4 h-4 mr-2 text-amber-500"></i> Ver Coordenadas
+                        </button>
+                        <button onclick="marcarPorCoordenadas(); cerrarMenuHerramientas()" class="w-full flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-gray-700 hover:text-blue-600 rounded-md transition-colors">
+                            <i data-lucide="compass" class="w-4 h-4 mr-2 text-purple-500"></i> Marcar por Coordenadas
+                        </button>                           
+                        <button onclick="limpiarMedicion(); cerrarMenuHerramientas()" class="w-full flex items-center px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors border-t border-gray-100 dark:border-gray-700 mt-1">
+                            <i data-lucide="x-circle" class="w-4 h-4 mr-2"></i> Limpiar Análisis
+                        </button>                   
+                    </div>
+                </div>
+
+                <!-- Botones Finales -->
+                <div class="flex items-center gap-2 h-10">
+                    <button id="btn-guardar" class="h-full flex justify-center bg-blue-600 hover:bg-blue-700 text-white transition-colors rounded-md text-sm font-medium px-4 shadow-sm items-center space-x-2">
+                        <i data-lucide="save" class="w-4 h-4"></i>
+                        <span>Guardar</span>
+                    </button>
+                    <a href="{{ url_for('geomatica.index') }}" id="btn-finalizar" class="h-full flex justify-center bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-200 rounded-md text-sm font-medium px-4 shadow-sm items-center space-x-2">
+                        <i data-lucide="check-circle" class="w-4 h-4 text-green-500"></i>
+                        <span>Finalizar</span>
+                    </a>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- Contenedor Principal (Mapa y Leyenda) -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-6">
+        
+        <!-- Sidebar Leyenda -->
+        <div class="lg:col-span-1 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 max-h-[40vh] lg:max-h-[75vh] overflow-y-auto custom-scrollbar flex flex-col order-2 lg:order-1">
+            <h3 class="text-sm font-bold text-gray-800 dark:text-white uppercase tracking-wider border-b border-gray-200 dark:border-gray-700 pb-3 mb-4 flex items-center">
+                <i data-lucide="list" class="w-4 h-4 mr-2"></i> Elementos del Mapa
+            </h3>
+            
+            <div id="contenedor-categorias" class="flex-1 space-y-4">
+                <ul id="lista-leyenda" class="space-y-2">
+                    <li id="leyenda-vacia" class="text-sm text-gray-400 text-center mt-4 lg:mt-10 italic">
+                        No hay elementos registrados.
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Div del Mapa -->
+        <div class="lg:col-span-3 p-3 sm:p-4 rounded-xl shadow-sm border bg-white dark:bg-gray-800 dark:border-gray-700 flex flex-col order-1 lg:order-2">
+            <div class="flex items-start space-x-3 pb-3 mb-3 border-b border-gray-100 dark:border-gray-700 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+                <i data-lucide="info" class="w-5 h-5 mt-0.5 text-blue-500 dark:text-blue-400 flex-shrink-0"></i>
+                <p class="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                    <span class="text-blue-700 dark:text-blue-400 font-bold block mb-1">Paso 1: Defina el Layout.</span>
+                    Utilice <b>"Insertar Marco"</b> para fijar el área de trabajo con relación de aspecto para impresión. Todo el contenido debe digitalizarse dentro de este recuadro.
+                </p>
+            </div>
+            
+            <div id="map" class="shadow-inner border border-gray-300 dark:border-gray-600 relative"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+window.ONCC_CONFIG = {
+        mapaId: "{{ mapa.id_mapa_riesgo }}",
+        urlCatalogo: "{{ url_for('catalogo.listar_simbologia') }}",
+        csrfToken: "{{ csrf_token() }}"
+    };
+</script>
+
+<!-- 3. Llamada a tu archivo separado -->
+<script src="{{ url_for('static', filename='js/digitalizacion_mapa.js') }}"></script>
+{% endblock %}

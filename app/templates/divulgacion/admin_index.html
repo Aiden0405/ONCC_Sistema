@@ -1,0 +1,323 @@
+{% extends 'base.html' %}
+
+{% block title %}Divulgación - Administrar{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
+    
+    <div class="flex items-center justify-between mb-2">
+        <div>
+            <h1 class="text-2xl font-bold dark:text-white text-gray-800">Panel de Divulgación</h1>
+            <p class="text-sm dark:text-gray-400 text-gray-500">Crear, revisar y publicar contenidos informativos destinados al portal público institucional</p>
+        </div>
+        
+        {% if 'registrar_divulgaciones' in permisos_activos or current_user.id_rol|int in (1, 2) %}
+        <a href="{{ url_for('core.divulgacion_admin_nuevo') }}" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md shadow-sm hover:bg-green-700 transition-colors text-sm font-medium">
+            <i data-lucide="plus" class="w-4 h-4 mr-2"></i> Nueva Publicación
+        </a>
+        {% endif %}
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                {% if category == 'error' %}
+                    <div class="p-4 rounded-md bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800 flex items-center shadow-sm">
+                        <i data-lucide="alert-triangle" class="mr-2 w-5 h-5"></i> 
+                        <span class="text-sm font-medium">{{ message }}</span>
+                    </div>
+                {% else %}
+                    <div class="p-4 rounded-md bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800 flex items-center shadow-sm">
+                        <i data-lucide="check-circle" class="mr-2 w-5 h-5"></i> 
+                        <span class="text-sm font-medium">{{ message }}</span>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+            <div>
+                <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400">Gobernanza de Contenidos</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Administre borradores, apruebe informes y verifique el material visible en la web</p>
+            </div>
+            <span class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ publicaciones|length }} registro(s)</span>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left border-collapse">
+                <thead>
+                    <tr class="text-xs uppercase tracking-wider bg-gray-50 text-gray-500 dark:bg-gray-700/40 dark:text-gray-400">
+                        <th class="px-6 py-3 font-semibold">Título del Contenido</th>
+                        <th class="px-6 py-3 font-semibold">Tipo</th>
+                        <th class="px-6 py-3 font-semibold text-center">Prioridad</th>
+                        <th class="px-6 py-3 font-semibold">Estatus</th>
+                        <th class="px-6 py-3 font-semibold">Creación</th>
+                        <th class="px-6 py-3 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
+                    {% for p in publicaciones %}
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                        <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-100 max-w-sm truncate">
+                            <div class="font-semibold text-gray-900 dark:text-white truncate">{{ p.titulo }}</div>
+                            <div class="text-[11px] text-gray-400 dark:text-gray-500 mt-1 flex items-center gap-1">
+                                <i data-lucide="link" class="w-3 h-3 text-green-600 dark:text-green-400"></i>
+                                {% if p.id_divulgacion and p.divulgacion %}
+                                    <span class="text-green-700 dark:text-green-400 font-semibold">{{ p.divulgacion.nombre_divulgacion }}</span> (Actividad #{{ p.divulgacion.id_actividad }})
+                                {% else %}
+                                    <span class="text-gray-400 italic">Sin despliegue directo</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 uppercase tracking-tight">
+                                <i data-lucide="file-text" class="w-3 h-3 mr-1 text-blue-400"></i> {{ p.tipo }}
+                            </span>
+                        </td>
+
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            {% if p.prioridad and p.prioridad >= 8 %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-black bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300 animate-pulse border border-red-300">
+                                    ⚠️ Nivel {{ p.prioridad }}
+                                </span>
+                            {% elif p.prioridad and p.prioridad >= 5 %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-300">
+                                    Nivel {{ p.prioridad }}
+                                </span>
+                            {% else %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+                                    Nivel {{ p.prioridad|default(1) }}
+                                </span>
+                            {% endif %}
+                        </td>
+                        
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if p.estado == 'publicado' %}
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5 animate-pulse"></span> Publicado
+                                </span>
+                            {% else %}
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-yellow-50 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-yellow-500 mr-1.5"></span> Borrador
+                                </span>
+                            {% endif %}
+                        </td>
+                        
+                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400 font-mono text-xs whitespace-nowrap">
+                            {{ p.creado_en.strftime('%Y-%m-%d') }}
+                        </td>
+                        
+                        <!-- BOTONES DE ACCIÓN -->
+                        <td class="px-6 py-4 text-right whitespace-nowrap space-x-1">
+                            
+                            <!-- 👁️ BOTÓN VER DETALLES (MODAL) -->
+                            <button type="button" 
+                                    onclick="abrirModalDetalle(this)"
+                                    data-titulo="{{ p.titulo }}"
+                                    data-tipo="{{ p.tipo }}"
+                                    data-prioridad="{{ p.prioridad|default(1) }}"
+                                    data-estado="{{ p.estado }}"
+                                    data-fecha="{{ p.creado_en.strftime('%d/%m/%Y') }}"
+                                    data-resumen="{{ p.resumen if p.resumen else 'Sin resumen registrado.' }}"
+                                    data-contenido="{{ p.contenido if p.contenido else 'Sin contenido.' }}"
+                                    data-acto="{{ p.divulgacion.nombre_divulgacion if p.divulgacion else 'No especificado' }}"
+                                    data-permiso="{{ p.divulgacion.permiso_divulgacion if p.divulgacion else 'Público' }}"
+                                    data-aval="{{ p.divulgacion.descripcion_divulgacion if p.divulgacion else 'Sin descripción de aval' }}"
+                                    data-actividad="{% if p.divulgacion and p.divulgacion.actividad %}#{{ p.divulgacion.actividad.id_actividad }} - {{ p.divulgacion.actividad.tipo_actividad }} ({{ p.divulgacion.actividad.fecha_actividad }}){% else %}Sin actividad{% endif %}"
+                                    data-comunidad="{% if p.divulgacion and p.divulgacion.actividad and p.divulgacion.actividad.comunidad %}{{ p.divulgacion.actividad.comunidad.nombre_comunidad }}{% else %}Comunidad General{% endif %}"
+                                    class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-300 transition-colors" title="Ver detalles y trazabilidad">
+                                <i data-lucide="eye" class="w-3.5 h-3.5 mr-1"></i> Ver
+                            </button>
+
+                            <!-- ✏️ BOTÓN EDITAR -->
+                            {% if current_user.id_rol|int in (1, 2) or p.id_usuario|int == current_user.id|int %}
+                                <a href="{{ url_for('core.divulgacion_admin_editar', pub_id=p.id) }}" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300 transition-colors">
+                                    <i data-lucide="edit" class="w-3.5 h-3.5 mr-1"></i> Editar
+                                </a>
+                            {% endif %}
+
+                            {% if p.estado != 'publicado' %}
+                                {% if current_user.id_rol|int in (1, 2) or p.id_usuario|int == current_user.id|int %}
+                                    <form action="{{ url_for('core.divulgacion_admin_eliminar', pub_id=p.id) }}" method="post" class="inline" onsubmit="return confirm('¿Está seguro de que desea eliminar este borrador?');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300 transition-colors">
+                                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                    </form>
+                                {% endif %}
+
+                                {% if 'aprobar_divulgaciones' in permisos_activos or current_user.id_rol|int in (1, 2) %}
+                                <form action="{{ url_for('core.divulgacion_admin_aprobar', pub_id=p.id) }}" method="post" class="inline" onsubmit="return confirm('¿Desea publicar este contenido en la web?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-bold text-white bg-green-600 hover:bg-green-700 transition-colors shadow-sm">
+                                        <i data-lucide="globe" class="w-3.5 h-3.5 mr-1"></i> Publicar
+                                    </button>
+                                </form>
+                                {% endif %}
+                                
+                            {% else %}
+                                {% if 'aprobar_divulgaciones' in permisos_activos or current_user.id_rol|int in (1, 2) %}
+                                    <form action="{{ url_for('core.divulgacion_admin_despublicar', pub_id=p.id) }}" method="post" class="inline" onsubmit="return confirm('¿Desea retirar esta publicación del portal web?');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300 transition-colors">
+                                            <i data-lucide="eye-off" class="w-3.5 h-3.5 mr-1"></i> Despublicar
+                                        </button>
+                                    </form>
+
+                                    <form action="{{ url_for('core.divulgacion_admin_eliminar', pub_id=p.id) }}" method="post" class="inline" onsubmit="return confirm('🚨 ¡ADVERTENCIA! Esta publicación está activa en la web. ¿Desea eliminarla permanentemente?');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300 transition-colors">
+                                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                            <div class="flex flex-col items-center justify-center space-y-2">
+                                <i data-lucide="newspaper" class="w-8 h-8 text-gray-300 dark:text-gray-600"></i>
+                                <p class="text-sm font-medium">No hay registros informativos cargados en la bitácora de divulgación.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- 🔍 MODAL DE DETALLE COMPLETO Y TRAZABILIDAD INSTITUCIONAL      -->
+<!-- ============================================================== -->
+<div id="modalDetalleDivulgacion" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 max-w-2xl w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        
+        <!-- HEADER DEL MODAL -->
+        <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-slate-50 dark:bg-gray-700/40">
+            <div class="flex items-center gap-2">
+                <div class="p-1.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-lg">
+                    <i data-lucide="file-check" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-gray-900 dark:text-white" id="modalTitulo">Detalles de Publicación</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Ficha técnica y aval de divulgación</p>
+                </div>
+            </div>
+            <button onclick="cerrarModalDetalle()" class="text-gray-400 hover:text-gray-600 dark:hover:text-white p-1 rounded-lg">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <!-- CUERPO DEL MODAL -->
+        <div class="p-6 space-y-5 max-h-[75vh] overflow-y-auto custom-scrollbar text-sm">
+            
+            <!-- BLOQUE 1: TRAZABILIDAD OPERATIVA (AVAL PADRE) -->
+            <div class="bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 rounded-xl p-4 space-y-3">
+                <p class="text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+                    <i data-lucide="link" class="w-4 h-4"></i> 1. Aval Institucional de Origen
+                </p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div>
+                        <span class="text-gray-500 dark:text-gray-400 font-medium block">Actividad de Campo Vinculada:</span>
+                        <span id="modalActividad" class="font-bold text-gray-800 dark:text-gray-200"></span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500 dark:text-gray-400 font-medium block">Comunidad / Sector:</span>
+                        <span id="modalComunidad" class="font-bold text-gray-800 dark:text-gray-200"></span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500 dark:text-gray-400 font-medium block">Nombre del Acto:</span>
+                        <span id="modalActo" class="font-bold text-gray-800 dark:text-gray-200"></span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500 dark:text-gray-400 font-medium block">Alcance / Permiso:</span>
+                        <span id="modalPermiso" class="font-bold text-emerald-700 dark:text-emerald-300"></span>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <span class="text-gray-500 dark:text-gray-400 font-medium block">Descripción del Aval:</span>
+                        <span id="modalAval" class="text-gray-700 dark:text-gray-300 italic"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BLOQUE 2: CONTENIDO EDITORIAL DE LA WEB -->
+            <div class="space-y-3">
+                <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                    <i data-lucide="newspaper" class="w-4 h-4"></i> 2. Contenido Informativo para la Web
+                </p>
+
+                <div class="flex flex-wrap gap-2 text-xs">
+                    <span id="modalBadgeTipo" class="px-2.5 py-1 rounded-md font-semibold bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 uppercase"></span>
+                    <span id="modalBadgePrioridad" class="px-2.5 py-1 rounded-md font-bold bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300"></span>
+                    <span id="modalBadgeEstado" class="px-2.5 py-1 rounded-md font-bold uppercase"></span>
+                    <span id="modalFecha" class="px-2.5 py-1 rounded-md text-gray-500 dark:text-gray-400 font-mono"></span>
+                </div>
+
+                <div class="bg-gray-50 dark:bg-gray-700/30 p-3.5 rounded-xl border border-gray-100 dark:border-gray-700">
+                    <span class="text-xs font-bold uppercase text-gray-500 dark:text-gray-400 block mb-1">Resumen Ejecutivo:</span>
+                    <p id="modalResumen" class="text-gray-700 dark:text-gray-300 text-xs leading-relaxed"></p>
+                </div>
+
+                <div>
+                    <span class="text-xs font-bold uppercase text-gray-500 dark:text-gray-400 block mb-1">Cuerpo del Reporte:</span>
+                    <div id="modalContenido" class="p-3.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-200 text-xs leading-relaxed max-h-48 overflow-y-auto whitespace-pre-line font-sans"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FOOTER DEL MODAL -->
+        <div class="px-6 py-3 bg-gray-50 dark:bg-gray-700/40 border-t border-gray-100 dark:border-gray-700 flex justify-end">
+            <button onclick="cerrarModalDetalle()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-800 dark:text-white rounded-lg text-xs font-semibold transition-colors">
+                Cerrar
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function abrirModalDetalle(boton) {
+        document.getElementById('modalTitulo').textContent = boton.dataset.titulo || 'Sin Título';
+        document.getElementById('modalActividad').textContent = boton.dataset.actividad;
+        document.getElementById('modalComunidad').textContent = boton.dataset.comunidad;
+        document.getElementById('modalActo').textContent = boton.dataset.acto;
+        document.getElementById('modalPermiso').textContent = boton.dataset.permiso;
+        document.getElementById('modalAval').textContent = boton.dataset.aval;
+
+        document.getElementById('modalBadgeTipo').textContent = boton.dataset.tipo;
+        document.getElementById('modalBadgePrioridad').textContent = 'Prioridad ' + boton.dataset.prioridad;
+        
+        const badgeEstado = document.getElementById('modalBadgeEstado');
+        badgeEstado.textContent = boton.dataset.estado;
+        if (boton.dataset.estado === 'publicado') {
+            badgeEstado.className = 'px-2.5 py-1 rounded-md font-bold uppercase bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300';
+        } else {
+            badgeEstado.className = 'px-2.5 py-1 rounded-md font-bold uppercase bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300';
+        }
+
+        document.getElementById('modalFecha').textContent = 'Creado: ' + boton.dataset.fecha;
+        document.getElementById('modalResumen').textContent = boton.dataset.resumen;
+        document.getElementById('modalContenido').textContent = boton.dataset.contenido;
+
+        document.getElementById('modalDetalleDivulgacion').classList.remove('hidden');
+        if (window.lucide) lucide.createIcons();
+    }
+
+    function cerrarModalDetalle() {
+        document.getElementById('modalDetalleDivulgacion').classList.add('hidden');
+    }
+
+    // Cerrar modal al presionar la tecla ESC
+    document.addEventListener('keydown', function(event) {
+        if (event.key === "Escape") {
+            cerrarModalDetalle();
+        }
+    });
+</script>
+{% endblock %}
