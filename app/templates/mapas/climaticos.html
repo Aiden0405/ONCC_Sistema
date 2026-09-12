@@ -12,9 +12,9 @@
             <p class="text-sm text-gray-500 dark:text-gray-400">Procesamiento de isoyetas, isotermas e inyección de datos SSBC.</p>
         </div>
         <div class="flex items-center gap-2">
-            <a href="#" onclick="abrirModalCarga()" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700 transition-colors text-sm font-medium">
+            <button onclick="abrirModalCarga()" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700 transition-colors text-sm font-medium">
                 <i data-lucide="upload-cloud" class="w-4 h-4 mr-2"></i> Subir Imagen Climática
-            </a>
+            </button>
         </div>
     </div>
 
@@ -29,11 +29,10 @@
                 <label class="text-xs font-semibold uppercase tracking-wider text-gray-500">Estado</label>
                 <select id="filtro_estado" onchange="aplicarFiltrosClimaticos()" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                     <option value="">Todos los Estados</option>
-                    <!-- Llenado dinámico mediante JS -->
                 </select>
             </div>
             <div class="md:col-span-2 flex justify-end">
-                <button type="button" onclick="limpiarFiltrosClimaticos()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg flex items-center hover:bg-gray-50">
+                <button type="button" onclick="limpiarFiltrosClimaticos()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg flex items-center hover:bg-gray-50 dark:bg-gray-700 dark:text-white dark:border-gray-600">
                     <i data-lucide="refresh-cw" class="w-4 h-4 mr-2"></i> Limpiar Filtros
                 </button>
             </div>
@@ -72,13 +71,126 @@
         </div>
     </div>
 </div>
+
+<!-- ========================================================================= -->
+<!-- MODAL DE GESTIÓN CRUD DE DATOS CLIMÁTICOS MENSUALES -->
+<!-- ========================================================================= -->
+<div id="modalDatosClimaticos" class="fixed inset-0 z-50 hidden bg-gray-900/60 backdrop-blur-sm overflow-y-auto h-full w-full flex items-center justify-center p-4">
+    <div class="relative w-full max-w-4xl bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden my-8">
+        
+        <!-- Header Modal -->
+        <div class="px-6 py-4 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+            <div>
+                <div class="flex items-center space-x-2">
+                    <h3 class="text-lg font-bold text-gray-800 dark:text-white">Gestión de Datos Climáticos</h3>
+                    <span id="badgeEstadoCrud" class="px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-300">Sin datos</span>
+                </div>
+                <p id="subtituloModalMapa" class="text-xs text-blue-600 dark:text-blue-400 font-semibold"></p>
+            </div>
+            <button onclick="cerrarModalRegistrarDatos()" class="text-gray-400 hover:text-gray-600 dark:hover:text-white">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+        </div>
+
+        <!-- Formulario Modal -->
+<form id="formDatosClimaticos" onsubmit="guardarDatosClimaticos(event)" class="p-6 space-y-6">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" id="modal_id_mapa_climatico" name="id_mapa_climatico">
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <!-- Equipo Climático -->
+    <div>
+        <label for="modal_id_equipo" class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-300 mb-1">Equipo Climático</label>
+        <select id="modal_id_equipo" name="id_equipo" required onchange="consultarYCargarMes()" 
+                class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+            <option value="">Seleccione Equipo...</option>
+            {% if equipos %}
+                {% for eq in equipos %}
+                    <option value="{{ eq.id_equipo }}">{{ eq.nombre }}</option>
+                {% endfor %}
+            {% endif %}
+        </select>
+    </div>
+
+    <!-- Año -->
+    <div>
+        <label for="modal_anio" class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-300 mb-1">Año</label>
+        <input type="number" id="modal_anio" name="anio" value="2026" min="2000" max="2100" required onchange="consultarYCargarMes()"
+               class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+    </div>
+
+    <!-- Mes -->
+    <div>
+        <label for="modal_mes" class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-300 mb-1">Mes</label>
+        <select id="modal_mes" name="mes" required onchange="consultarYCargarMes()"
+                class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+            <option value="">Seleccione Mes...</option>
+            <option value="1">Enero</option>
+            <option value="2">Febrero</option>
+            <option value="3">Marzo</option>
+            <option value="4">Abril</option>
+            <option value="5">Mayo</option>
+            <option value="6">Junio</option>
+            <option value="7">Julio</option>
+            <option value="8">Agosto</option>
+            <option value="9">Septiembre</option>
+            <option value="10">Octubre</option>
+            <option value="11">Noviembre</option>
+            <option value="12">Diciembre</option>
+        </select>
+    </div>
+</div>
+
+    <!-- Tabla dinámicamente construida -->
+    <div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+        <div class="max-h-80 overflow-y-auto">
+            <table class="w-full text-xs text-left">
+                <thead class="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 sticky top-0 uppercase font-semibold">
+                    <tr>
+                        <th class="px-4 py-2 text-center w-16">Día</th>
+                        <th class="px-4 py-2">Temperatura (°C)</th>
+                        <th class="px-4 py-2">Precipitaciones (mm)</th>
+                        <th class="px-4 py-2">Vientos (km/h)</th>
+                        <th class="px-4 py-2">Humedad (%)</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaDiasBody" class="divide-y divide-gray-200 dark:divide-gray-700">
+                    <tr>
+                        <td colspan="5" class="px-4 py-6 text-center text-gray-400">Seleccione equipo, año y mes.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">
+        <button type="button" id="btnEliminarMes" onclick="eliminarMesClimatico()" class="hidden px-4 py-2 text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 flex items-center">
+            <i data-lucide="trash-2" class="w-4 h-4 mr-2"></i> Eliminar Mes
+        </button>
+        <div class="flex space-x-3 ml-auto">
+            <button type="button" onclick="cerrarModalRegistrarDatos()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
+            <button type="submit" id="btnGuardarMes" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm flex items-center">
+                <i data-lucide="save" class="w-4 h-4 mr-2"></i> <span id="lblBtnGuardar">Guardar Mes</span>
+            </button>
+        </div>
+    </div>
+</form>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     let mapasClimaticosData = []; 
+    let modoEdicion = false;
     const csrfToken = "{{ csrf_token() }}";
+
+    // RUTAS DEL CRUD BACKEND
+    const URL_CARGAR = "{{ url_for('mapas.cargar_mes_climatico') }}";
+    const URL_REGISTRAR = "{{ url_for('mapas.registrar_mes_climatico') }}";
+    const URL_ACTUALIZAR = "{{ url_for('mapas.actualizar_mes_climatico') }}";
+    const URL_ELIMINAR = "{{ url_for('mapas.eliminar_mes_climatico') }}";
 
     function cargarTablaClimatica() {
         fetch('/mapas-climaticos/lista')
@@ -87,6 +199,109 @@
                 mapasClimaticosData = data; 
                 renderizarTablaClimatica(); 
             }).catch(console.error);
+    }
+// Se ejecuta al cambiar Equipo, Año o Mes
+async function consultarYCargarMes() {
+    const idEquipo = document.getElementById('modal_id_equipo').value;
+    const anio = parseInt(document.getElementById('modal_anio').value);
+    const mes = parseInt(document.getElementById('modal_mes').value);
+
+    if (!idEquipo || !anio || !mes) {
+        generarTablaDias({});
+        return;
+    }
+
+    try {
+        const response = await fetch(`${URL_CARGAR_MES}?id_equipo=${idEquipo}&anio=${anio}&mes=${mes}`);
+        const data = await response.json();
+
+        if (response.ok && data.status === 'success' && data.registros.length > 0) {
+            modoEdicion = true;
+            
+            // Indexar datos por número de día { 1: {temperatura: ...}, 2: {...} }
+            const mapaDatos = {};
+            data.registros.forEach(reg => { mapaDatos[reg.dia] = reg; });
+
+            generarTablaDias(mapaDatos);
+            document.getElementById('lblBtnGuardar').innerText = "Actualizar Mes";
+        } else {
+            modoEdicion = false;
+            generarTablaDias({});
+            document.getElementById('lblBtnGuardar').innerText = "Guardar Mes";
+        }
+    } catch (err) {
+        console.error("Error cargando el mes:", err);
+        generarTablaDias({});
+    }
+}
+
+// Dibuja las filas inyectando los valores guardados si existen
+function generarTablaDias(datosExistentes = {}) {
+    const anio = parseInt(document.getElementById('modal_anio').value);
+    const mes = parseInt(document.getElementById('modal_mes').value);
+    const tbody = document.getElementById('tablaDiasBody');
+    tbody.innerHTML = '';
+
+    if (!anio || !mes) return;
+
+    // Obtener días totales del mes
+    const totalDias = new Date(anio, mes, 0).getDate();
+
+    for (let dia = 1; dia <= totalDias; dia++) {
+        const d = datosExistentes[dia] || {};
+
+        tbody.innerHTML += `
+            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                <td class="px-3 py-2 text-xs font-bold text-center text-gray-700 dark:text-gray-300">${dia}</td>
+                <td class="px-2 py-1">
+                    <input type="number" step="0.01" min="-50" max="50" name="temp_${dia}" 
+                           value="${d.temperatura !== undefined ? d.temperatura : ''}" required 
+                           class="w-full text-xs p-1.5 border rounded focus:ring-blue-500">
+                </td>
+                <td class="px-2 py-1">
+                    <input type="number" step="0.01" min="0" name="prec_${dia}" 
+                           value="${d.precipitaciones !== undefined ? d.precipitaciones : ''}" required 
+                           class="w-full text-xs p-1.5 border rounded focus:ring-blue-500">
+                </td>
+                <td class="px-2 py-1">
+                    <input type="number" step="0.01" min="0" name="viento_${dia}" 
+                           value="${d.vientos !== undefined ? d.vientos : ''}" required 
+                           class="w-full text-xs p-1.5 border rounded focus:ring-blue-500">
+                </td>
+                <td class="px-2 py-1">
+                    <input type="number" step="0.01" min="0" max="100" name="hum_${dia}" 
+                           value="${d.humedad !== undefined ? d.humedad : ''}" required 
+                           class="w-full text-xs p-1.5 border rounded focus:ring-blue-500">
+                </td>
+            </tr>
+        `;
+    }
+}
+    async function cargarEquiposClimaticos() {
+        try {
+            const response = await fetch("{{ url_for('logistica.listar_equipos_json') }}");
+            if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+
+            const data = await response.json();
+            const listaEquipos = Array.isArray(data) ? data : (data.equipos || data.inventario || data.data || []);
+            
+            const selectEquipo = document.getElementById('modal_id_equipo');
+            selectEquipo.innerHTML = '<option value="">Seleccione Equipo...</option>';
+
+            if (listaEquipos.length === 0) {
+                selectEquipo.innerHTML += '<option value="" disabled>No hay equipos disponibles</option>';
+                return;
+            }
+
+            listaEquipos.forEach(equipo => {
+                const id = equipo.id || equipo.id_equipo;
+                const nombre = equipo.nombre || equipo.nombre_equipo || equipo.descripcion || `Equipo #${id}`;
+                selectEquipo.innerHTML += `<option value="${id}">${nombre}</option>`;
+            });
+        } catch (error) {
+            console.error('Error al cargar equipos:', error);
+            document.getElementById('modal_id_equipo').innerHTML = '<option value="">Error al cargar equipos</option>';
+        }
     }
 
     function aplicarFiltrosClimaticos() {
@@ -115,19 +330,244 @@
         }
 
         filtrados.forEach(mapa => {
+            const idMapa = mapa.id || mapa.id_mapa_climatico;
             tbody.innerHTML += `
                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                     <td class="px-6 py-4 font-medium uppercase tracking-tight text-blue-700 dark:text-blue-400">${mapa.tipo_de_mapa}</td>
                     <td class="px-6 py-4 font-mono text-xs truncate max-w-xs">${mapa.url_mapa.split('/').pop()}</td>
                     <td class="px-6 py-4 text-xs">${new Date(mapa.fecha_creacion).toLocaleDateString()}</td>
                     <td class="px-6 py-4 text-right space-x-2">
-                        <button onclick="verImagenClimatica('${mapa.url_mapa}')" class="text-blue-600 hover:text-blue-900" title="Ver Mapa"><i data-lucide="image" class="w-4 h-4 inline"></i></button>
-                        <button onclick="eliminarMapaClimatico(${mapa.id})" class="text-red-600 hover:text-red-900" title="Eliminar"><i data-lucide="trash-2" class="w-4 h-4 inline"></i></button>
+                        <button onclick="abrirModalRegistrarDatos(${idMapa}, '${mapa.tipo_de_mapa}')" class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300" title="Gestionar Datos Climáticos del Mes">
+                            <i data-lucide="file-plus" class="w-4 h-4 inline"></i>
+                        </button>
+                        <button onclick="verImagenClimatica('${mapa.url_mapa}')" class="text-blue-600 hover:text-blue-900" title="Ver Mapa">
+                            <i data-lucide="image" class="w-4 h-4 inline"></i>
+                        </button>
+                        <button onclick="eliminarMapaClimatico(${idMapa})" class="text-red-600 hover:text-red-900" title="Eliminar">
+                            <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
+                        </button>
                     </td>
                 </tr>
             `;
         });
         if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    // =========================================================================
+    // LÓGICA DEL MODAL DE REGISTRO / CRUD CLIMÁTICO
+    // =========================================================================
+    function abrirModalRegistrarDatos(idMapa, tipoMapa) {
+        document.getElementById('modal_id_mapa_climatico').value = idMapa;
+        document.getElementById('subtituloModalMapa').innerText = `Mapa Asociado: ID #${idMapa} - ${tipoMapa}`;
+        document.getElementById('modalDatosClimaticos').classList.remove('hidden');
+        consultarYCargarMes();
+    }
+
+    function cerrarModalRegistrarDatos() {
+        document.getElementById('modalDatosClimaticos').classList.add('hidden');
+    }
+
+// Genera la estructura de días considerando bisiestos
+function generarTablaDias(datosExistentes = {}) {
+    const elAnio = document.getElementById('modal_anio');
+    const elMes = document.getElementById('modal_mes');
+    const tbody = document.getElementById('tablaDiasBody');
+    tbody.innerHTML = '';
+
+    if (!elAnio || !elMes || !elAnio.value || !elMes.value) {
+        tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-gray-400">Seleccione un año y mes válidos.</td></tr>`;
+        return;
+    }
+
+    const anio = parseInt(elAnio.value);
+    const mes = parseInt(elMes.value);
+    
+    // Control de fechas para no permitir registrar días futuros
+    const hoy = new Date();
+    const anioActual = hoy.getFullYear();
+    const mesActual = hoy.getMonth() + 1; // getMonth() es base 0
+    const diaActual = hoy.getDate();
+
+    // Calcula automáticamente los días del mes (Febrero bisiesto = 29 días)
+    const totalDias = new Date(anio, mes, 0).getDate();
+
+    for (let dia = 1; dia <= totalDias; dia++) {
+        const d = datosExistentes[dia] || {};
+
+        // Determinar si el día específico es futuro
+        const esFuturo = (anio > anioActual) || 
+                         (anio === anioActual && mes > mesActual) || 
+                         (anio === anioActual && mes === mesActual && dia > diaActual);
+
+        const inputClass = esFuturo 
+            ? "w-full text-xs p-1.5 border rounded bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-500"
+            : "w-full text-xs p-1.5 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white";
+        
+        const stateAttr = esFuturo ? 'disabled' : 'required';
+
+        tbody.innerHTML += `
+            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 ${esFuturo ? 'bg-gray-50/50 dark:bg-gray-800/30' : ''}">
+                <td class="px-3 py-2 text-xs font-bold text-center text-gray-700 dark:text-gray-300">${dia}</td>
+                
+                <!-- Temperatura: -50.00 °C a 50.00 °C -->
+                <td class="px-2 py-1">
+                    <input type="number" step="0.01" min="-50" max="50" name="temp_${dia}" 
+                           value="${d.temperatura !== undefined ? Number(d.temperatura).toFixed(2) : ''}" 
+                           oninput="validarDecimales(this)" ${stateAttr} class="${inputClass}" 
+                           placeholder="-50 a 50">
+                </td>
+
+                <!-- Precipitaciones: >= 0.00 mm -->
+                <td class="px-2 py-1">
+                    <input type="number" step="0.01" min="0" max="2000" name="prec_${dia}" 
+                           value="${d.precipitaciones !== undefined ? Number(d.precipitaciones).toFixed(2) : ''}" 
+                           oninput="validarDecimales(this)" ${stateAttr} class="${inputClass}" 
+                           placeholder="≥ 0">
+                </td>
+
+                <!-- Vientos: >= 0.00 km/h -->
+                <td class="px-2 py-1">
+                    <input type="number" step="0.01" min="0" max="400" name="viento_${dia}" 
+                           value="${d.vientos !== undefined ? Number(d.vientos).toFixed(2) : ''}" 
+                           oninput="validarDecimales(this)" ${stateAttr} class="${inputClass}" 
+                           placeholder="≥ 0">
+                </td>
+
+                <!-- Humedad: 0.00 % a 100.00 % -->
+                <td class="px-2 py-1">
+                    <input type="number" step="0.01" min="0" max="100" name="hum_${dia}" 
+                           value="${d.humedad !== undefined ? Number(d.humedad).toFixed(2) : ''}" 
+                           oninput="validarDecimales(this)" ${stateAttr} class="${inputClass}" 
+                           placeholder="0 a 100%">
+                </td>
+            </tr>
+        `;
+    }
+}
+    // READ: Consultar datos guardados
+    async function consultarYCargarMes() {
+        const idEquipo = document.getElementById('modal_id_equipo').value;
+        const anio = document.getElementById('modal_anio').value;
+        const mes = document.getElementById('modal_mes').value;
+
+        const badge = document.getElementById('badgeEstadoCrud');
+        const btnEliminar = document.getElementById('btnEliminarMes');
+        const lblGuardar = document.getElementById('lblBtnGuardar');
+
+        if (!idEquipo || !anio || !mes) {
+            generarTablaDias();
+            badge.className = "px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-300";
+            badge.innerText = "Incompleto";
+            btnEliminar.classList.add('hidden');
+            return;
+        }
+
+        try {
+            const res = await fetch(`${URL_CARGAR}?id_equipo=${idEquipo}&anio=${anio}&mes=${mes}`);
+            const data = await res.json();
+
+            if (res.ok && data.status === 'success' && data.registros && data.registros.length > 0) {
+                // Modo Edición / Actualización
+                modoEdicion = true;
+                const mapaDatos = {};
+                data.registros.forEach(r => { mapaDatos[r.dia] = r; });
+                
+                generarTablaDias(mapaDatos);
+                badge.className = "px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300";
+                badge.innerText = `Datos Registrados (${data.registros.length} días)`;
+                lblGuardar.innerText = "Actualizar Mes";
+                btnEliminar.classList.remove('hidden');
+            } else {
+                // Modo Registro Nuevo
+                modoEdicion = false;
+                generarTablaDias();
+                badge.className = "px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300";
+                badge.innerText = "Nuevo Registro";
+                lblGuardar.innerText = "Guardar Mes";
+                btnEliminar.classList.add('hidden');
+            }
+        } catch (err) {
+            console.error("Error al consultar mes:", err);
+            generarTablaDias();
+        }
+    }
+
+    // CREATE / UPDATE: Guardar o Actualizar
+// 2. CREATE / UPDATE
+async function guardarDatosClimaticos(e) {
+    e.preventDefault();
+
+    const anio = parseInt(document.getElementById('modal_anio').value);
+    const mes = parseInt(document.getElementById('modal_mes').value);
+
+    if (!validarFechaNoFutura(anio, mes)) return;
+
+    const form = document.getElementById('formDatosClimaticos');
+    const formData = new FormData(form);
+    const endpointDestino = modoEdicion ? URL_ACTUALIZAR : URL_REGISTRAR;
+
+    Swal.fire({ title: 'Procesando datos...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+    try {
+        const response = await fetch(endpointDestino, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrfToken },
+            body: formData
+        });
+
+        const data = await response.json();
+        if (response.ok && data.status === 'success') {
+            Swal.fire('¡Éxito!', data.message, 'success');
+            consultarYCargarMes();
+        } else {
+            Swal.fire('Error', data.message || 'No se pudo guardar.', 'error');
+        }
+    } catch (err) {
+        Swal.fire('Error de Conexión', 'Ocurrió un fallo en la red al comunicarse con el servidor.', 'error');
+    }
+}
+    // DELETE: Eliminar datos del mes
+    async function eliminarMesClimatico() {
+        const idEquipo = document.getElementById('modal_id_equipo').value;
+        const anio = document.getElementById('modal_anio').value;
+        const mes = document.getElementById('modal_mes').value;
+
+        const confirmacion = await Swal.fire({
+            title: '¿Eliminar datos del mes?',
+            text: `Esta acción borrará permanentemente todas las lecturas registradas para el mes ${mes}/${anio}.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Sí, eliminar mes'
+        });
+
+        if (!confirmacion.isConfirmed) return;
+
+        const formData = new FormData();
+        formData.append('id_equipo', idEquipo);
+        formData.append('anio', anio);
+        formData.append('mes', mes);
+
+        Swal.fire({ title: 'Eliminando registros...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+        try {
+            const response = await fetch(URL_ELIMINAR, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken },
+                body: formData
+            });
+
+            const data = await response.json();
+            if (response.ok && data.status === 'success') {
+                Swal.fire('Eliminado', data.message || 'Se eliminaron los registros correctamente.', 'success');
+                consultarYCargarMes();
+            } else {
+                Swal.fire('Error', data.message || 'No se pudieron eliminar los registros.', 'error');
+            }
+        } catch (err) {
+            Swal.fire('Error de Conexión', 'Ocurrió un error al comunicarse con el servidor.', 'error');
+        }
     }
 
     function verImagenClimatica(url) {
@@ -141,7 +581,6 @@
     }
 
     async function abrirModalCarga() {
-        // Obtenemos los estados previamente cargados en el select principal para inyectarlos en el modal
         const opcionesEstados = document.getElementById('filtro_estado').innerHTML;
         
         const { value: formValues } = await Swal.fire({
@@ -201,7 +640,14 @@
             });
         }
     }
-
+function validarDecimales(input) {
+    if (input.value && input.value.includes('.')) {
+        const partes = input.value.split('.');
+        if (partes[1].length > 2) {
+            input.value = `${partes[0]}.${partes[1].substring(0, 2)}`;
+        }
+    }
+}
     function eliminarMapaClimatico(id) {
         Swal.fire({
             title: '¿Eliminar capa climática?',
@@ -232,8 +678,129 @@
         document.getElementById('buscadorClima').value = '';
         cargarTablaClimatica();
     }
+    function validarFechaNoFutura(anio, mes) {
+    const hoy = new Date();
+    const anioActual = hoy.getFullYear();
+    const mesActual = hoy.getMonth() + 1;
 
-    // Inicialización (Asegúrate de tener un endpoint /api/geografia/estados como en mapa_riesgo)
+    if (anio > anioActual || (anio === anioActual && mes > mesActual)) {
+        Swal.fire('Fecha Inválida', 'No se pueden consultar ni registrar datos de un año o mes futuro.', 'warning');
+        return false;
+    }
+    return true;
+}
+
+// 1. READ: Consultar datos del mes (petición GET)
+async function consultarYCargarMes() {
+    const idEquipo = document.getElementById('modal_id_equipo').value;
+    const anio = parseInt(document.getElementById('modal_anio').value);
+    const mes = parseInt(document.getElementById('modal_mes').value);
+
+    const badge = document.getElementById('badgeEstadoCrud');
+    const btnEliminar = document.getElementById('btnEliminarMes');
+    const lblGuardar = document.getElementById('lblBtnGuardar');
+
+    if (!idEquipo || !anio || !mes) {
+        generarTablaDias();
+        return;
+    }
+
+    // Validar que no sea una fecha futura
+    if (!validarFechaNoFutura(anio, mes)) {
+        document.getElementById('modal_mes').value = '';
+        generarTablaDias();
+        return;
+    }
+
+    try {
+        const res = await fetch(`${URL_CARGAR}?id_equipo=${idEquipo}&anio=${anio}&mes=${mes}`);
+        const data = await res.json();
+
+        if (res.ok && data.status === 'success' && data.registros && data.registros.length > 0) {
+            modoEdicion = true;
+            const mapaDatos = {};
+            data.registros.forEach(r => { mapaDatos[r.dia] = r; });
+
+            generarTablaDias(mapaDatos);
+            if (badge) {
+                badge.className = "px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-800";
+                badge.innerText = `Datos Cargados (${data.registros.length} días)`;
+            }
+            lblGuardar.innerText = "Actualizar Mes";
+            btnEliminar.classList.remove('hidden');
+        } else {
+            modoEdicion = false;
+            generarTablaDias();
+            if (badge) {
+                badge.className = "px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-800";
+                badge.innerText = "Nuevo Registro";
+            }
+            lblGuardar.innerText = "Guardar Mes";
+            btnEliminar.classList.add('hidden');
+        }
+    } catch (err) {
+        console.error("Error al consultar datos:", err);
+        generarTablaDias();
+    }
+}// 1. READ: Consultar datos del mes (petición GET)
+async function consultarYCargarMes() {
+    const idEquipo = document.getElementById('modal_id_equipo').value;
+    const anio = parseInt(document.getElementById('modal_anio').value);
+    const mes = parseInt(document.getElementById('modal_mes').value);
+
+    const badge = document.getElementById('badgeEstadoCrud');
+    const btnEliminar = document.getElementById('btnEliminarMes');
+    const lblGuardar = document.getElementById('lblBtnGuardar');
+
+    if (!idEquipo || !anio || !mes) {
+        generarTablaDias();
+        return;
+    }
+
+    // Validar que no sea una fecha futura
+    if (!validarFechaNoFutura(anio, mes)) {
+        document.getElementById('modal_mes').value = '';
+        generarTablaDias();
+        return;
+    }
+
+    try {
+        const res = await fetch(`${URL_CARGAR}?id_equipo=${idEquipo}&anio=${anio}&mes=${mes}`);
+        const data = await res.json();
+
+        if (res.ok && data.status === 'success' && data.registros && data.registros.length > 0) {
+            modoEdicion = true;
+            const mapaDatos = {};
+            data.registros.forEach(r => { mapaDatos[r.dia] = r; });
+
+            generarTablaDias(mapaDatos);
+            if (badge) {
+                badge.className = "px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-800";
+                badge.innerText = `Datos Cargados (${data.registros.length} días)`;
+            }
+            lblGuardar.innerText = "Actualizar Mes";
+            btnEliminar.classList.remove('hidden');
+        } else {
+            modoEdicion = false;
+            generarTablaDias();
+            if (badge) {
+                badge.className = "px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-800";
+                badge.innerText = "Nuevo Registro";
+            }
+            lblGuardar.innerText = "Guardar Mes";
+            btnEliminar.classList.add('hidden');
+        }
+    } catch (err) {
+        console.error("Error al consultar datos:", err);
+        generarTablaDias();
+    }
+}
+    function alCambiarAnio() {
+    // Limpia la tabla inmediatamente al cambiar el año para evitar mezclar registros anteriores
+    document.getElementById('tablaDiasBody').innerHTML = '';
+    consultarYCargarMes();
+    }
+
     document.addEventListener('DOMContentLoaded', () => { 
         fetch('/api/geografia/estados')
             .then(res => res.json())
@@ -244,6 +811,7 @@
                 });
             });
         cargarTablaClimatica(); 
+        cargarEquiposClimaticos();
     });
 </script>
 {% endblock %}
