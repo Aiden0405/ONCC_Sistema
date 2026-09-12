@@ -3,11 +3,13 @@ from flask_login import current_user, login_required
 
 from app import db
 from app.blueprints.core import core_bp
-from app.models.role import Permission, Role, Permiso
+from app.models.role import Permission, Role, Permiso, UserPermissionOverride
+from app.models.usuario import Usuario
 from app.services.auditoria import registrar_accion
 from app.services.notificacion import ServicioNotificacion
-from app.constants import KNOWN_PERMISSION_SLUGS
+from app.constants import KNOWN_PERMISSION_SLUGS, RBAC_MODULES
 from app.utils.authorization import current_role_id, is_superuser, verificar_permiso_dinamico
+from app.services.reportes import respuesta_csv
 
 
 # =============================================================================
@@ -20,6 +22,18 @@ def rol_index():
     verificar_permiso_dinamico('ver_roles')
     roles = Role.query.order_by(Role.id_rol).all()
     return render_template('roles/index.html', roles=roles)
+
+
+@core_bp.route('/admin/roles/reporte')
+@login_required
+def rol_reporte():
+    verificar_permiso_dinamico('reportes_roles')
+    roles = Role.query.order_by(Role.id_rol).all()
+    filas = [
+        (rol.id_rol, rol.nombre_rol, ', '.join(p.nombre_modulo for p in rol.permissions))
+        for rol in roles
+    ]
+    return respuesta_csv('reporte_roles.csv', ('ID', 'Rol', 'Permisos'), filas)
 
 
 @core_bp.route('/admin/roles/nuevo', methods=['GET', 'POST'])
@@ -64,7 +78,7 @@ def rol_nuevo():
 def rol_editar(rol_id):
     verificar_permiso_dinamico('editar_roles')
     
-    if int(rol_id) == 1 and current_role_id() != 1:
+    if int(rol_id) == 1 and not is_superuser():
         flash('No tiene jerarquía institucional para modificar el rol de Superusuario.', 'error')
         abort(403)
         
@@ -95,7 +109,7 @@ def rol_editar(rol_id):
 def rol_eliminar(rol_id):
     verificar_permiso_dinamico('eliminar_roles')
     
-    if int(rol_id) == 1 and current_role_id() != 1:
+    if int(rol_id) == 1 and not is_superuser():
         flash('Acceso denegado: El rol de Superusuario está blindado por el sistema.', 'error')
         abort(403)
         
@@ -124,30 +138,52 @@ def rol_eliminar(rol_id):
 def rol_gestionar_permisos(rol_id):
     verificar_permiso_dinamico('asignar_permisos_roles')
     
-    if int(rol_id) == 1 and current_role_id() != 1:
+    if int(rol_id) == 1 and not is_superuser():
         flash('No tiene jerarquía para alterar la matriz de accesos del Superusuario.', 'error')
         abort(403)
         
     rol = Role.query.get_or_404(rol_id)
     permisos = Permission.query.order_by(Permission.nombre_modulo).all()
+    permisos_por_nombre = {permiso.nombre_modulo: permiso for permiso in permisos}
+    matriz = [
+        (clave, modulo, [
+            (accion, permisos_por_nombre.get(slug))
+            for accion, slug in modulo['permissions'].items()
+            if permisos_por_nombre.get(slug)
+        ])
+        for clave, modulo in RBAC_MODULES.items()
+    ]
     
     if request.method == 'POST':
-        seleccion = request.form.getlist('permisos')
+        seleccion = {
+            int(pid) for pid in request.form.getlist('permisos')
+            if pid.isdigit()
+        }
+
+        for modulo in RBAC_MODULES.values():
+            acciones = modulo['permissions']
+            tiene_accion = any(
+                accion != 'leer'
+                and nombre in permisos_por_nombre
+                and permisos_por_nombre[nombre].id_modulo in seleccion
+                for accion, nombre in acciones.items()
+            )
+            permiso_leer = permisos_por_nombre.get(acciones['leer'])
+            if tiene_accion and permiso_leer:
+                seleccion.add(permiso_leer.id_modulo)
         
         try:
             Permiso.query.filter_by(id_rol=rol.id_rol).delete()
             
             for pid in seleccion:
-                if pid.isdigit():
-                    nueva_relacion = Permiso(id_rol=rol.id_rol, id_modulo=int(pid))
-                    db.session.add(nueva_relacion)
+                db.session.add(Permiso(id_rol=rol.id_rol, id_modulo=pid))
             
             db.session.commit()
             mensaje = f"Se actualizaron los permisos del rol '{rol.nombre_rol}'."
             ServicioNotificacion.notificar_por_permiso('gestionar_usuarios', mensaje, emisor_id=current_user.id_usuario)
             ServicioNotificacion.crear_aviso(id_usuario=current_user.id_usuario, mensaje=mensaje, categoria='Seguridad')
 
-            registrar_accion('Roles', rol.id_rol, 'ActualizarPermisos', current_user.nombre_usuario, detalle=f'Permisos actualizados para {rol.nombre_rol}: {seleccion}')
+            registrar_accion('Roles', rol.id_rol, 'ActualizarPermisos', current_user.nombre_usuario, detalle=f'Permisos actualizados para {rol.nombre_rol}: {sorted(seleccion)}')
             flash('Matriz de accesos actualizada con éxito.', 'success')
             
             # 🌟 CORRECCIÓN AQUÍ: Te mantiene en la lista de roles en lugar de mandarte a usuarios
@@ -160,7 +196,43 @@ def rol_gestionar_permisos(rol_id):
             # 🌟 CORRECCIÓN AQUÍ: En caso de error también te regresa de forma segura a roles
             return redirect(url_for('core.rol_index'))
 
-    return render_template('roles/permisos.html', rol=rol, permisos=permisos)
+    return render_template('roles/permisos.html', rol=rol, permisos=permisos, matriz=matriz)
+
+
+@core_bp.route('/admin/usuarios/<int:usuario_id>/permisos-excepciones', methods=['POST'])
+@login_required
+def usuario_permiso_excepcion(usuario_id):
+    """Aplica una excepción puntual sin modificar los permisos del rol."""
+    verificar_permiso_dinamico('asignar_permisos_roles')
+
+    usuario = Usuario.query.get_or_404(usuario_id)
+    permiso_id = request.form.get('permiso_id', type=int)
+    efecto = request.form.get('efecto')
+    if not permiso_id or efecto not in {'conceder', 'revocar', 'quitar'}:
+        flash('La excepción de permiso no es válida.', 'error')
+        return redirect(url_for('usuario.index'))
+
+    permiso = Permission.query.get_or_404(permiso_id)
+    override = UserPermissionOverride.query.get((usuario.id_usuario, permiso.id_modulo))
+    try:
+        if efecto == 'quitar':
+            if override:
+                db.session.delete(override)
+        elif override:
+            override.concedido = efecto == 'conceder'
+        else:
+            db.session.add(UserPermissionOverride(
+                id_usuario=usuario.id_usuario,
+                id_modulo=permiso.id_modulo,
+                concedido=efecto == 'conceder',
+            ))
+        db.session.commit()
+        flash('Excepción individual actualizada correctamente.', 'success')
+    except Exception:
+        db.session.rollback()
+        flash('No se pudo actualizar la excepción individual.', 'error')
+
+    return redirect(url_for('usuario.index'))
 
 
 # =============================================================================
@@ -179,6 +251,18 @@ def permiso_index():
     pagination = Permission.query.order_by(Permission.id_modulo).paginate(page=page, per_page=10)
     
     return render_template('roles/permisos_index.html', pagination=pagination, permisos=pagination.items)
+
+
+@core_bp.route('/admin/permisos/reporte')
+@login_required
+def permiso_reporte():
+    verificar_permiso_dinamico('reportes_permisos')
+    permisos = Permission.query.order_by(Permission.nombre_modulo).all()
+    filas = [
+        (permiso.id_modulo, permiso.nombre_modulo, permiso.descripcion_modulo or '', len(permiso.roles))
+        for permiso in permisos
+    ]
+    return respuesta_csv('reporte_permisos.csv', ('ID', 'Permiso', 'Descripción', 'Roles asignados'), filas)
 
 
 @core_bp.route('/admin/permisos/nuevo', methods=['GET', 'POST'])

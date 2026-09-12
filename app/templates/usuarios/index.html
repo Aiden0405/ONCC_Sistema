@@ -10,9 +10,10 @@
             <h1 class="text-2xl font-bold dark:text-white text-gray-800">Usuarios</h1>
             <p class="text-sm dark:text-gray-400 text-gray-500">Administración de autenticación, roles institucionales y acceso al sistema</p>
         </div>
-        <a href="{{ url_for('usuario.nuevo') }}" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md shadow-sm hover:bg-green-700 transition-colors text-sm font-medium">
-            <i data-lucide="user-plus" class="w-4 h-4 mr-2"></i> Nuevo Usuario
-        </a>
+        <div class="flex items-center gap-2">
+            {% if current_user.id_rol|int in (1, 2) or current_user.has_permission('reportes_usuarios') or current_user.rol == config.SUPER_ROLE_NAME %}<a href="{{ url_for('core.usuario_reporte') }}" class="inline-flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-100 text-sm font-medium"><i data-lucide="download" class="w-4 h-4 mr-1"></i> Reporte</a>{% endif %}
+            <a href="{{ url_for('usuario.nuevo') }}" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md shadow-sm hover:bg-green-700 transition-colors text-sm font-medium"><i data-lucide="user-plus" class="w-4 h-4 mr-2"></i> Nuevo Usuario</a>
+        </div>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -50,6 +51,7 @@
                         <th class="px-6 py-3 font-semibold">Correo Electrónico</th>
                         <th class="px-6 py-3 font-semibold">Rol Asignado</th>
                         <th class="px-6 py-3 font-semibold">Estatus</th>
+                        <th class="px-6 py-3 font-semibold">Permisos individuales</th>
                         <th class="px-6 py-3 text-right">Acciones Administrativas</th>
                     </tr>
                 </thead>
@@ -121,10 +123,49 @@
                                 </span>
                             {% endif %}
                         </td>
+
+                        <td class="px-6 py-4 align-top">
+                            {% if puede_gestionar_excepciones %}
+                            <details class="relative text-left">
+                                <summary class="inline-flex cursor-pointer items-center rounded-md bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-700 dark:bg-amber-900/20 dark:text-amber-300">
+                                    <i data-lucide="key-round" class="mr-1 h-3.5 w-3.5"></i> Configurar
+                                </summary>
+                                <form action="{{ url_for('core.usuario_permiso_excepcion', usuario_id=u.id_usuario) }}" method="post" class="absolute right-0 z-10 mt-2 w-72 rounded-md border border-amber-200 bg-white p-3 shadow-lg dark:border-amber-800 dark:bg-gray-800">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <select name="permiso_id" required class="mb-2 w-full rounded border border-gray-300 bg-white p-1.5 text-xs dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100">
+                                        <option value="">Seleccione un permiso</option>
+                                        {% for permiso in permisos %}
+                                        <option value="{{ permiso.id_modulo }}">{{ permiso.nombre_modulo|replace('_', ' ')|title }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="flex gap-1">
+                                        <select name="efecto" class="min-w-0 flex-1 rounded border border-gray-300 bg-white p-1.5 text-xs dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100">
+                                            <option value="conceder">Conceder</option>
+                                            <option value="revocar">Revocar</option>
+                                            <option value="quitar">Quitar excepción</option>
+                                        </select>
+                                        <button type="submit" class="rounded bg-amber-600 px-2 py-1.5 text-xs font-bold text-white hover:bg-amber-700">Aplicar</button>
+                                    </div>
+                                    {% if excepciones.get(u.id_usuario) %}
+                                    <div class="mt-2 border-t border-amber-200 pt-2 text-[11px] dark:border-amber-800">
+                                        {% for permiso_id, override in excepciones[u.id_usuario].items() %}
+                                        <div class="flex justify-between py-0.5">
+                                            <span>{{ override.permission_obj.nombre_modulo|replace('_', ' ')|title }}</span>
+                                            <strong>{{ 'Concedido' if override.concedido else 'Revocado' }}</strong>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </form>
+                            </details>
+                            {% else %}
+                            <span class="text-xs text-gray-400">No disponible</span>
+                            {% endif %}
+                        </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="5" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
+                        <td colspan="6" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
                             No hay cuentas de usuarios registradas bajo las directivas del ONCC.
                         </td>
                     </tr>

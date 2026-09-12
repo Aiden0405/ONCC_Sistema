@@ -6,6 +6,7 @@ from flask_login import login_user, logout_user
 from app import db
 from app.models.usuario import Usuario
 from app.models.password_reset import PasswordReset
+from app.utils.validation import validate_password
 
 
 class GestorSesion:
@@ -34,6 +35,10 @@ class GestorSesion:
         return token
 
     def confirmar_restauracion(self, token: str, nueva_password: str):
+        try:
+            validate_password(nueva_password)
+        except ValueError:
+            return False
         pr = PasswordReset.query.filter_by(token=token).first()
         if not pr or not pr.is_valid():
             return False

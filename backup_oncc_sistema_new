@@ -1,0 +1,3257 @@
+--
+-- PostgreSQL database dump
+--
+
+\restrict zy1KbQnKRJ6kiCoVZEHpe4zkFNqHETsrEVkyRmndropylacTJsgbCz5emQb3wC3
+
+-- Dumped from database version 17.10
+-- Dumped by pg_dump version 17.10
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- Name: postgis; Type: EXTENSION; Schema: -; Owner: -
+--
+
+CREATE EXTENSION IF NOT EXISTS postgis WITH SCHEMA public;
+
+
+--
+-- Name: EXTENSION postgis; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION postgis IS 'PostGIS geometry and geography spatial types and functions';
+
+
+--
+-- Name: actualizar_timestamp(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.actualizar_timestamp() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    NEW.actualizado_en = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.actualizar_timestamp() OWNER TO postgres;
+
+--
+-- Name: validar_previa_sensibilizacion(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.validar_previa_sensibilizacion() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    v_id_comunidad integer;
+    v_tiene_sensibilizacion integer;
+BEGIN
+    -- Obtener el id_comunidad asociado a la actividad del nuevo mapa
+    SELECT id_comunidad INTO v_id_comunidad
+    FROM public.actividad
+    WHERE id_actividad = NEW.id_actividad;
+
+    -- Verificar si existe alguna actividad del tipo 'SENSIBILIZACION' para esa comunidad
+    SELECT COUNT(*) INTO v_tiene_sensibilizacion
+    FROM public.actividad
+    WHERE id_comunidad = v_id_comunidad 
+      AND tipo_actividad = 'SENSIBILIZACION';
+
+    -- Si el conteo es cero, se bloquea la transacción y se levanta la excepción controlada
+    IF v_tiene_sensibilizacion = 0 THEN
+        RAISE EXCEPTION 'Restricción de ONCC: Error detectado en validar_previa_sensibilizacion. La comunidad asociada debe contar con una actividad previa de sensibilización antes de registrar una matriz cartográfica.';
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.validar_previa_sensibilizacion() OWNER TO postgres;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- Name: actividad; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.actividad (
+    id_actividad integer NOT NULL,
+    fecha_actividad date NOT NULL,
+    tipo_actividad character varying(50) NOT NULL,
+    id_comunidad integer NOT NULL,
+    id_nivel integer
+);
+
+
+ALTER TABLE public.actividad OWNER TO postgres;
+
+--
+-- Name: actividad_id_actividad_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.actividad_id_actividad_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.actividad_id_actividad_seq OWNER TO postgres;
+
+--
+-- Name: actividad_id_actividad_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.actividad_id_actividad_seq OWNED BY public.actividad.id_actividad;
+
+
+--
+-- Name: actividad_tecnico; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.actividad_tecnico (
+    id_actividad_tecnico integer NOT NULL,
+    id_actividad integer NOT NULL,
+    id_tecnico integer NOT NULL
+);
+
+
+ALTER TABLE public.actividad_tecnico OWNER TO postgres;
+
+--
+-- Name: actividad_tecnico_id_actividad_tecnico_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.actividad_tecnico_id_actividad_tecnico_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.actividad_tecnico_id_actividad_tecnico_seq OWNER TO postgres;
+
+--
+-- Name: actividad_tecnico_id_actividad_tecnico_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.actividad_tecnico_id_actividad_tecnico_seq OWNED BY public.actividad_tecnico.id_actividad_tecnico;
+
+
+--
+-- Name: alembic_version; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.alembic_version (
+    version_num character varying(32) NOT NULL
+);
+
+
+ALTER TABLE public.alembic_version OWNER TO postgres;
+
+--
+-- Name: catalogo_simbologia; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.catalogo_simbologia (
+    id_simbologia integer NOT NULL,
+    categoria character varying(50) NOT NULL,
+    nombre_elemento character varying(100) NOT NULL,
+    tipo_geometria character varying(20) NOT NULL,
+    estilo_defecto jsonb DEFAULT '{}'::jsonb NOT NULL
+);
+
+
+ALTER TABLE public.catalogo_simbologia OWNER TO postgres;
+
+--
+-- Name: catalogo_simbologia_id_simbologia_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.catalogo_simbologia_id_simbologia_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.catalogo_simbologia_id_simbologia_seq OWNER TO postgres;
+
+--
+-- Name: catalogo_simbologia_id_simbologia_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.catalogo_simbologia_id_simbologia_seq OWNED BY public.catalogo_simbologia.id_simbologia;
+
+
+--
+-- Name: categoria; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.categoria (
+    id_categoria integer NOT NULL,
+    nombre_categoria character varying(50) NOT NULL,
+    descripcion_categoria text NOT NULL
+);
+
+
+ALTER TABLE public.categoria OWNER TO postgres;
+
+--
+-- Name: categoria_id_categoria_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.categoria_id_categoria_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.categoria_id_categoria_seq OWNER TO postgres;
+
+--
+-- Name: categoria_id_categoria_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.categoria_id_categoria_seq OWNED BY public.categoria.id_categoria;
+
+
+--
+-- Name: comunidad; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.comunidad (
+    id_comunidad integer NOT NULL,
+    id_parroquia integer NOT NULL,
+    nombre_comunidad character varying(180) NOT NULL
+);
+
+
+ALTER TABLE public.comunidad OWNER TO postgres;
+
+--
+-- Name: comunidad_id_comunidad_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.comunidad_id_comunidad_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.comunidad_id_comunidad_seq OWNER TO postgres;
+
+--
+-- Name: comunidad_id_comunidad_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.comunidad_id_comunidad_seq OWNED BY public.comunidad.id_comunidad;
+
+
+--
+-- Name: divulgacion; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.divulgacion (
+    id_divulgacion integer NOT NULL,
+    id_actividad integer NOT NULL,
+    nombre_divulgacion character varying(100) NOT NULL,
+    descripcion_divulgacion text NOT NULL,
+    permiso_divulgacion character varying(50) NOT NULL
+);
+
+
+ALTER TABLE public.divulgacion OWNER TO postgres;
+
+--
+-- Name: divulgacion_id_divulgacion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.divulgacion_id_divulgacion_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.divulgacion_id_divulgacion_seq OWNER TO postgres;
+
+--
+-- Name: divulgacion_id_divulgacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.divulgacion_id_divulgacion_seq OWNED BY public.divulgacion.id_divulgacion;
+
+
+--
+-- Name: elementos_mapariesgo; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.elementos_mapariesgo (
+    id_elemento integer NOT NULL,
+    id_mapa_riesgo integer NOT NULL,
+    id_simbologia integer NOT NULL,
+    descripcion_especifica text,
+    geom public.geometry(Geometry,4326) NOT NULL,
+    estilo_personalizado jsonb,
+    nombre_propio character varying(150)
+);
+
+
+ALTER TABLE public.elementos_mapariesgo OWNER TO postgres;
+
+--
+-- Name: elementos_mapariesgo_id_elemento_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.elementos_mapariesgo_id_elemento_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.elementos_mapariesgo_id_elemento_seq OWNER TO postgres;
+
+--
+-- Name: elementos_mapariesgo_id_elemento_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.elementos_mapariesgo_id_elemento_seq OWNED BY public.elementos_mapariesgo.id_elemento;
+
+
+--
+-- Name: equipo; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.equipo (
+    id_equipo integer NOT NULL,
+    id_modelos_equipos integer NOT NULL,
+    id_ubicacion_actual integer,
+    codigo_interno character varying(50) NOT NULL,
+    numero_serie character varying(250),
+    estado character varying(30) NOT NULL,
+    fecha_ingreso date NOT NULL,
+    observaciones text,
+    condicion character varying(50),
+    ultimo_mantenimiento date,
+    responsable character varying(120)
+);
+
+
+ALTER TABLE public.equipo OWNER TO postgres;
+
+--
+-- Name: equipo_id_equipo_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.equipo_id_equipo_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.equipo_id_equipo_seq OWNER TO postgres;
+
+--
+-- Name: equipo_id_equipo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.equipo_id_equipo_seq OWNED BY public.equipo.id_equipo;
+
+
+--
+-- Name: equipo_monitoreo; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.equipo_monitoreo (
+    id_monitoreo_equipo integer NOT NULL,
+    id_equipo integer NOT NULL,
+    id_monitoreo integer NOT NULL
+);
+
+
+ALTER TABLE public.equipo_monitoreo OWNER TO postgres;
+
+--
+-- Name: equipo_monitoreo_id_monitoreo_equipo_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.equipo_monitoreo_id_monitoreo_equipo_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.equipo_monitoreo_id_monitoreo_equipo_seq OWNER TO postgres;
+
+--
+-- Name: equipo_monitoreo_id_monitoreo_equipo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.equipo_monitoreo_id_monitoreo_equipo_seq OWNED BY public.equipo_monitoreo.id_monitoreo_equipo;
+
+
+--
+-- Name: estado; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.estado (
+    id_estado integer NOT NULL,
+    nombre_estado character varying(80) NOT NULL
+);
+
+
+ALTER TABLE public.estado OWNER TO postgres;
+
+--
+-- Name: estado_id_estado_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.estado_id_estado_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.estado_id_estado_seq OWNER TO postgres;
+
+--
+-- Name: estado_id_estado_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.estado_id_estado_seq OWNED BY public.estado.id_estado;
+
+
+--
+-- Name: formacion; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.formacion (
+    id_formacion integer NOT NULL,
+    id_actividad integer NOT NULL,
+    id_institucion integer NOT NULL,
+    nombre_formacion text NOT NULL,
+    tipo_actividad character varying(50) DEFAULT 'FORMACION'::character varying NOT NULL,
+    id_nivel integer NOT NULL,
+    CONSTRAINT chk_solo_formacion CHECK (((tipo_actividad)::text = 'FORMACION'::text))
+);
+
+
+ALTER TABLE public.formacion OWNER TO postgres;
+
+--
+-- Name: formacion_id_formacion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.formacion_id_formacion_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.formacion_id_formacion_seq OWNER TO postgres;
+
+--
+-- Name: formacion_id_formacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.formacion_id_formacion_seq OWNED BY public.formacion.id_formacion;
+
+
+--
+-- Name: imagenes; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.imagenes (
+    id_imagen bigint NOT NULL,
+    url_imagen text NOT NULL,
+    nombre_imagen character varying(100) NOT NULL,
+    fecha_imagen date NOT NULL
+);
+
+
+ALTER TABLE public.imagenes OWNER TO postgres;
+
+--
+-- Name: imagenes_actividad; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.imagenes_actividad (
+    id_imagenes_actividad integer NOT NULL,
+    id_imagen bigint NOT NULL,
+    id_actividad integer NOT NULL
+);
+
+
+ALTER TABLE public.imagenes_actividad OWNER TO postgres;
+
+--
+-- Name: imagenes_actividad_id_imagenes_actividad_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.imagenes_actividad_id_imagenes_actividad_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.imagenes_actividad_id_imagenes_actividad_seq OWNER TO postgres;
+
+--
+-- Name: imagenes_actividad_id_imagenes_actividad_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.imagenes_actividad_id_imagenes_actividad_seq OWNED BY public.imagenes_actividad.id_imagenes_actividad;
+
+
+--
+-- Name: imagenes_id_imagen_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.imagenes_id_imagen_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.imagenes_id_imagen_seq OWNER TO postgres;
+
+--
+-- Name: imagenes_id_imagen_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.imagenes_id_imagen_seq OWNED BY public.imagenes.id_imagen;
+
+
+--
+-- Name: institucion; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.institucion (
+    id_institucion integer NOT NULL,
+    id_comunidad integer,
+    nombre_institucion character varying(100) NOT NULL,
+    tipo_institucion character varying(50) NOT NULL,
+    direccion_exacta character varying(250) NOT NULL,
+    numero_contacto character varying(25) NOT NULL,
+    correo_electronico character varying(100) NOT NULL
+);
+
+
+ALTER TABLE public.institucion OWNER TO postgres;
+
+--
+-- Name: institucion_id_institucion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.institucion_id_institucion_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.institucion_id_institucion_seq OWNER TO postgres;
+
+--
+-- Name: institucion_id_institucion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.institucion_id_institucion_seq OWNED BY public.institucion.id_institucion;
+
+
+--
+-- Name: mapa_climatico; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.mapa_climatico (
+    id_mapa_climatico integer NOT NULL,
+    id_estado integer NOT NULL,
+    tipo_de_mapa character varying(50) NOT NULL,
+    url_mapa character varying(250) NOT NULL,
+    fecha_creacion date NOT NULL
+);
+
+
+ALTER TABLE public.mapa_climatico OWNER TO postgres;
+
+--
+-- Name: mapa_climatico_id_mapa_climatico_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.mapa_climatico_id_mapa_climatico_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.mapa_climatico_id_mapa_climatico_seq OWNER TO postgres;
+
+--
+-- Name: mapa_climatico_id_mapa_climatico_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.mapa_climatico_id_mapa_climatico_seq OWNED BY public.mapa_climatico.id_mapa_climatico;
+
+
+--
+-- Name: mapas_riesgo; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.mapas_riesgo (
+    id_mapa_riesgo integer NOT NULL,
+    nombre character varying(200) NOT NULL,
+    fecha_creacion timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    poligonal_comunidad public.geometry(MultiPolygon,4326),
+    ruta_imagen_mapa character varying(255),
+    id_actividad integer NOT NULL,
+    tipo_actividad character varying(20),
+    descripcion text,
+    ruta_kml character varying(255),
+    limites_layout jsonb
+);
+
+
+ALTER TABLE public.mapas_riesgo OWNER TO postgres;
+
+--
+-- Name: mapas_riesgo_id_mapa_riesgo_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.mapas_riesgo_id_mapa_riesgo_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.mapas_riesgo_id_mapa_riesgo_seq OWNER TO postgres;
+
+--
+-- Name: mapas_riesgo_id_mapa_riesgo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.mapas_riesgo_id_mapa_riesgo_seq OWNED BY public.mapas_riesgo.id_mapa_riesgo;
+
+
+--
+-- Name: marca; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.marca (
+    id_marca integer NOT NULL,
+    nombre_marca character varying(40) NOT NULL
+);
+
+
+ALTER TABLE public.marca OWNER TO postgres;
+
+--
+-- Name: marca_id_marca_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.marca_id_marca_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.marca_id_marca_seq OWNER TO postgres;
+
+--
+-- Name: marca_id_marca_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.marca_id_marca_seq OWNED BY public.marca.id_marca;
+
+
+--
+-- Name: material; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.material (
+    id_material integer NOT NULL,
+    id_nivel integer NOT NULL,
+    id_tema integer NOT NULL,
+    url character varying(250) NOT NULL
+);
+
+
+ALTER TABLE public.material OWNER TO postgres;
+
+--
+-- Name: material_id_material_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.material_id_material_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.material_id_material_seq OWNER TO postgres;
+
+--
+-- Name: material_id_material_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.material_id_material_seq OWNED BY public.material.id_material;
+
+
+--
+-- Name: modelo; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.modelo (
+    id_modelo integer NOT NULL,
+    id_marca integer NOT NULL,
+    nombre_modelo character varying(100) NOT NULL
+);
+
+
+ALTER TABLE public.modelo OWNER TO postgres;
+
+--
+-- Name: modelo_id_modelo_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.modelo_id_modelo_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.modelo_id_modelo_seq OWNER TO postgres;
+
+--
+-- Name: modelo_id_modelo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.modelo_id_modelo_seq OWNED BY public.modelo.id_modelo;
+
+
+--
+-- Name: modelos_equipo; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.modelos_equipo (
+    id_modelos_equipo integer NOT NULL,
+    id_categoria integer NOT NULL,
+    nombre_modelos_equipo character varying(100) NOT NULL,
+    id_modelo integer
+);
+
+
+ALTER TABLE public.modelos_equipo OWNER TO postgres;
+
+--
+-- Name: modelos_equipo_id_modelos_equipo_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.modelos_equipo_id_modelos_equipo_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.modelos_equipo_id_modelos_equipo_seq OWNER TO postgres;
+
+--
+-- Name: modelos_equipo_id_modelos_equipo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.modelos_equipo_id_modelos_equipo_seq OWNED BY public.modelos_equipo.id_modelos_equipo;
+
+
+--
+-- Name: monitoreo; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.monitoreo (
+    id_monitoreo integer NOT NULL,
+    id_actividad integer NOT NULL,
+    nombre_monitoreo character varying(100) NOT NULL,
+    tipo_actividad character varying(50) DEFAULT 'MONITOREO'::character varying NOT NULL,
+    CONSTRAINT chk_solo_monitoreo CHECK (((tipo_actividad)::text = 'MONITOREO'::text))
+);
+
+
+ALTER TABLE public.monitoreo OWNER TO postgres;
+
+--
+-- Name: monitoreo_id_monitoreo_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.monitoreo_id_monitoreo_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.monitoreo_id_monitoreo_seq OWNER TO postgres;
+
+--
+-- Name: monitoreo_id_monitoreo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.monitoreo_id_monitoreo_seq OWNED BY public.monitoreo.id_monitoreo;
+
+
+--
+-- Name: movimiento_equipo; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.movimiento_equipo (
+    id_movimiento integer NOT NULL,
+    id_equipo integer NOT NULL,
+    fecha_movimiento date DEFAULT CURRENT_DATE NOT NULL,
+    ubicacion_origen character varying(150),
+    ubicacion_destino character varying(150),
+    motivo_responsable text,
+    creado_en timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public.movimiento_equipo OWNER TO postgres;
+
+--
+-- Name: movimiento_equipo_id_movimiento_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.movimiento_equipo_id_movimiento_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.movimiento_equipo_id_movimiento_seq OWNER TO postgres;
+
+--
+-- Name: movimiento_equipo_id_movimiento_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.movimiento_equipo_id_movimiento_seq OWNED BY public.movimiento_equipo.id_movimiento;
+
+
+--
+-- Name: movimientos; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.movimientos (
+    id_movimientos integer NOT NULL,
+    id_equipo integer NOT NULL,
+    id_ubicacion_origen integer,
+    id_ubicacion_destino integer NOT NULL,
+    tipo_operacion character varying(50) NOT NULL,
+    fecha_movimiento timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public.movimientos OWNER TO postgres;
+
+--
+-- Name: movimientos_id_movimientos_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.movimientos_id_movimientos_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.movimientos_id_movimientos_seq OWNER TO postgres;
+
+--
+-- Name: movimientos_id_movimientos_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.movimientos_id_movimientos_seq OWNED BY public.movimientos.id_movimientos;
+
+
+--
+-- Name: municipio; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.municipio (
+    id_municipio integer NOT NULL,
+    id_estado integer NOT NULL,
+    nombre_municipio character varying(120) NOT NULL
+);
+
+
+ALTER TABLE public.municipio OWNER TO postgres;
+
+--
+-- Name: municipio_id_municipio_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.municipio_id_municipio_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.municipio_id_municipio_seq OWNER TO postgres;
+
+--
+-- Name: municipio_id_municipio_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.municipio_id_municipio_seq OWNED BY public.municipio.id_municipio;
+
+
+--
+-- Name: nivel; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.nivel (
+    id_nivel integer NOT NULL,
+    nombre_nivel character varying(80) NOT NULL,
+    descripcion text NOT NULL
+);
+
+
+ALTER TABLE public.nivel OWNER TO postgres;
+
+--
+-- Name: nivel_id_nivel_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.nivel_id_nivel_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.nivel_id_nivel_seq OWNER TO postgres;
+
+--
+-- Name: nivel_id_nivel_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.nivel_id_nivel_seq OWNED BY public.nivel.id_nivel;
+
+
+--
+-- Name: parroquia; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.parroquia (
+    id_parroquia integer NOT NULL,
+    id_municipio integer NOT NULL,
+    nombre_parroquia character varying(120) NOT NULL
+);
+
+
+ALTER TABLE public.parroquia OWNER TO postgres;
+
+--
+-- Name: parroquia_id_parroquia_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.parroquia_id_parroquia_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.parroquia_id_parroquia_seq OWNER TO postgres;
+
+--
+-- Name: parroquia_id_parroquia_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.parroquia_id_parroquia_seq OWNED BY public.parroquia.id_parroquia;
+
+
+--
+-- Name: publicaciones; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.publicaciones (
+    id_publicacion integer NOT NULL,
+    id_divulgacion integer,
+    tipo character varying(40) NOT NULL,
+    titulo_publicacion character varying(180) NOT NULL,
+    membrete text,
+    resumen text,
+    contenido text,
+    estado_publicacion character varying(20) NOT NULL,
+    fecha_publicacion date NOT NULL,
+    publicado_en timestamp without time zone,
+    creado_en timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    actualizado_en timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    prioridad integer DEFAULT 1 NOT NULL,
+    id_usuario integer
+);
+
+
+ALTER TABLE public.publicaciones OWNER TO postgres;
+
+--
+-- Name: publicaciones_id_publicacion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.publicaciones_id_publicacion_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.publicaciones_id_publicacion_seq OWNER TO postgres;
+
+--
+-- Name: publicaciones_id_publicacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.publicaciones_id_publicacion_seq OWNED BY public.publicaciones.id_publicacion;
+
+
+--
+-- Name: registros_climaticos; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.registros_climaticos (
+    id_registro bigint NOT NULL,
+    fecha_registro date NOT NULL,
+    id_equipo integer NOT NULL,
+    id_mapa_climatico integer,
+    temperatura real NOT NULL,
+    precipitaciones real NOT NULL,
+    vientos real NOT NULL,
+    humedad real NOT NULL
+);
+
+
+ALTER TABLE public.registros_climaticos OWNER TO postgres;
+
+--
+-- Name: registros_climaticos_id_registro_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.registros_climaticos_id_registro_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.registros_climaticos_id_registro_seq OWNER TO postgres;
+
+--
+-- Name: registros_climaticos_id_registro_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.registros_climaticos_id_registro_seq OWNED BY public.registros_climaticos.id_registro;
+
+
+--
+-- Name: sensibilizacion; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.sensibilizacion (
+    id_sensibilizacion integer NOT NULL,
+    id_actividad integer NOT NULL,
+    nombre_sensibilizacion text NOT NULL,
+    tipo_actividad character varying(50) DEFAULT 'SENSIBILIZACION'::character varying NOT NULL,
+    id_nivel integer NOT NULL,
+    CONSTRAINT chk_solo_sensibilizacion CHECK (((tipo_actividad)::text = 'SENSIBILIZACION'::text))
+);
+
+
+ALTER TABLE public.sensibilizacion OWNER TO postgres;
+
+--
+-- Name: sensibilizacion_id_sensibilizacion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.sensibilizacion_id_sensibilizacion_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.sensibilizacion_id_sensibilizacion_seq OWNER TO postgres;
+
+--
+-- Name: sensibilizacion_id_sensibilizacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.sensibilizacion_id_sensibilizacion_seq OWNED BY public.sensibilizacion.id_sensibilizacion;
+
+
+--
+-- Name: tecnicos; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.tecnicos (
+    id_tecnico integer NOT NULL,
+    cedula character varying(15) NOT NULL,
+    nombres character varying(60) NOT NULL,
+    apellidos character varying(60) NOT NULL,
+    id_usuario integer,
+    especialidad character varying(100)
+);
+
+
+ALTER TABLE public.tecnicos OWNER TO postgres;
+
+--
+-- Name: tecnicos_id_tecnico_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.tecnicos_id_tecnico_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.tecnicos_id_tecnico_seq OWNER TO postgres;
+
+--
+-- Name: tecnicos_id_tecnico_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.tecnicos_id_tecnico_seq OWNED BY public.tecnicos.id_tecnico;
+
+
+--
+-- Name: tema; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.tema (
+    id_tema integer NOT NULL,
+    nombre_tema character varying(100) NOT NULL,
+    descripcion_tema text
+);
+
+
+ALTER TABLE public.tema OWNER TO postgres;
+
+--
+-- Name: tema_id_tema_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.tema_id_tema_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.tema_id_tema_seq OWNER TO postgres;
+
+--
+-- Name: tema_id_tema_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.tema_id_tema_seq OWNED BY public.tema.id_tema;
+
+
+--
+-- Name: ubicacion; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.ubicacion (
+    id_ubicacion integer NOT NULL,
+    id_parroquia integer NOT NULL,
+    nombre_ubicacion character varying(100) NOT NULL,
+    geom public.geometry(Point,4326)
+);
+
+
+ALTER TABLE public.ubicacion OWNER TO postgres;
+
+--
+-- Name: ubicacion_id_ubicacion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.ubicacion_id_ubicacion_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.ubicacion_id_ubicacion_seq OWNER TO postgres;
+
+--
+-- Name: ubicacion_id_ubicacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.ubicacion_id_ubicacion_seq OWNED BY public.ubicacion.id_ubicacion;
+
+
+--
+-- Name: visitas_portal; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.visitas_portal (
+    id integer NOT NULL,
+    mes character varying(7) NOT NULL,
+    creado_en timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public.visitas_portal OWNER TO postgres;
+
+--
+-- Name: visitas_portal_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.visitas_portal_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.visitas_portal_id_seq OWNER TO postgres;
+
+--
+-- Name: visitas_portal_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.visitas_portal_id_seq OWNED BY public.visitas_portal.id;
+
+
+--
+-- Name: actividad id_actividad; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.actividad ALTER COLUMN id_actividad SET DEFAULT nextval('public.actividad_id_actividad_seq'::regclass);
+
+
+--
+-- Name: actividad_tecnico id_actividad_tecnico; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.actividad_tecnico ALTER COLUMN id_actividad_tecnico SET DEFAULT nextval('public.actividad_tecnico_id_actividad_tecnico_seq'::regclass);
+
+
+--
+-- Name: catalogo_simbologia id_simbologia; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.catalogo_simbologia ALTER COLUMN id_simbologia SET DEFAULT nextval('public.catalogo_simbologia_id_simbologia_seq'::regclass);
+
+
+--
+-- Name: categoria id_categoria; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.categoria ALTER COLUMN id_categoria SET DEFAULT nextval('public.categoria_id_categoria_seq'::regclass);
+
+
+--
+-- Name: comunidad id_comunidad; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.comunidad ALTER COLUMN id_comunidad SET DEFAULT nextval('public.comunidad_id_comunidad_seq'::regclass);
+
+
+--
+-- Name: divulgacion id_divulgacion; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.divulgacion ALTER COLUMN id_divulgacion SET DEFAULT nextval('public.divulgacion_id_divulgacion_seq'::regclass);
+
+
+--
+-- Name: elementos_mapariesgo id_elemento; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.elementos_mapariesgo ALTER COLUMN id_elemento SET DEFAULT nextval('public.elementos_mapariesgo_id_elemento_seq'::regclass);
+
+
+--
+-- Name: equipo id_equipo; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.equipo ALTER COLUMN id_equipo SET DEFAULT nextval('public.equipo_id_equipo_seq'::regclass);
+
+
+--
+-- Name: equipo_monitoreo id_monitoreo_equipo; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.equipo_monitoreo ALTER COLUMN id_monitoreo_equipo SET DEFAULT nextval('public.equipo_monitoreo_id_monitoreo_equipo_seq'::regclass);
+
+
+--
+-- Name: estado id_estado; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.estado ALTER COLUMN id_estado SET DEFAULT nextval('public.estado_id_estado_seq'::regclass);
+
+
+--
+-- Name: formacion id_formacion; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.formacion ALTER COLUMN id_formacion SET DEFAULT nextval('public.formacion_id_formacion_seq'::regclass);
+
+
+--
+-- Name: imagenes id_imagen; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.imagenes ALTER COLUMN id_imagen SET DEFAULT nextval('public.imagenes_id_imagen_seq'::regclass);
+
+
+--
+-- Name: imagenes_actividad id_imagenes_actividad; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.imagenes_actividad ALTER COLUMN id_imagenes_actividad SET DEFAULT nextval('public.imagenes_actividad_id_imagenes_actividad_seq'::regclass);
+
+
+--
+-- Name: institucion id_institucion; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.institucion ALTER COLUMN id_institucion SET DEFAULT nextval('public.institucion_id_institucion_seq'::regclass);
+
+
+--
+-- Name: mapa_climatico id_mapa_climatico; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.mapa_climatico ALTER COLUMN id_mapa_climatico SET DEFAULT nextval('public.mapa_climatico_id_mapa_climatico_seq'::regclass);
+
+
+--
+-- Name: mapas_riesgo id_mapa_riesgo; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.mapas_riesgo ALTER COLUMN id_mapa_riesgo SET DEFAULT nextval('public.mapas_riesgo_id_mapa_riesgo_seq'::regclass);
+
+
+--
+-- Name: marca id_marca; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.marca ALTER COLUMN id_marca SET DEFAULT nextval('public.marca_id_marca_seq'::regclass);
+
+
+--
+-- Name: material id_material; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.material ALTER COLUMN id_material SET DEFAULT nextval('public.material_id_material_seq'::regclass);
+
+
+--
+-- Name: modelo id_modelo; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.modelo ALTER COLUMN id_modelo SET DEFAULT nextval('public.modelo_id_modelo_seq'::regclass);
+
+
+--
+-- Name: modelos_equipo id_modelos_equipo; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.modelos_equipo ALTER COLUMN id_modelos_equipo SET DEFAULT nextval('public.modelos_equipo_id_modelos_equipo_seq'::regclass);
+
+
+--
+-- Name: monitoreo id_monitoreo; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.monitoreo ALTER COLUMN id_monitoreo SET DEFAULT nextval('public.monitoreo_id_monitoreo_seq'::regclass);
+
+
+--
+-- Name: movimiento_equipo id_movimiento; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.movimiento_equipo ALTER COLUMN id_movimiento SET DEFAULT nextval('public.movimiento_equipo_id_movimiento_seq'::regclass);
+
+
+--
+-- Name: movimientos id_movimientos; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.movimientos ALTER COLUMN id_movimientos SET DEFAULT nextval('public.movimientos_id_movimientos_seq'::regclass);
+
+
+--
+-- Name: municipio id_municipio; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.municipio ALTER COLUMN id_municipio SET DEFAULT nextval('public.municipio_id_municipio_seq'::regclass);
+
+
+--
+-- Name: nivel id_nivel; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.nivel ALTER COLUMN id_nivel SET DEFAULT nextval('public.nivel_id_nivel_seq'::regclass);
+
+
+--
+-- Name: parroquia id_parroquia; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.parroquia ALTER COLUMN id_parroquia SET DEFAULT nextval('public.parroquia_id_parroquia_seq'::regclass);
+
+
+--
+-- Name: publicaciones id_publicacion; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.publicaciones ALTER COLUMN id_publicacion SET DEFAULT nextval('public.publicaciones_id_publicacion_seq'::regclass);
+
+
+--
+-- Name: registros_climaticos id_registro; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.registros_climaticos ALTER COLUMN id_registro SET DEFAULT nextval('public.registros_climaticos_id_registro_seq'::regclass);
+
+
+--
+-- Name: sensibilizacion id_sensibilizacion; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.sensibilizacion ALTER COLUMN id_sensibilizacion SET DEFAULT nextval('public.sensibilizacion_id_sensibilizacion_seq'::regclass);
+
+
+--
+-- Name: tecnicos id_tecnico; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.tecnicos ALTER COLUMN id_tecnico SET DEFAULT nextval('public.tecnicos_id_tecnico_seq'::regclass);
+
+
+--
+-- Name: tema id_tema; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.tema ALTER COLUMN id_tema SET DEFAULT nextval('public.tema_id_tema_seq'::regclass);
+
+
+--
+-- Name: ubicacion id_ubicacion; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.ubicacion ALTER COLUMN id_ubicacion SET DEFAULT nextval('public.ubicacion_id_ubicacion_seq'::regclass);
+
+
+--
+-- Name: visitas_portal id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.visitas_portal ALTER COLUMN id SET DEFAULT nextval('public.visitas_portal_id_seq'::regclass);
+
+
+--
+-- Data for Name: actividad; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.actividad (id_actividad, fecha_actividad, tipo_actividad, id_comunidad, id_nivel) FROM stdin;
+7	2026-07-10	MAPA_RIESGO	5	\N
+9	2026-01-01	FORMACION	11	1
+10	2026-01-01	SENSIBILIZACION	11	2
+11	2026-01-02	FORMACION	5	1
+12	2026-01-02	SENSIBILIZACION	5	1
+\.
+
+
+--
+-- Data for Name: actividad_tecnico; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.actividad_tecnico (id_actividad_tecnico, id_actividad, id_tecnico) FROM stdin;
+\.
+
+
+--
+-- Data for Name: alembic_version; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.alembic_version (version_num) FROM stdin;
+c3d4e5f6a7b8
+\.
+
+
+--
+-- Data for Name: catalogo_simbologia; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.catalogo_simbologia (id_simbologia, categoria, nombre_elemento, tipo_geometria, estilo_defecto) FROM stdin;
+2	Recurso	Ambulatorio	Point	{"isIcon": true, "iconUrl": "/static/uploads/simbologia/1784273357_hospital-2_icon-icons.com_66067.webp", "iconSize": [30, 30]}
+3	Recurso	mortal	Polygon	{"color": "#ef4444", "weight": 2, "fillColor": "#ef4444", "fillOpacity": 0.7, "fillPattern": "grid"}
+4	Recurso	caminos de tierra	LineString	{"color": "#16a34a", "weight": 4, "dashArray": "10, 10"}
+1	Riesgo	Inundación	Polygon	{"color": "#ef4444", "weight": 2, "fillColor": "#ef4444", "fillOpacity": 0.7, "fillPattern": "grid"}
+\.
+
+
+--
+-- Data for Name: categoria; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.categoria (id_categoria, nombre_categoria, descripcion_categoria) FROM stdin;
+2	General	Categoría automática del sistema
+\.
+
+
+--
+-- Data for Name: comunidad; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.comunidad (id_comunidad, id_parroquia, nombre_comunidad) FROM stdin;
+5	8	urb.la caruciena
+11	14	Las Flores
+44	30	Las Mercedes
+\.
+
+
+--
+-- Data for Name: divulgacion; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.divulgacion (id_divulgacion, id_actividad, nombre_divulgacion, descripcion_divulgacion, permiso_divulgacion) FROM stdin;
+1	7	Jornada comunitaria	Es un boletin	Público
+\.
+
+
+--
+-- Data for Name: elementos_mapariesgo; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.elementos_mapariesgo (id_elemento, id_mapa_riesgo, id_simbologia, descripcion_especifica, geom, estilo_personalizado, nombre_propio) FROM stdin;
+37	15	2		0101000020E610000053CE177B2F8050C03F8BA548BE021E40	null	
+\.
+
+
+--
+-- Data for Name: equipo; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.equipo (id_equipo, id_modelos_equipos, id_ubicacion_actual, codigo_interno, numero_serie, estado, fecha_ingreso, observaciones, condicion, ultimo_mantenimiento, responsable) FROM stdin;
+1	3	3	EMA-005	\N	Disponible	2026-09-06	\N	Operativo	2026-01-01	Aileen
+\.
+
+
+--
+-- Data for Name: equipo_monitoreo; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.equipo_monitoreo (id_monitoreo_equipo, id_equipo, id_monitoreo) FROM stdin;
+\.
+
+
+--
+-- Data for Name: estado; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.estado (id_estado, nombre_estado) FROM stdin;
+1	Lara
+2	Falcón
+3	Yaracuy
+\.
+
+
+--
+-- Data for Name: formacion; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.formacion (id_formacion, id_actividad, id_institucion, nombre_formacion, tipo_actividad, id_nivel) FROM stdin;
+1	9	3	Gestion de Riesgos||Alcides Romero	FORMACION	1
+2	11	4	Gestion de Clima||Jose Sequera	FORMACION	1
+\.
+
+
+--
+-- Data for Name: imagenes; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.imagenes (id_imagen, url_imagen, nombre_imagen, fecha_imagen) FROM stdin;
+\.
+
+
+--
+-- Data for Name: imagenes_actividad; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.imagenes_actividad (id_imagenes_actividad, id_imagen, id_actividad) FROM stdin;
+\.
+
+
+--
+-- Data for Name: institucion; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.institucion (id_institucion, id_comunidad, nombre_institucion, tipo_institucion, direccion_exacta, numero_contacto, correo_electronico) FROM stdin;
+3	5	Uptaeb	Educativa	Sede Comunitaria	S/N	contacto@oncc.gob.ve
+4	5	IUJO	Educativa	Sede Comunitaria	S/N	contacto@oncc.gob.ve
+5	44	Fermin Toro	Educativa	Sede Comunitaria	S/N	contacto@oncc.gob.ve
+\.
+
+
+--
+-- Data for Name: mapa_climatico; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.mapa_climatico (id_mapa_climatico, id_estado, tipo_de_mapa, url_mapa, fecha_creacion) FROM stdin;
+1	1	temperatura	uploads/mapas/climaticos/climatico_1788096535_WhatsApp_Image_2026-08-22_at_3.36.29_PM.jpeg	2026-08-30
+2	1	temperatura	uploads/mapas/climaticos/climatico_1788096813_guacarapo3.png	2026-08-30
+\.
+
+
+--
+-- Data for Name: mapas_riesgo; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.mapas_riesgo (id_mapa_riesgo, nombre, fecha_creacion, poligonal_comunidad, ruta_imagen_mapa, id_actividad, tipo_actividad, descripcion, ruta_kml, limites_layout) FROM stdin;
+15	prueba mapa de riesgo	2026-09-06 14:53:30.514589-04	0106000020E61000000100000001030000000100000005000000B534B742588050C0D829560DC2FC1D40B534B742588050C058703FE081011E407A8F334DD87F50C058703FE081011E407A8F334DD87F50C0D829560DC2FC1D40B534B742588050C0D829560DC2FC1D40	\N	7	MAPA_RIESGO	dgddfgdfgdfg\r\n\r\n	uploads/mapas/vectores/extraccion_oncc_2026-08-01_1.kml	[[7.494153784278445, -66.00863342194116], [7.504875941981179, -65.9934722909495]]
+\.
+
+
+--
+-- Data for Name: marca; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.marca (id_marca, nombre_marca) FROM stdin;
+\.
+
+
+--
+-- Data for Name: material; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.material (id_material, id_nivel, id_tema, url) FROM stdin;
+\.
+
+
+--
+-- Data for Name: modelo; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.modelo (id_modelo, id_marca, nombre_modelo) FROM stdin;
+\.
+
+
+--
+-- Data for Name: modelos_equipo; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.modelos_equipo (id_modelos_equipo, id_categoria, nombre_modelos_equipo, id_modelo) FROM stdin;
+1	2	N/D	\N
+2	2	N/D	\N
+3	2	N/D	\N
+\.
+
+
+--
+-- Data for Name: monitoreo; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.monitoreo (id_monitoreo, id_actividad, nombre_monitoreo, tipo_actividad) FROM stdin;
+\.
+
+
+--
+-- Data for Name: movimiento_equipo; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.movimiento_equipo (id_movimiento, id_equipo, fecha_movimiento, ubicacion_origen, ubicacion_destino, motivo_responsable, creado_en) FROM stdin;
+1	1	2026-01-01	Comunidad	Nueva	Despligue inicial	2026-09-06 14:35:21.689846
+\.
+
+
+--
+-- Data for Name: movimientos; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.movimientos (id_movimientos, id_equipo, id_ubicacion_origen, id_ubicacion_destino, tipo_operacion, fecha_movimiento) FROM stdin;
+\.
+
+
+--
+-- Data for Name: municipio; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.municipio (id_municipio, id_estado, nombre_municipio) FROM stdin;
+101	1	Iribarren
+102	1	Palavecino
+103	1	Torres
+104	1	Morán
+105	1	Jiménez
+106	1	Andrés Eloy Blanco
+107	1	Crespo
+108	1	Urdaneta
+109	1	Simón Planas
+201	2	Acosta
+202	2	Bolívar
+203	2	Buchivacoa
+204	2	Carirubana
+205	2	Colina
+206	2	Dabajuro
+207	2	Democracia
+208	2	Falcón
+209	2	Federación
+210	2	Jacura
+211	2	José Laurencio Silva
+212	2	Los Taques
+213	2	Mauroa
+214	2	Cacique Manaure
+215	2	Miranda
+216	2	Monseñor Iturriza
+217	2	Palmasola
+218	2	Petit
+219	2	Píritu
+220	2	San Francisco
+221	2	Sucre
+222	2	Tocópero
+223	2	Unión
+224	2	Urumaco
+225	2	Zamora
+301	3	Arístides Bastidas
+302	3	Bolívar
+303	3	Bruzual
+304	3	Cocorote
+305	3	Independencia
+306	3	La Trinidad
+307	3	Manuel Monge
+308	3	Nirgua
+309	3	José Antonio Páez
+310	3	Peña
+311	3	San Felipe
+312	3	Sucre
+313	3	Urachiche
+314	3	Veroes
+\.
+
+
+--
+-- Data for Name: nivel; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.nivel (id_nivel, nombre_nivel, descripcion) FROM stdin;
+2	TSU	Formacion
+1	Básico / Comunitario	Nivel de Primaria
+3	Universitaria	Postgrado
+\.
+
+
+--
+-- Data for Name: parroquia; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.parroquia (id_parroquia, id_municipio, nombre_parroquia) FROM stdin;
+5	101	Concepción
+6	101	El Cují
+7	101	Juares
+8	101	Ana Soto
+9	101	Santa Rosa
+10	101	Tamaca
+11	101	Unión
+12	101	Catedral
+13	101	Aguedo Felipe Alvarado
+14	102	Cabudare
+15	102	José Gregorio Bastidas
+16	102	Agua Viva
+17	103	Trinidad Samuel
+18	103	Antonio Díaz
+19	103	Camacaro
+20	103	Castañeda
+21	103	Cecilio Zubillaga
+22	103	Chiquinquirá
+23	103	El Blanco
+24	103	Espinoza de los Monteros
+25	103	Lara
+26	103	Las Mercedes
+27	103	Manuel Morillo
+28	103	Montaña Verde
+29	103	Reyes Vargas
+30	103	Altagracia
+31	103	Heriberto Arroyo
+32	104	Anzoátegui
+33	104	Bolívar
+34	104	Guárico
+35	104	Hilario Luna y Luna
+36	104	Humocaro Bajo
+37	104	Humocaro Alto
+38	104	La Candelaria
+39	104	Morán
+40	105	Juan Bautista Rodríguez
+41	105	Cuara
+42	105	Diego de Lozada
+43	105	Paraíso de San José
+44	105	San Miguel
+45	105	Tintorero
+46	105	José Bernardo Dorante
+47	105	Coronel Mariano Peraza
+48	106	Quebrada Honda de Guache
+49	106	Pío Tamayo
+50	106	Yacambú
+51	107	Freitez
+52	107	José María Blanco
+53	108	Xaguas
+54	108	Siquisique
+55	108	San Miguel
+56	108	Moroturo
+57	109	Buría
+58	109	Gustavo Vega
+59	109	Sarare
+60	201	Capadare
+61	201	La Pastora
+62	201	Libertador
+63	201	San Juan de los Cayos
+64	202	Aracua
+65	202	La Peña
+66	202	San Luis
+67	203	Bariro
+68	203	Borojó
+69	203	Capatárida
+70	203	Guajiro
+71	203	Seque
+72	203	Valle de Eroa
+73	203	Zazárida
+74	204	Norte
+75	204	Carirubana
+76	204	Santa Ana
+77	204	Urbana Punta Cardón
+78	205	La Vela de Coro
+79	205	Acurigua
+80	205	Guaibacoa
+81	205	Las Calderas
+82	205	Macoruca
+83	206	Dabajuro
+84	207	Agua Clara
+85	207	Avaria
+86	207	Pedregal
+87	207	Piedra Grande
+88	207	Purureche
+89	208	Pueblo Nuevo
+90	208	Adícora
+91	208	Baraived
+92	208	Buena Vista
+93	208	Jadacaquiva
+94	208	El Vínculo
+95	208	El Hato
+96	208	Moruy
+97	209	Agua Larga
+98	209	Churuguara
+99	209	El Paují
+100	209	Independencia
+101	209	Mapararí
+102	210	Agua Linda
+103	210	Araurima
+104	210	Jacura
+105	211	Tucacas
+106	211	Boca de Aroa
+107	212	Los Taques
+108	212	Judibana
+109	213	Mene de Mauroa
+110	213	San Félix
+111	213	Casigua
+112	214	Cacique Manaure
+113	215	Guzmán Guillermo
+114	215	Mitare
+115	215	Río Seco
+116	215	Sabaneta
+117	215	San Antonio
+118	215	San Gabriel
+119	215	Santa Ana
+120	216	Boca del Tocuyo
+121	216	Chichiriviche
+122	216	Tocuyo de la Costa
+123	217	Palmasola
+124	218	Cabure
+125	218	Colina
+126	218	Curimagua
+127	219	San José de la Costa
+128	219	Píritu
+129	220	San Francisco
+130	221	Sucre
+131	221	Pecaya
+132	222	Tocópero
+133	223	El Charal
+134	223	Las Vegas del Tuy
+135	223	Santa Cruz de Bucaral
+136	224	Bruzual
+137	224	Urumaco
+138	225	Puerto Cumarebo
+139	225	La Ciénaga
+140	225	La Soledad
+141	225	Pueblo Cumarebo
+142	225	Zazárida
+143	301	Arístides Bastidas
+144	302	Aroa
+145	303	Chivacoa
+146	303	Campo Elías
+147	304	Cocorote
+148	305	Independencia
+149	306	Boraure
+150	307	Yumare
+151	308	Salóm
+152	308	Temerla
+153	308	Nirgua
+154	309	Sabana de Parra
+155	310	San Andrés
+156	310	Yaritagua
+157	311	San Javier
+158	311	Albarico
+159	311	San Felipe
+160	312	Guama
+161	313	Urachiche
+162	314	El Guayabo
+163	314	Farriar
+\.
+
+
+--
+-- Data for Name: publicaciones; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.publicaciones (id_publicacion, id_divulgacion, tipo, titulo_publicacion, membrete, resumen, contenido, estado_publicacion, fecha_publicacion, publicado_en, creado_en, actualizado_en, prioridad, id_usuario) FROM stdin;
+1	1	boletin	Articulo	\N	Resumen	Desarrollo	publicado	2026-07-10	2026-09-06 01:26:07.583475	2026-09-05 21:26:02.521453	2026-09-05 21:26:07.582449	5	4
+\.
+
+
+--
+-- Data for Name: registros_climaticos; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.registros_climaticos (id_registro, fecha_registro, id_equipo, id_mapa_climatico, temperatura, precipitaciones, vientos, humedad) FROM stdin;
+\.
+
+
+--
+-- Data for Name: sensibilizacion; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.sensibilizacion (id_sensibilizacion, id_actividad, nombre_sensibilizacion, tipo_actividad, id_nivel) FROM stdin;
+4	10	Gestion de Desechos Solidos||Maria Perez	SENSIBILIZACION	2
+5	12	Gestion de Desastres||Erick David	SENSIBILIZACION	1
+\.
+
+
+--
+-- Data for Name: spatial_ref_sys; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.spatial_ref_sys (srid, auth_name, auth_srid, srtext, proj4text) FROM stdin;
+\.
+
+
+--
+-- Data for Name: tecnicos; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.tecnicos (id_tecnico, cedula, nombres, apellidos, id_usuario, especialidad) FROM stdin;
+1	28736478	Luis Ramirez		19	Tecnico
+2	17384757	Angel Ferrer		6	Tecnico
+3	7869845	Maria Perozo		7	Analista
+\.
+
+
+--
+-- Data for Name: tema; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.tema (id_tema, nombre_tema, descripcion_tema) FROM stdin;
+\.
+
+
+--
+-- Data for Name: ubicacion; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.ubicacion (id_ubicacion, id_parroquia, nombre_ubicacion, geom) FROM stdin;
+1	5	dfd	\N
+2	5	Comunidad	\N
+3	5	Nueva	\N
+\.
+
+
+--
+-- Data for Name: visitas_portal; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.visitas_portal (id, mes, creado_en) FROM stdin;
+1	2026-06	2026-06-24 17:00:30.464557
+2	2026-06	2026-06-24 17:01:02.689556
+3	2026-06	2026-06-24 17:15:32.803147
+4	2026-06	2026-06-24 17:15:32.890147
+5	2026-06	2026-06-24 18:59:26.452315
+6	2026-06	2026-06-25 02:51:33.27876
+7	2026-07	2026-07-05 23:24:13.478782
+8	2026-07	2026-07-07 14:04:52.19856
+9	2026-07	2026-07-07 15:07:21.707962
+10	2026-07	2026-07-08 02:04:19.458305
+11	2026-07	2026-07-08 14:30:10.585875
+12	2026-07	2026-07-09 17:57:20.235795
+13	2026-07	2026-07-10 08:35:21.668301
+14	2026-07	2026-07-16 05:07:36.241435
+15	2026-08	2026-08-15 12:37:01.574511
+16	2026-08	2026-08-30 07:32:55.684821
+17	2026-09	2026-09-06 01:22:09.02225
+18	2026-09	2026-09-06 01:22:09.206097
+19	2026-09	2026-09-06 12:51:01.519988
+20	2026-09	2026-09-06 12:51:01.569821
+21	2026-09	2026-09-06 17:55:23.532822
+22	2026-09	2026-09-06 17:55:23.532822
+23	2026-09	2026-09-06 23:22:17.933792
+24	2026-09	2026-09-06 23:22:19.281313
+25	2026-09	2026-09-07 22:26:20.896222
+26	2026-09	2026-09-08 10:00:08.046775
+27	2026-09	2026-09-08 10:00:08.046775
+\.
+
+
+--
+-- Name: actividad_id_actividad_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.actividad_id_actividad_seq', 12, true);
+
+
+--
+-- Name: actividad_tecnico_id_actividad_tecnico_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.actividad_tecnico_id_actividad_tecnico_seq', 1, false);
+
+
+--
+-- Name: catalogo_simbologia_id_simbologia_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.catalogo_simbologia_id_simbologia_seq', 4, true);
+
+
+--
+-- Name: categoria_id_categoria_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.categoria_id_categoria_seq', 2, true);
+
+
+--
+-- Name: comunidad_id_comunidad_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.comunidad_id_comunidad_seq', 44, true);
+
+
+--
+-- Name: divulgacion_id_divulgacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.divulgacion_id_divulgacion_seq', 1, true);
+
+
+--
+-- Name: elementos_mapariesgo_id_elemento_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.elementos_mapariesgo_id_elemento_seq', 37, true);
+
+
+--
+-- Name: equipo_id_equipo_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.equipo_id_equipo_seq', 1, true);
+
+
+--
+-- Name: equipo_monitoreo_id_monitoreo_equipo_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.equipo_monitoreo_id_monitoreo_equipo_seq', 1, false);
+
+
+--
+-- Name: estado_id_estado_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.estado_id_estado_seq', 3, true);
+
+
+--
+-- Name: formacion_id_formacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.formacion_id_formacion_seq', 2, true);
+
+
+--
+-- Name: imagenes_actividad_id_imagenes_actividad_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.imagenes_actividad_id_imagenes_actividad_seq', 1, false);
+
+
+--
+-- Name: imagenes_id_imagen_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.imagenes_id_imagen_seq', 1, false);
+
+
+--
+-- Name: institucion_id_institucion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.institucion_id_institucion_seq', 5, true);
+
+
+--
+-- Name: mapa_climatico_id_mapa_climatico_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.mapa_climatico_id_mapa_climatico_seq', 2, true);
+
+
+--
+-- Name: mapas_riesgo_id_mapa_riesgo_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.mapas_riesgo_id_mapa_riesgo_seq', 15, true);
+
+
+--
+-- Name: marca_id_marca_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.marca_id_marca_seq', 1, false);
+
+
+--
+-- Name: material_id_material_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.material_id_material_seq', 1, false);
+
+
+--
+-- Name: modelo_id_modelo_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.modelo_id_modelo_seq', 1, false);
+
+
+--
+-- Name: modelos_equipo_id_modelos_equipo_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.modelos_equipo_id_modelos_equipo_seq', 3, true);
+
+
+--
+-- Name: monitoreo_id_monitoreo_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.monitoreo_id_monitoreo_seq', 1, false);
+
+
+--
+-- Name: movimiento_equipo_id_movimiento_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.movimiento_equipo_id_movimiento_seq', 1, true);
+
+
+--
+-- Name: movimientos_id_movimientos_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.movimientos_id_movimientos_seq', 1, false);
+
+
+--
+-- Name: municipio_id_municipio_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.municipio_id_municipio_seq', 314, true);
+
+
+--
+-- Name: nivel_id_nivel_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.nivel_id_nivel_seq', 3, true);
+
+
+--
+-- Name: parroquia_id_parroquia_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.parroquia_id_parroquia_seq', 163, true);
+
+
+--
+-- Name: publicaciones_id_publicacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.publicaciones_id_publicacion_seq', 1, true);
+
+
+--
+-- Name: registros_climaticos_id_registro_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.registros_climaticos_id_registro_seq', 1, false);
+
+
+--
+-- Name: sensibilizacion_id_sensibilizacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.sensibilizacion_id_sensibilizacion_seq', 5, true);
+
+
+--
+-- Name: tecnicos_id_tecnico_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.tecnicos_id_tecnico_seq', 3, true);
+
+
+--
+-- Name: tema_id_tema_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.tema_id_tema_seq', 1, false);
+
+
+--
+-- Name: ubicacion_id_ubicacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.ubicacion_id_ubicacion_seq', 3, true);
+
+
+--
+-- Name: visitas_portal_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.visitas_portal_id_seq', 27, true);
+
+
+--
+-- Name: actividad actividad_fecha_actividad_tipo_actividad_id_comunidad_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.actividad
+    ADD CONSTRAINT actividad_fecha_actividad_tipo_actividad_id_comunidad_key UNIQUE (fecha_actividad, tipo_actividad, id_comunidad);
+
+
+--
+-- Name: actividad actividad_id_y_tipo_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.actividad
+    ADD CONSTRAINT actividad_id_y_tipo_key UNIQUE (id_actividad, tipo_actividad);
+
+
+--
+-- Name: actividad actividad_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.actividad
+    ADD CONSTRAINT actividad_pkey PRIMARY KEY (id_actividad);
+
+
+--
+-- Name: actividad_tecnico actividad_tecnico_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.actividad_tecnico
+    ADD CONSTRAINT actividad_tecnico_pkey PRIMARY KEY (id_actividad_tecnico);
+
+
+--
+-- Name: alembic_version alembic_version_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.alembic_version
+    ADD CONSTRAINT alembic_version_pkey PRIMARY KEY (version_num);
+
+
+--
+-- Name: catalogo_simbologia catalogo_simbologia_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.catalogo_simbologia
+    ADD CONSTRAINT catalogo_simbologia_pkey PRIMARY KEY (id_simbologia);
+
+
+--
+-- Name: categoria categoria_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.categoria
+    ADD CONSTRAINT categoria_pkey PRIMARY KEY (id_categoria);
+
+
+--
+-- Name: comunidad comunidad_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.comunidad
+    ADD CONSTRAINT comunidad_pkey PRIMARY KEY (id_comunidad);
+
+
+--
+-- Name: divulgacion divulgacion_id_actividad_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.divulgacion
+    ADD CONSTRAINT divulgacion_id_actividad_key UNIQUE (id_actividad);
+
+
+--
+-- Name: divulgacion divulgacion_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.divulgacion
+    ADD CONSTRAINT divulgacion_pkey PRIMARY KEY (id_divulgacion);
+
+
+--
+-- Name: elementos_mapariesgo elementos_mapariesgo_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.elementos_mapariesgo
+    ADD CONSTRAINT elementos_mapariesgo_pkey PRIMARY KEY (id_elemento);
+
+
+--
+-- Name: equipo equipo_codigo_interno_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.equipo
+    ADD CONSTRAINT equipo_codigo_interno_key UNIQUE (codigo_interno);
+
+
+--
+-- Name: equipo_monitoreo equipo_monitoreo_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.equipo_monitoreo
+    ADD CONSTRAINT equipo_monitoreo_pkey PRIMARY KEY (id_monitoreo_equipo);
+
+
+--
+-- Name: equipo equipo_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.equipo
+    ADD CONSTRAINT equipo_pkey PRIMARY KEY (id_equipo);
+
+
+--
+-- Name: estado estado_nombre_estado_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.estado
+    ADD CONSTRAINT estado_nombre_estado_key UNIQUE (nombre_estado);
+
+
+--
+-- Name: estado estado_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.estado
+    ADD CONSTRAINT estado_pkey PRIMARY KEY (id_estado);
+
+
+--
+-- Name: formacion formacion_id_actividad_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.formacion
+    ADD CONSTRAINT formacion_id_actividad_key UNIQUE (id_actividad);
+
+
+--
+-- Name: formacion formacion_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.formacion
+    ADD CONSTRAINT formacion_pkey PRIMARY KEY (id_formacion);
+
+
+--
+-- Name: imagenes_actividad imagenes_actividad_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.imagenes_actividad
+    ADD CONSTRAINT imagenes_actividad_pkey PRIMARY KEY (id_imagenes_actividad);
+
+
+--
+-- Name: imagenes imagenes_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.imagenes
+    ADD CONSTRAINT imagenes_pkey PRIMARY KEY (id_imagen);
+
+
+--
+-- Name: institucion institucion_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.institucion
+    ADD CONSTRAINT institucion_pkey PRIMARY KEY (id_institucion);
+
+
+--
+-- Name: mapa_climatico mapa_climatico_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.mapa_climatico
+    ADD CONSTRAINT mapa_climatico_pkey PRIMARY KEY (id_mapa_climatico);
+
+
+--
+-- Name: mapas_riesgo mapas_riesgo_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.mapas_riesgo
+    ADD CONSTRAINT mapas_riesgo_pkey PRIMARY KEY (id_mapa_riesgo);
+
+
+--
+-- Name: marca marca_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.marca
+    ADD CONSTRAINT marca_pkey PRIMARY KEY (id_marca);
+
+
+--
+-- Name: material material_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.material
+    ADD CONSTRAINT material_pkey PRIMARY KEY (id_material);
+
+
+--
+-- Name: modelo modelo_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.modelo
+    ADD CONSTRAINT modelo_pkey PRIMARY KEY (id_modelo);
+
+
+--
+-- Name: modelos_equipo modelos_equipo_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.modelos_equipo
+    ADD CONSTRAINT modelos_equipo_pkey PRIMARY KEY (id_modelos_equipo);
+
+
+--
+-- Name: monitoreo monitoreo_id_actividad_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.monitoreo
+    ADD CONSTRAINT monitoreo_id_actividad_key UNIQUE (id_actividad);
+
+
+--
+-- Name: monitoreo monitoreo_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.monitoreo
+    ADD CONSTRAINT monitoreo_pkey PRIMARY KEY (id_monitoreo);
+
+
+--
+-- Name: movimiento_equipo movimiento_equipo_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.movimiento_equipo
+    ADD CONSTRAINT movimiento_equipo_pkey PRIMARY KEY (id_movimiento);
+
+
+--
+-- Name: movimientos movimientos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.movimientos
+    ADD CONSTRAINT movimientos_pkey PRIMARY KEY (id_movimientos);
+
+
+--
+-- Name: municipio municipio_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.municipio
+    ADD CONSTRAINT municipio_pkey PRIMARY KEY (id_municipio);
+
+
+--
+-- Name: nivel nivel_nombre_nivel_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.nivel
+    ADD CONSTRAINT nivel_nombre_nivel_key UNIQUE (nombre_nivel);
+
+
+--
+-- Name: nivel nivel_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.nivel
+    ADD CONSTRAINT nivel_pkey PRIMARY KEY (id_nivel);
+
+
+--
+-- Name: parroquia parroquia_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.parroquia
+    ADD CONSTRAINT parroquia_pkey PRIMARY KEY (id_parroquia);
+
+
+--
+-- Name: publicaciones publicaciones_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.publicaciones
+    ADD CONSTRAINT publicaciones_pkey PRIMARY KEY (id_publicacion);
+
+
+--
+-- Name: registros_climaticos registros_climaticos_fecha_registro_id_equipo_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.registros_climaticos
+    ADD CONSTRAINT registros_climaticos_fecha_registro_id_equipo_key UNIQUE (fecha_registro, id_equipo);
+
+
+--
+-- Name: registros_climaticos registros_climaticos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.registros_climaticos
+    ADD CONSTRAINT registros_climaticos_pkey PRIMARY KEY (id_registro, fecha_registro);
+
+
+--
+-- Name: sensibilizacion sensibilizacion_id_actividad_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.sensibilizacion
+    ADD CONSTRAINT sensibilizacion_id_actividad_key UNIQUE (id_actividad);
+
+
+--
+-- Name: sensibilizacion sensibilizacion_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.sensibilizacion
+    ADD CONSTRAINT sensibilizacion_pkey PRIMARY KEY (id_sensibilizacion);
+
+
+--
+-- Name: tecnicos tecnicos_cedula_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.tecnicos
+    ADD CONSTRAINT tecnicos_cedula_key UNIQUE (cedula);
+
+
+--
+-- Name: tecnicos tecnicos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.tecnicos
+    ADD CONSTRAINT tecnicos_pkey PRIMARY KEY (id_tecnico);
+
+
+--
+-- Name: tema tema_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.tema
+    ADD CONSTRAINT tema_pkey PRIMARY KEY (id_tema);
+
+
+--
+-- Name: ubicacion ubicacion_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.ubicacion
+    ADD CONSTRAINT ubicacion_pkey PRIMARY KEY (id_ubicacion);
+
+
+--
+-- Name: mapas_riesgo uq_mapas_riesgo_actividad; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.mapas_riesgo
+    ADD CONSTRAINT uq_mapas_riesgo_actividad UNIQUE (id_actividad, tipo_actividad);
+
+
+--
+-- Name: visitas_portal visitas_portal_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.visitas_portal
+    ADD CONSTRAINT visitas_portal_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: fki_adtividad_id_nivel; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX fki_adtividad_id_nivel ON public.actividad USING btree (id_nivel);
+
+
+--
+-- Name: fki_mapa_climatico_id_estado_fkey; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX fki_mapa_climatico_id_estado_fkey ON public.mapa_climatico USING btree (id_estado);
+
+
+--
+-- Name: idx_act_tec_actividad; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_act_tec_actividad ON public.actividad_tecnico USING btree (id_actividad);
+
+
+--
+-- Name: idx_act_tec_tecnico; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_act_tec_tecnico ON public.actividad_tecnico USING btree (id_tecnico);
+
+
+--
+-- Name: idx_actividad_comunidad; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_actividad_comunidad ON public.actividad USING btree (id_comunidad);
+
+
+--
+-- Name: idx_comunidad_parroquia; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_comunidad_parroquia ON public.comunidad USING btree (id_parroquia);
+
+
+--
+-- Name: idx_elementos_geom; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_elementos_geom ON public.elementos_mapariesgo USING gist (geom);
+
+
+--
+-- Name: idx_elementos_mapariesgo_geom; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_elementos_mapariesgo_geom ON public.elementos_mapariesgo USING gist (geom);
+
+
+--
+-- Name: idx_eq_monitoreo_equipo; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_eq_monitoreo_equipo ON public.equipo_monitoreo USING btree (id_equipo);
+
+
+--
+-- Name: idx_eq_monitoreo_monitoreo; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_eq_monitoreo_monitoreo ON public.equipo_monitoreo USING btree (id_monitoreo);
+
+
+--
+-- Name: idx_equipo_modelo; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_equipo_modelo ON public.equipo USING btree (id_modelos_equipos);
+
+
+--
+-- Name: idx_equipo_ubicacion_actual; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_equipo_ubicacion_actual ON public.equipo USING btree (id_ubicacion_actual);
+
+
+--
+-- Name: idx_formacion_institucion; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_formacion_institucion ON public.formacion USING btree (id_institucion);
+
+
+--
+-- Name: idx_img_act_actividad; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_img_act_actividad ON public.imagenes_actividad USING btree (id_actividad);
+
+
+--
+-- Name: idx_img_act_imagen; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_img_act_imagen ON public.imagenes_actividad USING btree (id_imagen);
+
+
+--
+-- Name: idx_institucion_comunidad; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_institucion_comunidad ON public.institucion USING btree (id_comunidad);
+
+
+--
+-- Name: idx_mapa_actividad; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_mapa_actividad ON public.mapas_riesgo USING btree (id_actividad);
+
+
+--
+-- Name: idx_mapa_poligonal; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_mapa_poligonal ON public.mapas_riesgo USING gist (poligonal_comunidad);
+
+
+--
+-- Name: idx_mapas_riesgo_poligonal; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_mapas_riesgo_poligonal ON public.mapas_riesgo USING gist (poligonal_comunidad);
+
+
+--
+-- Name: idx_material_nivel; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_material_nivel ON public.material USING btree (id_nivel);
+
+
+--
+-- Name: idx_material_tema; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_material_tema ON public.material USING btree (id_tema);
+
+
+--
+-- Name: idx_modelos_categoria; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_modelos_categoria ON public.modelos_equipo USING btree (id_categoria);
+
+
+--
+-- Name: idx_modelos_modelo; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_modelos_modelo ON public.modelos_equipo USING btree (id_modelo) WITH (deduplicate_items='true');
+
+
+--
+-- Name: idx_movimientos_equipo; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_movimientos_equipo ON public.movimientos USING btree (id_equipo);
+
+
+--
+-- Name: idx_movimientos_ubic_destino; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_movimientos_ubic_destino ON public.movimientos USING btree (id_ubicacion_destino);
+
+
+--
+-- Name: idx_movimientos_ubic_origen; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_movimientos_ubic_origen ON public.movimientos USING btree (id_ubicacion_origen);
+
+
+--
+-- Name: idx_municipio_estado; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_municipio_estado ON public.municipio USING btree (id_estado);
+
+
+--
+-- Name: idx_parroquia_municipio; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_parroquia_municipio ON public.parroquia USING btree (id_municipio);
+
+
+--
+-- Name: idx_publicaciones_divulgacion; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_publicaciones_divulgacion ON public.publicaciones USING btree (id_divulgacion);
+
+
+--
+-- Name: idx_regcli_equipo; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_regcli_equipo ON public.registros_climaticos USING btree (id_equipo);
+
+
+--
+-- Name: idx_regcli_mapa; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_regcli_mapa ON public.registros_climaticos USING btree (id_mapa_climatico);
+
+
+--
+-- Name: idx_simbologia_categoria; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_simbologia_categoria ON public.catalogo_simbologia USING btree (categoria);
+
+
+--
+-- Name: idx_ubicacion_parroquia; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_ubicacion_parroquia ON public.ubicacion USING btree (id_parroquia);
+
+
+--
+-- Name: mapas_riesgo tg_validar_previa_sensibilizacion; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER tg_validar_previa_sensibilizacion BEFORE INSERT OR UPDATE ON public.mapas_riesgo FOR EACH ROW EXECUTE FUNCTION public.validar_previa_sensibilizacion();
+
+
+--
+-- Name: actividad actividad_id_comunidad_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.actividad
+    ADD CONSTRAINT actividad_id_comunidad_fkey FOREIGN KEY (id_comunidad) REFERENCES public.comunidad(id_comunidad) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: actividad_tecnico actividad_tecnico_id_actividad_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.actividad_tecnico
+    ADD CONSTRAINT actividad_tecnico_id_actividad_fkey FOREIGN KEY (id_actividad) REFERENCES public.actividad(id_actividad) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: actividad_tecnico actividad_tecnico_id_tecnico_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.actividad_tecnico
+    ADD CONSTRAINT actividad_tecnico_id_tecnico_fkey FOREIGN KEY (id_tecnico) REFERENCES public.tecnicos(id_tecnico) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: actividad adtividad_id_nivel; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.actividad
+    ADD CONSTRAINT adtividad_id_nivel FOREIGN KEY (id_nivel) REFERENCES public.nivel(id_nivel) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: comunidad comunidad_id_parroquia_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.comunidad
+    ADD CONSTRAINT comunidad_id_parroquia_fkey FOREIGN KEY (id_parroquia) REFERENCES public.parroquia(id_parroquia) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: divulgacion divulgacion_id_actividad_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.divulgacion
+    ADD CONSTRAINT divulgacion_id_actividad_fkey FOREIGN KEY (id_actividad) REFERENCES public.actividad(id_actividad) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: elementos_mapariesgo elementos_mapariesgo_id_mapa_riesgo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.elementos_mapariesgo
+    ADD CONSTRAINT elementos_mapariesgo_id_mapa_riesgo_fkey FOREIGN KEY (id_mapa_riesgo) REFERENCES public.mapas_riesgo(id_mapa_riesgo) ON DELETE CASCADE;
+
+
+--
+-- Name: elementos_mapariesgo elementos_mapariesgo_id_simbologia_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.elementos_mapariesgo
+    ADD CONSTRAINT elementos_mapariesgo_id_simbologia_fkey FOREIGN KEY (id_simbologia) REFERENCES public.catalogo_simbologia(id_simbologia);
+
+
+--
+-- Name: equipo equipo_id_modelos_equipos_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.equipo
+    ADD CONSTRAINT equipo_id_modelos_equipos_fkey FOREIGN KEY (id_modelos_equipos) REFERENCES public.modelos_equipo(id_modelos_equipo) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: equipo equipo_id_ubicacion_actual_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.equipo
+    ADD CONSTRAINT equipo_id_ubicacion_actual_fkey FOREIGN KEY (id_ubicacion_actual) REFERENCES public.ubicacion(id_ubicacion) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: equipo_monitoreo equipo_monitoreo_id_equipo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.equipo_monitoreo
+    ADD CONSTRAINT equipo_monitoreo_id_equipo_fkey FOREIGN KEY (id_equipo) REFERENCES public.equipo(id_equipo) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: equipo_monitoreo equipo_monitoreo_id_monitoreo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.equipo_monitoreo
+    ADD CONSTRAINT equipo_monitoreo_id_monitoreo_fkey FOREIGN KEY (id_monitoreo) REFERENCES public.monitoreo(id_monitoreo) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: divulgacion fk_divulgacion_actividad; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.divulgacion
+    ADD CONSTRAINT fk_divulgacion_actividad FOREIGN KEY (id_actividad) REFERENCES public.actividad(id_actividad);
+
+
+--
+-- Name: mapas_riesgo fk_mapas_riesgo_actividad; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.mapas_riesgo
+    ADD CONSTRAINT fk_mapas_riesgo_actividad FOREIGN KEY (id_actividad, tipo_actividad) REFERENCES public.actividad(id_actividad, tipo_actividad) ON DELETE RESTRICT;
+
+
+--
+-- Name: movimiento_equipo fk_movimiento_equipo; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.movimiento_equipo
+    ADD CONSTRAINT fk_movimiento_equipo FOREIGN KEY (id_equipo) REFERENCES public.equipo(id_equipo) ON DELETE CASCADE;
+
+
+--
+-- Name: publicaciones fk_publicaciones_divulgacion; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.publicaciones
+    ADD CONSTRAINT fk_publicaciones_divulgacion FOREIGN KEY (id_divulgacion) REFERENCES public.divulgacion(id_divulgacion);
+
+
+--
+-- Name: formacion formacion_actividad_compuesta_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.formacion
+    ADD CONSTRAINT formacion_actividad_compuesta_fkey FOREIGN KEY (id_actividad, tipo_actividad) REFERENCES public.actividad(id_actividad, tipo_actividad) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: formacion formacion_id_nivel_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.formacion
+    ADD CONSTRAINT formacion_id_nivel_fkey FOREIGN KEY (id_nivel) REFERENCES public.nivel(id_nivel) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: imagenes_actividad imagenes_actividad_id_actividad_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.imagenes_actividad
+    ADD CONSTRAINT imagenes_actividad_id_actividad_fkey FOREIGN KEY (id_actividad) REFERENCES public.actividad(id_actividad) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: imagenes_actividad imagenes_actividad_id_imagen_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.imagenes_actividad
+    ADD CONSTRAINT imagenes_actividad_id_imagen_fkey FOREIGN KEY (id_imagen) REFERENCES public.imagenes(id_imagen) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: institucion institucion_id_comunidad_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.institucion
+    ADD CONSTRAINT institucion_id_comunidad_fkey FOREIGN KEY (id_comunidad) REFERENCES public.comunidad(id_comunidad) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: modelos_equipo listado_equipo_id_modelo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.modelos_equipo
+    ADD CONSTRAINT listado_equipo_id_modelo_fkey FOREIGN KEY (id_modelo) REFERENCES public.modelo(id_modelo) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: mapa_climatico mapa_climatico_id_estado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.mapa_climatico
+    ADD CONSTRAINT mapa_climatico_id_estado_fkey FOREIGN KEY (id_estado) REFERENCES public.estado(id_estado) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: material material_id_nivel_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.material
+    ADD CONSTRAINT material_id_nivel_fkey FOREIGN KEY (id_nivel) REFERENCES public.nivel(id_nivel) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: material material_id_tema_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.material
+    ADD CONSTRAINT material_id_tema_fkey FOREIGN KEY (id_tema) REFERENCES public.tema(id_tema) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: modelo modelo_id_marca_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.modelo
+    ADD CONSTRAINT modelo_id_marca_fkey FOREIGN KEY (id_marca) REFERENCES public.marca(id_marca) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: modelos_equipo modelos_equipo_id_categoria_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.modelos_equipo
+    ADD CONSTRAINT modelos_equipo_id_categoria_fkey FOREIGN KEY (id_categoria) REFERENCES public.categoria(id_categoria) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: monitoreo monitoreo_actividad_compuesta_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.monitoreo
+    ADD CONSTRAINT monitoreo_actividad_compuesta_fkey FOREIGN KEY (id_actividad, tipo_actividad) REFERENCES public.actividad(id_actividad, tipo_actividad) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: movimientos movimientos_id_equipo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.movimientos
+    ADD CONSTRAINT movimientos_id_equipo_fkey FOREIGN KEY (id_equipo) REFERENCES public.equipo(id_equipo) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: movimientos movimientos_id_ubicacion_destino_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.movimientos
+    ADD CONSTRAINT movimientos_id_ubicacion_destino_fkey FOREIGN KEY (id_ubicacion_destino) REFERENCES public.ubicacion(id_ubicacion) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: municipio municipio_id_estado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.municipio
+    ADD CONSTRAINT municipio_id_estado_fkey FOREIGN KEY (id_estado) REFERENCES public.estado(id_estado) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: parroquia parroquia_id_municipio_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.parroquia
+    ADD CONSTRAINT parroquia_id_municipio_fkey FOREIGN KEY (id_municipio) REFERENCES public.municipio(id_municipio) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: publicaciones publicaciones_id_divulgacion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.publicaciones
+    ADD CONSTRAINT publicaciones_id_divulgacion_fkey FOREIGN KEY (id_divulgacion) REFERENCES public.divulgacion(id_divulgacion) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: registros_climaticos registros_climaticos_id_equipo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.registros_climaticos
+    ADD CONSTRAINT registros_climaticos_id_equipo_fkey FOREIGN KEY (id_equipo) REFERENCES public.equipo(id_equipo) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: registros_climaticos registros_climaticos_id_mapa_climatico_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.registros_climaticos
+    ADD CONSTRAINT registros_climaticos_id_mapa_climatico_fkey FOREIGN KEY (id_mapa_climatico) REFERENCES public.mapa_climatico(id_mapa_climatico) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: sensibilizacion sensibilizacion_actividad_compuesta_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.sensibilizacion
+    ADD CONSTRAINT sensibilizacion_actividad_compuesta_fkey FOREIGN KEY (id_actividad, tipo_actividad) REFERENCES public.actividad(id_actividad, tipo_actividad) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: sensibilizacion sensibilizacion_id_nivel_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.sensibilizacion
+    ADD CONSTRAINT sensibilizacion_id_nivel_fkey FOREIGN KEY (id_nivel) REFERENCES public.nivel(id_nivel) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: ubicacion ubicacion_id_parroquia_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.ubicacion
+    ADD CONSTRAINT ubicacion_id_parroquia_fkey FOREIGN KEY (id_parroquia) REFERENCES public.parroquia(id_parroquia) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+\unrestrict zy1KbQnKRJ6kiCoVZEHpe4zkFNqHETsrEVkyRmndropylacTJsgbCz5emQb3wC3
+

@@ -1,5 +1,5 @@
-import random
-from flask import flash, redirect, render_template, request, url_for, session
+import requests
+from flask import current_app, flash, redirect, render_template, request, url_for, session
 from flask_login import current_user, login_required, login_user, logout_user
 from urllib.parse import urljoin, urlparse
 
@@ -14,17 +14,32 @@ from app.services.gestor_sesion import GestorSesion
 gestor = GestorSesion()
 
 
-def _generar_captcha():
-    num1 = random.randint(1, 9)
-    num2 = random.randint(1, 9)
-    session['captcha_resultado'] = num1 + num2
-    session['captcha_texto'] = f"¿Cuánto es {num1} + {num2}?"
-
-
 def is_safe_url(target):
     ref_url = urlparse(request.host_url)
     test_url = urlparse(urljoin(request.host_url, target))
     return test_url.scheme in ('http', 'https') and ref_url.netloc == test_url.netloc
+
+
+def _recaptcha_valido():
+    secret = current_app.config.get('RECAPTCHA_SECRET_KEY')
+    respuesta = request.form.get('g-recaptcha-response', '').strip()
+    if current_app.testing and not respuesta:
+        return True
+    if not secret or not respuesta:
+        return False
+    try:
+        response = requests.post(
+            current_app.config['RECAPTCHA_VERIFY_URL'],
+            data={
+                'secret': secret,
+                'response': respuesta,
+                'remoteip': request.remote_addr,
+            },
+            timeout=5,
+        )
+        return response.ok and response.json().get('success') is True
+    except (requests.RequestException, ValueError):
+        return False
 
 
 @core_bp.route('/auth/login', methods=['GET', 'POST'])
@@ -34,58 +49,37 @@ def login():
 
     form = LoginForm()
 
-    if request.method == 'GET' or 'captcha_resultado' not in session:
-        _generar_captcha()
-
     if form.validate_on_submit():
         correo = (form.correo.data or '').strip().lower()
-        password = (form.password.data or '').strip()
-        captcha_usuario = request.form.get('captcha_login', '').strip()
-
-        # 1. Validación del Captcha Matemático en Login
-        try:
-            captcha_valido = int(captcha_usuario) == int(session.get('captcha_resultado'))
-        except (TypeError, ValueError):
-            captcha_valido = False
-
-        if not captcha_valido:
-            flash('La verificación de seguridad (Captcha) es incorrecta.', 'error')
-            _generar_captcha()
+        password = form.password.data or ''
+        if not _recaptcha_valido():
+            flash('Complete correctamente la verificación de seguridad.', 'error')
             return render_template('auth/login.html', form=form)
 
         if not correo or not password:
             flash('Debe ingresar correo y contraseña.', 'error')
-            _generar_captcha()
             return render_template('auth/login.html', form=form)
 
         usuario = Usuario.query.filter_by(correo=correo).first()
 
         if not usuario:
             flash('El correo no está registrado en el sistema.', 'error')
-            _generar_captcha()
             return render_template('auth/login.html', form=form)
 
         if not usuario.estatus:
             flash('El usuario está inactivo. Contacte al administrador.', 'error')
-            _generar_captcha()
             return render_template('auth/login.html', form=form)
 
         if usuario.check_password(password):
             gestor.iniciar_sesion(usuario)
-            # Limpieza de variables de seguridad
-            session.pop('captcha_resultado', None)
-            session.pop('captcha_texto', None)
-
             next_page = request.args.get('next') or form.next.data
             if next_page and is_safe_url(next_page):
                 return redirect(next_page)
             return redirect(url_for('dashboard'))
 
         flash('La contraseña es incorrecta. Intente nuevamente.', 'error')
-        _generar_captcha()
     elif request.method == 'POST':
         flash('Revise los datos del formulario e intente nuevamente.', 'error')
-        _generar_captcha()
 
     return render_template('auth/login.html', form=form)
 
@@ -101,21 +95,11 @@ def logout():
 def recuperar_contrasena():
     form = ResetRequestForm()
 
-    if request.method == 'GET' or 'captcha_resultado' not in session:
-        _generar_captcha()
-
     if form.validate_on_submit():
         correo = (form.correo.data or '').strip().lower()
-        captcha_usuario = request.form.get('captcha', '').strip()
 
-        try:
-            captcha_valido = int(captcha_usuario) == int(session.get('captcha_resultado'))
-        except (TypeError, ValueError):
-            captcha_valido = False
-
-        if not captcha_valido:
-            flash('La verificación de seguridad (Captcha) es incorrecta.', 'error')
-            _generar_captcha()
+        if not _recaptcha_valido():
+            flash('Complete correctamente la verificación de seguridad.', 'error')
             return render_template('auth/recuperar.html', form=form)
 
         usuario = Usuario.query.filter_by(correo=correo).first()
@@ -138,8 +122,6 @@ def recuperar_contrasena():
                     flash('Ocurrió un inconveniente al procesar el envío del correo de recuperación.', 'error')
                     return render_template('auth/recuperar.html', form=form)
 
-        session.pop('captcha_resultado', None)
-        session.pop('captcha_texto', None)
         flash('Si el correo institucional se encuentra registrado, recibirá un enlace de recuperación en breve.', 'info')
         return redirect(url_for('core.login'))
 

@@ -16,6 +16,7 @@ from app.models.esquema_activo import (
 )
 from app.models.actividad import Actividad
 from app.services.notificacion import ServicioNotificacion
+from app.services.reportes import respuesta_csv
 
 
 def _cargar_sensibilizacion_choices(form):
@@ -40,6 +41,7 @@ def _registrar_sensibilizacion(form):
     nueva_sensibilizacion = Sensibilizacion(
         nombre_sensibilizacion=f"{form.nombre_sensibilizacion.data}||{form.facilitador.data}",
         id_actividad=nueva_actividad.id_actividad,
+        tipo_actividad='SENSIBILIZACION',
         id_nivel=form.id_nivel.data,
     )
     db.session.add(nueva_sensibilizacion)
@@ -64,6 +66,25 @@ def sensibilizaciones_index():
         'sensibilizaciones/index.html', 
         form=form, 
         sensibilizaciones=sensibilizaciones_procesadas
+    )
+
+
+@comunitario_bp.route('/sensibilizaciones/reporte')
+@login_required
+def sensibilizaciones_reporte():
+    verificar_permiso_dinamico('reportes_sensibilizaciones')
+    filas = [
+        (
+            registro['id_sensibilizacion'], registro['campana'],
+            registro['facilitador'], registro['nombre_comunidad'],
+            registro['fecha_actividad'], registro['id_nivel'],
+        )
+        for registro in Sensibilizacion.obtener_historial_completo()
+    ]
+    return respuesta_csv(
+        'reporte_sensibilizaciones.csv',
+        ('ID', 'Campaña', 'Facilitador', 'Comunidad', 'Fecha', 'Nivel'),
+        filas,
     )
 
 
@@ -103,7 +124,10 @@ def sensibilizacion_editar(id_sensibilizacion):
     verificar_permiso_dinamico('editar_sensibilizaciones')
 
     sensibilizacion = Sensibilizacion.query.get_or_404(id_sensibilizacion)
-    actividad = Actividad.query.get(sensibilizacion.id_actividad)
+    actividad = Actividad.query.filter_by(
+        id_actividad=sensibilizacion.id_actividad,
+        tipo_actividad='SENSIBILIZACION',
+    ).first_or_404()
 
     campana_nueva = request.form.get('edit_nombre_sensibilizacion')
     facilitador_nuevo = request.form.get('edit_facilitador') 
@@ -145,7 +169,10 @@ def sensibilizacion_eliminar(id_sensibilizacion):
     verificar_permiso_dinamico('eliminar_sensibilizaciones')
 
     sensibilizacion = Sensibilizacion.query.get_or_404(id_sensibilizacion)
-    actividad = Actividad.query.get(sensibilizacion.id_actividad)
+    actividad = Actividad.query.filter_by(
+        id_actividad=sensibilizacion.id_actividad,
+        tipo_actividad='SENSIBILIZACION',
+    ).first_or_404()
 
     try:
         db.session.delete(sensibilizacion)

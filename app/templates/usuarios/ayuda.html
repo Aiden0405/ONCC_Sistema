@@ -40,6 +40,122 @@
         </div>
     </div>
 
+    <section class="bg-slate-900 text-white rounded-2xl p-6 shadow-sm">
+        <div class="flex items-start justify-between gap-4">
+            <div>
+                <p class="text-xs font-bold uppercase tracking-wider text-emerald-300">Ruta recomendada</p>
+                <h2 class="text-xl font-black mt-1">Del trabajo de campo al reporte</h2>
+                <p class="text-sm text-slate-300 mt-2 max-w-2xl">Registre la actividad, agregue evidencias, mantenga actualizado al equipo y publique solo la información validada.</p>
+            </div>
+            <i data-lucide="route" class="w-7 h-7 text-emerald-300 flex-shrink-0"></i>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mt-6">
+            <div class="border border-white/15 rounded-lg p-3"><span class="text-emerald-300 text-xs font-bold">01</span><p class="text-sm font-semibold mt-1">Preparar catálogos</p><p class="text-xs text-slate-400 mt-1">Comunidades, instituciones y niveles.</p></div>
+            <div class="border border-white/15 rounded-lg p-3"><span class="text-emerald-300 text-xs font-bold">02</span><p class="text-sm font-semibold mt-1">Registrar actividad</p><p class="text-xs text-slate-400 mt-1">Fecha, territorio, tipo y responsable.</p></div>
+            <div class="border border-white/15 rounded-lg p-3"><span class="text-emerald-300 text-xs font-bold">03</span><p class="text-sm font-semibold mt-1">Adjuntar evidencia</p><p class="text-xs text-slate-400 mt-1">Minuta PDF y fotografías válidas.</p></div>
+            <div class="border border-white/15 rounded-lg p-3"><span class="text-emerald-300 text-xs font-bold">04</span><p class="text-sm font-semibold mt-1">Revisar y reportar</p><p class="text-xs text-slate-400 mt-1">Historial, bitácora y reportes.</p></div>
+            <div class="border border-white/15 rounded-lg p-3"><span class="text-emerald-300 text-xs font-bold">05</span><p class="text-sm font-semibold mt-1">Divulgar</p><p class="text-xs text-slate-400 mt-1">Validar y publicar al portal.</p></div>
+        </div>
+    </section>
+
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 p-5 shadow-sm">
+            <div class="flex items-center gap-2 text-green-600 dark:text-green-400 font-bold text-sm"><i data-lucide="map-pin" class="w-4 h-4"></i> Técnico de campo</div>
+            <ol class="mt-3 space-y-2 text-xs text-slate-600 dark:text-slate-300 list-decimal list-inside">
+                <li>Abra Actividades y registre la jornada.</li>
+                <li>Seleccione comunidad, nivel y técnico.</li>
+                <li>Adjunte minuta y fotografías.</li>
+                <li>Complete Formaciones o Sensibilizaciones.</li>
+                <li>Revise el historial antes de cerrar la jornada.</li>
+            </ol>
+            <div class="flex flex-wrap gap-2 mt-4">
+                <a href="{{ url_for('monitoreo.actividades_index') }}" class="text-xs font-semibold text-green-700 dark:text-green-300 hover:underline">Actividades</a>
+                <a href="{{ url_for('comunitario.formaciones_index') }}" class="text-xs font-semibold text-green-700 dark:text-green-300 hover:underline">Formaciones</a>
+                <a href="{{ url_for('comunitario.sensibilizaciones_index') }}" class="text-xs font-semibold text-green-700 dark:text-green-300 hover:underline">Sensibilizaciones</a>
+            </div>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 p-5 shadow-sm">
+            <div class="flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold text-sm"><i data-lucide="clipboard-check" class="w-4 h-4"></i> Administrador</div>
+            <ol class="mt-3 space-y-2 text-xs text-slate-600 dark:text-slate-300 list-decimal list-inside">
+                <li>Verifique catálogos y cuentas activas.</li>
+                <li>Asigne permisos según la responsabilidad.</li>
+                <li>Revise notificaciones y bitácora.</li>
+                <li>Valide borradores antes de publicar.</li>
+                <li>Descargue reportes periódicamente.</li>
+            </ol>
+            <div class="flex flex-wrap gap-2 mt-4">
+                <a href="{{ url_for('core.usuario_index') }}" class="text-xs font-semibold text-blue-700 dark:text-blue-300 hover:underline">Usuarios</a>
+                <a href="{{ url_for('core.rol_index') }}" class="text-xs font-semibold text-blue-700 dark:text-blue-300 hover:underline">Roles</a>
+                <a href="{{ url_for('core.divulgacion_admin_index') }}" class="text-xs font-semibold text-blue-700 dark:text-blue-300 hover:underline">Divulgación</a>
+            </div>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 p-5 shadow-sm">
+            <div class="flex items-center gap-2 text-purple-600 dark:text-purple-400 font-bold text-sm"><i data-lucide="settings-2" class="w-4 h-4"></i> Superusuario</div>
+            <ol class="mt-3 space-y-2 text-xs text-slate-600 dark:text-slate-300 list-decimal list-inside">
+                <li>Configure catálogos antes de la operación.</li>
+                <li>Defina roles y permisos mínimos.</li>
+                <li>Pruebe cada perfil con una cuenta de prueba.</li>
+                <li>Audite cambios desde la bitácora.</li>
+                <li>Documente incidencias y decisiones.</li>
+            </ol>
+            <div class="flex flex-wrap gap-2 mt-4">
+                <a href="{{ url_for('core.catalogos_index') }}" class="text-xs font-semibold text-purple-700 dark:text-purple-300 hover:underline">Catálogos</a>
+                <a href="{{ url_for('core.bitacora_index') }}" class="text-xs font-semibold text-purple-700 dark:text-purple-300 hover:underline">Bitácora</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm p-6">
+        <div class="flex items-center gap-2 border-b border-gray-100 dark:border-gray-700 pb-4">
+            <i data-lucide="list-checks" class="w-5 h-5 text-green-600"></i>
+            <div><h2 class="text-base font-bold text-slate-900 dark:text-white">Guías rápidas de operación</h2><p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Use estas listas durante la capacitación y la entrega.</p></div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+            <details class="border border-slate-200 dark:border-gray-700 rounded-lg p-4" open>
+                <summary class="cursor-pointer text-sm font-semibold text-slate-800 dark:text-slate-200">Registrar una actividad con evidencia</summary>
+                <ul class="mt-3 space-y-2 text-xs text-slate-600 dark:text-slate-300 list-disc list-inside">
+                    <li>Complete fecha, nombre, área, comunidad y nivel.</li>
+                    <li>Asigne el técnico responsable si corresponde.</li>
+                    <li>Use PDF para la minuta y JPG, PNG o WEBP para fotografías.</li>
+                    <li>Guarde y confirme que el registro aparece en el historial.</li>
+                </ul>
+            </details>
+            <details class="border border-slate-200 dark:border-gray-700 rounded-lg p-4">
+                <summary class="cursor-pointer text-sm font-semibold text-slate-800 dark:text-slate-200">Registrar un equipo y un movimiento</summary>
+                <ul class="mt-3 space-y-2 text-xs text-slate-600 dark:text-slate-300 list-disc list-inside">
+                    <li>Registre código único, tipo, ubicación, estado y responsable.</li>
+                    <li>Para trasladarlo, seleccione el equipo y registre origen, destino, fecha y motivo.</li>
+                    <li>Verifique que la ubicación actual cambió antes de cerrar el proceso.</li>
+                </ul>
+            </details>
+            <details class="border border-slate-200 dark:border-gray-700 rounded-lg p-4">
+                <summary class="cursor-pointer text-sm font-semibold text-slate-800 dark:text-slate-200">Publicar información institucional</summary>
+                <ul class="mt-3 space-y-2 text-xs text-slate-600 dark:text-slate-300 list-disc list-inside">
+                    <li>Cree el contenido como borrador y seleccione la actividad de origen.</li>
+                    <li>Revise título, resumen, contenido, tipo y prioridad.</li>
+                    <li>Solicite validación administrativa antes de publicar.</li>
+                    <li>Confirme la visibilidad desde el portal público.</li>
+                </ul>
+            </details>
+            <details class="border border-slate-200 dark:border-gray-700 rounded-lg p-4">
+                <summary class="cursor-pointer text-sm font-semibold text-slate-800 dark:text-slate-200">Recuperar el acceso</summary>
+                <ul class="mt-3 space-y-2 text-xs text-slate-600 dark:text-slate-300 list-disc list-inside">
+                    <li>Use el correo registrado y complete el reto de seguridad.</li>
+                    <li>Revise la bandeja de entrada y spam.</li>
+                    <li>El enlace es de un solo uso y tiene vigencia limitada.</li>
+                    <li>Si no llega, solicite al administrador verificar el correo y el SMTP.</li>
+                </ul>
+            </details>
+        </div>
+    </section>
+
+    <section class="border border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-900/10 rounded-xl p-5">
+        <div class="flex items-start gap-3">
+            <i data-lucide="life-buoy" class="w-5 h-5 text-amber-600 flex-shrink-0"></i>
+            <div><h2 class="text-sm font-bold text-amber-900 dark:text-amber-200">Cuando algo no funciona</h2><p class="text-xs text-amber-800 dark:text-amber-300 mt-2 leading-relaxed">Anote usuario, fecha, módulo, acción realizada y mensaje exacto. No comparta contraseñas. Envíe una captura sin datos sensibles y revise primero permisos, catálogos y notificaciones.</p></div>
+        </div>
+    </section>
+
     <!-- Sección de Preguntas Frecuentes (FAQ) y Documentación -->
     <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm p-6 space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 dark:border-gray-700 pb-4">

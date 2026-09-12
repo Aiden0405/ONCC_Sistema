@@ -13,8 +13,6 @@ class Divulgacion(db.Model):
     id = db.Column('id_divulgacion', db.Integer, primary_key=True)
     
     # Llave foránea hacia la tabla actividad del mismo módulo local
-    id_actividad = db.Column(db.Integer, db.ForeignKey('actividad.id_actividad'), nullable=False)
-    
     # Campos específicos físicos mapeados a nombres limpios de Python
     nombre = db.Column('nombre_divulgacion', db.String(100), nullable=False)
     descripcion = db.Column('descripcion_divulgacion', db.Text, nullable=False)

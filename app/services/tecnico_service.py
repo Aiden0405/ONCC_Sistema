@@ -7,6 +7,7 @@ from app.models.role import Role
 from app.models.tecnico import Tecnico
 from app.models.usuario import Usuario
 from app.services.notificacion import ServicioNotificacion
+from app.utils.validation import validate_person_text
 
 
 class TecnicoService:
@@ -104,6 +105,15 @@ class TecnicoService:
         if not nombre or not correo or not cedula or not especialidad:
             return {'ok': False, 'error': 'Todos los campos son obligatorios.'}
 
+        try:
+            nombre = validate_person_text(nombre, field='El nombre')
+            especialidad = validate_person_text(especialidad, field='La especialidad')
+            cedula = validate_person_text(cedula, field='La cédula', max_length=30)
+            if len(correo) > 50 or '@' not in correo:
+                raise ValueError('El correo no es válido.')
+        except ValueError as error:
+            return {'ok': False, 'error': str(error)}
+
         existe_correo = Usuario.query.filter_by(correo=correo).first()
         if existe_correo:
             return {'ok': False, 'error': 'Ya existe un usuario con ese correo.'}
@@ -159,6 +169,15 @@ class TecnicoService:
 
         if not nombre or not correo or not cedula or not especialidad:
             return {'ok': False, 'error': 'Todos los campos son obligatorios.'}
+
+        try:
+            nombre = validate_person_text(nombre, field='El nombre')
+            especialidad = validate_person_text(especialidad, field='La especialidad')
+            cedula = validate_person_text(cedula, field='La cédula', max_length=30)
+            if len(correo) > 50 or '@' not in correo:
+                raise ValueError('El correo no es válido.')
+        except ValueError as error:
+            return {'ok': False, 'error': str(error)}
 
         existe_correo = Usuario.query.filter_by(correo=correo).first()
         if existe_correo and existe_correo.id_usuario != usuario.id_usuario:

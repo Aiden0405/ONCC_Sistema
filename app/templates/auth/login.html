@@ -29,6 +29,7 @@
             }
         })();
     </script>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
@@ -79,23 +80,20 @@
                 <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2 ml-1">Contraseña</label>
                 <div class="relative">
                     <i data-lucide="lock" class="absolute left-3 top-3 w-5 h-5 text-gray-400"></i>
-                    {{ form.password(class_="block w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent dark:text-white transition-all outline-none", placeholder="••••••••") }}
+                    {{ form.password(class_="block w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent dark:text-white transition-all outline-none", placeholder="••••••••", maxlength="128", autocomplete="current-password") }}
                 </div>
                 {% if form.password.errors %}
                     <p class="mt-2 text-xs text-red-500">{{ form.password.errors[0] }}</p>
                 {% endif %}
             </div>
 
-            <!-- Bloque de Verificación de Seguridad (Captcha Matemático) -->
+            <!-- Google reCAPTCHA v2 -->
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2 ml-1">
                     Verificación de Seguridad
                 </label>
-                <div class="flex items-center space-x-3">
-                    <span class="px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-mono font-bold rounded-xl select-none border border-gray-200 dark:border-gray-600 whitespace-nowrap text-sm">
-                        {{ session.get('captcha_texto', '¿Cuánto es 4 + 3?') }}
-                    </span>
-                    <input type="number" name="captcha_login" class="block w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent dark:text-white transition-all outline-none font-mono text-sm" placeholder="Resultado" required />
+                <div class="flex justify-center">
+                    <div class="g-recaptcha" data-sitekey="{{ config.RECAPTCHA_SITE_KEY }}"></div>
                 </div>
             </div>
 

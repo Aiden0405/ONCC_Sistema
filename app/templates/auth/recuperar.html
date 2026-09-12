@@ -27,6 +27,7 @@
             }
         })();
     </script>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 min-h-screen flex items-center justify-center font-sans transition-colors duration-300">
@@ -78,16 +79,13 @@
                 {% endif %}
             </div>
 
-            <!-- 🌟 Bloque del Captcha Matemático Integrado -->
+            <!-- Google reCAPTCHA v2 -->
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2 ml-1">
-                    Verificación de Seguridad (Captcha)
+                    Verificación de Seguridad
                 </label>
-                <div class="flex items-center space-x-3">
-                    <span class="px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-mono font-bold rounded-xl select-none border border-gray-200 dark:border-gray-600 whitespace-nowrap">
-                        {{ session.get('captcha_texto', '¿Cuánto es 5 + 3?') }}
-                    </span>
-                    <input type="number" name="captcha" class="block w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent dark:text-white transition-all outline-none font-mono" placeholder="Resultado" required />
+                <div class="flex justify-center">
+                    <div class="g-recaptcha" data-sitekey="{{ config.RECAPTCHA_SITE_KEY }}"></div>
                 </div>
             </div>
 

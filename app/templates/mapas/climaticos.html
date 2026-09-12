@@ -12,6 +12,7 @@
             <p class="text-sm text-gray-500 dark:text-gray-400">Procesamiento de isoyetas, isotermas e inyección de datos SSBC.</p>
         </div>
         <div class="flex items-center gap-2">
+            {% if current_user.id_rol|int in (1, 2) or current_user.has_permission('reportes_mapas_climaticos') or current_user.rol == config.SUPER_ROLE_NAME %}<a href="{{ url_for('mapas.reporte_mapas_climaticos') }}" class="inline-flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-100 text-sm font-medium"><i data-lucide="download" class="w-4 h-4 mr-1"></i> Reporte</a>{% endif %}
             <a href="#" onclick="abrirModalCarga()" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700 transition-colors text-sm font-medium">
                 <i data-lucide="upload-cloud" class="w-4 h-4 mr-2"></i> Subir Imagen Climática
             </a>
