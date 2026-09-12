@@ -21,6 +21,7 @@ from app.utils.authorization import (
     is_superuser,
     verificar_permiso_dinamico,
 )
+from app.services.reportes import respuesta_csv
 
 
 def _cargar_formulario_divulgacion(form):
@@ -183,6 +184,30 @@ def divulgacion_admin_index():
         cant_borradores=cant_borradores,  
         cant_publicados=cant_publicados,
         permisos_activos=permisos_del_rol  
+    )
+
+
+@core_bp.route('/admin/divulgacion/reporte')
+@login_required
+def divulgacion_reporte():
+    verificar_permiso_dinamico('reportes_divulgaciones')
+    publicaciones = Publicacion.query.order_by(Publicacion.creado_en.desc()).all()
+    filas = [
+        (
+            pub.id_publicacion,
+            pub.titulo_publicacion,
+            pub.tipo,
+            pub.estado_publicacion,
+            pub.autor.nombre_usuario if pub.autor else '',
+            pub.fecha_publicacion,
+            pub.publicado_en or '',
+        )
+        for pub in publicaciones
+    ]
+    return respuesta_csv(
+        'reporte_divulgaciones.csv',
+        ('ID', 'Título', 'Tipo', 'Estado', 'Autor', 'Fecha publicación', 'Publicado en'),
+        filas,
     )
 
 

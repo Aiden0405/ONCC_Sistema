@@ -40,6 +40,7 @@ def do_seed():
         # Catálogo técnico único. Los roles solo agrupan estos permisos.
         permisos_base = [
             ('ver_usuarios', 'Consultar usuarios'),
+            ('reportes_usuarios', 'Generar reportes de usuarios'),
             ('registrar_usuarios', 'Registrar usuarios'),
             ('editar_usuarios', 'Editar usuarios'),
             ('eliminar_usuarios', 'Eliminar usuarios'),
@@ -70,6 +71,7 @@ def do_seed():
             ('eliminar_sensibilizaciones', 'Eliminar sensibilizaciones'),
             ('cambiar_estado_sensibilizaciones', 'Cambiar estado de sensibilizaciones'),
             ('ver_divulgaciones', 'Consultar divulgaciones'),
+            ('reportes_divulgaciones', 'Generar reportes de divulgación'),
             ('registrar_divulgaciones', 'Registrar divulgaciones'),
             ('editar_divulgaciones', 'Editar divulgaciones'),
             ('eliminar_divulgaciones', 'Eliminar divulgaciones'),
@@ -89,6 +91,7 @@ def do_seed():
             ('editar_niveles', 'Editar niveles'),
             ('eliminar_niveles', 'Eliminar niveles'),
             ('ver_mapas_riesgo', 'Consultar mapas de riesgo'),
+            ('reportes_mapas_riesgo', 'Generar reportes de mapas de riesgo'),
             ('registrar_mapas_riesgo', 'Registrar mapas de riesgo'),
             ('editar_mapas_riesgo', 'Editar mapas de riesgo'),
             ('eliminar_mapas_riesgo', 'Eliminar mapas de riesgo'),
@@ -101,6 +104,7 @@ def do_seed():
             ('editar_simbologia', 'Editar simbología'),
             ('eliminar_simbologia', 'Eliminar simbología'),
             ('ver_mapas_climaticos', 'Consultar mapas climáticos'),
+            ('reportes_mapas_climaticos', 'Generar reportes de mapas climáticos'),
             ('registrar_mapas_climaticos', 'Registrar mapas climáticos'),
             ('editar_mapas_climaticos', 'Editar mapas climáticos'),
             ('eliminar_mapas_climaticos', 'Eliminar mapas climáticos'),
@@ -115,11 +119,17 @@ def do_seed():
             ('ver_reportes_inventario', 'Generar reportes de inventario'),
             ('ver_actas_inventario', 'Consultar actas de responsabilidad'),
             ('ver_tecnicos', 'Consultar técnicos de campo'),
+            ('editar_mi_tecnico', 'Editar los datos propios del técnico'),
             ('registrar_tecnicos', 'Registrar técnicos de campo'),
             ('editar_tecnicos', 'Editar técnicos de campo'),
             ('eliminar_tecnicos', 'Eliminar técnicos de campo'),
             ('ver_movimientos_tecnicos', 'Consultar movimientos de técnicos'),
             ('ver_reportes_tecnicos', 'Generar reportes de técnicos'),
+            ('reportes_roles', 'Generar reportes de roles'),
+            ('reportes_permisos', 'Generar reportes de permisos'),
+            ('reportes_formaciones', 'Generar reportes de formaciones'),
+            ('reportes_sensibilizaciones', 'Generar reportes de sensibilizaciones'),
+            ('reportes_actividades', 'Generar reportes de actividades'),
             ('consultar_geografia', 'Consultar catálogos geográficos'),
             # Compatibilidad con instalaciones anteriores.
             ('gestionar_usuarios', 'Compatibilidad: administrar seguridad'),
@@ -136,10 +146,17 @@ def do_seed():
         ]
 
         permisos_creados = {}
+        ultimo_permiso = Permission.query.order_by(Permission.id_modulo.desc()).first()
+        siguiente_id_permiso = (ultimo_permiso.id_modulo + 1) if ultimo_permiso else 1
         for nombre_permiso, descripcion_permiso in permisos_base:
             permiso = Permission.query.filter_by(nombre=nombre_permiso).first()
             if not permiso:
-                permiso = Permission(nombre=nombre_permiso, descripcion=descripcion_permiso)
+                permiso = Permission(
+                    id_modulo=siguiente_id_permiso,
+                    nombre=nombre_permiso,
+                    descripcion=descripcion_permiso,
+                )
+                siguiente_id_permiso += 1
                 db.session.add(permiso)
             permisos_creados[nombre_permiso] = permiso
 

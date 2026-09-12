@@ -16,6 +16,8 @@ from app.models.esquema_activo import NivelActivo as Nivel
 from app.blueprints.core.forms import ActividadForm
 from app.blueprints.core.controllers.roles import verificar_permiso_dinamico
 from app.services.notificacion import ServicioNotificacion
+from app.services.reportes import respuesta_csv
+from app.utils.validation import normalize_text, parse_positive_int
 
 
 def _guardar_archivo(archivo, carpeta):
@@ -23,6 +25,12 @@ def _guardar_archivo(archivo, carpeta):
         return None
 
     nombre_archivo = secure_filename(archivo.filename)
+    extensiones = {
+        'minutas': {'pdf'},
+        'fotos_actividad': {'jpg', 'jpeg', 'png', 'webp'},
+    }.get(carpeta, set())
+    if not nombre_archivo or '.' not in nombre_archivo or nombre_archivo.rsplit('.', 1)[1].lower() not in extensiones:
+        return None
     destino = os.path.join(current_app.root_path, 'static', 'uploads', carpeta)
     os.makedirs(destino, exist_ok=True)
     ruta_completa = os.path.join(destino, nombre_archivo)
@@ -73,6 +81,26 @@ def actividades_index():
     return render_template('actividades/index.html', actividades=actividades, estados_actividad=ESTADOS_ACTIVIDAD)
 
 
+@monitoreo_bp.route('/actividades/reporte')
+@login_required
+def actividades_reporte():
+    verificar_permiso_dinamico('reportes_actividades')
+    actividades = Actividad.query.order_by(Actividad.fecha_actividad.desc()).all()
+    filas = [
+        (
+            actividad.id_actividad, actividad.fecha_actividad,
+            actividad.tipo_actividad, actividad.id_comunidad,
+            actividad.id_nivel, len(actividad.tecnicos_asociados),
+        )
+        for actividad in actividades
+    ]
+    return respuesta_csv(
+        'reporte_actividades.csv',
+        ('ID', 'Fecha', 'Tipo', 'Comunidad', 'Nivel', 'Técnicos asignados'),
+        filas,
+    )
+
+
 # 2. CREATE (NUEVA ACTIVIDAD - RESPETANDO CHECK CONSTRAINT)
 @monitoreo_bp.route('/actividades/nueva', methods=['GET', 'POST'])
 @login_required
@@ -94,7 +122,15 @@ def nueva():
         except (ValueError, TypeError):
             id_tecnico = 0
 
-        if not fecha or not nombre_actividad:
+        try:
+            nombre_actividad = normalize_text(nombre_actividad, max_length=180, field='El nombre de la actividad')
+            fecha_actividad = datetime.strptime(fecha, '%Y-%m-%d').date()
+            comunidad_id = parse_positive_int(request.form.get('id_comunidad'), field='La comunidad')
+            nivel_id = parse_positive_int(request.form.get('id_nivel'), field='El nivel')
+            poblacion = int(request.form.get('poblacion', 0) or 0)
+            if poblacion < 0 or poblacion > 100000000:
+                raise ValueError('La población debe ser un número entre 0 y 100000000.')
+        except (ValueError, TypeError):
             flash('Debe completar el nombre de la actividad y la fecha.', 'error')
             return render_template('actividades/formulario.html', form=form, comunidades=comunidades, niveles=niveles)
 
@@ -102,13 +138,13 @@ def nueva():
             user_id = getattr(current_user, 'id_usuario', None) or getattr(current_user, 'id', 1)
 
             nueva_actividad = Actividad(
-                fecha_actividad=datetime.strptime(fecha, '%Y-%m-%d').date(),
+                fecha_actividad=fecha_actividad,
                 tipo_actividad=area if area in ['MONITOREO', 'FORMACION', 'SENSIBILIZACION'] else 'MONITOREO',
-                id_comunidad=int(request.form.get('id_comunidad', 1) or 1),
-                id_nivel=int(request.form.get('id_nivel', 1) or 1),
+                id_comunidad=comunidad_id,
+                id_nivel=nivel_id,
                 id_usuario=user_id,
                 descripcion=request.form.get('descripcion', '').strip() or None,
-                poblacion=int(request.form.get('poblacion', 0) or 0),
+                poblacion=poblacion,
                 acuerdos=request.form.get('acuerdos', '').strip() or None
             )
 
