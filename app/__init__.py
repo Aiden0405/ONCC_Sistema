@@ -225,7 +225,7 @@ def create_app(config_class=Config):
     app.add_url_rule('/formaciones', endpoint='formacion.index', view_func=comunitario_formaciones_index)
     app.add_url_rule('/formaciones/nuevo', endpoint='formacion.nuevo', view_func=formacion_nuevo, methods=['GET', 'POST'])
     app.add_url_rule('/formaciones/<int:formacion_id>/estado', endpoint='formacion.cambiar_estado', view_func=formacion_cambiar_estado, methods=['POST'])
-    app.add_url_rule('/sensibilizaciones', endpoint='sensibilizacion.index', view_func=comunitario_sensibilizaciones_index)
+    app.add_url_rule('/sensibilizaciones', endpoint='sensibilizacion.index', view_func=comunitario_formaciones_index)
     app.add_url_rule('/sensibilizaciones/nuevo', endpoint='sensibilizacion.nuevo', view_func=sensibilizacion_nuevo, methods=['GET', 'POST'])
     app.add_url_rule('/sensibilizaciones/<int:sensibilizacion_id>/estado', endpoint='sensibilizacion.cambiar_estado', view_func=sensibilizacion_cambiar_estado, methods=['POST'])
 
