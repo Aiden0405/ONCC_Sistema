@@ -138,7 +138,6 @@ def do_seed():
             ('gestionar_formaciones', 'Compatibilidad: administrar formaciones'),
             ('gestionar_sensibilizaciones', 'Compatibilidad: administrar sensibilizaciones'),
             ('crear_divulgaciones', 'Compatibilidad: crear divulgaciones'),
-            ('aprobar_divulgaciones', 'Compatibilidad: aprobar divulgaciones'),
             ('gestionar_geomatica', 'Compatibilidad: administrar geomática'),
             ('ver_mapas', 'Compatibilidad: consultar mapas'),
             ('gestionar_inventario', 'Compatibilidad: administrar inventario'),

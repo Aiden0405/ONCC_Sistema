@@ -1,4 +1,4 @@
-from flask import flash, redirect, render_template, request, url_for, abort
+from flask import current_app, flash, redirect, render_template, request, url_for, abort
 from flask_login import current_user, login_required
 
 from app import db
@@ -8,7 +8,7 @@ from app.models.usuario import Usuario
 from app.services.auditoria import registrar_accion
 from app.services.notificacion import ServicioNotificacion
 from app.constants import KNOWN_PERMISSION_SLUGS, RBAC_MODULES
-from app.utils.authorization import current_role_id, is_superuser, verificar_permiso_dinamico
+from app.utils.authorization import current_role_id, is_superuser_role, verificar_permiso_dinamico
 from app.services.reportes import respuesta_csv
 
 
@@ -78,11 +78,11 @@ def rol_nuevo():
 def rol_editar(rol_id):
     verificar_permiso_dinamico('editar_roles')
     
-    if int(rol_id) == 1 and not is_superuser():
+    rol = Role.query.get_or_404(rol_id)
+    if rol.nombre_rol == current_app.config.get('SUPER_ROLE_NAME') and not is_superuser_role(current_user.rol):
         flash('No tiene jerarquía institucional para modificar el rol de Superusuario.', 'error')
         abort(403)
         
-    rol = Role.query.get_or_404(rol_id)
     if request.method == 'POST':
         nombre_anterior = rol.nombre_rol
         rol.nombre_rol = (request.form.get('nombre') or rol.nombre_rol).strip()
@@ -109,11 +109,11 @@ def rol_editar(rol_id):
 def rol_eliminar(rol_id):
     verificar_permiso_dinamico('eliminar_roles')
     
-    if int(rol_id) == 1 and not is_superuser():
+    rol = Role.query.get_or_404(rol_id)
+    if rol.nombre_rol == current_app.config.get('SUPER_ROLE_NAME') and not is_superuser_role(current_user.rol):
         flash('Acceso denegado: El rol de Superusuario está blindado por el sistema.', 'error')
         abort(403)
         
-    rol = Role.query.get_or_404(rol_id)
     rol_id_temp = rol.id_rol
     rol_nombre_temp = rol.nombre_rol
     
@@ -138,11 +138,11 @@ def rol_eliminar(rol_id):
 def rol_gestionar_permisos(rol_id):
     verificar_permiso_dinamico('asignar_permisos_roles')
     
-    if int(rol_id) == 1 and not is_superuser():
+    rol = Role.query.get_or_404(rol_id)
+    if rol.nombre_rol == current_app.config.get('SUPER_ROLE_NAME') and not is_superuser_role(current_user.rol):
         flash('No tiene jerarquía para alterar la matriz de accesos del Superusuario.', 'error')
         abort(403)
         
-    rol = Role.query.get_or_404(rol_id)
     permisos = Permission.query.order_by(Permission.nombre_modulo).all()
     permisos_por_nombre = {permiso.nombre_modulo: permiso for permiso in permisos}
     matriz = [
@@ -162,16 +162,19 @@ def rol_gestionar_permisos(rol_id):
 
         for modulo in RBAC_MODULES.values():
             acciones = modulo['permissions']
-            tiene_accion = any(
-                accion != 'leer'
-                and nombre in permisos_por_nombre
-                and permisos_por_nombre[nombre].id_modulo in seleccion
-                for accion, nombre in acciones.items()
-            )
             permiso_leer = permisos_por_nombre.get(acciones['leer'])
-            if tiene_accion and permiso_leer:
-                seleccion.add(permiso_leer.id_modulo)
-        
+            acciones_internas = [
+                permisos_por_nombre[nombre].id_modulo
+                for accion, nombre in acciones.items()
+                if accion != 'leer' and nombre in permisos_por_nombre
+            ]
+            if any(permiso_id in seleccion for permiso_id in acciones_internas):
+                if not permiso_leer or permiso_leer.id_modulo not in seleccion:
+                    flash(
+                        f"En el módulo '{modulo['label']}' debe seleccionar primero 'Leer' para asignar acciones internas.",
+                        'error',
+                    )
+                    return render_template('roles/permisos.html', rol=rol, permisos=permisos, matriz=matriz)
         try:
             Permiso.query.filter_by(id_rol=rol.id_rol).delete()
             
@@ -213,6 +216,28 @@ def usuario_permiso_excepcion(usuario_id):
         return redirect(url_for('usuario.index'))
 
     permiso = Permission.query.get_or_404(permiso_id)
+    modulo_padre = next(
+        (
+            module for module in RBAC_MODULES.values()
+            if permiso.nombre_modulo in module['permissions'].values()
+        ),
+        None,
+    )
+    if modulo_padre:
+        permiso_lectura = modulo_padre['permissions']['leer']
+        permisos_modulo = set(modulo_padre['permissions'].values())
+        if efecto == 'conceder' and permiso.nombre_modulo != permiso_lectura and not usuario.has_permission(permiso_lectura):
+            flash('Primero debe conceder el permiso "Leer" del módulo antes de asignar acciones internas.', 'error')
+            return redirect(url_for('usuario.index'))
+        if efecto == 'revocar' and permiso.nombre_modulo == permiso_lectura:
+            conserva_accion = any(
+                usuario.has_permission(nombre)
+                for nombre in permisos_modulo
+                if nombre != permiso_lectura
+            )
+            if conserva_accion:
+                flash('No puede revocar el acceso al módulo mientras conserve acciones internas.', 'error')
+                return redirect(url_for('usuario.index'))
     override = UserPermissionOverride.query.get((usuario.id_usuario, permiso.id_modulo))
     try:
         if efecto == 'quitar':

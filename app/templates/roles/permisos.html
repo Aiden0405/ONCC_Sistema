@@ -20,7 +20,7 @@
             <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400 flex items-center">
                 <i data-lucide="key-round" class="w-4 h-4 mr-2"></i> Módulos Transaccionales Autorizados
             </h3>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Cada módulo tiene Leer, Crear, Actualizar, Eliminar y Reportes. Si selecciona una acción, Leer se asigna automáticamente.</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Seleccione primero Leer para habilitar el módulo y después las acciones permitidas dentro de él. Las excepciones individuales de Usuarios se conservan por separado.</p>
         </div>
 
         <form method="post" class="p-6 space-y-6">
@@ -32,10 +32,10 @@
                     <h4 class="mb-3 text-sm font-bold text-gray-800 dark:text-gray-100">{{ module.label }}</h4>
                     <div class="grid grid-cols-2 gap-2 sm:grid-cols-5">
                         {% for action_key, permiso in module_permissions %}
-                        {% set labels = {'leer': 'Leer / Buscar', 'crear': 'Crear', 'actualizar': 'Actualizar', 'eliminar': 'Eliminar', 'reportes': 'Reportes / Exportar'} %}
+                        {% set labels = {'leer': 'Leer / Acceso', 'crear': 'Crear', 'actualizar': 'Actualizar', 'eliminar': 'Eliminar', 'reportes': 'Reportes / Exportar', 'aprobar': 'Aprobar', 'publicar': 'Publicar', 'retirar': 'Retirar', 'asignar': 'Asignar permisos', 'cambiar_estado': 'Cambiar estado', 'instituciones': 'Consultar instituciones', 'comunidades': 'Consultar comunidades', 'niveles': 'Consultar niveles', 'crear_instituciones': 'Crear instituciones', 'editar_instituciones': 'Editar instituciones', 'eliminar_instituciones': 'Eliminar instituciones', 'crear_comunidades': 'Crear comunidades', 'editar_comunidades': 'Editar comunidades', 'eliminar_comunidades': 'Eliminar comunidades', 'crear_niveles': 'Crear niveles', 'editar_niveles': 'Editar niveles', 'eliminar_niveles': 'Eliminar niveles', 'actas': 'Actas', 'actualizar_propio': 'Editar datos propios'} %}
                         <label class="flex min-h-16 cursor-pointer flex-col items-center justify-center rounded-md border border-gray-200 bg-gray-50 p-2 text-center text-xs dark:border-gray-600 dark:bg-gray-700/30">
                             <input type="checkbox" name="permisos" value="{{ permiso.id_modulo }}" {% if permiso in rol.permissions %}checked{% endif %} class="mb-1 h-4 w-4 accent-green-600">
-                            <span class="font-semibold">{{ labels[action_key] }}</span>
+                            <span class="font-semibold">{{ labels.get(action_key, action_key|replace('_', ' ')|title) }}</span>
                         </label>
                         {% endfor %}
                     </div>

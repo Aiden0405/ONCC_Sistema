@@ -1,6 +1,7 @@
 from app import db
 from app.models.notificacion import Notificacion
 from app.models.usuario import Usuario
+from app.utils.authorization import is_superuser_role
 
 class ServicioNotificacion:
 
@@ -29,7 +30,7 @@ class ServicioNotificacion:
             for u in usuarios:
                 # Usa tu sistema existente de permisos en el modelo Usuario
                 tiene_permiso = getattr(u, 'has_permission', lambda p: False)(permiso_requerido)
-                es_super = getattr(u, 'id_rol', None) in (1, 2)
+                es_super = is_superuser_role(getattr(u, 'rol', ''))
                 
                 if (tiene_permiso or es_super) and u.id_usuario != emisor_id:
                     notif = Notificacion(

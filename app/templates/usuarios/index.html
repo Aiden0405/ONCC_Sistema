@@ -51,8 +51,8 @@
                         <th class="px-6 py-3 font-semibold">Correo Electrónico</th>
                         <th class="px-6 py-3 font-semibold">Rol Asignado</th>
                         <th class="px-6 py-3 font-semibold">Estatus</th>
-                        <th class="px-6 py-3 font-semibold">Permisos individuales</th>
-                        <th class="px-6 py-3 text-right">Acciones Administrativas</th>
+                        <th class="px-6 py-3 font-semibold">Excepciones de permisos</th>
+                        <th class="px-6 py-3 text-right">Gestión de cuenta</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
@@ -132,11 +132,23 @@
                                 </summary>
                                 <form action="{{ url_for('core.usuario_permiso_excepcion', usuario_id=u.id_usuario) }}" method="post" class="absolute right-0 z-10 mt-2 w-72 rounded-md border border-amber-200 bg-white p-3 shadow-lg dark:border-amber-800 dark:bg-gray-800">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <p class="mb-2 text-[11px] text-amber-800 dark:text-amber-200">Primero conceda <strong>Leer</strong> del módulo. Luego podrá conceder acciones internas.</p>
                                     <select name="permiso_id" required class="mb-2 w-full rounded border border-gray-300 bg-white p-1.5 text-xs dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100">
                                         <option value="">Seleccione un permiso</option>
-                                        {% for permiso in permisos %}
-                                        <option value="{{ permiso.id_modulo }}">{{ permiso.nombre_modulo|replace('_', ' ')|title }}</option>
+                                        {% for label, permisos_modulo in permisos_por_modulo %}
+                                        <optgroup label="{{ label }}">
+                                            {% for accion, permiso in permisos_modulo %}
+                                            <option value="{{ permiso.id_modulo }}">{% if accion == 'leer' %}Leer / Acceso al módulo{% elif accion == 'crear' %}Crear{% elif accion == 'actualizar' %}Actualizar{% elif accion == 'eliminar' %}Eliminar{% elif accion == 'reportes' %}Reportes{% else %}{{ accion|replace('_', ' ')|title }}{% endif %}</option>
+                                            {% endfor %}
+                                        </optgroup>
                                         {% endfor %}
+                                        {% if permisos_sin_modulo %}
+                                        <optgroup label="Otros permisos">
+                                            {% for permiso in permisos_sin_modulo %}
+                                            <option value="{{ permiso.id_modulo }}">{{ permiso.nombre_modulo|replace('_', ' ')|title }}</option>
+                                            {% endfor %}
+                                        </optgroup>
+                                        {% endif %}
                                     </select>
                                     <div class="flex gap-1">
                                         <select name="efecto" class="min-w-0 flex-1 rounded border border-gray-300 bg-white p-1.5 text-xs dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100">

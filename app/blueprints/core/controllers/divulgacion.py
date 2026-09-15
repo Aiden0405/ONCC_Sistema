@@ -18,6 +18,7 @@ from app.models.visita_portal import VisitaPortal
 from app.utils.authorization import (
     current_permission_names,
     current_role_id,
+    has_permission,
     is_superuser,
     verificar_permiso_dinamico,
 )
@@ -250,7 +251,7 @@ def divulgacion_admin_editar(pub_id):
     rol_id_actual = current_role_id()
     usuario_id_actual = int(current_user.get_id())
     
-    if rol_id_actual not in (1, 2) and int(pub.id_usuario) != usuario_id_actual:
+    if not has_permission('editar_divulgaciones'):
         flash('Acceso denegado: No posee los privilegios para modificar esta publicación.', 'error')
         return redirect(url_for('core.divulgacion_admin_index'))
     
@@ -313,7 +314,7 @@ def divulgacion_admin_eliminar(pub_id):
     rol_id_actual = current_role_id()
     usuario_id_actual = int(current_user.get_id())
     
-    if rol_id_actual not in (1, 2) and int(pub.id_usuario) != usuario_id_actual:
+    if not has_permission('eliminar_divulgaciones'):
         flash('Acceso denegado: No posee la autoría para eliminar este expediente.', 'error')
         return redirect(url_for('core.divulgacion_admin_index'))
     
@@ -346,7 +347,6 @@ def divulgacion_admin_aprobar(pub_id):
     ServicioNotificacion.notificar_por_permiso('aprobar_divulgaciones', mensaje, emisor_id=current_user.id_usuario)
     ServicioNotificacion.crear_aviso(id_usuario=current_user.id_usuario, mensaje=mensaje, categoria='Divulgación')
 
-    ServicioNotificacion.disparar_a_main_page(pub)
     registrar_accion('Divulgación', pub.id_publicacion, 'Modificar', getattr(current_user, 'nombre_usuario', 'Usuario'), detalle=f'Aprobada para la Web: {pub.titulo_publicacion[:40]}...', estado_nuevo='publicado')
     flash('Publicación aprobada y publicada exitosamente.', 'success')
     return redirect(url_for('core.divulgacion_admin_index'))

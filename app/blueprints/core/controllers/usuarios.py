@@ -4,12 +4,13 @@ from flask_login import current_user, login_required
 from app import db
 from app.blueprints.core import core_bp
 from app.models.role import Permission, Role, UserPermissionOverride
+from app.constants import LEGACY_PERMISSION_NAMES, RBAC_MODULES
 from app.models.usuario import Usuario
 from app.models.notificacion import Notificacion
 from app.models.password_reset import PasswordReset
 from app.services.auditoria import registrar_accion
 from app.services.notificacion import ServicioNotificacion
-from app.utils.authorization import current_role_id, is_superuser, verificar_permiso_dinamico
+from app.utils.authorization import current_role_id, has_full_access_role, is_superuser, verificar_permiso_dinamico
 from app.services.reportes import respuesta_csv
 from app.utils.validation import parse_positive_int, validate_password, validate_person_text
 
@@ -20,6 +21,23 @@ def usuario_index():
     verificar_permiso_dinamico('ver_usuarios')
     usuarios = Usuario.query.order_by(Usuario.nombre_usuario).all()
     permisos = Permission.query.order_by(Permission.nombre_modulo).all()
+    permisos_por_nombre = {permiso.nombre_modulo: permiso for permiso in permisos}
+    permisos_por_modulo = []
+    permisos_asignados = set()
+    for module in RBAC_MODULES.values():
+        permisos_modulo = [
+            (accion, permisos_por_nombre[nombre])
+            for accion, nombre in module['permissions'].items()
+            if nombre in permisos_por_nombre
+        ]
+        if permisos_modulo:
+            permisos_por_modulo.append((module['label'], permisos_modulo))
+            permisos_asignados.update(permiso.nombre_modulo for _, permiso in permisos_modulo)
+    permisos_sin_modulo = [
+        permiso for permiso in permisos
+        if permiso.nombre_modulo not in permisos_asignados
+        and permiso.nombre_modulo not in LEGACY_PERMISSION_NAMES
+    ]
     excepciones = {
         usuario.id_usuario: {
             override.id_modulo: override
@@ -32,8 +50,10 @@ def usuario_index():
         whitespaces=True,
         usuarios=usuarios,
         permisos=permisos,
+        permisos_por_modulo=permisos_por_modulo,
+        permisos_sin_modulo=permisos_sin_modulo,
         excepciones=excepciones,
-        puede_gestionar_excepciones=is_superuser() or current_role_id() in (1, 2),
+        puede_gestionar_excepciones=has_full_access_role(current_user.rol),
     )
 
 
@@ -84,7 +104,7 @@ def usuario_nuevo():
         # 🛡️ CONTROL DE JERARQUÍA ABSOLUTO EN CREACIÓN
         rol_creador = current_role_id()
         
-        if rol_creador != 1 and rol_destino <= rol_creador:
+        if not has_full_access_role(current_user.rol) and rol_destino <= rol_creador:
             flash('Acceso denegado: No posee el rango jerárquico para asignar este nivel de privilegio.', 'error')
             return redirect(url_for('usuario.index'))
 
@@ -135,7 +155,7 @@ def usuario_editar(usuario_id):
     rol_operador = current_role_id()
     rol_objetivo = int(usuario.id_rol)
 
-    if rol_operador != 1:
+    if not has_full_access_role(current_user.rol):
         if rol_operador == 2 and rol_objetivo == 1:
             flash('No tiene jerarquía para modificar los datos de un Superusuario.', 'error')
             abort(403)
@@ -208,7 +228,7 @@ def usuario_eliminar(usuario_id):
     rol_operador = current_role_id()
     rol_objetivo = int(usuario.id_rol)
 
-    if rol_operador != 1:
+    if not has_full_access_role(current_user.rol):
         if rol_operador == 2 and rol_objetivo == 1:
             flash('Acceso denegado: No posee la jerarquía para eliminar a un Superusuario.', 'error')
             return redirect(url_for('usuario.index'))

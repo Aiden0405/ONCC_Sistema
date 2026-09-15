@@ -339,9 +339,9 @@ def create_app(config_class=Config):
         from app.models.inventario import InventarioEquipo
         from app.models.esquema_activo import FormacionActiva, SensibilizacionActiva
         from flask_login import current_user
-        from app.utils.authorization import is_superuser
+        from app.utils.authorization import has_full_access_role, has_permission
 
-        alcance_global = is_superuser() or current_user.id_rol in (1, 2)
+        alcance_global = has_full_access_role(current_user.rol)
         if alcance_global:
             actividades_query = Actividad.query
             publicaciones_query = Publicacion.query
@@ -465,6 +465,17 @@ def create_app(config_class=Config):
                 return dict(alertas_sistema=[], conteo_alertas=0)
         
         return dict(alertas_sistema=[], conteo_alertas=0)
+
+    @app.context_processor
+    def inject_authorization_helpers():
+        from flask_login import current_user
+        from app.utils.authorization import has_full_access_role, has_permission, is_superuser, is_superuser_role
+        return dict(
+            has_full_access_role=lambda: has_full_access_role(current_user.rol),
+            has_permission=has_permission,
+            is_superuser=is_superuser,
+            is_system_superuser=lambda: is_superuser_role(current_user.rol),
+        )
 
     @app.route('/api/notificaciones/marcar-leidas', methods=['POST'])
     @login_required
