@@ -9,6 +9,25 @@ class Permiso(db.Model):
     id_rol = db.Column(db.Integer, primary_key=True)
 
 
+class UserPermissionOverride(db.Model):
+    """Excepción por usuario: una fila concede o revoca un permiso del catálogo."""
+    __bind_key__ = 'seguridad'
+    __tablename__ = 'usuario_permiso_excepcion'
+
+    id_usuario = db.Column(
+        db.Integer,
+        db.ForeignKey('usuario.id_usuario', ondelete='CASCADE'),
+        primary_key=True,
+    )
+    id_modulo = db.Column(
+        db.Integer,
+        db.ForeignKey('modulos.id_modulo', ondelete='CASCADE'),
+        primary_key=True,
+    )
+    concedido = db.Column(db.Boolean, nullable=False)
+    permission_obj = db.relationship('Permission', foreign_keys=[id_modulo], uselist=False)
+
+
 class Role(db.Model):
     __bind_key__ = 'seguridad'
     __tablename__ = 'rol'

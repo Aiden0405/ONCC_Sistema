@@ -7,23 +7,10 @@
     {# ==============================================================================
        LÓGICA DE GOBERNANZA: RE-CALCULAMOS VARIABLES SI EL USUARIO ES TÉCNICO
        ============================================================================== #}
-    {% if current_user.id_rol == 3 %}
-        {% set total_tecnico = current_user.publicaciones|length %}
-        {% set borradores_tecnico = current_user.publicaciones|selectattr('estado', 'equalto', 'borrador')|list|length %}
-        {% set publicados_tecnico = current_user.publicaciones|selectattr('estado', 'equalto', 'publicado')|list|length %}
-        
-        {# Pisamos las variables del sistema con las del técnico individual #}
-        {% set div_total = total_tecnico %}
-        {% set div_publicadas = publicados_tecnico %}
-        {% set div_borradores = borradores_tecnico %}
-        {% set div_resumen = total_tecnico %}
-    {% else %}
-        {# Usamos los valores globales calculados originalmente por tu backend #}
-        {% set div_total = modulos_operativos.divulgacion %}
-        {% set div_publicadas = modulos_operativos.divulgacion_publicadas %}
-        {% set div_borradores = modulos_operativos.divulgacion_borradores %}
-        {% set div_resumen = resumen.divulgacion %}
-    {% endif %}
+    {% set div_total = modulos_operativos.divulgacion %}
+    {% set div_publicadas = modulos_operativos.divulgacion_publicadas %}
+    {% set div_borradores = modulos_operativos.divulgacion_borradores %}
+    {% set div_resumen = resumen.divulgacion %}
 
     <div class="relative overflow-hidden rounded-3xl border border-emerald-100 bg-gradient-to-br from-white via-emerald-50/70 to-slate-50 p-6 shadow-sm dark:border-gray-700 dark:from-gray-800 dark:via-gray-800 dark:to-gray-900">
         <div class="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-emerald-200/30 blur-3xl dark:bg-emerald-900/20"></div>
@@ -31,11 +18,11 @@
             <div class="space-y-4">
                 <div class="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700 shadow-sm dark:border-emerald-900/40 dark:bg-gray-900/60 dark:text-emerald-300">
                     <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
-                    Monitoreo general
+                    {{ 'Monitoreo general' if alcance_global else 'Mi tablero personal' }}
                 </div>
                 <div class="space-y-2">
-                    <h1 class="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Monitoreo General</h1>
-                    <p class="max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">Vista central del sistema con indicadores útiles, accesos rápidos y estado resumido de los módulos operativos.</p>
+                    <h1 class="text-3xl font-black tracking-tight text-slate-900 dark:text-white">{{ 'Monitoreo General' if alcance_global else 'Mi tablero personal' }}</h1>
+                    <p class="max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">{% if alcance_global %}Vista central del sistema con indicadores útiles, accesos rápidos y estado resumido de los módulos operativos.{% else %}Resumen de tus actividades, publicaciones y recursos asignados.{% endif %}</p>
                 </div>
                 <div class="flex flex-wrap gap-3 text-xs font-medium text-slate-600 dark:text-slate-300">
                     <div class="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-2 shadow-sm ring-1 ring-slate-200 dark:bg-gray-900/50 dark:ring-gray-700">

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title>ONCC</title>
+  <rect width="64" height="64" rx="14" fill="#15803d"/>
+  <path d="M16 39.5h31.5a8.5 8.5 0 0 0 .7-17 13.5 13.5 0 0 0-25.7-2.8A9.5 9.5 0 0 0 16 39.5Z" fill="#fff"/>
+  <path d="M24 45.5l-2.8 6M34 45.5l-2.8 6M44 45.5l-2.8 6" stroke="#bbf7d0" stroke-width="4" stroke-linecap="round"/>
+</svg>

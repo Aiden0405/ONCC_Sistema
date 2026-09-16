@@ -11,11 +11,10 @@
             <p class="text-sm dark:text-gray-400 text-gray-500">Crear, revisar y publicar contenidos informativos destinados al portal público institucional</p>
         </div>
         
-        {% if 'registrar_divulgaciones' in permisos_activos or current_user.id_rol|int in (1, 2) %}
-        <a href="{{ url_for('core.divulgacion_admin_nuevo') }}" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md shadow-sm hover:bg-green-700 transition-colors text-sm font-medium">
-            <i data-lucide="plus" class="w-4 h-4 mr-2"></i> Nueva Publicación
-        </a>
-        {% endif %}
+        <div class="flex items-center gap-2">
+            {% if is_superuser() or has_permission('reportes_divulgaciones') %}<a href="{{ url_for('core.divulgacion_reporte') }}" class="inline-flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-100 text-sm font-medium"><i data-lucide="download" class="w-4 h-4 mr-1"></i> Reporte</a>{% endif %}
+            {% if has_permission('registrar_divulgaciones') or is_superuser() %}<a href="{{ url_for('core.divulgacion_admin_nuevo') }}" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md shadow-sm hover:bg-green-700 transition-colors text-sm font-medium"><i data-lucide="plus" class="w-4 h-4 mr-2"></i> Nueva Publicación</a>{% endif %}
+        </div>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -133,14 +132,14 @@
                             </button>
 
                             <!-- ✏️ BOTÓN EDITAR -->
-                            {% if current_user.id_rol|int in (1, 2) or p.id_usuario|int == current_user.id|int %}
+                            {% if has_permission('editar_divulgaciones') or is_superuser() %}
                                 <a href="{{ url_for('core.divulgacion_admin_editar', pub_id=p.id) }}" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300 transition-colors">
                                     <i data-lucide="edit" class="w-3.5 h-3.5 mr-1"></i> Editar
                                 </a>
                             {% endif %}
 
                             {% if p.estado != 'publicado' %}
-                                {% if current_user.id_rol|int in (1, 2) or p.id_usuario|int == current_user.id|int %}
+                                {% if has_permission('eliminar_divulgaciones') or is_superuser() %}
                                     <form action="{{ url_for('core.divulgacion_admin_eliminar', pub_id=p.id) }}" method="post" class="inline" onsubmit="return confirm('¿Está seguro de que desea eliminar este borrador?');">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                         <button type="submit" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300 transition-colors">
@@ -149,7 +148,7 @@
                                     </form>
                                 {% endif %}
 
-                                {% if 'aprobar_divulgaciones' in permisos_activos or current_user.id_rol|int in (1, 2) %}
+                                {% if has_permission('aprobar_divulgaciones') or is_superuser() %}
                                 <form action="{{ url_for('core.divulgacion_admin_aprobar', pub_id=p.id) }}" method="post" class="inline" onsubmit="return confirm('¿Desea publicar este contenido en la web?');">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-bold text-white bg-green-600 hover:bg-green-700 transition-colors shadow-sm">
@@ -159,7 +158,7 @@
                                 {% endif %}
                                 
                             {% else %}
-                                {% if 'aprobar_divulgaciones' in permisos_activos or current_user.id_rol|int in (1, 2) %}
+                                {% if has_permission('aprobar_divulgaciones') or is_superuser() %}
                                     <form action="{{ url_for('core.divulgacion_admin_despublicar', pub_id=p.id) }}" method="post" class="inline" onsubmit="return confirm('¿Desea retirar esta publicación del portal web?');">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                         <button type="submit" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300 transition-colors">

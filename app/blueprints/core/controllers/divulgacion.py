@@ -18,9 +18,11 @@ from app.models.visita_portal import VisitaPortal
 from app.utils.authorization import (
     current_permission_names,
     current_role_id,
+    has_permission,
     is_superuser,
     verificar_permiso_dinamico,
 )
+from app.services.reportes import respuesta_csv
 
 
 def _cargar_formulario_divulgacion(form):
@@ -186,6 +188,30 @@ def divulgacion_admin_index():
     )
 
 
+@core_bp.route('/admin/divulgacion/reporte')
+@login_required
+def divulgacion_reporte():
+    verificar_permiso_dinamico('reportes_divulgaciones')
+    publicaciones = Publicacion.query.order_by(Publicacion.creado_en.desc()).all()
+    filas = [
+        (
+            pub.id_publicacion,
+            pub.titulo_publicacion,
+            pub.tipo,
+            pub.estado_publicacion,
+            pub.autor.nombre_usuario if pub.autor else '',
+            pub.fecha_publicacion,
+            pub.publicado_en or '',
+        )
+        for pub in publicaciones
+    ]
+    return respuesta_csv(
+        'reporte_divulgaciones.csv',
+        ('ID', 'Título', 'Tipo', 'Estado', 'Autor', 'Fecha publicación', 'Publicado en'),
+        filas,
+    )
+
+
 @core_bp.route('/admin/divulgacion/nuevo', methods=['GET', 'POST'])
 @login_required
 def divulgacion_admin_nuevo():
@@ -225,7 +251,7 @@ def divulgacion_admin_editar(pub_id):
     rol_id_actual = current_role_id()
     usuario_id_actual = int(current_user.get_id())
     
-    if rol_id_actual not in (1, 2) and int(pub.id_usuario) != usuario_id_actual:
+    if not has_permission('editar_divulgaciones'):
         flash('Acceso denegado: No posee los privilegios para modificar esta publicación.', 'error')
         return redirect(url_for('core.divulgacion_admin_index'))
     
@@ -288,7 +314,7 @@ def divulgacion_admin_eliminar(pub_id):
     rol_id_actual = current_role_id()
     usuario_id_actual = int(current_user.get_id())
     
-    if rol_id_actual not in (1, 2) and int(pub.id_usuario) != usuario_id_actual:
+    if not has_permission('eliminar_divulgaciones'):
         flash('Acceso denegado: No posee la autoría para eliminar este expediente.', 'error')
         return redirect(url_for('core.divulgacion_admin_index'))
     
@@ -321,7 +347,6 @@ def divulgacion_admin_aprobar(pub_id):
     ServicioNotificacion.notificar_por_permiso('aprobar_divulgaciones', mensaje, emisor_id=current_user.id_usuario)
     ServicioNotificacion.crear_aviso(id_usuario=current_user.id_usuario, mensaje=mensaje, categoria='Divulgación')
 
-    ServicioNotificacion.disparar_a_main_page(pub)
     registrar_accion('Divulgación', pub.id_publicacion, 'Modificar', getattr(current_user, 'nombre_usuario', 'Usuario'), detalle=f'Aprobada para la Web: {pub.titulo_publicacion[:40]}...', estado_nuevo='publicado')
     flash('Publicación aprobada y publicada exitosamente.', 'success')
     return redirect(url_for('core.divulgacion_admin_index'))

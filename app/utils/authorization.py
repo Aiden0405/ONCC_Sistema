@@ -3,7 +3,6 @@ from flask import abort, redirect, url_for, flash, current_app
 from flask_login import current_user
 
 
-SUPERUSER_ROLE_IDS = (1, 2)
 PERMISSION_ALIASES = {
     'manage_users': 'gestionar_usuarios',
     'manage_roles': 'gestionar_usuarios',
@@ -39,7 +38,6 @@ PERMISSION_FALLBACKS = {
     'editar_sensibilizaciones': ('gestionar_sensibilizaciones',),
     'eliminar_sensibilizaciones': ('gestionar_sensibilizaciones',),
     'cambiar_estado_sensibilizaciones': ('gestionar_sensibilizaciones',),
-    'ver_divulgaciones': ('crear_divulgaciones', 'aprobar_divulgaciones'),
     'registrar_divulgaciones': ('crear_divulgaciones',),
     'editar_divulgaciones': ('crear_divulgaciones',),
     'eliminar_divulgaciones': ('crear_divulgaciones',),
@@ -105,8 +103,26 @@ def current_role_id(default=None):
         return default
 
 
+def is_superuser_role(role_name):
+    configured_name = (current_app.config.get('SUPER_ROLE_NAME') or '').strip().lower()
+    normalized_name = (role_name or '').strip().lower()
+    return normalized_name in {configured_name, 'superusuario', 'super usuario'}
+
+
+def has_full_access_role(role_name):
+    normalized_name = (role_name or '').strip().lower()
+    configured_name = (current_app.config.get('SUPER_ROLE_NAME') or '').strip().lower()
+    return normalized_name in {
+        configured_name,
+        'superusuario',
+        'super usuario',
+        'administrador',
+        'admin',
+    }
+
+
 def is_superuser():
-    return current_role_id() in SUPERUSER_ROLE_IDS
+    return has_full_access_role(getattr(current_user, 'rol', ''))
 
 
 def current_permission_names():
@@ -130,7 +146,7 @@ def has_permission(permission_name):
     if not current_user.is_authenticated:
         return False
 
-    if is_superuser():
+    if has_full_access_role(getattr(current_user, 'rol', '')):
         return True
 
     permission_name = _normalize_permission_name(permission_name)
@@ -149,7 +165,7 @@ def verificar_permiso_dinamico(permission_name):
     if not current_user.is_authenticated:
         abort(403)
 
-    if is_superuser():
+    if has_full_access_role(getattr(current_user, 'rol', '')):
         return True
 
     if not has_permission(permission_name):

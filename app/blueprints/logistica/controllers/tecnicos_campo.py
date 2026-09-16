@@ -56,7 +56,8 @@ def tecnicos_nuevo():
 @logistica_bp.route('/tecnicos-campo/<int:tecnico_id>/editar', methods=['POST'])
 @login_required
 def tecnicos_editar(tecnico_id):
-    verificar_permiso_dinamico('editar_tecnicos')
+    permiso_edicion = 'editar_mi_tecnico' if int(tecnico_id) == int(current_user.id_usuario) else 'editar_tecnicos'
+    verificar_permiso_dinamico(permiso_edicion)
     resultado = TecnicoService.actualizar_tecnico(tecnico_id, request.form)
     if not resultado['ok']:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':

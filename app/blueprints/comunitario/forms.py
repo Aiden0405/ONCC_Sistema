@@ -1,7 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import DateField, SelectField, StringField
-from wtforms.validators import DataRequired
-
+from wtforms.validators import DataRequired, Length
 
 class FormacionForm(FlaskForm):
     fecha_actividad = DateField(
@@ -28,9 +27,9 @@ class FormacionForm(FlaskForm):
         'Tema de la formación',
         validators=[DataRequired(message='El tema de la formación es obligatorio.')],
     )
-    tecnico = StringField(
+    tecnico = SelectField(
         'Técnico / Facilitador',
-        validators=[DataRequired(message='Debe ingresar el nombre del facilitador.')],
+        validators=[DataRequired(message='Debe ingresar el nombre del facilitador.'), Length(max=120)],
     )
 
 
@@ -54,7 +53,7 @@ class SensibilizacionForm(FlaskForm):
         'Nombre del taller / campaña de sensibilización',
         validators=[DataRequired(message='El nombre de la sensibilización es obligatorio.')],
     )
-    facilitador = StringField(
+    facilitador = SelectField(
         'Técnico / Facilitador',
-        validators=[DataRequired(message='Debe ingresar el nombre del técnico.')],
+        validators=[DataRequired(message='Debe ingresar el nombre del técnico.'), Length(max=120)],
     )

@@ -11,6 +11,7 @@
             <p class="text-sm dark:text-gray-400 text-gray-500">Administración de perfiles estructurales, cargos institucionales y control de acceso (RBAC)</p>
         </div>
         <div class="flex items-center space-x-3">
+            {% if current_user.id_rol|int in (1, 2) or current_user.has_permission('reportes_roles') or current_user.rol == config.SUPER_ROLE_NAME %}<a href="{{ url_for('core.rol_reporte') }}" class="inline-flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-100 text-sm font-medium"><i data-lucide="download" class="w-4 h-4 mr-1"></i> Reporte</a>{% endif %}
             <a href="{{ url_for('core.rol_nuevo') }}" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md shadow-sm hover:bg-green-700 transition-colors text-sm font-medium">
                 <i data-lucide="shield-plus" class="w-4 h-4 mr-2"></i> Nuevo Rol
             </a>

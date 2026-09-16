@@ -113,7 +113,9 @@ class FormacionActiva(db.Model):
         ).join(
             InstitucionActiva, cls.id_institucion == InstitucionActiva.id_institucion
         ).join(
-            Actividad, cls.id_actividad == Actividad.id_actividad
+            Actividad,
+            (cls.id_actividad == Actividad.id_actividad)
+            & (Actividad.tipo_actividad == 'FORMACION')
         ).order_by(cls.id_formacion.desc()).all()
 
         formaciones_procesadas = []
@@ -183,7 +185,9 @@ class SensibilizacionActiva(db.Model):
             Actividad,
             ComunidadActiva
         ).join(
-            Actividad, cls.id_actividad == Actividad.id_actividad
+            Actividad,
+            (cls.id_actividad == Actividad.id_actividad)
+            & (Actividad.tipo_actividad == 'SENSIBILIZACION')
         ).join(
             ComunidadActiva, Actividad.id_comunidad == ComunidadActiva.id_comunidad
         ).order_by(cls.id_sensibilizacion.desc()).all()
