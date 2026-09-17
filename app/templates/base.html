@@ -178,11 +178,11 @@
             {% endif %}
 
             <!-- 🎯 Formaciones y Sensibilizaciones -->
-            {% if 'ver_formaciones' in permisos_activos or is_superuser() %}
+            {% if 'ver_formaciones' in permisos_activos or 'ver_sensibilizaciones' in permisos_activos or is_superuser() %}
             <a href="{{ url_for('formacion.index') }}"
                 class="w-full flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['formacion', 'formaciones']) }}">
                 <i data-lucide="graduation-cap" class="mr-3 w-5 h-5 flex-shrink-0"></i>
-                <span class="sidebar-text whitespace-nowrap">Formaciones y Sensibilizaciones</span>
+                <span class="sidebar-text whitespace-nowrap">Formaciones</span>
             </a>
             {% endif %}
             {% endif %}

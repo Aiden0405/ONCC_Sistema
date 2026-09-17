@@ -1,18 +1,93 @@
 {% extends 'base.html' %} 
 
-{% block title %}Formaciones y Sensibilizaciones - ONCC{% endblock %} 
+{% block title %}Formaciones - ONCC{% endblock %} 
 
 {% block content %}
 <div class="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
+  
   <div class="flex items-center justify-between mb-2">
     <div>
       <h1 class="text-2xl font-bold dark:text-white text-gray-800">
-        Módulo de Formaciones y Sensibilizaciones
+        Módulo de Formaciones
       </h1>
       <p class="text-sm dark:text-gray-400 text-gray-500">
-        Registro consolidado de jornadas de formación y campañas de sensibilización comunitaria
+        Registro consolidado de formaciones y sensibilizaciones comunitarias
       </p>
     </div>
+  </div>
+
+  <!-- 🌟 SECCIÓN DE REPORTE PARAMETRIZADO ESTANDARIZADO -->
+  <div class="rounded-xl shadow-sm border p-4 bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="text-sm font-bold uppercase tracking-wide text-gray-700 dark:text-gray-200">Reporte parametrizado</h3>
+      <i data-lucide="filter" class="w-4 h-4 text-gray-400"></i>
+    </div>
+    
+    <form id="formReporteParametrizado" method="GET" action="{{ url_for('comunitario.formaciones_reporte') }}" target="_blank" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+      
+      <div class="space-y-1">
+          <label class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase">Tipo</label>
+          <select name="tipo" class="w-full border rounded-md p-2 text-sm bg-white dark:bg-gray-700 dark:text-white">
+            <option value="">Todos los tipos</option>
+            <option value="FORMACION">Formación</option>
+            <option value="SENSIBILIZACION">Sensibilización</option>
+          </select>
+      </div>
+
+      <div class="space-y-1">
+          <label class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase">Técnico Asignado</label>
+          <select name="tecnico" class="w-full border rounded-md p-2 text-sm bg-white dark:bg-gray-700 dark:text-white">
+            <option value="">Todos los técnicos</option>
+            {% for id, nombre in form.tecnico.choices %}<option value="{{ id }}">{{ nombre }}</option>{% endfor %}
+          </select>
+      </div>
+
+      <div class="space-y-1">
+          <label class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase">Comunidad</label>
+          <select name="comunidad" class="w-full border rounded-md p-2 text-sm bg-white dark:bg-gray-700 dark:text-white">
+            <option value="">Todas las comunidades</option>
+            {% for id, nombre in form.id_comunidad.choices %}<option value="{{ id }}">{{ nombre }}</option>{% endfor %}
+          </select>
+      </div>
+
+      <div class="space-y-1">
+          <label class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase">Nivel de Instrucción</label>
+          <select name="nivel" class="w-full border rounded-md p-2 text-sm bg-white dark:bg-gray-700 dark:text-white">
+            <option value="">Todos los niveles</option>
+            {% for id, nombre in form.id_nivel.choices %}<option value="{{ id }}">{{ nombre }}</option>{% endfor %}
+          </select>
+      </div>
+      
+      <div class="space-y-1">
+        <label class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase">Desde (Fecha)</label>
+        <input type="date" name="desde" class="w-full border rounded-md p-2 text-sm bg-white dark:bg-gray-700 dark:text-white" aria-label="Desde">
+      </div>
+
+      <div class="space-y-1">
+        <label class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase">Hasta (Fecha)</label>
+        <input type="date" name="hasta" class="w-full border rounded-md p-2 text-sm bg-white dark:bg-gray-700 dark:text-white" aria-label="Hasta">
+      </div>
+
+      <div class="space-y-1">
+          <label class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase">Estado Actual</label>
+          <select name="estado" class="w-full border rounded-md p-2 text-sm bg-white dark:bg-gray-700 dark:text-white">
+            <option value="">Todos los estados</option>
+            <option value="Planificada">Planificada</option>
+            <option value="En proceso">En proceso</option>
+            <option value="Completado">Completado</option>
+            <option value="Suspendida">Suspendida</option>
+          </select>
+      </div>
+      
+      <!-- 🌟 CONDICIÓN CORREGIDA PARA QUE SIEMPRE SALGA A LOS ADMINS -->
+      {% if current_user.id_rol|int in (1, 2) or current_user.has_permission('reportes_formaciones') or current_user.rol == config.SUPER_ROLE_NAME %}
+      <div class="space-y-1">
+          <button type="button" onclick="enviarReporteParametrizado()" class="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-md px-4 py-2 text-sm font-medium inline-flex items-center justify-center transition-colors shadow-sm h-[38px]">
+            <i data-lucide="file-text" class="w-4 h-4 mr-2"></i> Generar PDF
+          </button>
+      </div>
+      {% endif %}
+    </form>
   </div>
 
   {% with messages = get_flashed_messages(with_categories=true) %} 
@@ -29,11 +104,23 @@
   <!-- FORMULARIO SUPERIOR DE REGISTRO -->
   <div class="rounded-xl shadow-sm border p-6 bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
     <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400 mb-4 flex items-center">
-      <i data-lucide="graduation-cap" class="w-4 h-4 mr-2"></i> Registrar Nueva Jornada de Formación
+      <i data-lucide="graduation-cap" class="w-4 h-4 mr-2"></i> Registrar actividad comunitaria
     </h3>
 
-    <form method="POST" action="{{ url_for('formacion.nuevo') if 'formacion.nuevo' in url_map else url_for('comunitario.formacion_nuevo') }}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
+    <form method="POST" action="{{ url_for('formacion.nuevo') if 'formacion.nuevo' in url_map else url_for('comunitario.formacion_nuevo') }}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {{ form.hidden_tag() }}
+
+      <div class="space-y-1">
+        <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Tipo de registro</label>
+        {{ form.tipo_actividad(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white') }}
+        {% for error in form.tipo_actividad.errors %}<p class="text-xs text-red-600 mt-1">{{ error }}</p>{% endfor %}
+      </div>
+
+      <div class="space-y-1">
+        <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Destino</label>
+        {{ form.tipo_destino(id='tipo_destino', class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white') }}
+        {% for error in form.tipo_destino.errors %}<p class="text-xs text-red-600 mt-1">{{ error }}</p>{% endfor %}
+      </div>
 
       <div class="space-y-1">
         <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Técnico / Facilitador</label>
@@ -42,9 +129,9 @@
       </div>
 
       <div class="space-y-1">
-        <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Tema de la Formación</label>
-        {{ form.nombre_formacion(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none', placeholder='Ej: Gestión de Riesgos Climáticos') }}
-        {% for error in form.nombre_formacion.errors %}<p class="text-xs text-red-600 mt-1">{{ error }}</p>{% endfor %}
+        <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Tema / Campaña</label>
+        {{ form.nombre(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none', placeholder='Ej: Gestión de Riesgos Climáticos') }}
+        {% for error in form.nombre.errors %}<p class="text-xs text-red-600 mt-1">{{ error }}</p>{% endfor %}
       </div>
 
       <div class="space-y-1">
@@ -65,61 +152,16 @@
         {% for error in form.id_nivel.errors %}<p class="text-xs text-red-600 mt-1">{{ error }}</p>{% endfor %}
       </div>
 
-      <div class="space-y-1">
+      <div class="space-y-1" id="campo-institucion-wrapper">
         <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Institución / Sede</label>
-        {{ form.id_institucion(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none') }}
+        {{ form.id_institucion(id='id_institucion', class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none') }}
+        <p class="text-[11px] text-gray-400 dark:text-gray-500 italic mt-0.5">Seleccione la escuela, centro o sede específica si aplica.</p>
         {% for error in form.id_institucion.errors %}<p class="text-xs text-red-600 mt-1">{{ error }}</p>{% endfor %}
       </div>
 
-      <div class="md:col-span-2 lg:col-span-6 flex justify-end pt-2">
-        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-medium px-6 py-2 transition-colors shadow-sm inline-flex items-center justify-center">
-          <i data-lucide="plus-circle" class="w-4 h-4 mr-2"></i> Registrar Formación
-        </button>
-      </div>
-    </form>
-  </div>
-
-  <div class="rounded-xl shadow-sm border p-6 bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
-    <h3 class="text-sm font-bold uppercase tracking-wide text-amber-700 dark:text-amber-400 mb-4 flex items-center">
-      <i data-lucide="megaphone" class="w-4 h-4 mr-2"></i> Registrar Nueva Campaña de Sensibilización
-    </h3>
-
-    <form method="POST" action="{{ url_for('sensibilizacion.nuevo') if 'sensibilizacion.nuevo' in url_map else url_for('comunitario.sensibilizacion_nuevo') }}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
-      {{ sensibilizacion_form.hidden_tag() }}
-
-      <div class="space-y-1">
-        <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Técnico / Facilitador</label>
-        {{ sensibilizacion_form.facilitador(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none') }}
-        {% for error in sensibilizacion_form.facilitador.errors %}<p class="text-xs text-red-600 mt-1">{{ error }}</p>{% endfor %}
-      </div>
-
-      <div class="space-y-1">
-        <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Tema / Campaña</label>
-        {{ sensibilizacion_form.nombre_sensibilizacion(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none', placeholder='Ej: Gestión de Desechos Sólidos') }}
-        {% for error in sensibilizacion_form.nombre_sensibilizacion.errors %}<p class="text-xs text-red-600 mt-1">{{ error }}</p>{% endfor %}
-      </div>
-
-      <div class="space-y-1">
-        <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Fecha Ejecución</label>
-        {{ sensibilizacion_form.fecha_actividad(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none') }}
-        {% for error in sensibilizacion_form.fecha_actividad.errors %}<p class="text-xs text-red-600 mt-1">{{ error }}</p>{% endfor %}
-      </div>
-
-      <div class="space-y-1">
-        <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Nivel de Instrucción</label>
-        {{ sensibilizacion_form.id_nivel(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none') }}
-        {% for error in sensibilizacion_form.id_nivel.errors %}<p class="text-xs text-red-600 mt-1">{{ error }}</p>{% endfor %}
-      </div>
-
-      <div class="space-y-1">
-        <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Comunidad / Territorio</label>
-        {{ sensibilizacion_form.id_comunidad(class_='w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none') }}
-        {% for error in sensibilizacion_form.id_comunidad.errors %}<p class="text-xs text-red-600 mt-1">{{ error }}</p>{% endfor %}
-      </div>
-
-      <div class="md:col-span-2 lg:col-span-5 flex justify-end pt-2">
-        <button type="submit" class="bg-amber-600 hover:bg-amber-700 text-white rounded-md text-sm font-medium px-6 py-2 transition-colors shadow-sm inline-flex items-center justify-center">
-          <i data-lucide="plus-circle" class="w-4 h-4 mr-2"></i> Registrar Sensibilización
+      <div class="flex items-end pt-2">
+        <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-medium px-6 py-2.5 transition-colors shadow-sm inline-flex items-center justify-center">
+          <i data-lucide="plus-circle" class="w-4 h-4 mr-2"></i> Registrar Actividad
         </button>
       </div>
     </form>
@@ -129,7 +171,7 @@
   <div class="rounded-xl shadow-sm border overflow-hidden bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
     <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
       <div>
-        <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400">Historial de Jornadas de Formación</h3>
+        <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400">Historial de Formaciones</h3>
         <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Bitácora consolidada del sistema</p>
       </div>
       <span class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ formaciones|length }} registro(s)</span>
@@ -140,18 +182,30 @@
         <thead>
           <tr class="text-xs uppercase tracking-wider bg-gray-50 text-gray-500 dark:bg-gray-700/40 dark:text-gray-400">
             <th class="px-6 py-3 font-semibold">ID</th>
-            <th class="px-6 py-3 font-semibold">Tema de la Formación</th>
+            <th class="px-6 py-3 font-semibold">Tipo</th>
+            <th class="px-6 py-3 font-semibold">Tema / Campaña</th>
             <th class="px-6 py-3 font-semibold">Técnico / Facilitador</th>
-            <th class="px-6 py-3 font-semibold">Institución / Sede Académica</th>
+            <th class="px-6 py-3 font-semibold">Destino</th>
+            <th class="px-6 py-3 font-semibold">Nivel de instrucción</th>
             <th class="px-6 py-3 font-semibold">Fecha Ejecución</th>
             <th class="px-6 py-3 font-semibold text-center">Acciones</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
           {% for item in formaciones %}
-          <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+          <tr data-id="{{ item.id_formacion }}" class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
             <td class="px-6 py-4 font-mono text-xs text-gray-400">
               #{{ item.id_formacion }}
+            </td>
+            <td class="px-6 py-4" data-label="Tipo">
+              <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider 
+                {% if item.tipo == 'FORMACION' %} 
+                  bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300
+                {% else %} 
+                  bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 
+                {% endif %}">
+                {{ item.tipo }}
+              </span>
             </td>
             <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-100">
               {{ item.tema if item.tema is defined else item.nombre_formacion }}
@@ -160,14 +214,21 @@
               {{ item.tecnico if item.tecnico is defined else (item.nombre_tecnico if item.nombre_tecnico is defined else 'No asignado') }}
             </td>
             <td class="px-6 py-4 text-gray-600 dark:text-gray-400 font-medium">
-              {{ item.nombre_institucion if item.nombre_institucion is defined else (item.institucion.nombre_institucion if item.institucion is defined else 'Sin institución') }}
+              {% if item.tipo_destino == 'INSTITUCION' %}
+                Institución: {{ item.nombre_institucion or 'No asignada' }}
+              {% else %}
+                Comunidad: {{ item.nombre_comunidad or 'No asignada' }}
+              {% endif %}
+            </td>
+            <td class="px-6 py-4 text-gray-600 dark:text-gray-400">
+              {{ item.nombre_nivel or 'No asignado' }}
             </td>
             <td class="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-400">
               {{ item.fecha_formateada if item.fecha_formateada is defined else (item.actividad.fecha_actividad.strftime('%Y-%m-%d') if item.actividad and item.actividad.fecha_actividad else 'N/D') }}
             </td>
 
             <td class="px-6 py-4 text-center space-x-3">
-              {% if current_user.id_rol in [1, 2] %}
+              {% if current_user.id_rol|int in [1, 2] %}
               <button type="button"
                       onclick="abrirModalEdicion(this)"
                       data-id="{{ item.id_formacion }}"
@@ -175,7 +236,8 @@
                       data-tecnico="{% if item.tecnico is defined %}{{ item.tecnico }}{% elif item.nombre_tecnico is defined %}{{ item.nombre_tecnico }}{% else %}{% endif %}"
                       data-fecha="{% if item.fecha_actividad_cruda is defined %}{{ item.fecha_actividad_cruda }}{% elif item.actividad and item.actividad.fecha_actividad %}{{ item.actividad.fecha_actividad }}{% else %}{% endif %}"
                       data-comunidad="{% if item.id_comunidad is defined %}{{ item.id_comunidad }}{% elif item.actividad and item.actividad.id_comunidad %}{{ item.actividad.id_comunidad }}{% else %}{% endif %}"
-                      data-institucion="{{ item.id_institucion }}"
+                      data-institucion="{{ item.id_institucion or 0 }}"
+                      data-tipo-destino="{{ item.tipo_destino }}"
                       data-nivel="{{ item.id_nivel }}"
                       class="text-blue-600 hover:text-blue-800 transition-colors"
                       title="Editar">
@@ -195,7 +257,7 @@
           </tr>
           {% else %}
           <tr>
-            <td colspan="6" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
+            <td colspan="8" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
               <div class="flex flex-col items-center justify-center space-y-1">
                 <i data-lucide="graduation-cap" class="w-6 h-6 text-gray-300 dark:text-gray-600"></i>
                 <p class="text-sm font-medium">No se encuentran jornadas pedagógicas registradas en la bitácora.</p>
@@ -208,56 +270,13 @@
     </div>
   </div>
 
-  <div class="rounded-xl shadow-sm border overflow-hidden bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
-    <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
-      <div>
-        <h3 class="text-sm font-bold uppercase tracking-wide text-amber-700 dark:text-amber-400">Historial de Sensibilizaciones</h3>
-        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Campañas de alcance comunitario y prevención</p>
-      </div>
-      <span class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ sensibilizaciones|length }} registro(s)</span>
-    </div>
-
-    <div class="overflow-x-auto">
-      <table class="w-full text-sm text-left border-collapse">
-        <thead>
-          <tr class="text-xs uppercase tracking-wider bg-gray-50 text-gray-500 dark:bg-gray-700/40 dark:text-gray-400">
-            <th class="px-6 py-3 font-semibold">ID</th>
-            <th class="px-6 py-3 font-semibold">Campaña</th>
-            <th class="px-6 py-3 font-semibold">Facilitador</th>
-            <th class="px-6 py-3 font-semibold">Comunidad</th>
-            <th class="px-6 py-3 font-semibold">Fecha</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
-          {% for item in sensibilizaciones %}
-          <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
-            <td class="px-6 py-4 font-mono text-xs text-gray-400">#{{ item.id_sensibilizacion }}</td>
-            <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-100">{{ item.campana if item.campana is defined else item.nombre_sensibilizacion }}</td>
-            <td class="px-6 py-4 text-gray-600 dark:text-gray-400">{{ item.facilitador if item.facilitador is defined else (item.nombre_facilitador if item.nombre_facilitador is defined else 'No asignado') }}</td>
-            <td class="px-6 py-4 text-gray-600 dark:text-gray-400 font-medium">{{ item.nombre_comunidad if item.nombre_comunidad is defined else (item.actividad.comunidad.nombre_comunidad if item.actividad and item.actividad.comunidad else 'Comunidad General') }}</td>
-            <td class="px-6 py-4 font-mono text-xs text-gray-600 dark:text-gray-400">{{ item.fecha_actividad.strftime('%d/%m/%Y') if item.fecha_actividad else (item.fecha_formateada if item.fecha_formateada is defined else 'N/D') }}</td>
-          </tr>
-          {% else %}
-          <tr>
-            <td colspan="5" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
-              <div class="flex flex-col items-center justify-center space-y-1">
-                <i data-lucide="megaphone" class="w-6 h-6 text-gray-300 dark:text-gray-600"></i>
-                <p class="text-sm font-medium">No se encuentran campañas de sensibilización registradas.</p>
-              </div>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
 </div>
 
 <!-- MODAL DE EDICIÓN -->
 <div id="modalEdicion" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
   <div class="bg-white dark:bg-gray-800 rounded-xl max-w-lg w-full p-6 shadow-xl space-y-4 border border-gray-100 dark:border-gray-700">
     <div class="flex justify-between items-center border-b pb-2 dark:border-gray-700">
-      <h3 class="text-lg font-bold text-gray-800 dark:text-white">Modificar Jornada de Formación</h3>
+      <h3 class="text-lg font-bold text-gray-800 dark:text-white">Modificar registro</h3>
       <button onclick="cerrarModalEdicion()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">&times;</button>
     </div>
 
@@ -270,6 +289,14 @@
           {% for id, nombre in form.tecnico.choices %}
           <option value="{{ id }}">{{ nombre }}</option>
           {% endfor %}
+        </select>
+      </div>
+
+      <div class="space-y-1">
+        <label class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Destino</label>
+        <select id="edit_tipo_destino" name="edit_tipo_destino" required class="w-full border rounded-md p-2 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white outline-none">
+          <option value="COMUNIDAD">Comunidad</option>
+          <option value="INSTITUCION">Institución</option>
         </select>
       </div>
 
@@ -303,7 +330,7 @@
 
       <div class="space-y-1">
         <label class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Institución / Sede</label>
-        <select id="edit_id_institucion" name="edit_id_institucion" required class="w-full border rounded-md p-2 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white outline-none">
+        <select id="edit_id_institucion" name="edit_id_institucion" class="w-full border rounded-md p-2 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white outline-none">
           {% for id, nombre in form.id_institucion.choices %}
           <option value="{{ id }}">{{ nombre }}</option>
           {% endfor %}
@@ -322,7 +349,44 @@
   </div>
 </div>
 
+<!-- 🌟 MODAL CONFIRMAR REPORTE ESTANDARIZADO -->
+<div id="modal-confirmar-reporte" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="rounded-xl shadow-xl w-full max-w-md bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-6 text-center relative">
+        <button onclick="document.getElementById('modal-confirmar-reporte').classList.add('hidden')" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+            <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+        <div class="w-14 h-14 mx-auto mb-4 rounded-full bg-amber-100 dark:bg-amber-900/20 flex items-center justify-center">
+            <i data-lucide="file-text" class="w-7 h-7 text-amber-600 dark:text-amber-400"></i>
+        </div>
+        <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-2">¿Estás seguro de generar este reporte?</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Se generará un documento PDF de Formaciones aplicando los filtros de fecha, tipo, técnico y comunidad que hayas seleccionado.</p>
+        <div class="flex justify-center gap-3">
+            <button type="button" onclick="document.getElementById('modal-confirmar-reporte').classList.add('hidden')" class="px-5 py-2.5 border rounded-lg text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Cancelar</button>
+            <button type="button" onclick="confirmarGenerarReporte()" class="px-5 py-2.5 bg-amber-600 rounded-lg text-sm font-medium text-white hover:bg-amber-700 transition-colors shadow-sm">Sí, generar reporte</button>
+        </div>
+    </div>
+</div>
+
 <script>
+  function actualizarCamposComunitarios() {
+    const tipo = document.getElementById('tipo_destino');
+    const contenedor = document.getElementById('campo-institucion-wrapper');
+    const institucion = document.getElementById('id_institucion');
+    if (!tipo || !contenedor || !institucion) return;
+
+    const usaInstitucion = tipo.value === 'INSTITUCION';
+    contenedor.classList.toggle('hidden', !usaInstitucion);
+    institucion.required = usaInstitucion;
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const tipo = document.getElementById('tipo_destino');
+    if (tipo) {
+      tipo.addEventListener('change', actualizarCamposComunitarios);
+      actualizarCamposComunitarios();
+    }
+  });
+
   function abrirModalEdicion(boton) {
     const id = boton.dataset.id;
     document.getElementById("formEditar").action = "{{ url_for('comunitario.formacion_editar', id_formacion=0) if 'comunitario.formacion_editar' in url_map else '/formaciones/editar/0' }}".replace('0', id);
@@ -344,13 +408,68 @@
     document.getElementById('edit_fecha').value = boton.dataset.fecha || '';
     document.getElementById('edit_id_comunidad').value = boton.dataset.comunidad || '';
     document.getElementById('edit_id_institucion').value = boton.dataset.institucion || '';
+    document.getElementById('edit_tipo_destino').value = boton.dataset.tipoDestino || 'COMUNIDAD';
     document.getElementById('edit_id_nivel').value = boton.dataset.nivel || '';
+    actualizarInstitucionEdicion();
 
     document.getElementById("modalEdicion").classList.remove("hidden");
   }
   
   function cerrarModalEdicion() {
     document.getElementById("modalEdicion").classList.add("hidden");
+  }
+
+  function actualizarInstitucionEdicion() {
+    const destino = document.getElementById('edit_tipo_destino');
+    const institucion = document.getElementById('edit_id_institucion');
+    if (!destino || !institucion) return;
+    const requiereInstitucion = destino.value === 'INSTITUCION';
+    institucion.closest('.space-y-1').classList.toggle('hidden', !requiereInstitucion);
+    institucion.required = requiereInstitucion;
+  }
+
+  document.getElementById('edit_tipo_destino').addEventListener('change', actualizarInstitucionEdicion);
+
+  // 🌟 LÓGICA DEL REPORTE ESTANDARIZADA
+  let accionReportePendiente = null;
+
+  function abrirModalConfirmarReporte(accion) {
+      accionReportePendiente = accion;
+      document.getElementById('modal-confirmar-reporte').classList.remove('hidden');
+  }
+
+  function confirmarGenerarReporte() {
+      document.getElementById('modal-confirmar-reporte').classList.add('hidden');
+      if (typeof accionReportePendiente === 'function') {
+          accionReportePendiente();
+          accionReportePendiente = null;
+      }
+  }
+
+  function enviarReporteParametrizado() {
+      abrirModalConfirmarReporte(function() {
+          const form = document.getElementById('formReporteParametrizado');
+          
+          const filas = document.querySelectorAll('tbody tr[data-id]');
+          const ids = [];
+          filas.forEach(function(fila) {
+              if (fila.style.display !== 'none') {
+                  ids.push(fila.dataset.id);
+              }
+          });
+
+          const formData = new FormData(form);
+          const params = new URLSearchParams(formData);
+
+          if (ids.length > 0) {
+              params.append('ids', ids.join(','));
+          }
+
+          const baseUrl = form.action;
+          const finalUrl = baseUrl + '?' + params.toString();
+          
+          window.open(finalUrl, '_blank');
+      });
   }
 </script>
 {% endblock %}

@@ -1,4 +1,11 @@
-from flask import flash, redirect, render_template, request, url_for, abort
+import io
+from datetime import datetime
+from reportlab.lib.pagesizes import letter, landscape
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib import colors
+
+from flask import flash, redirect, render_template, request, url_for, abort, Response
 from flask_login import current_user, login_required
 
 from app import db
@@ -11,7 +18,6 @@ from app.models.password_reset import PasswordReset
 from app.services.auditoria import registrar_accion
 from app.services.notificacion import ServicioNotificacion
 from app.utils.authorization import current_role_id, has_full_access_role, is_superuser, verificar_permiso_dinamico
-from app.services.reportes import respuesta_csv
 from app.utils.validation import parse_positive_int, validate_password, validate_person_text
 
 
@@ -20,6 +26,8 @@ from app.utils.validation import parse_positive_int, validate_password, validate
 def usuario_index():
     verificar_permiso_dinamico('ver_usuarios')
     usuarios = Usuario.query.order_by(Usuario.nombre_usuario).all()
+    roles = Role.query.order_by(Role.id_rol).all() # 🌟 Pasamos los roles a la vista para el filtro
+    
     permisos = Permission.query.order_by(Permission.nombre_modulo).all()
     permisos_por_nombre = {permiso.nombre_modulo: permiso for permiso in permisos}
     permisos_por_modulo = []
@@ -49,6 +57,7 @@ def usuario_index():
         'usuarios/index.html',
         whitespaces=True,
         usuarios=usuarios,
+        roles=roles, # 🌟 Para el filtro del reporte
         permisos=permisos,
         permisos_por_modulo=permisos_por_modulo,
         permisos_sin_modulo=permisos_sin_modulo,
@@ -62,15 +71,84 @@ def usuario_index():
 def usuario_reporte():
     verificar_permiso_dinamico('reportes_usuarios')
     usuarios = Usuario.query.order_by(Usuario.nombre_usuario).all()
-    filas = [
-        (u.id_usuario, u.nombre_usuario, u.correo, u.rol, 'Activo' if u.estatus else 'Inactivo')
-        for u in usuarios
+    
+    # Filtro inteligente de tabla visible
+    ids_param = request.args.get('ids')
+    if ids_param:
+        id_list = [int(x) for x in ids_param.split(',') if x.strip().isdigit()]
+        if id_list:
+            usuarios = [u for u in usuarios if u.id_usuario in id_list]
+
+    # 🌟 Filtros de Rol y Estatus
+    rol_filtro = request.args.get('rol', type=int)
+    estatus_filtro = request.args.get('estatus')
+
+    def coincide(u):
+        if rol_filtro and u.id_rol != rol_filtro:
+            return False
+        if estatus_filtro == '1' and not u.estatus:
+            return False
+        if estatus_filtro == '0' and u.estatus:
+            return False
+        return True
+
+    usuarios_finales = [u for u in usuarios if coincide(u)]
+
+    # 🌟 GENERACIÓN DE PDF PROFESIONAL PARA USUARIOS
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(letter), rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
+    elements = []
+    
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle('TitleStyle', parent=styles['Heading1'], fontSize=15, textColor=colors.HexColor('#16a34a'), spaceAfter=4)
+    subtitle_style = ParagraphStyle('SubTitleStyle', parent=styles['Normal'], fontSize=8, textColor=colors.HexColor('#6b7280'), spaceAfter=12)
+    
+    header_cell_style = ParagraphStyle('HeaderCell', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=9, textColor=colors.whitesmoke)
+    body_cell_style = ParagraphStyle('BodyCell', parent=styles['Normal'], fontName='Helvetica', fontSize=8, textColor=colors.HexColor('#374151'))
+    
+    elements.append(Paragraph("Reporte de Autenticación y Cuentas de Acceso Institucional", title_style))
+    elements.append(Paragraph(f"Generado por: {current_user.correo} | Fecha: {datetime.now().strftime('%Y-%m-%d %H:%M')}", subtitle_style))
+    
+    headers = [
+        Paragraph("ID", header_cell_style),
+        Paragraph("Nombre de Usuario", header_cell_style),
+        Paragraph("Correo Electrónico", header_cell_style),
+        Paragraph("Rol Asignado", header_cell_style),
+        Paragraph("Estatus", header_cell_style)
     ]
-    return respuesta_csv(
-        'reporte_usuarios.csv',
-        ('ID', 'Nombre', 'Correo', 'Rol', 'Estatus'),
-        filas,
-    )
+    
+    table_data = [headers]
+    
+    for u in usuarios_finales:
+        estatus_txt = "Activo" if u.estatus else "Inactivo (Suspendido)"
+        rol_txt = u.rol if u.rol else "Sin definir"
+        
+        table_data.append([
+            Paragraph(f"#{u.id_usuario}", body_cell_style),
+            Paragraph(u.nombre_usuario, body_cell_style),
+            Paragraph(u.correo, body_cell_style),
+            Paragraph(rol_txt, body_cell_style),
+            Paragraph(estatus_txt, body_cell_style)
+        ])
+        
+    t = Table(table_data, colWidths=[50, 180, 250, 140, 110])
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#16a34a')),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, 0), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f9fafb')),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#e5e7eb')),
+        ('TOPPADDING', (0, 1), (-1, -1), 5),
+        ('BOTTOMPADDING', (0, 1), (-1, -1), 5),
+    ]))
+    
+    elements.append(t)
+    doc.build(elements)
+    buffer.seek(0)
+    
+    return Response(buffer, mimetype='application/pdf', headers={'Content-Disposition': 'inline; filename=reporte_usuarios.pdf'})
 
 
 @core_bp.route('/admin/usuarios/nuevo', methods=['GET', 'POST'])
@@ -239,7 +317,6 @@ def usuario_eliminar(usuario_id):
     user_correo = getattr(usuario, 'correo', usuario.nombre_usuario)
     nombre_eliminado = usuario.nombre_usuario
 
-    # Estas filas pertenecen a la cuenta y no pueden quedar con id_usuario NULL.
     Notificacion.query.filter_by(id_usuario=usuario.id_usuario).delete(synchronize_session=False)
     PasswordReset.query.filter_by(user_id=usuario.id_usuario).delete(synchronize_session=False)
     db.session.delete(usuario)
@@ -290,14 +367,9 @@ def usuario_perfil():
 @core_bp.route('/admin/notificaciones/leer', methods=['POST'])
 @login_required
 def marcar_notificaciones_leidas():
-    """
-    Actualiza masivamente el estado 'leido' a True en la base de datos
-    para todas las alertas sin leer del usuario logueado en esta sesión.
-    """
     from app.models.notificacion import Notificacion
 
     try:
-        # 🌟 CORRECCIÓN: Usamos .is_(None) para que PostgreSQL reconozca las alertas globales
         notificaciones_pendientes = Notificacion.query.filter(
             (Notificacion.id_usuario == current_user.id_usuario) | (Notificacion.id_usuario.is_(None)),
             Notificacion.leido == False
@@ -317,13 +389,8 @@ def marcar_notificaciones_leidas():
 @core_bp.route('/admin/notificaciones/historial')
 @login_required
 def notificaciones_historial():
-    """
-    Vista formal para listar la bandeja de entrada o historial 
-    completo de notificaciones del ecosistema.
-    """
     from app.models.notificacion import Notificacion
 
-    # 🌟 CORRECCIÓN: Al entrar al historial, limpiamos usando la sintaxis correcta .is_(None)
     try:
         notificaciones_pendientes = Notificacion.query.filter(
             (Notificacion.id_usuario == current_user.id_usuario) | (Notificacion.id_usuario.is_(None)),
@@ -337,7 +404,6 @@ def notificaciones_historial():
     except Exception:
         db.session.rollback()
 
-    # Consultamos todo el historial usando .is_(None)
     historial = Notificacion.query.filter(
         (Notificacion.id_usuario == current_user.id_usuario) | (Notificacion.id_usuario.is_(None))
     ).order_by(Notificacion.fecha_creacion.desc()).all()

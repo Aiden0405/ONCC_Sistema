@@ -92,7 +92,6 @@ def create_app(config_class=Config):
         from app.models.esquema_activo import NivelActivo  # noqa: F401
         from app.models.esquema_activo import MunicipioActivo  # noqa: F401
         from app.models.esquema_activo import ParroquiaActiva  # noqa: F401
-        from app.models.esquema_activo import SensibilizacionActiva  # noqa: F401
         from app.models.divulgacion import Divulgacion  # noqa: F401
         from app.models.divulgacion import Publicacion  # noqa: F401
         from app.models.geomatica import MapaRiesgo  # noqa: F401
@@ -199,13 +198,6 @@ def create_app(config_class=Config):
     from app.blueprints.comunitario.controllers.formaciones import formaciones_index as comunitario_formaciones_index
     from app.blueprints.comunitario.controllers.formaciones import formacion_editar as formacion_editar
     from app.blueprints.comunitario.controllers.formaciones import formacion_eliminar as formacion_eliminar
-    from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizacion_editar as sensibilizacion_editar
-    from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizacion_eliminar as sensibilizacion_eliminar
-    from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizaciones_index as sensibilizacoiones_index
-    from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizacion_cambiar_estado
-    from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizaciones_index as comunitario_sensibilizaciones_index
-    from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizacion_cambiar_estado
-    from app.blueprints.comunitario.controllers.sensibilizaciones import sensibilizacion_editar as sensibilizacion_nuevo
     from app.blueprints.geografia.controllers.ubicaciones import obtener_estados as geografia_obtener_estados
     from app.blueprints.geografia.controllers.ubicaciones import obtener_municipios as geografia_obtener_municipios
     from app.blueprints.geografia.controllers.ubicaciones import obtener_parroquias as geografia_obtener_parroquias
@@ -225,9 +217,6 @@ def create_app(config_class=Config):
     app.add_url_rule('/formaciones', endpoint='formacion.index', view_func=comunitario_formaciones_index)
     app.add_url_rule('/formaciones/nuevo', endpoint='formacion.nuevo', view_func=formacion_nuevo, methods=['GET', 'POST'])
     app.add_url_rule('/formaciones/<int:formacion_id>/estado', endpoint='formacion.cambiar_estado', view_func=formacion_cambiar_estado, methods=['POST'])
-    app.add_url_rule('/sensibilizaciones', endpoint='sensibilizacion.index', view_func=comunitario_formaciones_index)
-    app.add_url_rule('/sensibilizaciones/nuevo', endpoint='sensibilizacion.nuevo', view_func=sensibilizacion_nuevo, methods=['GET', 'POST'])
-    app.add_url_rule('/sensibilizaciones/<int:sensibilizacion_id>/estado', endpoint='sensibilizacion.cambiar_estado', view_func=sensibilizacion_cambiar_estado, methods=['POST'])
 
     app.add_url_rule('/admin/usuarios/', endpoint='usuario.index', view_func=core_usuario_index)
     app.add_url_rule('/admin/usuarios/nuevo', endpoint='usuario.nuevo', view_func=core_usuario_nuevo, methods=['GET', 'POST'])
@@ -337,7 +326,7 @@ def create_app(config_class=Config):
         from app.models.divulgacion import Publicacion
         from app.models.geomatica import MapaRiesgo
         from app.models.inventario import InventarioEquipo
-        from app.models.esquema_activo import FormacionActiva, SensibilizacionActiva
+        from app.models.esquema_activo import FormacionActiva
         from flask_login import current_user
         from app.utils.authorization import has_full_access_role, has_permission
 
@@ -346,7 +335,6 @@ def create_app(config_class=Config):
             actividades_query = Actividad.query
             publicaciones_query = Publicacion.query
             formaciones_query = FormacionActiva.query
-            sensibilizaciones_query = SensibilizacionActiva.query
             mapas_query = MapaRiesgo.query
             inventario_query = InventarioEquipo.query
         else:
@@ -355,7 +343,6 @@ def create_app(config_class=Config):
             publicaciones_query = Publicacion.query.filter(Publicacion.id_usuario == usuario_id)
             actividad_ids = actividades_query.with_entities(Actividad.id_actividad).scalar_subquery()
             formaciones_query = FormacionActiva.query.filter(FormacionActiva.id_actividad.in_(actividad_ids))
-            sensibilizaciones_query = SensibilizacionActiva.query.filter(SensibilizacionActiva.id_actividad.in_(actividad_ids))
             mapas_query = MapaRiesgo.query.filter(MapaRiesgo.id_actividad.in_(actividad_ids))
             # Inventario no tiene FK de propietario; solo se muestran equipos
             # cuyo responsable coincide con el usuario conectado.
@@ -386,8 +373,8 @@ def create_app(config_class=Config):
             'divulgacion_publicadas': publicaciones_query.filter_by(estado_publicacion='publicado').count(),
             'divulgacion_borradores': publicaciones_query.filter_by(estado_publicacion='borrador').count(),
             'comunidades': 0,
-            'formaciones': formaciones_query.count(),
-            'sensibilizaciones': sensibilizaciones_query.count(),
+            'formaciones': formaciones_query.filter(FormacionActiva.tipo_actividad == 'FORMACION').count(),
+            'sensibilizaciones': formaciones_query.filter(FormacionActiva.tipo_actividad == 'SENSIBILIZACION').count(),
         }
 
         resumen = {
@@ -475,6 +462,7 @@ def create_app(config_class=Config):
             has_permission=has_permission,
             is_superuser=is_superuser,
             is_system_superuser=lambda: is_superuser_role(current_user.rol),
+            is_system_superuser_role=is_superuser_role,
         )
 
     @app.route('/api/notificaciones/marcar-leidas', methods=['POST'])

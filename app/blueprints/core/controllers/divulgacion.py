@@ -1,14 +1,20 @@
+import io
 from collections import Counter
 from datetime import datetime
 
-from flask import render_template, session, request, redirect, url_for, flash, abort
+from flask import render_template, session, request, redirect, url_for, flash, abort, Response
 from flask_login import login_required, current_user
 
 from app import db
-from app.blueprints.core.forms import PublicacionForm # IMPORTACIÓN CORREGIDA
+from app.blueprints.core.forms import PublicacionForm
 from app.services.notificacion import ServicioNotificacion
 from app.services.auditoria import registrar_accion
 from sqlalchemy.exc import OperationalError
+
+from reportlab.lib.pagesizes import letter, landscape
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib import colors
 
 from app.blueprints.core import core_bp
 from app.models.actividad import Actividad
@@ -22,7 +28,6 @@ from app.utils.authorization import (
     is_superuser,
     verificar_permiso_dinamico,
 )
-from app.services.reportes import respuesta_csv
 
 
 def _cargar_formulario_divulgacion(form):
@@ -192,24 +197,112 @@ def divulgacion_admin_index():
 @login_required
 def divulgacion_reporte():
     verificar_permiso_dinamico('reportes_divulgaciones')
+    
     publicaciones = Publicacion.query.order_by(Publicacion.creado_en.desc()).all()
-    filas = [
-        (
-            pub.id_publicacion,
-            pub.titulo_publicacion,
-            pub.tipo,
-            pub.estado_publicacion,
-            pub.autor.nombre_usuario if pub.autor else '',
-            pub.fecha_publicacion,
-            pub.publicado_en or '',
-        )
-        for pub in publicaciones
+    
+    # 1. Filtro inteligente por IDs visibles desde la tabla (vía JavaScript)
+    ids_param = request.args.get('ids')
+    if ids_param:
+        id_list = [int(x) for x in ids_param.split(',') if x.strip().isdigit()]
+        if id_list:
+            publicaciones = [p for p in publicaciones if p.id_publicacion in id_list]
+
+    # 2. Filtros parametrizados avanzados (Tipo, Prioridad, Estatus, Fechas)
+    tipo_filtro = request.args.get('tipo', '').strip()
+    prioridad_filtro = request.args.get('prioridad', type=int)
+    estado_filtro = request.args.get('estado', '').strip()
+    desde = request.args.get('desde', '').strip()
+    hasta = request.args.get('hasta', '').strip()
+
+    def coincide(pub):
+        if tipo_filtro and str(pub.tipo).lower() != tipo_filtro.lower():
+            return False
+        if prioridad_filtro and pub.prioridad != prioridad_filtro:
+            return False
+        if estado_filtro and str(pub.estado_publicacion).lower() != estado_filtro.lower():
+            return False
+            
+        if pub.creado_en:
+            fecha_pub = pub.creado_en.date() if isinstance(pub.creado_en, datetime) else pub.creado_en
+            if desde:
+                try:
+                    if fecha_pub < datetime.strptime(desde, '%Y-%m-%d').date():
+                        return False
+                except ValueError:
+                    pass
+            if hasta:
+                try:
+                    if fecha_pub > datetime.strptime(hasta, '%Y-%m-%d').date():
+                        return False
+                except ValueError:
+                    pass
+        elif desde or hasta:
+            return False
+
+        return True
+
+    publicaciones_finales = [p for p in publicaciones if coincide(p)]
+
+    # 🌟 GENERACIÓN DE PDF PROFESIONAL
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(letter), rightMargin=25, leftMargin=25, topMargin=25, bottomMargin=25)
+    elements = []
+    
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle('TitleStyle', parent=styles['Heading1'], fontSize=15, textColor=colors.HexColor('#16a34a'), spaceAfter=4)
+    subtitle_style = ParagraphStyle('SubTitleStyle', parent=styles['Normal'], fontSize=8, textColor=colors.HexColor('#6b7280'), spaceAfter=12)
+    
+    header_cell_style = ParagraphStyle('HeaderCell', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=8, textColor=colors.whitesmoke)
+    body_cell_style = ParagraphStyle('BodyCell', parent=styles['Normal'], fontName='Helvetica', fontSize=7.5, textColor=colors.HexColor('#374151'))
+    
+    elements.append(Paragraph("Reporte Consolidado de Gobernanza y Divulgación Institucional", title_style))
+    elements.append(Paragraph(f"Generado por: {current_user.correo} | Fecha: {datetime.now().strftime('%Y-%m-%d %H:%M')}", subtitle_style))
+    
+    headers = [
+        Paragraph("ID", header_cell_style),
+        Paragraph("Título del Contenido", header_cell_style),
+        Paragraph("Tipo", header_cell_style),
+        Paragraph("Prioridad", header_cell_style),
+        Paragraph("Estatus", header_cell_style),
+        Paragraph("Autor", header_cell_style),
+        Paragraph("Creación", header_cell_style)
     ]
-    return respuesta_csv(
-        'reporte_divulgaciones.csv',
-        ('ID', 'Título', 'Tipo', 'Estado', 'Autor', 'Fecha publicación', 'Publicado en'),
-        filas,
-    )
+    
+    table_data = [headers]
+    
+    for pub in publicaciones_finales:
+        titulo_txt = pub.titulo_publicacion if pub.titulo_publicacion else "Sin Título"
+        autor_txt = pub.autor.nombre_usuario if pub.autor else "Sistema"
+        creacion_txt = pub.creado_en.strftime('%Y-%m-%d') if pub.creado_en else 'N/D'
+
+        table_data.append([
+            Paragraph(f"#{pub.id_publicacion}", body_cell_style),
+            Paragraph(titulo_txt, body_cell_style),
+            Paragraph(str(pub.tipo), body_cell_style),
+            Paragraph(f"Nivel {pub.prioridad or 1}", body_cell_style),
+            Paragraph(str(pub.estado_publicacion).upper(), body_cell_style),
+            Paragraph(autor_txt, body_cell_style),
+            Paragraph(creacion_txt, body_cell_style)
+        ])
+        
+    t = Table(table_data, colWidths=[45, 270, 95, 75, 75, 110, 62])
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#16a34a')),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, 0), 5),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 5),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f9fafb')),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#e5e7eb')),
+        ('TOPPADDING', (0, 1), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 1), (-1, -1), 4),
+    ]))
+    
+    elements.append(t)
+    doc.build(elements)
+    buffer.seek(0)
+    
+    return Response(buffer, mimetype='application/pdf', headers={'Content-Disposition': 'inline; filename=reporte_divulgaciones.pdf'})
 
 
 @core_bp.route('/admin/divulgacion/nuevo', methods=['GET', 'POST'])
