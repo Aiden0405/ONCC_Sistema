@@ -87,7 +87,6 @@ def actividades_index():
             act.municipio_nombre = 'Iribarren'
             act.estado_geo_nombre = 'Lara'
 
-    # 🌟 Pasar las opciones para los filtros de la interfaz
     comunidades = Comunidad.query.order_by(Comunidad.nombre_comunidad.asc()).all()
     niveles = Nivel.query.order_by(Nivel.nombre_nivel.asc()).all()
 
@@ -106,14 +105,12 @@ def actividades_reporte():
     verificar_permiso_dinamico('reportes_actividades')
     actividades = Actividad.query.order_by(Actividad.fecha_actividad.desc()).all()
     
-    # 1. Filtro inteligente por IDs visibles desde la tabla (vía JavaScript)
     ids_param = request.args.get('ids')
     if ids_param:
         id_list = [int(x) for x in ids_param.split(',') if x.strip().isdigit()]
         if id_list:
             actividades = [a for a in actividades if a.id_actividad in id_list]
 
-    # 2. Filtros parametrizados opcionales
     tipo_filtro = request.args.get('tipo', '').strip()
     desde = request.args.get('desde', '').strip()
     hasta = request.args.get('hasta', '').strip()
@@ -121,7 +118,6 @@ def actividades_reporte():
     nivel_id = request.args.get('nivel', type=int)
 
     def coincide(act):
-        # Conversión segura de fecha para comparar
         fecha_str = str(act.fecha_actividad) if act.fecha_actividad else ''
 
         return (
@@ -134,7 +130,6 @@ def actividades_reporte():
 
     actividades_finales = [a for a in actividades if coincide(a)]
 
-    # 🌟 GENERACIÓN DE PDF PROFESIONAL
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=landscape(letter), rightMargin=25, leftMargin=25, topMargin=25, bottomMargin=25)
     elements = []
@@ -162,7 +157,6 @@ def actividades_reporte():
     table_data = [headers]
     
     for act in actividades_finales:
-        # 🌟 CORRECCIÓN 1: Buscar nombre en todos los módulos posibles
         nombre_act = "Jornada General"
         if act.monitoreo and act.monitoreo.nombre_monitoreo:
             nombre_act = act.monitoreo.nombre_monitoreo
@@ -173,11 +167,9 @@ def actividades_reporte():
         elif hasattr(act, 'descripcion') and act.descripcion:
             nombre_act = act.descripcion
 
-        # Estatus
         ultima_bitacora = BitacoraTransaccion.query.filter_by(modulo='actividades', registro_id=act.id_actividad).order_by(BitacoraTransaccion.id.desc()).first()
         estatus = ultima_bitacora.estado_nuevo if ultima_bitacora and ultima_bitacora.estado_nuevo else 'Completado'
 
-        # 🌟 CORRECCIÓN 2: Buscar al técnico asignado en todos los módulos posibles
         tecnico_txt = "Sin asignar"
         if act.tecnicos_asociados:
             t = act.tecnicos_asociados[0].tecnico
@@ -187,7 +179,6 @@ def actividades_reporte():
         elif hasattr(act, 'sensibilizacion_activa_rel') and act.sensibilizacion_activa_rel and hasattr(act.sensibilizacion_activa_rel, 'facilitador_real'):
             tecnico_txt = act.sensibilizacion_activa_rel.facilitador_real
 
-        # Comunidad
         comunidad_txt = act.comunidad.nombre_comunidad if act.comunidad else "Comunidad Central"
 
         table_data.append([
@@ -218,6 +209,7 @@ def actividades_reporte():
     buffer.seek(0)
     
     return Response(buffer, mimetype='application/pdf', headers={'Content-Disposition': 'inline; filename=reporte_actividades.pdf'})
+
 
 # ==============================================================================
 # 2. CREATE (NUEVA ACTIVIDAD)
@@ -325,7 +317,7 @@ def nueva():
 
 
 # ==============================================================================
-# 3. UPDATE (EDITAR ACTIVIDAD)
+# 3. UPDATE (EDITAR ACTIVIDAD - BLINDADO PARA TÍTULOS Y MÓDULOS)
 # ==============================================================================
 @monitoreo_bp.route('/actividades/<int:actividad_id>/editar', methods=['GET', 'POST'])
 @login_required
@@ -369,14 +361,18 @@ def editar(actividad_id):
                                 nombre_monitoreo=nombre_actividad, 
                                 tipo_actividad='MONITOREO'
                             ))
-
-                    if hasattr(actividad_obj, 'formacion_activa_rel') and actividad_obj.formacion_activa_rel:
-                        tecnico_previo = actividad_obj.formacion_activa_rel.tecnico_real
-                        actividad_obj.formacion_activa_rel.nombre_formacion = f"{nombre_actividad}||{tecnico_previo}"
-
-                    if hasattr(actividad_obj, 'sensibilizacion_activa_rel') and actividad_obj.sensibilizacion_activa_rel:
-                        facilitador_previo = actividad_obj.sensibilizacion_activa_rel.facilitador_real
-                        actividad_obj.sensibilizacion_activa_rel.nombre_sensibilizacion = f"{nombre_actividad}||{facilitador_previo}"
+                    elif actividad_obj.tipo_actividad == 'FORMACION':
+                        if hasattr(actividad_obj, 'formacion_activa_rel') and actividad_obj.formacion_activa_rel:
+                            tecnico_previo = getattr(actividad_obj.formacion_activa_rel, 'tecnico_real', '')
+                            actividad_obj.formacion_activa_rel.nombre_formacion = f"{nombre_actividad}||{tecnico_previo}"
+                        else:
+                            actividad_obj.descripcion = nombre_actividad
+                    elif actividad_obj.tipo_actividad == 'SENSIBILIZACION':
+                        if hasattr(actividad_obj, 'sensibilizacion_activa_rel') and actividad_obj.sensibilizacion_activa_rel:
+                            facilitador_previo = getattr(actividad_obj.sensibilizacion_activa_rel, 'facilitador_real', '')
+                            actividad_obj.sensibilizacion_activa_rel.nombre_sensibilizacion = f"{nombre_actividad}||{facilitador_previo}"
+                        else:
+                            actividad_obj.descripcion = nombre_actividad
 
                 nueva_minuta = _guardar_archivo(request.files.get('minuta_archivo'), 'minutas')
                 if nueva_minuta:

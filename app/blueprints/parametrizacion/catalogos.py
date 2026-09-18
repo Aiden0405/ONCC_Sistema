@@ -1,3 +1,4 @@
+# app/blueprints/core/controllers/catalogos.py
 from flask import render_template, request, redirect, url_for, flash
 from flask_login import current_user, login_required
 from sqlalchemy import text
@@ -18,9 +19,15 @@ def catalogos_index():
     instituciones = Institucion.query.order_by(Institucion.id_institucion.asc()).all()
     niveles = Nivel.query.order_by(Nivel.id_nivel.asc()).all()
     
-    # Cargar las parroquias existentes en BD para el selector
+    # 🌟 Consulta ampliada para incluir Estado, Municipio y Parroquia en jerarquía formal
     parroquias = db.session.execute(
-        text("SELECT id_parroquia, nombre_parroquia FROM parroquia ORDER BY nombre_parroquia ASC;")
+        text("""
+            SELECT p.id_parroquia, p.nombre_parroquia, m.nombre_municipio, e.nombre_estado 
+            FROM parroquia p
+            JOIN municipio m ON p.id_municipio = m.id_municipio
+            JOIN estado e ON m.id_estado = e.id_estado
+            ORDER BY e.nombre_estado ASC, m.nombre_municipio ASC, p.nombre_parroquia ASC;
+        """)
     ).fetchall()
     
     return render_template(

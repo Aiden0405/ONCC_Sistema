@@ -1,4 +1,6 @@
+# app/blueprints/core/controllers/usuarios.py
 import io
+import re
 from datetime import datetime
 from reportlab.lib.pagesizes import letter, landscape
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
@@ -26,7 +28,7 @@ from app.utils.validation import parse_positive_int, validate_password, validate
 def usuario_index():
     verificar_permiso_dinamico('ver_usuarios')
     usuarios = Usuario.query.order_by(Usuario.nombre_usuario).all()
-    roles = Role.query.order_by(Role.id_rol).all() # 🌟 Pasamos los roles a la vista para el filtro
+    roles = Role.query.order_by(Role.id_rol).all()
     
     permisos = Permission.query.order_by(Permission.nombre_modulo).all()
     permisos_por_nombre = {permiso.nombre_modulo: permiso for permiso in permisos}
@@ -57,7 +59,7 @@ def usuario_index():
         'usuarios/index.html',
         whitespaces=True,
         usuarios=usuarios,
-        roles=roles, # 🌟 Para el filtro del reporte
+        roles=roles,
         permisos=permisos,
         permisos_por_modulo=permisos_por_modulo,
         permisos_sin_modulo=permisos_sin_modulo,
@@ -72,14 +74,12 @@ def usuario_reporte():
     verificar_permiso_dinamico('reportes_usuarios')
     usuarios = Usuario.query.order_by(Usuario.nombre_usuario).all()
     
-    # Filtro inteligente de tabla visible
     ids_param = request.args.get('ids')
     if ids_param:
         id_list = [int(x) for x in ids_param.split(',') if x.strip().isdigit()]
         if id_list:
             usuarios = [u for u in usuarios if u.id_usuario in id_list]
 
-    # 🌟 Filtros de Rol y Estatus
     rol_filtro = request.args.get('rol', type=int)
     estatus_filtro = request.args.get('estatus')
 
@@ -94,7 +94,6 @@ def usuario_reporte():
 
     usuarios_finales = [u for u in usuarios if coincide(u)]
 
-    # 🌟 GENERACIÓN DE PDF PROFESIONAL PARA USUARIOS
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=landscape(letter), rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
     elements = []
@@ -170,8 +169,12 @@ def usuario_nuevo():
             
         try:
             nombre = validate_person_text(nombre, field='El nombre')
-            if len(correo) > 50 or '@' not in correo:
-                raise ValueError('El correo no es válido.')
+            
+            # 🌟 VALIDACIÓN ROBUSTA DE CORREO
+            patron_correo = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
+            if not correo or not re.match(patron_correo, correo) or len(correo) > 100:
+                raise ValueError('El correo electrónico no es válido. Debe tener un formato real (ejemplo: usuario@gmail.com).')
+                
             validate_password(password)
             rol_destino = parse_positive_int(id_rol_form, field='El rol')
         except ValueError as error:
@@ -179,12 +182,11 @@ def usuario_nuevo():
             roles = Role.query.order_by(Role.id_rol).all()
             return render_template('usuarios/formulario.html', roles=roles)
 
-        # 🛡️ CONTROL DE JERARQUÍA ABSOLUTO EN CREACIÓN
         rol_creador = current_role_id()
         
         if not has_full_access_role(current_user.rol) and rol_destino <= rol_creador:
             flash('Acceso denegado: No posee el rango jerárquico para asignar este nivel de privilegio.', 'error')
-            return redirect(url_for('usuario.index'))
+            return redirect(url_for('core.usuario_index'))
 
         existe = Usuario.query.filter_by(correo=correo).first()
         if existe:
@@ -211,7 +213,7 @@ def usuario_nuevo():
         registrar_accion('Usuarios', nuevo_usuario.id_usuario, 'Crear', current_user.nombre_usuario, detalle=f'Creado usuario {correo}', estado_nuevo=nuevo_usuario.rol)
 
         flash('Usuario creado correctamente.', 'success')
-        return redirect(url_for('usuario.index'))
+        return redirect(url_for('core.usuario_index'))
 
     roles = Role.query.order_by(Role.id_rol).all()
     return render_template('usuarios/formulario.html', roles=roles)
@@ -224,12 +226,10 @@ def usuario_editar(usuario_id):
     
     usuario = Usuario.query.get_or_404(usuario_id)
 
-    # 🛡️ REGLA DE NO AUTO-EDICIÓN EN LA TABLA GENERAL
     if current_role_id() != 1 and usuario.id_usuario == current_user.id_usuario:
         flash('Para modificar sus datos personales, utilice el módulo dedicado "Mi Perfil".', 'error')
-        return redirect(url_for('usuario.index'))
+        return redirect(url_for('core.usuario_index'))
 
-    # 🛡️ BARRERA JERÁRQUICA DE EDICIÓN ESTÁNDAR
     rol_operador = current_role_id()
     rol_objetivo = int(usuario.id_rol)
 
@@ -246,16 +246,15 @@ def usuario_editar(usuario_id):
         id_rol_form = request.form.get('id_rol')
         estatus_form = request.form.get('estatus')
 
-        # 🛡️ CONTROL DE ESCALADA Y ANTI AUTO-DEGRADACIÓN
         if id_rol_form and usuario.id_usuario != current_user.id_usuario:
             try:
                 rol_destino = parse_positive_int(id_rol_form, field='El rol')
             except ValueError as error:
                 flash(str(error), 'error')
-                return redirect(url_for('usuario.index'))
+                return redirect(url_for('core.usuario_index'))
             if rol_operador != 1 and rol_destino < rol_operador:
                 flash('No puede asignar un nivel de privilegio superior al suyo.', 'error')
-                return redirect(url_for('usuario.index'))
+                return redirect(url_for('core.usuario_index'))
             usuario.id_rol = rol_destino
 
         if estatus_form is not None and usuario.id_usuario != current_user.id_usuario:
@@ -266,7 +265,7 @@ def usuario_editar(usuario_id):
                 usuario.nombre_usuario = validate_person_text(nombre, field='El nombre')
             except ValueError as error:
                 flash(str(error), 'error')
-                return redirect(url_for('usuario.index'))
+                return redirect(url_for('core.usuario_index'))
 
         nueva_pass = request.form.get('password') or ''
         if nueva_pass:
@@ -274,7 +273,7 @@ def usuario_editar(usuario_id):
                 validate_password(nueva_pass)
             except ValueError as error:
                 flash(str(error), 'error')
-                return redirect(url_for('usuario.index'))
+                return redirect(url_for('core.usuario_index'))
             usuario.set_password(nueva_pass)
 
         db.session.commit()
@@ -286,7 +285,7 @@ def usuario_editar(usuario_id):
         registrar_accion('Usuarios', usuario.id_usuario, 'Modificar', current_user.nombre_usuario, detalle=f'Editado usuario {user_correo}', estado_nuevo=usuario.rol)
 
         flash('Usuario actualizado correctamente.', 'success')
-        return redirect(url_for('usuario.index'))
+        return redirect(url_for('core.usuario_index'))
 
     roles = Role.query.order_by(Role.id_rol).all()
     return render_template('usuarios/formulario.html', usuario=usuario, roles=roles)
@@ -301,7 +300,7 @@ def usuario_eliminar(usuario_id):
     
     if usuario.id_usuario == current_user.id_usuario:
         flash('No puede eliminar su propio usuario mientras esté autenticado en el sistema.', 'error')
-        return redirect(url_for('usuario.index'))
+        return redirect(url_for('core.usuario_index'))
 
     rol_operador = current_role_id()
     rol_objetivo = int(usuario.id_rol)
@@ -309,10 +308,10 @@ def usuario_eliminar(usuario_id):
     if not has_full_access_role(current_user.rol):
         if rol_operador == 2 and rol_objetivo == 1:
             flash('Acceso denegado: No posee la jerarquía para eliminar a un Superusuario.', 'error')
-            return redirect(url_for('usuario.index'))
+            return redirect(url_for('core.usuario_index'))
         elif rol_operador == 3 and rol_objetivo < 3:
             flash('Acceso denegado: No posee la jerarquía para eliminar a este usuario.', 'error')
-            return redirect(url_for('usuario.index'))
+            return redirect(url_for('core.usuario_index'))
 
     user_correo = getattr(usuario, 'correo', usuario.nombre_usuario)
     nombre_eliminado = usuario.nombre_usuario
@@ -327,7 +326,7 @@ def usuario_eliminar(usuario_id):
     registrar_accion('Usuarios', usuario_id, 'Eliminar', current_user.nombre_usuario, detalle=f'Eliminado usuario {user_correo}')
 
     flash('Usuario eliminado correctamente.', 'success')
-    return redirect(url_for('usuario.index'))
+    return redirect(url_for('core.usuario_index'))
 
 
 @core_bp.route('/admin/usuarios/perfil', methods=['GET', 'POST'])
@@ -340,7 +339,7 @@ def usuario_perfil():
             usuario.nombre_usuario = validate_person_text(nombre, field='El nombre')
         except ValueError as error:
             flash(str(error), 'error')
-            return redirect(url_for('usuario.index'))
+            return redirect(url_for('core.usuario_index'))
 
         nueva_pass = request.form.get('password') or ''
         if nueva_pass:
@@ -348,22 +347,19 @@ def usuario_perfil():
                 validate_password(nueva_pass)
             except ValueError as error:
                 flash(str(error), 'error')
-                return redirect(url_for('usuario.index'))
+                return redirect(url_for('core.usuario_index'))
             usuario.set_password(nueva_pass)
 
         db.session.add(usuario)
         db.session.commit()
         registrar_accion('Usuarios', usuario.id_usuario, 'ModificarPerfil', usuario.nombre_usuario, detalle='Actualizó perfil propio')
         flash('Perfil actualizado correctamente.', 'success')
-        return redirect(url_for('usuario.index'))
+        return redirect(url_for('core.usuario_index'))
 
     roles = Role.query.order_by(Role.id_rol).all()
     return render_template('usuarios/formulario.html', usuario=usuario, es_perfil=True, roles=roles)
 
 
-# =============================================================================
-#  🔔 ENDPOINT DE ACTUALIZACIÓN ASÍNCRONA PARA LA CAMPANITA
-# =============================================================================
 @core_bp.route('/admin/notificaciones/leer', methods=['POST'])
 @login_required
 def marcar_notificaciones_leidas():
