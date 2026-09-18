@@ -10,10 +10,70 @@
             <h1 class="text-2xl font-bold dark:text-white text-gray-800">Gestión de Actividades</h1>
             <p class="text-sm dark:text-gray-400 text-gray-500">Registro operativo de jornadas y seguimiento institucional ONCC</p>
         </div>
-            {% if is_superuser() or has_permission('reportes_actividades') %}<a href="{{ url_for('monitoreo.actividades_reporte') }}" class="inline-flex items-center justify-center px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-100 text-sm font-medium"><i data-lucide="download" class="mr-1 w-4 h-4"></i> Reporte</a>{% endif %}
-        <a href="{{ url_for('monitoreo.nueva') }}" class="inline-flex items-center justify-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-medium shadow-sm transition-colors whitespace-nowrap">
-            <i data-lucide="plus" class="mr-2 w-4 h-4"></i> Registrar Actividad
-        </a>
+        <div class="flex items-center gap-2">
+            <a href="{{ url_for('monitoreo.nueva') }}" class="inline-flex items-center justify-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-medium shadow-sm transition-colors whitespace-nowrap">
+                <i data-lucide="plus" class="mr-2 w-4 h-4"></i> Registrar Actividad
+            </a>
+        </div>
+    </div>
+
+    <!-- 🌟 SECCIÓN DE REPORTE PARAMETRIZADO ESTANDARIZADA -->
+    <div class="rounded-xl shadow-sm border p-4 bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-bold uppercase tracking-wide text-gray-700 dark:text-gray-200">Reporte parametrizado</h3>
+            <i data-lucide="filter" class="w-4 h-4 text-gray-400"></i>
+        </div>
+        
+        <form id="formReporteParametrizado" method="GET" action="{{ url_for('monitoreo.actividades_reporte') }}" target="_blank" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 items-end">
+            <div class="space-y-1">
+                <label class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase">Área / Tipo</label>
+                <select name="tipo" class="w-full border rounded-md p-2 text-sm bg-white dark:bg-gray-700 dark:text-white">
+                    <option value="">Todas las áreas / tipos</option>
+                    <option value="MONITOREO">Monitoreo y seguridad</option>
+                    <option value="FORMACION">Formación y capacitaciones</option>
+                    <option value="SENSIBILIZACION">Sensibilización comunitaria</option>
+                </select>
+            </div>
+            
+            <div class="space-y-1">
+                <label class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase">Comunidad</label>
+                <select name="comunidad" class="w-full border rounded-md p-2 text-sm bg-white dark:bg-gray-700 dark:text-white">
+                    <option value="">Todas las comunidades</option>
+                    {% for com in comunidades %}
+                    <option value="{{ com.id_comunidad }}">{{ com.nombre_comunidad }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase">Nivel</label>
+                <select name="nivel" class="w-full border rounded-md p-2 text-sm bg-white dark:bg-gray-700 dark:text-white">
+                    <option value="">Todos los niveles</option>
+                    {% for niv in niveles %}
+                    <option value="{{ niv.id_nivel }}">{{ niv.nombre_nivel }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="space-y-1">
+                <label class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase">Desde (Fecha)</label>
+                <input type="date" name="desde" class="w-full border rounded-md p-2 text-sm bg-white dark:bg-gray-700 dark:text-white" aria-label="Desde">
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase">Hasta (Fecha)</label>
+                <input type="date" name="hasta" class="w-full border rounded-md p-2 text-sm bg-white dark:bg-gray-700 dark:text-white" aria-label="Hasta">
+            </div>
+
+            {% if current_user.id_rol|int in (1, 2) or current_user.has_permission('reportes_actividades') or current_user.rol == config.SUPER_ROLE_NAME %}
+            <!-- 🌟 BOTÓN ÁMBAR UNIFICADO Y VISUALMENTE EQUILIBRADO -->
+            <div class="space-y-1">
+                <button type="button" onclick="enviarReporteParametrizado()" class="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-md px-4 py-2 text-sm font-medium inline-flex items-center justify-center transition-colors shadow-sm h-[38px]">
+                    <i data-lucide="file-text" class="w-4 h-4 mr-2"></i> Generar PDF
+                </button>
+            </div>
+            {% endif %}
+        </form>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -52,11 +112,10 @@
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
                     {% for act in actividades %}
-                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                    <tr data-id="{{ act.id_actividad }}" class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
                         <td class="px-6 py-4 font-mono text-xs font-bold text-gray-500">#{{ act.id_actividad }}</td>
                         <td class="px-6 py-4 font-mono text-xs whitespace-nowrap">{{ act.fecha_actividad.strftime('%Y-%m-%d') if act.fecha_actividad else 'N/D' }}</td>
                         
-                        <!-- 🌟 NOMBRE REAL DE LA ACTIVIDAD + BADGE DEL MÓDULO DE ORIGEN -->
                         <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-100 max-w-xs">
                             <div class="font-bold text-gray-900 dark:text-white truncate">
                                 {% if act.monitoreo and act.monitoreo.nombre_monitoreo %}
@@ -72,7 +131,6 @@
                                 {% endif %}
                             </div>
 
-                            <!-- BADGE IDENTIFICADOR DE ORIGEN -->
                             <div class="mt-1 flex items-center gap-1.5">
                                 {% set tipo = (act.tipo_actividad if act.tipo_actividad is defined else '')|upper %}
                                 
@@ -100,7 +158,6 @@
                             </div>
                         </td>
 
-                        <!-- ESTATUS OPERATIVO REAL DE BITÁCORA -->
                         <td class="px-6 py-4 whitespace-nowrap">
                             {% set estatus_actual = act.estado_operativo_real|default('Completado', true) %}
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold uppercase tracking-tight
@@ -112,7 +169,6 @@
                             </span>
                         </td>
 
-                        <!-- TÉCNICO ASIGNADO -->
                         <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-600 dark:text-gray-400">
                             {% if act.tecnicos_asociados %}
                                 {{ act.tecnicos_asociados[0].tecnico.nombres }} {{ act.tecnicos_asociados[0].tecnico.apellidos }}
@@ -125,13 +181,11 @@
                             {% endif %}
                         </td>
 
-                        <!-- COMUNIDAD / UBICACIÓN -->
                         <td class="px-6 py-4 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
                             <div class="font-bold text-gray-700 dark:text-gray-200">{{ act.comunidad.nombre_comunidad if act.comunidad else 'Comunidad Central' }}</div>
                             <div class="text-[10px] text-gray-400 font-mono">{{ act.municipio_nombre }} - {{ act.parroquia_nombre }}</div>
                         </td>
 
-                        <!-- SOPORTES -->
                         <td class="px-6 py-4 whitespace-nowrap text-xs">
                             <div class="flex items-center space-x-2">
                                 {% if act.minuta_archivo %}
@@ -152,7 +206,6 @@
                             </div>
                         </td>
 
-                        <!-- ACCIONES (BOTÓN VER MODAL) -->
                         <td class="px-6 py-4 text-right whitespace-nowrap space-x-1">
                             <button type="button"
                                     data-id="{{ act.id_actividad }}"
@@ -202,11 +255,10 @@
     </div>
 </div>
 
-<!-- MODAL ADAPTATIVO -->
+<!-- MODAL ADAPTATIVO DE DETALLE -->
 <div id="modalDetalleActividad" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
     <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl border border-gray-100 dark:border-gray-700 space-y-6">
         
-        <!-- CABECERA -->
         <div class="flex justify-between items-start border-b pb-3 dark:border-gray-700">
             <div>
                 <span id="det_id_fecha" class="text-xs font-mono text-green-600 dark:text-green-400 font-bold uppercase"></span>
@@ -215,7 +267,6 @@
             <button onclick="cerrarModalDetalle()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-2xl font-bold">&times;</button>
         </div>
 
-        <!-- 1. DATOS GENERALES -->
         <div class="space-y-2">
             <h4 class="text-xs font-bold uppercase text-green-700 dark:text-green-400 flex items-center tracking-wider">
                 <i data-lucide="activity" class="w-3.5 h-3.5 mr-1.5"></i> 1. Datos Generales de la Jornada
@@ -244,7 +295,6 @@
             </div>
         </div>
 
-        <!-- 2. DESPLIEGUE TERRITORIAL -->
         <div class="space-y-2">
             <h4 class="text-xs font-bold uppercase text-green-700 dark:text-green-400 flex items-center tracking-wider">
                 <i data-lucide="map-pin" class="w-3.5 h-3.5 mr-1.5"></i> 2. Despliegue Territorial y Parametrización
@@ -273,7 +323,6 @@
             </div>
         </div>
 
-        <!-- 3. DESCRIPCIÓN Y ALCANCE -->
         <div class="space-y-2">
             <h4 class="text-xs font-bold uppercase text-green-700 dark:text-green-400 flex items-center tracking-wider">
                 <i data-lucide="file-text" class="w-3.5 h-3.5 mr-1.5"></i> 3. Descripción y Alcance
@@ -290,7 +339,6 @@
             </div>
         </div>
 
-        <!-- 4. SOPORTES Y ARCHIVOS -->
         <div class="space-y-2">
             <h4 class="text-xs font-bold uppercase text-green-700 dark:text-green-400 flex items-center tracking-wider">
                 <i data-lucide="paperclip" class="w-3.5 h-3.5 mr-1.5"></i> 4. Soportes, Acuerdos y Archivos Vinculados
@@ -306,18 +354,34 @@
                 </div>
             </div>
 
-            <!-- FOTOS -->
             <div class="bg-gray-50 dark:bg-gray-700/40 p-3 rounded-lg space-y-2 text-xs">
                 <span class="text-gray-400 block uppercase font-bold text-[10px]">Evidencias Fotográficas</span>
                 <div id="det_galeria_fotos" class="flex flex-wrap gap-2 pt-1"></div>
             </div>
         </div>
 
-        <!-- PIE DE MODAL -->
         <div class="flex justify-end pt-3 border-t dark:border-gray-700">
             <button onclick="cerrarModalDetalle()" class="px-5 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-md text-xs font-bold transition-colors">
                 Cerrar Ficha
             </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Confirmar Generar Reporte PDF -->
+<div id="modal-confirmar-reporte" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="rounded-xl shadow-xl w-full max-w-md bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-6 text-center relative">
+        <button onclick="document.getElementById('modal-confirmar-reporte').classList.add('hidden')" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+            <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+        <div class="w-14 h-14 mx-auto mb-4 rounded-full bg-amber-100 dark:bg-amber-900/20 flex items-center justify-center">
+            <i data-lucide="file-text" class="w-7 h-7 text-amber-600 dark:text-amber-400"></i>
+        </div>
+        <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-2">¿Estás seguro de generar este reporte?</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Estás a punto de generar el reporte PDF. Se incluirán las actividades que coincidan con los filtros seleccionados.</p>
+        <div class="flex justify-center gap-3">
+            <button type="button" onclick="document.getElementById('modal-confirmar-reporte').classList.add('hidden')" class="px-5 py-2.5 border rounded-lg text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Cancelar</button>
+            <button type="button" onclick="confirmarGenerarReporte()" class="px-5 py-2.5 bg-amber-600 rounded-lg text-sm font-medium text-white hover:bg-amber-700 transition-colors shadow-sm">Sí, generar reporte</button>
         </div>
     </div>
 </div>
@@ -329,7 +393,6 @@ function verDetalleCompleto(btn) {
     const nombre = btn.getAttribute('data-nombre');
     const area = btn.getAttribute('data-area');
     
-    // 1. Datos Generales
     document.getElementById('det_id_fecha').textContent = `#${id}`;
     document.getElementById('det_nombre_actividad_titulo').textContent = nombre;
     document.getElementById('det_nombre_actividad').textContent = nombre;
@@ -338,21 +401,16 @@ function verDetalleCompleto(btn) {
     document.getElementById('det_estatus').textContent = btn.getAttribute('data-estatus');
     document.getElementById('det_tecnico').textContent = btn.getAttribute('data-tecnico');
 
-    // 2. Despliegue Territorial
     document.getElementById('det_comunidad').textContent = btn.getAttribute('data-comunidad');
     document.getElementById('det_nivel').textContent = btn.getAttribute('data-nivel');
     document.getElementById('det_estado_geo').textContent = btn.getAttribute('data-estado-geo');
     document.getElementById('det_municipio').textContent = btn.getAttribute('data-municipio');
     document.getElementById('det_parroquia').textContent = btn.getAttribute('data-parroquia');
 
-    // 3. Descripción y Alcance
     document.getElementById('det_descripcion').textContent = btn.getAttribute('data-descripcion');
     document.getElementById('det_poblacion').textContent = `${btn.getAttribute('data-poblacion')} Personas Impactadas`;
-
-    // 4. Soportes y Acuerdos
     document.getElementById('det_acuerdos').textContent = btn.getAttribute('data-acuerdos');
 
-    // Renderizar Minuta PDF
     const minutaUrl = btn.getAttribute('data-minuta');
     const contMinuta = document.getElementById('det_minuta_contenedor');
     if (minutaUrl) {
@@ -361,11 +419,9 @@ function verDetalleCompleto(btn) {
         contMinuta.innerHTML = `<span class="text-gray-400 italic">Sin minuta PDF cargada</span>`;
     }
 
-    // Renderizar Fotos
     const fotosRaw = btn.getAttribute('data-fotos');
     const contFotos = document.getElementById('det_galeria_fotos');
     contFotos.innerHTML = '';
-
     if (fotosRaw) {
         const listaFotos = fotosRaw.split('||');
         listaFotos.forEach(urlFoto => {
@@ -385,6 +441,50 @@ function verDetalleCompleto(btn) {
 
 function cerrarModalDetalle() {
     document.getElementById('modalDetalleActividad').classList.add('hidden');
+}
+
+// 🌟 LÓGICA JAVASCRIPT DEL REPORTE ESTANDARIZADA 
+let accionReportePendiente = null;
+
+function abrirModalConfirmarReporte(accion) {
+    accionReportePendiente = accion;
+    document.getElementById('modal-confirmar-reporte').classList.remove('hidden');
+}
+
+function confirmarGenerarReporte() {
+    document.getElementById('modal-confirmar-reporte').classList.add('hidden');
+    if (typeof accionReportePendiente === 'function') {
+        accionReportePendiente();
+        accionReportePendiente = null;
+    }
+}
+
+function enviarReporteParametrizado() {
+    abrirModalConfirmarReporte(function() {
+        const form = document.getElementById('formReporteParametrizado');
+        
+        // Captura solo los IDs que no están ocultos por si hay filtrado local en la tabla
+        const filas = document.querySelectorAll('tbody tr[data-id]');
+        const ids = [];
+        filas.forEach(function(fila) {
+            if (fila.style.display !== 'none') {
+                ids.push(fila.dataset.id);
+            }
+        });
+
+        // Recoge los parámetros del formulario HTML
+        const formData = new FormData(form);
+        const params = new URLSearchParams(formData);
+
+        if (ids.length > 0) {
+            params.append('ids', ids.join(','));
+        }
+
+        const baseUrl = form.action;
+        const finalUrl = baseUrl + '?' + params.toString();
+        
+        window.open(finalUrl, '_blank');
+    });
 }
 </script>
 {% endblock %}

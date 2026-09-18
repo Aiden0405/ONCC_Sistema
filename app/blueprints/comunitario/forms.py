@@ -1,6 +1,45 @@
 from flask_wtf import FlaskForm
 from wtforms import DateField, SelectField, StringField
-from wtforms.validators import DataRequired, Length
+from wtforms.validators import DataRequired, Length, ValidationError
+
+
+class RegistroComunitarioForm(FlaskForm):
+    tipo_actividad = SelectField(
+        'Tipo de registro',
+        choices=[('FORMACION', 'Formación'), ('SENSIBILIZACION', 'Sensibilización')],
+        validators=[DataRequired(message='Debe seleccionar el tipo de registro.')],
+        default='FORMACION',
+    )
+    tipo_destino = SelectField(
+        'Destino',
+        choices=[('COMUNIDAD', 'Comunidad'), ('INSTITUCION', 'Institución')],
+        validators=[DataRequired(message='Debe seleccionar el destino.')],
+        default='COMUNIDAD',
+    )
+    fecha_actividad = DateField(
+        'Fecha de ejecución', format='%Y-%m-%d',
+        validators=[DataRequired(message='La fecha es obligatoria.')],
+    )
+    id_comunidad = SelectField(
+        'Comunidad / Territorio', coerce=int,
+        validators=[DataRequired(message='Debe seleccionar una comunidad.')],
+    )
+    id_nivel = SelectField(
+        'Nivel de instrucción', coerce=int,
+        validators=[DataRequired(message='Debe seleccionar el nivel de instrucción.')],
+    )
+    nombre = StringField(
+        'Tema / campaña', validators=[DataRequired(message='Debe indicar el tema o campaña.'), Length(max=180)],
+    )
+    tecnico = SelectField(
+        'Técnico / Facilitador', coerce=int,
+        validators=[DataRequired(message='Debe seleccionar el técnico o facilitador.')],
+    )
+    id_institucion = SelectField('Institución / Sede', coerce=int)
+
+    def validate_id_institucion(self, field):
+        if self.tipo_destino.data == 'INSTITUCION' and not field.data:
+            raise ValidationError('Debe seleccionar una institución para ese destino.')
 
 class FormacionForm(FlaskForm):
     fecha_actividad = DateField(

@@ -14,13 +14,49 @@
             <a href="{{ url_for('core.rol_index') }}" class="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-white rounded-md shadow-sm transition-colors text-sm font-medium border border-gray-200 dark:border-gray-600">
                 <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i> Volver a Roles
             </a>
+            
             {% if is_system_superuser() %}
             <a href="{{ url_for('core.permiso_nuevo') }}" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md shadow-sm hover:bg-green-700 transition-colors text-sm font-medium">
                 <i data-lucide="key-round" class="w-4 h-4 mr-2"></i> Crear permiso
             </a>
             {% endif %}
-            {% if current_user.id_rol|int in (1, 2) or current_user.has_permission('reportes_permisos') or current_user.rol == config.SUPER_ROLE_NAME %}<a href="{{ url_for('core.permiso_reporte') }}" class="inline-flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-100 text-sm font-medium"><i data-lucide="download" class="w-4 h-4 mr-1"></i> Reporte</a>{% endif %}
         </div>
+    </div>
+
+    <!-- SECCIÓN DE REPORTE PARAMETRIZADO DE PERMISOS -->
+    <div class="rounded-xl shadow-sm border p-4 bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-bold uppercase tracking-wide text-gray-700 dark:text-gray-200">Auditoría del Catálogo</h3>
+            <i data-lucide="filter" class="w-4 h-4 text-gray-400"></i>
+        </div>
+        <form id="formReporteParametrizado" method="GET" action="{{ url_for('core.permiso_reporte') }}" target="_blank" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
+            <div class="space-y-1 lg:col-span-2">
+                <label class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase">Módulo Afectado</label>
+                <select name="modulo" class="w-full border rounded-md p-2 text-sm bg-white dark:bg-gray-700 dark:text-white">
+                    <option value="">Todos los módulos</option>
+                    <option value="usuario">Seguridad / Usuarios</option>
+                    <option value="rol">Roles y Permisos</option>
+                    <option value="actividad">Actividades</option>
+                    <option value="divulgacion">Divulgación</option>
+                    <option value="reporte">Reportes y Exportaciones</option>
+                </select>
+            </div>
+
+            <div class="space-y-1 lg:col-span-2">
+                <label class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase">Estado de Asignación</label>
+                <select name="asignacion" class="w-full border rounded-md p-2 text-sm bg-white dark:bg-gray-700 dark:text-white">
+                    <option value="">Mostrar todos</option>
+                    <option value="asignados">Solo activos (Asignados a roles)</option>
+                    <option value="huerfanos">Huérfanos / Inactivos (Sin asignar)</option>
+                </select>
+            </div>
+
+            {% if current_user.id_rol|int in (1, 2) or current_user.has_permission('reportes_permisos') or current_user.rol == config.SUPER_ROLE_NAME %}
+            <button type="button" onclick="enviarReporteParametrizado()" class="lg:col-span-1 bg-amber-600 hover:bg-amber-700 text-white rounded-md px-4 py-2 text-sm font-medium inline-flex items-center justify-center transition-colors shadow-sm w-full">
+                <i data-lucide="file-text" class="w-4 h-4 mr-2"></i> PDF
+            </button>
+            {% endif %}
+        </form>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -57,22 +93,22 @@
                     {% for p in permisos %}
                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
                         <td class="px-6 py-4 font-mono text-xs text-gray-500">
-                            #0{{ p.id }}
+                            #0{{ p.id_modulo }}
                         </td>
                         
                         <td class="px-6 py-4 font-mono text-xs text-purple-700 dark:text-purple-400 font-bold whitespace-nowrap">
-                            {{ p.nombre }}
+                            {{ p.nombre_modulo }}
                         </td>
 
                         <td class="px-6 py-4 text-gray-600 dark:text-gray-300 text-xs">
-                            {{ p.descripcion }}
+                            {{ p.descripcion or getattr(p, 'descripcion_modulo', '') }}
                         </td>
                         {% if is_system_superuser() %}
                         <td class="px-6 py-4 text-right whitespace-nowrap">
-                            <a href="{{ url_for('core.permiso_editar', permiso_id=p.id) }}" class="inline-flex items-center rounded-md bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 transition-colors hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300 dark:hover:bg-blue-900/30 mr-2">
+                            <a href="{{ url_for('core.permiso_editar', permiso_id=p.id_modulo) }}" class="inline-flex items-center rounded-md bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 transition-colors hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300 dark:hover:bg-blue-900/30 mr-2">
                                 <i data-lucide="edit" class="mr-1 h-3.5 w-3.5"></i> Editar
                             </a>
-                            <form action="{{ url_for('core.permiso_eliminar', permiso_id=p.id) }}" method="post" class="inline" onsubmit="return confirm('¿Seguro que desea eliminar este permiso?');">
+                            <form action="{{ url_for('core.permiso_eliminar', permiso_id=p.id_modulo) }}" method="post" class="inline" onsubmit="return confirm('¿Seguro que desea eliminar este permiso?');">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <button type="submit" class="inline-flex items-center rounded-md bg-red-50 px-3 py-1.5 text-xs font-bold text-red-700 transition-colors hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300 dark:hover:bg-red-900/30">
                                     <i data-lucide="trash-2" class="mr-1 h-3.5 w-3.5"></i> Eliminar
@@ -93,7 +129,7 @@
             </table>
         </div>
 
-        <!-- 🌟 CONTROLES DE PAGINACIÓN (Parte 1, 2, 3...) -->
+        <!-- 🌟 CONTROLES DE PAGINACIÓN -->
         {% if pagination.pages > 1 %}
         <div class="px-6 py-4 bg-gray-50 dark:bg-gray-700/30 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
             <span class="text-xs text-gray-500 dark:text-gray-400">
@@ -133,4 +169,53 @@
 
     </div>
 </div>
+
+<!-- Modal Confirmar Generar Reporte PDF -->
+<div id="modal-confirmar-reporte" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="rounded-xl shadow-xl w-full max-w-md bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-6 text-center relative">
+        <button onclick="document.getElementById('modal-confirmar-reporte').classList.add('hidden')" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+            <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+        <div class="w-14 h-14 mx-auto mb-4 rounded-full bg-amber-100 dark:bg-amber-900/20 flex items-center justify-center">
+            <i data-lucide="key" class="w-7 h-7 text-amber-600 dark:text-amber-400"></i>
+        </div>
+        <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-2">¿Generar Catálogo PDF?</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Obtendrás un documento auditable con los privilegios aplicando los filtros seleccionados.</p>
+        <div class="flex justify-center gap-3">
+            <button type="button" onclick="document.getElementById('modal-confirmar-reporte').classList.add('hidden')" class="px-5 py-2.5 border rounded-lg text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Cancelar</button>
+            <button type="button" onclick="confirmarGenerarReporte()" class="px-5 py-2.5 bg-amber-600 rounded-lg text-sm font-medium text-white hover:bg-amber-700 transition-colors shadow-sm">Sí, generar reporte</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let accionReportePendiente = null;
+
+    function abrirModalConfirmarReporte(accion) {
+        accionReportePendiente = accion;
+        document.getElementById('modal-confirmar-reporte').classList.remove('hidden');
+    }
+
+    function enviarReporteParametrizado() {
+        abrirModalConfirmarReporte(function() {
+            const form = document.getElementById('formReporteParametrizado');
+            
+            const formData = new FormData(form);
+            const params = new URLSearchParams(formData);
+
+            const baseUrl = form.action;
+            const finalUrl = baseUrl + '?' + params.toString();
+            
+            window.open(finalUrl, '_blank');
+        });
+    }
+
+    function confirmarGenerarReporte() {
+        document.getElementById('modal-confirmar-reporte').classList.add('hidden');
+        if (typeof accionReportePendiente === 'function') {
+            accionReportePendiente();
+            accionReportePendiente = null;
+        }
+    }
+</script>
 {% endblock %}

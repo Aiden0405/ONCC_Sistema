@@ -12,9 +12,64 @@
         </div>
         
         <div class="flex items-center gap-2">
-            {% if is_superuser() or has_permission('reportes_divulgaciones') %}<a href="{{ url_for('core.divulgacion_reporte') }}" class="inline-flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-100 text-sm font-medium"><i data-lucide="download" class="w-4 h-4 mr-1"></i> Reporte</a>{% endif %}
-            {% if has_permission('registrar_divulgaciones') or is_superuser() %}<a href="{{ url_for('core.divulgacion_admin_nuevo') }}" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md shadow-sm hover:bg-green-700 transition-colors text-sm font-medium"><i data-lucide="plus" class="w-4 h-4 mr-2"></i> Nueva Publicación</a>{% endif %}
+            {% if has_permission('registrar_divulgaciones') or is_superuser() %}
+            <a href="{{ url_for('core.divulgacion_admin_nuevo') }}" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md shadow-sm hover:bg-green-700 transition-colors text-sm font-medium">
+                <i data-lucide="plus" class="w-4 h-4 mr-2"></i> Registrar Divulgación
+            </a>
+            {% endif %}
         </div>
+    </div>
+
+    <!-- SECCIÓN DE REPORTE PARAMETRIZADO AVANZADO -->
+    <div class="rounded-xl shadow-sm border p-4 bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-bold uppercase tracking-wide text-gray-700 dark:text-gray-200">Reporte parametrizado</h3>
+            <i data-lucide="filter" class="w-4 h-4 text-gray-400"></i>
+        </div>
+        <form id="formReporteParametrizado" method="GET" action="{{ url_for('core.divulgacion_reporte') }}" target="_blank" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
+            <select name="tipo" id="filtro_tipo" class="border rounded-md p-2 text-sm bg-white dark:bg-gray-700 dark:text-white">
+                <option value="">Todos los tipos</option>
+                <option value="Boletin">Boletín</option>
+                <option value="Informe">Informe</option>
+                <option value="Alerta">Alerta</option>
+            </select>
+
+            <select name="prioridad" id="filtro_prioridad" class="border rounded-md p-2 text-sm bg-white dark:bg-gray-700 dark:text-white">
+                <option value="">Todas las prioridades (1 - 10)</option>
+                <option value="1">Nivel 1</option>
+                <option value="2">Nivel 2</option>
+                <option value="3">Nivel 3</option>
+                <option value="4">Nivel 4</option>
+                <option value="5">Nivel 5</option>
+                <option value="6">Nivel 6</option>
+                <option value="7">Nivel 7</option>
+                <option value="8">Nivel 8</option>
+                <option value="9">Nivel 9</option>
+                <option value="10">Nivel 10 (Crítica)</option>
+            </select>
+
+            <select name="estado" id="filtro_estado" class="border rounded-md p-2 text-sm bg-white dark:bg-gray-700 dark:text-white">
+                <option value="">Todos los estatus</option>
+                <option value="borrador">Borrador</option>
+                <option value="publicado">Publicado</option>
+            </select>
+            
+            <div class="space-y-1">
+                <label class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase">Desde</label>
+                <input type="date" name="desde" id="filtro_desde" class="w-full border rounded-md p-2 text-sm bg-white dark:bg-gray-700 dark:text-white" aria-label="Desde">
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase">Hasta</label>
+                <input type="date" name="hasta" id="filtro_hasta" class="w-full border rounded-md p-2 text-sm bg-white dark:bg-gray-700 dark:text-white" aria-label="Hasta">
+            </div>
+
+            {% if is_superuser() or has_permission('reportes_divulgaciones') %}
+            <button type="button" onclick="enviarReporteParametrizado()" class="lg:col-span-3 bg-amber-600 hover:bg-amber-700 text-white rounded-md px-4 py-2 text-sm font-medium inline-flex items-center justify-center transition-colors shadow-sm">
+                <i data-lucide="file-text" class="w-4 h-4 mr-2"></i> Generar reporte PDF parametrizado
+            </button>
+            {% endif %}
+        </form>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -58,7 +113,7 @@
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
                     {% for p in publicaciones %}
-                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                    <tr data-id="{{ p.id_publicacion }}" class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
                         <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-100 max-w-sm truncate">
                             <div class="font-semibold text-gray-900 dark:text-white truncate">{{ p.titulo }}</div>
                             <div class="text-[11px] text-gray-400 dark:text-gray-500 mt-1 flex items-center gap-1">
@@ -198,7 +253,6 @@
 <div id="modalDetalleDivulgacion" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 max-w-2xl w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         
-        <!-- HEADER DEL MODAL -->
         <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-slate-50 dark:bg-gray-700/40">
             <div class="flex items-center gap-2">
                 <div class="p-1.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-lg">
@@ -214,10 +268,8 @@
             </button>
         </div>
 
-        <!-- CUERPO DEL MODAL -->
         <div class="p-6 space-y-5 max-h-[75vh] overflow-y-auto custom-scrollbar text-sm">
             
-            <!-- BLOQUE 1: TRAZABILIDAD OPERATIVA (AVAL PADRE) -->
             <div class="bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 rounded-xl p-4 space-y-3">
                 <p class="text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
                     <i data-lucide="link" class="w-4 h-4"></i> 1. Aval Institucional de Origen
@@ -246,7 +298,6 @@
                 </div>
             </div>
 
-            <!-- BLOQUE 2: CONTENIDO EDITORIAL DE LA WEB -->
             <div class="space-y-3">
                 <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
                     <i data-lucide="newspaper" class="w-4 h-4"></i> 2. Contenido Informativo para la Web
@@ -271,11 +322,28 @@
             </div>
         </div>
 
-        <!-- FOOTER DEL MODAL -->
         <div class="px-6 py-3 bg-gray-50 dark:bg-gray-700/40 border-t border-gray-100 dark:border-gray-700 flex justify-end">
             <button onclick="cerrarModalDetalle()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-800 dark:text-white rounded-lg text-xs font-semibold transition-colors">
                 Cerrar
             </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Confirmar Generar Reporte PDF -->
+<div id="modal-confirmar-reporte" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="rounded-xl shadow-xl w-full max-w-md bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-6 text-center relative">
+        <button onclick="document.getElementById('modal-confirmar-reporte').classList.add('hidden')" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+            <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+        <div class="w-14 h-14 mx-auto mb-4 rounded-full bg-amber-100 dark:bg-amber-900/20 flex items-center justify-center">
+            <i data-lucide="file-text" class="w-7 h-7 text-amber-600 dark:text-amber-400"></i>
+        </div>
+        <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-2">¿Estás seguro de generar este reporte?</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Estás a punto de generar el reporte PDF aplicando los filtros seleccionados actualmente.</p>
+        <div class="flex justify-center gap-3">
+            <button type="button" onclick="document.getElementById('modal-confirmar-reporte').classList.add('hidden')" class="px-5 py-2.5 border rounded-lg text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Cancelar</button>
+            <button type="button" onclick="confirmarGenerarReporte()" class="px-5 py-2.5 bg-amber-600 rounded-lg text-sm font-medium text-white hover:bg-amber-700 transition-colors shadow-sm">Sí, generar reporte</button>
         </div>
     </div>
 </div>
@@ -312,10 +380,39 @@
         document.getElementById('modalDetalleDivulgacion').classList.add('hidden');
     }
 
-    // Cerrar modal al presionar la tecla ESC
+    let accionReportePendiente = null;
+
+    function abrirModalConfirmarReporte(accion) {
+        accionReportePendiente = accion;
+        document.getElementById('modal-confirmar-reporte').classList.remove('hidden');
+    }
+
+    function enviarReporteParametrizado() {
+        abrirModalConfirmarReporte(function() {
+            const form = document.getElementById('formReporteParametrizado');
+            
+            const formData = new FormData(form);
+            const params = new URLSearchParams(formData);
+
+            const baseUrl = form.action;
+            const finalUrl = baseUrl + '?' + params.toString();
+            
+            window.open(finalUrl, '_blank');
+        });
+    }
+
+    function confirmarGenerarReporte() {
+        document.getElementById('modal-confirmar-reporte').classList.add('hidden');
+        if (typeof accionReportePendiente === 'function') {
+            accionReportePendiente();
+            accionReportePendiente = null;
+        }
+    }
+
     document.addEventListener('keydown', function(event) {
         if (event.key === "Escape") {
             cerrarModalDetalle();
+            document.getElementById('modal-confirmar-reporte').classList.add('hidden');
         }
     });
 </script>

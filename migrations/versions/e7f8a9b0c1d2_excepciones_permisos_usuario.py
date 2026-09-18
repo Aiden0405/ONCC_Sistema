@@ -18,7 +18,7 @@ def upgrade():
         sa.Column('id_usuario', sa.Integer(), nullable=False),
         sa.Column('id_modulo', sa.Integer(), nullable=False),
         sa.Column('concedido', sa.Boolean(), nullable=False),
-        sa.ForeignKeyConstraint(['id_usuario'], ['usuario.id_usuario'], ondelete='CASCADE'),
+        sa.ForeignKeyConstraint(['id_usuario'], ['usuarios.id_usuario'], ondelete='CASCADE'),
         sa.ForeignKeyConstraint(['id_modulo'], ['modulos.id_modulo'], ondelete='CASCADE'),
         sa.PrimaryKeyConstraint('id_usuario', 'id_modulo'),
     )

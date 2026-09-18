@@ -58,18 +58,20 @@
                 </div>
 
                 <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Parroquia Perteneciente</label>
+                    <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación Territorial (Estado &gt; Municipio &gt; Parroquia)</label>
                     <select name="id_parroquia" required class="w-full border rounded-lg p-2.5 text-sm bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none">
-                        <option value="" disabled selected>Seleccione una parroquia...</option>
+                        <option value="" disabled selected>Seleccione la ubicación correspondiente...</option>
                         {% for p in parroquias %}
-                            <option value="{{ p[0] }}">{{ p[1] }}</option>
+                            <option value="{{ p[0] }}">
+                                {{ p[3] }} &gt; {{ p[2] }} &gt; {{ p[1] }}
+                            </option>
                         {% endfor %}
                     </select>
                 </div>
 
                 <div>
                     <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white text-sm font-semibold py-2.5 px-4 rounded-lg shadow-sm transition-all flex items-center justify-center">
-                        <i data-lucide="plus" class="w-4 h-4 mr-1.5"></i> Guardar Comunidad
+                        <i data-lucide="plus" class="w-4 h-4 mr-1.5"></i> Registrar Comunidad
                     </button>
                 </div>
             </form>
@@ -169,7 +171,7 @@
 
                     <div>
                         <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white text-sm font-semibold py-2.5 px-4 rounded-lg shadow-sm transition-all flex items-center justify-center">
-                            <i data-lucide="plus" class="w-4 h-4 mr-1.5"></i> Guardar Institución
+                            <i data-lucide="plus" class="w-4 h-4 mr-1.5"></i> Registrar Institución
                         </button>
                     </div>
                 </form>
@@ -255,7 +257,7 @@
 
                 <div>
                     <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white text-sm font-semibold py-2.5 px-4 rounded-lg shadow-sm transition-all flex items-center justify-center">
-                        <i data-lucide="plus" class="w-4 h-4 mr-1.5"></i> Guardar Nivel
+                        <i data-lucide="plus" class="w-4 h-4 mr-1.5"></i> Registrar Nivel
                     </button>
                 </div>
             </form>

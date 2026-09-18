@@ -76,8 +76,10 @@ class FormacionActiva(db.Model):
     id_formacion = db.Column(db.Integer, primary_key=True)
     nombre_formacion = db.Column(db.Text, nullable=False)
     id_actividad = db.Column('id_actividad', db.Integer, db.ForeignKey('actividad.id_actividad'), nullable=False, unique=True)
-    id_institucion = db.Column(db.Integer, db.ForeignKey('institucion.id_institucion'), nullable=False)
+    id_institucion = db.Column(db.Integer, db.ForeignKey('institucion.id_institucion'), nullable=True)
     tipo_actividad = db.Column(db.String(50), nullable=False, default='FORMACION')
+    tipo_destino = db.Column(db.String(30), nullable=False, default='COMUNIDAD')
+    id_tecnico = db.Column(db.Integer, db.ForeignKey('tecnicos.id_tecnico'), nullable=True)
     id_nivel = db.Column(db.Integer, db.ForeignKey('nivel.id_nivel'), nullable=False)
 
     # 🌟 Nombres de backref únicos para no colisionar con Actividad
@@ -87,6 +89,7 @@ class FormacionActiva(db.Model):
         backref=db.backref('formacion_activa_rel', uselist=False, cascade="all, delete-orphan")
     )
     institucion = db.relationship('InstitucionActiva', backref=db.backref('formaciones', lazy='dynamic'))
+    tecnico = db.relationship('Tecnico', backref=db.backref('formaciones', lazy='dynamic'))
 
     @property
     def id(self):
@@ -105,28 +108,44 @@ class FormacionActiva(db.Model):
         return "No asignado"
 
     @classmethod
-    def obtener_historial_completo(cls):
+    def obtener_historial_completo(cls, tipo_actividad=None):
         historial = db.session.query(
             cls, 
-            InstitucionActiva, 
+            InstitucionActiva,
+            ComunidadActiva,
+            NivelActivo,
             Actividad
-        ).join(
-            InstitucionActiva, cls.id_institucion == InstitucionActiva.id_institucion
         ).join(
             Actividad,
             (cls.id_actividad == Actividad.id_actividad)
-            & (Actividad.tipo_actividad == 'FORMACION')
-        ).order_by(cls.id_formacion.desc()).all()
+        ).outerjoin(
+            InstitucionActiva, cls.id_institucion == InstitucionActiva.id_institucion
+        ).join(
+            ComunidadActiva, Actividad.id_comunidad == ComunidadActiva.id_comunidad
+        ).join(
+            NivelActivo, cls.id_nivel == NivelActivo.id_nivel
+        )
+        if tipo_actividad:
+            historial = historial.filter(cls.tipo_actividad == tipo_actividad)
+        historial = historial.order_by(cls.id_formacion.desc()).all()
 
         formaciones_procesadas = []
-        for formacion, institucion, actividad in historial:
+        for formacion, institucion, comunidad, nivel, actividad in historial:
             fecha_lista = actividad.fecha_actividad.strftime('%d/%m/%Y') if actividad.fecha_actividad else 'N/D'
             
             formaciones_procesadas.append({
                 'id_formacion': formacion.id_formacion,
+                'id_sensibilizacion': formacion.id_formacion,
                 'tema': formacion.tema_real,
+                'campana': formacion.tema_real,
                 'tecnico': formacion.tecnico_real,
-                'nombre_institucion': institucion.nombre_institucion,
+                'facilitador': formacion.tecnico_real,
+                'nombre_institucion': institucion.nombre_institucion if institucion else None,
+                'tipo': formacion.tipo_actividad,
+                'tipo_destino': formacion.tipo_destino,
+                'nombre_comunidad': comunidad.nombre_comunidad,
+                'nombre_nivel': nivel.nombre_nivel,
+                'id_tecnico': formacion.id_tecnico,
                 'fecha_actividad_cruda': actividad.fecha_actividad,
                 'fecha_formateada': fecha_lista,
                 'id_actividad': formacion.id_actividad,
@@ -137,71 +156,15 @@ class FormacionActiva(db.Model):
         return formaciones_procesadas
 
 
-class SensibilizacionActiva(db.Model):
-    __tablename__ = 'sensibilizacion'
-    __table_args__ = {'extend_existing': True}
-
-    id_sensibilizacion = db.Column('id_sensibilizacion', db.Integer, primary_key=True)
-    nombre_sensivilizacion = db.Column('nombre_sensibilizacion', db.Text, nullable=False)
-    id_actividad = db.Column(db.Integer, db.ForeignKey('actividad.id_actividad'), nullable=False, unique=True)
-    tipo_actividad = db.Column(db.String(50), nullable=False, default='SENSIBILIZACION')
-    id_nivel = db.Column(db.Integer, db.ForeignKey('nivel.id_nivel'), nullable=False)
-
-    # 🌟 Nombres de backref únicos para no colisionar con Actividad
-    actividad = db.relationship(
-        'Actividad', 
-        foreign_keys=[id_actividad], 
-        backref=db.backref('sensibilizacion_activa_rel', uselist=False, cascade="all, delete-orphan")
-    )
-
-    @property
-    def id(self):
-        return self.id_sensibilizacion
-
     @property
     def nombre_sensibilizacion(self):
-        return self.nombre_sensivilizacion
+        return self.nombre_formacion
 
-    @nombre_sensibilizacion.setter
-    def nombre_sensibilizacion(self, value):
-        self.nombre_sensivilizacion = value
-  
     @property
     def campana_real(self):
-        if "||" in self.nombre_sensibilizacion:
-            return self.nombre_sensibilizacion.split("||", 1)[0]
-        return self.nombre_sensibilizacion
+        return self.tema_real
 
     @property
     def facilitador_real(self):
-        if "||" in self.nombre_sensibilizacion:
-            return self.nombre_sensibilizacion.split("||", 1)[1]
-        return "No asignado"
+        return self.tecnico_real
 
-    @classmethod
-    def obtener_historial_completo(cls):
-        historial = db.session.query(
-            cls,
-            Actividad,
-            ComunidadActiva
-        ).join(
-            Actividad,
-            (cls.id_actividad == Actividad.id_actividad)
-            & (Actividad.tipo_actividad == 'SENSIBILIZACION')
-        ).join(
-            ComunidadActiva, Actividad.id_comunidad == ComunidadActiva.id_comunidad
-        ).order_by(cls.id_sensibilizacion.desc()).all()
-
-        sensibilizaciones_procesadas = []
-        for sensibilizacion, actividad, comunidad in historial:
-            sensibilizaciones_procesadas.append({
-                'id_sensibilizacion': sensibilizacion.id_sensibilizacion,
-                'campana': sensibilizacion.campana_real,
-                'facilitador': sensibilizacion.facilitador_real,
-                'nombre_comunidad': comunidad.nombre_comunidad,
-                'fecha_actividad': actividad.fecha_actividad,
-                'id_actividad': sensibilizacion.id_actividad,
-                'id_nivel': sensibilizacion.id_nivel or actividad.id_nivel,
-                'id_comunidad': actividad.id_comunidad
-            })
-        return sensibilizaciones_procesadas

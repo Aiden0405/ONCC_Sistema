@@ -12,6 +12,11 @@ class Actividad(db.Model):
     id_usuario = db.Column(db.Integer, nullable=True)
     id_comunidad = db.Column(db.Integer, db.ForeignKey('comunidad.id_comunidad'), nullable=False)
     id_nivel = db.Column(db.Integer, db.ForeignKey('nivel.id_nivel'), nullable=True) # 👈 Columna FK requerida
+    descripcion = db.Column(db.Text, nullable=True)
+    poblacion = db.Column(db.Integer, nullable=False, default=0, server_default='0')
+    acuerdos = db.Column(db.Text, nullable=True)
+    minuta_archivo = db.Column(db.String(255), nullable=True)
+    fotos_archivos = db.Column(db.Text, nullable=True)
     divulgacion = db.relationship(
         'Divulgacion', 
         back_populates='actividad_obj', 
@@ -45,6 +50,12 @@ class Actividad(db.Model):
     monitoreo = db.relationship('Monitoreo', backref='actividad_rel', uselist=False, cascade="all, delete-orphan")
     tecnicos_asociados = db.relationship('ActividadTecnico', backref='actividad_rel', cascade="all, delete-orphan")
     imagenes_asociadas = db.relationship('ImagenesActividad', backref='actividad_rel', cascade="all, delete-orphan")
+
+    @property
+    def sensibilizacion_activa_rel(self):
+        if self.tipo_actividad == 'SENSIBILIZACION':
+            return self.formacion_activa_rel
+        return None
 
     def __repr__(self):
         return f"<Actividad {self.tipo_actividad} ({self.id_actividad})>"

@@ -22,4 +22,3 @@ from app.models.esquema_activo import InstitucionActiva
 from app.models.esquema_activo import NivelActivo
 from app.models.esquema_activo import MunicipioActivo
 from app.models.esquema_activo import ParroquiaActiva
-from app.models.esquema_activo import SensibilizacionActiva
