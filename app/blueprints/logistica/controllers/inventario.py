@@ -2,6 +2,7 @@ from flask import flash, jsonify, redirect, render_template, request, url_for, R
 from flask_login import current_user, login_required
 
 from app.blueprints.logistica import logistica_bp
+from app.models.usuario import Usuario
 from app.services.inventario_service import InventarioService
 from app.utils.authorization import verificar_permiso_dinamico
 
@@ -12,11 +13,13 @@ def inventario_index():
     verificar_permiso_dinamico('ver_inventario')
     equipos = InventarioService.listar_equipos()
     movimientos = InventarioService.listar_movimientos()
+    usuarios = Usuario.query.filter(Usuario.estatus.is_(True)).order_by(Usuario.nombre_usuario).all()
     return render_template('inventario/index.html',
                            inventario=equipos,
                            inventario_json=InventarioService.serializar(equipos),
                            movimientos=movimientos,
-                           movimientos_json=InventarioService.serializar_movimientos(movimientos))
+                           movimientos_json=InventarioService.serializar_movimientos(movimientos),
+                           usuarios=usuarios)
 
 
 @logistica_bp.route('/inventario/nuevo', methods=['POST'])

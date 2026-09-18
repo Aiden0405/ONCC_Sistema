@@ -52,6 +52,63 @@ class InventarioService:
         } for m in movimientos]
 
     @staticmethod
+    def listar_modelos():
+        from app.models.inventario import ModeloEquipo
+
+        return ModeloEquipo.query.order_by(ModeloEquipo.nombre_modelos_equipo).all()
+
+    @staticmethod
+    def serializar_modelos(modelos):
+        return [{'id': m.id_modelos_equipo, 'nombre': m.nombre_modelos_equipo} for m in modelos]
+
+    @staticmethod
+    def crear_modelo(nombre, usuario):
+        from app.models.inventario import ModeloEquipo
+
+        modelo = InventarioService._obtener_o_crear_modelo(nombre)
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            return {'ok': False, 'error': 'No se pudo registrar el tipo de equipo.'}
+
+        mensaje = f"Se registró el tipo de equipo {modelo.nombre_modelos_equipo}."
+        ServicioNotificacion.notificar_por_permiso(
+            'gestionar_inventario', mensaje, emisor_id=usuario.id_usuario
+        )
+        ServicioNotificacion.crear_aviso(
+            id_usuario=usuario.id_usuario, mensaje=mensaje, categoria='Inventario'
+        )
+
+        return {'ok': True, 'modelo': modelo}
+
+    @staticmethod
+    def eliminar_modelo(modelo_id, usuario):
+        from app.models.inventario import ModeloEquipo
+
+        modelo = ModeloEquipo.query.get(modelo_id)
+        if not modelo:
+            return {'ok': False, 'error': 'El tipo de equipo no existe.'}
+
+        equipo_asociado = InventarioEquipo.query.filter_by(id_modelos_equipos=modelo.id_modelos_equipo).first()
+        if equipo_asociado:
+            return {'ok': False, 'error': 'No se puede eliminar: hay equipos registrados con este tipo.'}
+
+        nombre = modelo.nombre_modelos_equipo
+        db.session.delete(modelo)
+        db.session.commit()
+
+        mensaje = f"Se eliminó el tipo de equipo {nombre}."
+        ServicioNotificacion.notificar_por_permiso(
+            'gestionar_inventario', mensaje, emisor_id=usuario.id_usuario
+        )
+        ServicioNotificacion.crear_aviso(
+            id_usuario=usuario.id_usuario, mensaje=mensaje, categoria='Inventario'
+        )
+
+        return {'ok': True, 'nombre': nombre}
+
+    @staticmethod
     def _obtener_o_crear_modelo(nombre):
         from app.models.inventario import CategoriaEquipo, ModeloEquipo
 
