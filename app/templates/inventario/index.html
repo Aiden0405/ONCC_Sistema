@@ -289,14 +289,26 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Nombre del Equipo</label>
-                        <select name="tipo_equipo" id="nuevo-tipo_equipo" required oninvalid="this.setCustomValidity('Seleccione un tipo de equipo')" oninput="this.setCustomValidity('')" onchange="manejarNuevoTipoEquipo(this)" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
-                            <option value="">Seleccione...</option>
-                            <option>Estación Meteorológica (EMA)</option>
-                            <option>Pluviómetro de Campo</option>
-                            <option>Aparato Transmisor Data (SSBC)</option>
-                            <option>Equipo Tecnológico (GPS/Drone)</option>
-                            <option value="__nuevo_equipo__">＋ Agregar nuevo equipo</option>
-                        </select>
+                        <div class="relative combobox-responsive" id="wrap-nuevo-tipo-equipo" data-placeholder="Seleccione un tipo de equipo...">
+                            <select name="tipo_equipo" id="nuevo-tipo_equipo" required class="sr-only" oninvalid="this.setCustomValidity('Seleccione un tipo de equipo')" oninput="sincronizarCombobox(this)" onchange="manejarNuevoTipoEquipo(this)">
+                                <option value="">Seleccione...</option>
+                                <option>Estación Meteorológica (EMA)</option>
+                                <option>Pluviómetro de Campo</option>
+                                <option>Aparato Transmisor Data (SSBC)</option>
+                                <option>Equipo Tecnológico (GPS/Drone)</option>
+                                <option value="__nuevo_equipo__">＋ Agregar nuevo equipo</option>
+                            </select>
+                            <button type="button" class="combobox-btn w-full flex items-center justify-between border rounded-md px-3 py-2 text-sm text-left bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none transition-colors">
+                                <span class="combobox-label text-gray-400">Seleccione un tipo de equipo...</span>
+                                <i data-lucide="chevrons-up-down" class="w-4 h-4 text-gray-400"></i>
+                            </button>
+                            <div class="combobox-panel hidden absolute z-20 mt-1 w-full rounded-md border bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 shadow-lg">
+                                <div class="p-2 border-b border-gray-100 dark:border-gray-700">
+                                    <input type="text" class="combobox-search w-full border rounded-md px-2 py-1.5 text-sm bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none" placeholder="Buscar tipo de equipo..." />
+                                </div>
+                                <ul class="combobox-list max-h-48 overflow-y-auto py-1"></ul>
+                            </div>
+                        </div>
                     </div>
                     <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">ID Equipo</label>
@@ -311,7 +323,24 @@
                     </div>
                     <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Responsable</label>
-                    <input type="text" name="responsable" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Nombre del funcionario a cargo" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                        <div class="relative combobox-responsive" id="wrap-nuevo-responsable" data-placeholder="Seleccione un usuario...">
+                            <select name="responsable" id="seleccion-nuevo-responsable" required class="sr-only" oninvalid="this.setCustomValidity('Seleccione un responsable')" oninput="sincronizarCombobox(this)">
+                                <option value="">Seleccione un usuario...</option>
+                                {% for usuario in usuarios %}
+                                <option value="{{ usuario.nombre }}">{{ usuario.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="button" class="combobox-btn w-full flex items-center justify-between border rounded-md px-3 py-2 text-sm text-left bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none transition-colors">
+                                <span class="combobox-label text-gray-400">Seleccione un usuario...</span>
+                                <i data-lucide="chevrons-up-down" class="w-4 h-4 text-gray-400"></i>
+                            </button>
+                            <div class="combobox-panel hidden absolute z-20 mt-1 w-full rounded-md border bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 shadow-lg">
+                                <div class="p-2 border-b border-gray-100 dark:border-gray-700">
+                                    <input type="text" class="combobox-search w-full border rounded-md px-2 py-1.5 text-sm bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none" placeholder="Buscar usuario..." />
+                                </div>
+                                <ul class="combobox-list max-h-48 overflow-y-auto py-1"></ul>
+                            </div>
+                        </div>
                 </div>
             </div>
 
@@ -397,13 +426,25 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Nombre del Equipo</label>
-                        <select id="edit-tipo_equipo" name="tipo_equipo" required oninvalid="this.setCustomValidity('Seleccione un tipo de equipo')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
-                            <option value="">Seleccione...</option>
-                            <option>Estación Meteorológica (EMA)</option>
-                            <option>Pluviómetro de Campo</option>
-                            <option>Aparato Transmisor Data (SSBC)</option>
-                            <option>Equipo Tecnológico (GPS/Drone)</option>
-                        </select>
+                        <div class="relative combobox-responsive" id="wrap-editar-tipo-equipo" data-placeholder="Seleccione un tipo de equipo...">
+                            <select id="edit-tipo_equipo" name="tipo_equipo" required class="sr-only" oninvalid="this.setCustomValidity('Seleccione un tipo de equipo')" oninput="sincronizarCombobox(this)">
+                                <option value="">Seleccione...</option>
+                                <option>Estación Meteorológica (EMA)</option>
+                                <option>Pluviómetro de Campo</option>
+                                <option>Aparato Transmisor Data (SSBC)</option>
+                                <option>Equipo Tecnológico (GPS/Drone)</option>
+                            </select>
+                            <button type="button" class="combobox-btn w-full flex items-center justify-between border rounded-md px-3 py-2 text-sm text-left bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none transition-colors">
+                                <span class="combobox-label text-gray-400">Seleccione un tipo de equipo...</span>
+                                <i data-lucide="chevrons-up-down" class="w-4 h-4 text-gray-400"></i>
+                            </button>
+                            <div class="combobox-panel hidden absolute z-20 mt-1 w-full rounded-md border bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 shadow-lg">
+                                <div class="p-2 border-b border-gray-100 dark:border-gray-700">
+                                    <input type="text" class="combobox-search w-full border rounded-md px-2 py-1.5 text-sm bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none" placeholder="Buscar tipo de equipo..." />
+                                </div>
+                                <ul class="combobox-list max-h-48 overflow-y-auto py-1"></ul>
+                            </div>
+                        </div>
                     </div>
                     <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">ID Equipo</label>
@@ -418,7 +459,24 @@
                     </div>
                     <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Responsable</label>
-                    <input type="text" id="edit-responsable" name="responsable" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Nombre del funcionario a cargo" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                        <div class="relative combobox-responsive" id="wrap-editar-responsable" data-placeholder="Seleccione un usuario...">
+                            <select name="responsable" id="edit-responsable" required class="sr-only" oninvalid="this.setCustomValidity('Seleccione un responsable')" oninput="sincronizarCombobox(this)">
+                                <option value="">Seleccione un usuario...</option>
+                                {% for usuario in usuarios %}
+                                <option value="{{ usuario.nombre }}">{{ usuario.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="button" class="combobox-btn w-full flex items-center justify-between border rounded-md px-3 py-2 text-sm text-left bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none transition-colors">
+                                <span class="combobox-label text-gray-400">Seleccione un usuario...</span>
+                                <i data-lucide="chevrons-up-down" class="w-4 h-4 text-gray-400"></i>
+                            </button>
+                            <div class="combobox-panel hidden absolute z-20 mt-1 w-full rounded-md border bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 shadow-lg">
+                                <div class="p-2 border-b border-gray-100 dark:border-gray-700">
+                                    <input type="text" class="combobox-search w-full border rounded-md px-2 py-1.5 text-sm bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none" placeholder="Buscar usuario..." />
+                                </div>
+                                <ul class="combobox-list max-h-48 overflow-y-auto py-1"></ul>
+                            </div>
+                        </div>
                 </div>
             </div>
 
@@ -823,10 +881,12 @@ function abrirModalEditar(id) {
     asegurarOpcion('edit-tipo_equipo', equipo.tipo_equipo);
     asegurarOpcion('edit-estado_operativo', equipo.estado_operativo);
     asegurarOpcion('edit-estado', equipo.estado_flujo);
+    asegurarOpcion('edit-responsable', equipo.responsable);
+    sincronizarCombobox(document.getElementById('edit-tipo_equipo'));
+    sincronizarCombobox(document.getElementById('edit-responsable'));
 
     document.getElementById('edit-codigo').value = equipo.codigo || '';
     document.getElementById('edit-ubicacion').value = equipo.ubicacion || '';
-    document.getElementById('edit-responsable').value = equipo.responsable || '';
     document.getElementById('edit-ultimo_mantenimiento').value = equipo.ultimo_mantenimiento || '';
 
     document.getElementById('form-editar-equipo').action = "{{ url_for('inventario.editar', equipo_id=0) }}".replace('/0', '/' + id);
@@ -849,6 +909,7 @@ function cerrarModalNuevoTipo() {
     document.getElementById('modal-nuevo-tipo-equipo').classList.add('hidden');
     if (selectTipoActivo) {
         selectTipoActivo.value = '';
+        sincronizarCombobox(selectTipoActivo);
     }
     selectTipoActivo = null;
 }
@@ -878,6 +939,7 @@ function agregarTipoEquipo(event) {
             }
         }
         sel.value = nombre;
+        sincronizarCombobox(sel);
     });
     document.getElementById('modal-nuevo-tipo-equipo').classList.add('hidden');
     selectTipoActivo = null;
@@ -1105,6 +1167,106 @@ function exportarReporte() {
 
 let accionReportePendiente = null;
 
+function armarListaCombobox(select) {
+    const wrap = select.closest('.combobox-responsive');
+    const lista = wrap.querySelector('.combobox-list');
+    const busqueda = wrap.querySelector('.combobox-search').value.trim().toLowerCase();
+    const seleccionadoValor = select.value;
+    lista.innerHTML = '';
+    let alguno = false;
+
+    Array.from(select.options).forEach(function(op) {
+        if (!op.value) return;
+        if (busqueda && op.text.toLowerCase().indexOf(busqueda) === -1) return;
+        alguno = true;
+        const li = document.createElement('li');
+        li.textContent = op.text;
+        li.className = 'px-3 py-2 text-sm cursor-pointer transition-colors ' +
+            (op.value === '__nuevo_equipo__'
+                ? 'border-t border-green-700/20 mt-1 text-green-700 dark:text-green-300 hover:bg-green-50 dark:hover:bg-gray-700'
+                : (op.value === seleccionadoValor
+                    ? 'bg-green-50 dark:bg-gray-700 text-green-700 dark:text-green-300 hover:bg-green-50 dark:hover:bg-gray-700'
+                    : 'text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-gray-700'));
+        li.addEventListener('mousedown', function(ev) { ev.preventDefault(); });
+        li.addEventListener('click', function() {
+            wrap.querySelector('.combobox-panel').classList.add('hidden');
+            if (op.value === '__nuevo_equipo__') {
+                select.value = op.value;
+                manejarNuevoTipoEquipo(select);
+                return;
+            }
+            select.value = op.value;
+            select.setCustomValidity('');
+            sincronizarCombobox(select);
+        });
+        lista.appendChild(li);
+    });
+
+    if (!alguno) {
+        const li = document.createElement('li');
+        li.textContent = 'Sin resultados';
+        li.className = 'px-3 py-2 text-sm text-gray-400 dark:text-gray-500';
+        lista.appendChild(li);
+    }
+}
+
+function abrirCombobox(select) {
+    const wrap = select.closest('.combobox-responsive');
+    document.querySelectorAll('.combobox-responsive .combobox-panel').forEach(function(panel) {
+        panel.classList.add('hidden');
+    });
+    const buscar = wrap.querySelector('.combobox-search');
+    buscar.value = '';
+    armarListaCombobox(select);
+    wrap.querySelector('.combobox-panel').classList.remove('hidden');
+    buscar.focus();
+}
+
+function sincronizarCombobox(select) {
+    if (!select) return;
+    const wrap = select.closest('.combobox-responsive');
+    if (!wrap) return;
+    const label = wrap.querySelector('.combobox-label');
+    const op = Array.from(select.options).find(function(o) { return o.value === select.value; });
+    const placeholder = wrap.dataset.placeholder || 'Seleccione...';
+    if (op) {
+        label.textContent = op.text;
+        label.classList.remove('text-gray-400');
+        label.classList.add('text-gray-800', 'dark:text-gray-100');
+    } else {
+        label.textContent = placeholder;
+        label.classList.add('text-gray-400');
+        label.classList.remove('text-gray-800', 'dark:text-gray-100');
+    }
+}
+
+function inicializarComboboxResponsables() {
+    document.querySelectorAll('.combobox-responsive').forEach(function(wrap) {
+        const select = wrap.querySelector('select');
+        const btn = wrap.querySelector('.combobox-btn');
+        const panel = wrap.querySelector('.combobox-panel');
+        const buscar = wrap.querySelector('.combobox-search');
+
+        btn.addEventListener('click', function() {
+            if (panel.classList.contains('hidden')) {
+                abrirCombobox(select);
+            } else {
+                panel.classList.add('hidden');
+            }
+        });
+
+        buscar.addEventListener('input', function() {
+            armarListaCombobox(select);
+        });
+
+        document.addEventListener('click', function(ev) {
+            if (!wrap.contains(ev.target)) panel.classList.add('hidden');
+        });
+
+        if (select.value) sincronizarCombobox(select);
+    });
+}
+
 function abrirModalConfirmarReporte(accion) {
     accionReportePendiente = accion;
     document.getElementById('modal-confirmar-reporte').classList.remove('hidden');
@@ -1120,6 +1282,7 @@ function confirmarGenerarReporte() {
 
 paginarTabla('equipos');
 paginarTabla('movimientos');
+inicializarComboboxResponsables();
 </script>
 
 <style>
