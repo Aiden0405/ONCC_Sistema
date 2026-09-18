@@ -4,6 +4,13 @@ from wtforms.validators import DataRequired, Length, ValidationError
 
 
 class RegistroComunitarioForm(FlaskForm):
+    # 🌟 CAMPO AÑADIDO: Vínculo con la actividad de campo padre
+    id_actividad = SelectField(
+        'Actividad Origen', 
+        coerce=int,
+        validators=[DataRequired(message='Debe vincular a una actividad de campo existente.')]
+    )
+    
     tipo_actividad = SelectField(
         'Tipo de registro',
         choices=[('FORMACION', 'Formación'), ('SENSIBILIZACION', 'Sensibilización')],
@@ -16,23 +23,14 @@ class RegistroComunitarioForm(FlaskForm):
         validators=[DataRequired(message='Debe seleccionar el destino.')],
         default='COMUNIDAD',
     )
-    fecha_actividad = DateField(
-        'Fecha de ejecución', format='%Y-%m-%d',
-        validators=[DataRequired(message='La fecha es obligatoria.')],
-    )
-    id_comunidad = SelectField(
-        'Comunidad / Territorio', coerce=int,
-        validators=[DataRequired(message='Debe seleccionar una comunidad.')],
-    )
-    id_nivel = SelectField(
-        'Nivel de instrucción', coerce=int,
-        validators=[DataRequired(message='Debe seleccionar el nivel de instrucción.')],
-    )
+    
     nombre = StringField(
-        'Tema / campaña', validators=[DataRequired(message='Debe indicar el tema o campaña.'), Length(max=180)],
+        'Tema / campaña', 
+        validators=[DataRequired(message='Debe indicar el tema o campaña.'), Length(max=180)],
     )
     tecnico = SelectField(
-        'Técnico / Facilitador', coerce=int,
+        'Técnico / Facilitador', 
+        coerce=int,
         validators=[DataRequired(message='Debe seleccionar el técnico o facilitador.')],
     )
     id_institucion = SelectField('Institución / Sede', coerce=int)
@@ -40,6 +38,7 @@ class RegistroComunitarioForm(FlaskForm):
     def validate_id_institucion(self, field):
         if self.tipo_destino.data == 'INSTITUCION' and not field.data:
             raise ValidationError('Debe seleccionar una institución para ese destino.')
+
 
 class FormacionForm(FlaskForm):
     fecha_actividad = DateField(

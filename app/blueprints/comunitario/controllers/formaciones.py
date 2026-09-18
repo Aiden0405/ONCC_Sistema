@@ -26,33 +26,24 @@ from app.services.notificacion import ServicioNotificacion
 from app.utils.authorization import has_permission
 
 
-def _cargar_formacion_choices(form):
-    comunidades = Comunidad.query.order_by(Comunidad.nombre_comunidad.asc()).all()
-    form.id_comunidad.choices = [(com.id_comunidad, com.nombre_comunidad) for com in comunidades]
-
-    niveles = Nivel.query.order_by(Nivel.nombre_nivel.asc()).all()
-    form.id_nivel.choices = [(niv.id_nivel, niv.nombre_nivel) for niv in niveles]
-
-    instituciones = Institucion.query.order_by(Institucion.nombre_institucion.asc()).all()
-    form.id_institucion.choices = [(0, 'No aplica')] + [
-        (inst.id_institucion, inst.nombre_institucion) for inst in instituciones
-    ]
-
-    tecnicos = (
-        Tecnico.query
-        .filter(Tecnico.id_usuario.isnot(None))
-        .order_by(Tecnico.apellidos.asc(), Tecnico.nombres.asc())
+def _cargar_registro_choices(form):
+    # Mostrar solo Actividades de FORMACION o SENSIBILIZACION sin vinculación previa
+    actividades_disponibles = (
+        Actividad.query
+        .outerjoin(Formacion, Actividad.id_actividad == Formacion.id_actividad)
+        .filter(Formacion.id_formacion == None)
+        .filter(Actividad.tipo_actividad.in_(['FORMACION', 'SENSIBILIZACION']))
+        .order_by(Actividad.id_actividad.desc())
         .all()
     )
-    form.tecnico.choices = [(t.id_tecnico, f"{t.nombres} {t.apellidos}") for t in tecnicos]
 
-
-def _cargar_registro_choices(form):
-    comunidades = Comunidad.query.order_by(Comunidad.nombre_comunidad.asc()).all()
-    form.id_comunidad.choices = [(com.id_comunidad, com.nombre_comunidad) for com in comunidades]
-
-    niveles = Nivel.query.order_by(Nivel.nombre_nivel.asc()).all()
-    form.id_nivel.choices = [(niv.id_nivel, niv.nombre_nivel) for niv in niveles]
+    if actividades_disponibles:
+        form.id_actividad.choices = [
+            (a.id_actividad, f"Actividad #{a.id_actividad} - {a.tipo_actividad} ({a.fecha_actividad})") 
+            for a in actividades_disponibles
+        ]
+    else:
+        form.id_actividad.choices = [(0, "No hay actividades disponibles para vincular")]
 
     instituciones = Institucion.query.order_by(Institucion.nombre_institucion.asc()).all()
     form.id_institucion.choices = [(0, 'No aplica')] + [
@@ -63,6 +54,8 @@ def _cargar_registro_choices(form):
         Tecnico.apellidos.asc(), Tecnico.nombres.asc()
     ).all()
     form.tecnico.choices = [(t.id_tecnico, f"{t.nombres} {t.apellidos}") for t in tecnicos]
+    
+    return actividades_disponibles
 
 
 def _registrar_registro_comunitario(form):
@@ -70,40 +63,24 @@ def _registrar_registro_comunitario(form):
     if tecnico is None:
         raise ValueError('El técnico seleccionado no existe o no está activo.')
 
-    actividad = Actividad(
-        fecha_actividad=form.fecha_actividad.data,
-        tipo_actividad=form.tipo_actividad.data,
-        id_comunidad=form.id_comunidad.data,
-        id_nivel=form.id_nivel.data,
-        id_usuario=current_user.id_usuario,
-    )
-    db.session.add(actividad)
-    db.session.flush()
+    actividad_padre = Actividad.query.get(form.id_actividad.data)
+    if not actividad_padre:
+        raise ValueError('Debe vincular la formación a una actividad de campo existente.')
 
     nombre_tecnico = f"{tecnico.nombres} {tecnico.apellidos}".strip()
-    if form.tipo_actividad.data == 'FORMACION':
-        db.session.add(Formacion(
-            nombre_formacion=f"{form.nombre.data}||{nombre_tecnico}",
-            id_institucion=form.id_institucion.data or None,
-            tipo_destino=form.tipo_destino.data,
-            id_tecnico=form.tecnico.data,
-            id_actividad=actividad.id_actividad,
-            id_nivel=form.id_nivel.data,
-        ))
-    else:
-        db.session.add(Formacion(
-            nombre_formacion=f"{form.nombre.data}||{nombre_tecnico}",
-            id_actividad=actividad.id_actividad,
-            tipo_actividad='SENSIBILIZACION',
-            tipo_destino=form.tipo_destino.data,
-            id_institucion=form.id_institucion.data or None,
-            id_tecnico=form.tecnico.data,
-            id_nivel=form.id_nivel.data,
-        ))
+    tipo_heredado = actividad_padre.tipo_actividad
+    
+    db.session.add(Formacion(
+        nombre_formacion=f"{form.nombre.data}||{nombre_tecnico}",
+        id_institucion=form.id_institucion.data or None,
+        tipo_destino=form.tipo_destino.data,
+        id_tecnico=form.tecnico.data,
+        id_actividad=actividad_padre.id_actividad,
+        id_nivel=actividad_padre.id_nivel,
+        tipo_actividad=tipo_heredado 
+    ))
 
-# ==========================================
-# 1. LISTAR Y REGISTRAR (GET y POST)
-# ==========================================
+
 @comunitario_bp.route('/formaciones', methods=['GET', 'POST'])
 @login_required  
 def formaciones_index():
@@ -111,15 +88,16 @@ def formaciones_index():
         verificar_permiso_dinamico('ver_formaciones')
 
     form = RegistroComunitarioForm()
-    _cargar_registro_choices(form)
+    act_disponibles = _cargar_registro_choices(form)
     formaciones_procesadas = Formacion.obtener_historial_completo()
+    instituciones = Institucion.query.all()
 
     return render_template(
         'formaciones/index.html', 
         form=form,
-        sensibilizacion_form=None,
         formaciones=formaciones_procesadas,
-        sensibilizaciones=[],
+        actividades_disponibles=act_disponibles,
+        instituciones=instituciones
     )
 
 
@@ -151,9 +129,7 @@ def formaciones_reporte():
     for bitacora in BitacoraTransaccion.query.filter_by(modulo='actividades').order_by(BitacoraTransaccion.id.desc()).all():
         estados.setdefault(bitacora.registro_id, bitacora.estado_nuevo or 'Completado')
 
-    # 🌟 MEJORA: Filtro de fechas robusto para strings
     def coincide(registro):
-        # Convertimos la fecha de la DB a string (YYYY-MM-DD) por seguridad
         fecha_str = str(registro.get('fecha_actividad_cruda', '')) 
         
         return (
@@ -163,7 +139,6 @@ def formaciones_reporte():
             and (not tipo or registro.get('tipo') == tipo)
             and (not desde or fecha_str >= desde)
             and (not hasta or fecha_str <= hasta)
-            # Para filtrado manual por Mes o Año si se enviaran:
             and (not mes or (len(fecha_str) >= 7 and int(fecha_str[5:7]) == mes))
             and (not anio or (len(fecha_str) >= 4 and int(fecha_str[0:4]) == anio))
             and (not estado or estados.get(registro.get('id_actividad'), 'Completado') == estado)
@@ -171,7 +146,6 @@ def formaciones_reporte():
 
     filas_filtradas = [r for r in registros if coincide(r)]
 
-    # 🌟 GENERACIÓN DE PDF ORDENADA Y AJUSTADA
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=landscape(letter), rightMargin=25, leftMargin=25, topMargin=25, bottomMargin=25)
     elements = []
@@ -241,16 +215,21 @@ def formacion_nuevo():
         verificar_permiso_dinamico('registrar_formaciones')
 
     form = RegistroComunitarioForm()
-    _cargar_registro_choices(form)
+    act_disponibles = _cargar_registro_choices(form)
+    instituciones = Institucion.query.all()
 
     if request.method == 'POST' and form.validate_on_submit():
         try:
             _registrar_registro_comunitario(form)
             db.session.commit()
-            es_formacion = form.tipo_actividad.data == 'FORMACION'
+            
+            actividad_padre = Actividad.query.get(form.id_actividad.data)
+            es_formacion = actividad_padre.tipo_actividad == 'FORMACION'
+            
             modulo = 'gestionar_formaciones' if es_formacion else 'gestionar_sensibilizaciones'
             categoria = 'Formaciones' if es_formacion else 'Sensibilizaciones'
             etiqueta = 'formación' if es_formacion else 'sensibilización'
+            
             mensaje = f'Se registró una nueva {etiqueta} comunitaria.'
             ServicioNotificacion.notificar_por_permiso(modulo, mensaje, emisor_id=current_user.id_usuario)
             ServicioNotificacion.crear_aviso(id_usuario=current_user.id_usuario, mensaje=mensaje, categoria=categoria)
@@ -264,15 +243,12 @@ def formacion_nuevo():
     return render_template(
         'formaciones/index.html',
         form=form,
-        sensibilizacion_form=None,
         formaciones=formaciones_procesadas,
-        sensibilizaciones=[],
+        actividades_disponibles=act_disponibles,
+        instituciones=instituciones
     )
 
 
-# ==========================================
-# 2. MODIFICAR / ACTUALIZAR (POST)
-# ==========================================
 @comunitario_bp.route('/formaciones/editar/<int:id_formacion>', methods=['POST'])
 @login_required
 def formacion_editar(id_formacion):
@@ -280,14 +256,10 @@ def formacion_editar(id_formacion):
     verificar_permiso_dinamico(permiso_edicion)
 
     formacion = Formacion.query.get_or_404(id_formacion)
-    actividad = Actividad.query.get(formacion.id_actividad)
 
     tema_nuevo = request.form.get('edit_nombre_formacion')
     id_tecnico_nuevo = request.form.get('edit_tecnico')
-    fecha_nueva = request.form.get('edit_fecha')
-    id_comunidad_nueva = request.form.get('edit_id_comunidad')
     id_inst_nueva = request.form.get('edit_id_institucion')
-    id_nivel_nuevo = request.form.get('edit_id_nivel')
     tipo_destino_nuevo = request.form.get('edit_tipo_destino') or formacion.tipo_destino
 
     try:
@@ -298,15 +270,7 @@ def formacion_editar(id_formacion):
                 raise ValueError('El técnico seleccionado no existe.')
             tecnico_nuevo = f"{tecnico_selected.nombres} {tecnico_selected.apellidos}".strip()
 
-        if fecha_nueva:
-            actividad.fecha_actividad = datetime.strptime(fecha_nueva, '%Y-%m-%d').date()
-        if id_comunidad_nueva:
-            actividad.id_comunidad = int(id_comunidad_nueva)
-        if id_nivel_nuevo:
-            actividad.id_nivel = int(id_nivel_nuevo)
-
         formacion.nombre_formacion = f"{tema_nuevo}||{tecnico_nuevo or getattr(formacion, 'tecnico_real', '')}"
-        formacion.id_nivel = actividad.id_nivel
         formacion.tipo_destino = tipo_destino_nuevo
         formacion.id_tecnico = int(id_tecnico_nuevo) if id_tecnico_nuevo else formacion.id_tecnico
         formacion.id_institucion = int(id_inst_nueva) if id_inst_nueva and int(id_inst_nueva) > 0 else None
@@ -323,27 +287,20 @@ def formacion_editar(id_formacion):
     return redirect(url_for('comunitario.formaciones_index'))
 
 
-# ==========================================
-# 3. ELIMINAR (POST)
-# ==========================================
 @comunitario_bp.route('/formaciones/eliminar/<int:id_formacion>', methods=['POST'])
 @login_required
 def formacion_eliminar(id_formacion):
     formacion = Formacion.query.get_or_404(id_formacion)
     permiso_eliminacion = 'eliminar_sensibilizaciones' if formacion.tipo_actividad == 'SENSIBILIZACION' else 'eliminar_formaciones'
     verificar_permiso_dinamico(permiso_eliminacion)
-    actividad = Actividad.query.get(formacion.id_actividad)
-
+    
     try:
         db.session.delete(formacion)
-        if actividad:
-            db.session.delete(actividad)
-            
         db.session.commit()
         mensaje = f'Se eliminó la formación #{id_formacion}.'
         ServicioNotificacion.notificar_por_permiso('gestionar_formaciones', mensaje, emisor_id=current_user.id_usuario)
         ServicioNotificacion.crear_aviso(id_usuario=current_user.id_usuario, mensaje=mensaje, categoria='Formaciones')
-        flash('Formación eliminada del historial.', 'success')
+        flash('Formación eliminada del historial (La actividad base se mantiene).', 'success')
     except Exception as e:
         db.session.rollback()
         flash(f'Error al eliminar: {str(e)}', 'error')
@@ -351,17 +308,12 @@ def formacion_eliminar(id_formacion):
     return redirect(url_for('comunitario.formaciones_index'))
 
 
-# ==========================================
-# 4. CAMBIAR ESTADO (Compatibilidad)
-# ==========================================
 @comunitario_bp.route('/formaciones/cambiar_estado/<int:id_formacion>', methods=['POST'])
 @login_required
 def formacion_cambiar_estado(id_formacion):
     verificar_permiso_dinamico('cambiar_estado_formaciones')
-        
     try:
         flash('Estado de la formación actualizado (Simulado).', 'success')
     except Exception as e:
         flash(f'Error al cambiar estado: {str(e)}', 'error')
-        
     return redirect(url_for('comunitario.formaciones_index'))

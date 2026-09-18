@@ -6,6 +6,7 @@ from datetime import datetime
 from flask import current_app, flash, redirect, render_template, request, url_for, Response
 from flask_login import current_user, login_required
 from werkzeug.utils import secure_filename
+from sqlalchemy import text
 
 from reportlab.lib.pagesizes import letter, landscape
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
@@ -23,7 +24,6 @@ from app.models.esquema_activo import NivelActivo as Nivel
 from app.blueprints.core.forms import ActividadForm
 from app.blueprints.core.controllers.roles import verificar_permiso_dinamico
 from app.services.notificacion import ServicioNotificacion
-from app.services.reportes import respuesta_csv
 from app.utils.validation import normalize_text, parse_positive_int
 
 
@@ -56,6 +56,18 @@ def _cargar_tecnicos(form):
         )
     else:
         form.tecnico_responsable.choices = [(0, 'No hay técnicos registrados')]
+
+
+def _obtener_datos_geograficos():
+    """Consulta jerárquica para alimentar los desplegables en cascada."""
+    estados = db.session.execute(text("SELECT id_estado, nombre_estado FROM estado ORDER BY nombre_estado ASC;")).fetchall()
+    municipios = db.session.execute(text("SELECT id_municipio, id_estado, nombre_municipio FROM municipio ORDER BY nombre_municipio ASC;")).fetchall()
+    parroquias = db.session.execute(text("SELECT id_parroquia, id_municipio, nombre_parroquia FROM parroquia ORDER BY nombre_parroquia ASC;")).fetchall()
+    
+    comunidades = db.session.query(Comunidad).join(Comunidad.parroquia).order_by(Comunidad.nombre_comunidad.asc()).all()
+    niveles = Nivel.query.order_by(Nivel.nombre_nivel.asc()).all()
+    
+    return estados, municipios, parroquias, comunidades, niveles
 
 
 # ==============================================================================
@@ -221,8 +233,7 @@ def nueva():
     form = ActividadForm()
     _cargar_tecnicos(form)
     
-    comunidades = Comunidad.query.order_by(Comunidad.nombre_comunidad.asc()).all()
-    niveles = Nivel.query.order_by(Nivel.nombre_nivel.asc()).all()
+    estados, municipios, parroquias, comunidades, niveles = _obtener_datos_geograficos()
     
     if request.method == 'POST':
         fecha = request.form.get('fecha', '').strip()
@@ -244,7 +255,7 @@ def nueva():
                 raise ValueError('La población debe ser un número entre 0 y 100000000.')
         except (ValueError, TypeError):
             flash('Debe completar el nombre de la actividad y la fecha.', 'error')
-            return render_template('actividades/formulario.html', form=form, comunidades=comunidades, niveles=niveles)
+            return render_template('actividades/formulario.html', form=form, estados=estados, municipios=municipios, parroquias=parroquias, comunidades=comunidades, niveles=niveles)
 
         try:
             user_id = getattr(current_user, 'id_usuario', None) or getattr(current_user, 'id', 1)
@@ -313,11 +324,11 @@ def nueva():
             db.session.rollback()
             flash(f'Error al registrar la actividad: {str(e)}', 'error')
 
-    return render_template('actividades/formulario.html', form=form, actividad_obj=None, comunidades=comunidades, niveles=niveles)
+    return render_template('actividades/formulario.html', form=form, actividad_obj=None, estados=estados, municipios=municipios, parroquias=parroquias, comunidades=comunidades, niveles=niveles)
 
 
 # ==============================================================================
-# 3. UPDATE (EDITAR ACTIVIDAD - BLINDADO PARA TÍTULOS Y MÓDULOS)
+# 3. UPDATE (EDITAR ACTIVIDAD)
 # ==============================================================================
 @monitoreo_bp.route('/actividades/<int:actividad_id>/editar', methods=['GET', 'POST'])
 @login_required
@@ -327,8 +338,7 @@ def editar(actividad_id):
     form = ActividadForm()
     _cargar_tecnicos(form)
 
-    comunidades = Comunidad.query.order_by(Comunidad.nombre_comunidad.asc()).all()
-    niveles = Nivel.query.order_by(Nivel.nombre_nivel.asc()).all()
+    estados, municipios, parroquias, comunidades, niveles = _obtener_datos_geograficos()
 
     if request.method == 'POST':
         try:
@@ -439,26 +449,10 @@ def editar(actividad_id):
     ultima_bitacora = BitacoraTransaccion.query.filter_by(modulo='actividades', registro_id=actividad_obj.id_actividad).order_by(BitacoraTransaccion.id.desc()).first()
     actividad_obj.estado = ultima_bitacora.estado_nuevo if ultima_bitacora and ultima_bitacora.estado_nuevo else 'Completado'
 
-    if actividad_obj.comunidad and actividad_obj.comunidad.parroquia:
-        actividad_obj.parroquia = actividad_obj.comunidad.parroquia.nombre_parroquia
-        if actividad_obj.comunidad.parroquia.municipio:
-            actividad_obj.municipio = actividad_obj.comunidad.parroquia.municipio.nombre_municipio
-            if actividad_obj.comunidad.parroquia.municipio.estado:
-                actividad_obj.estado_geo = actividad_obj.comunidad.parroquia.municipio.estado.nombre_estado
-            else:
-                actividad_obj.estado_geo = 'Lara'
-        else:
-            actividad_obj.municipio = 'Iribarren'
-            actividad_obj.estado_geo = 'Lara'
-    else:
-        actividad_obj.parroquia = 'Catedral'
-        actividad_obj.municipio = 'Iribarren'
-        actividad_obj.estado_geo = 'Lara'
-
     if actividad_obj.imagenes_asociadas:
         actividad_obj.fotos_archivos = ", ".join([img_rel.imagen.url_imagen for img_rel in actividad_obj.imagenes_asociadas])
 
-    return render_template('actividades/formulario.html', form=form, actividad_obj=actividad_obj, comunidades=comunidades, niveles=niveles)
+    return render_template('actividades/formulario.html', form=form, actividad_obj=actividad_obj, estados=estados, municipios=municipios, parroquias=parroquias, comunidades=comunidades, niveles=niveles)
 
 
 # ==============================================================================

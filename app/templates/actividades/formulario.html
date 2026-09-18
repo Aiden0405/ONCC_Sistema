@@ -62,29 +62,68 @@
                 </div>
             </div>
 
-            <!-- 2. DESPLIEGUE TERRITORIAL Y CATÁLOGOS -->
+            <!-- 2. DESPLIEGUE TERRITORIAL EN CASCADA -->
             <div class="space-y-4">
                 <h3 class="text-sm font-bold uppercase tracking-wide flex items-center text-green-700 dark:text-green-400 border-b border-gray-100 dark:border-gray-700 pb-2">
-                    <i data-lucide="map-pin" class="mr-2 w-4 h-4"></i> 2. Despliegue Territorial y Parametrización
+                    <i data-lucide="map-pin" class="mr-2 w-4 h-4"></i> 2. Despliegue Territorial en Cascada (Estado ➡️ Municipio ➡️ Parroquia ➡️ Comunidad)
                 </h3>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Estado -->
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estado</label>
+                        <select id="select_estado" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none" onchange="filtrarMunicipios()">
+                            <option value="">Seleccione estado...</option>
+                            {% for est in estados %}
+                                <option value="{{ est.id_estado }}" {% if actividad_obj and actividad_obj.comunidad and actividad_obj.comunidad.parroquia and actividad_obj.comunidad.parroquia.municipio and actividad_obj.comunidad.parroquia.municipio.id_estado == est.id_estado %}selected{% endif %}>
+                                    {{ est.nombre_estado }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Municipio -->
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Municipio</label>
+                        <select id="select_municipio" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none" onchange="filtrarParroquias()">
+                            <option value="">Seleccione municipio...</option>
+                            {% for mun in municipios %}
+                                <option value="{{ mun.id_municipio }}" data-estado="{{ mun.id_estado }}" {% if actividad_obj and actividad_obj.comunidad and actividad_obj.comunidad.parroquia and actividad_obj.comunidad.parroquia.id_municipio == mun.id_municipio %}selected{% endif %}>
+                                    {{ mun.nombre_municipio }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Parroquia -->
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Parroquia</label>
+                        <select id="select_parroquia" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none" onchange="filtrarComunidades()">
+                            <option value="">Seleccione parroquia...</option>
+                            {% for parr in parroquias %}
+                                <option value="{{ parr.id_parroquia }}" data-municipio="{{ parr.id_municipio }}" {% if actividad_obj and actividad_obj.comunidad and actividad_obj.comunidad.id_parroquia == parr.id_parroquia %}selected{% endif %}>
+                                    {{ parr.nombre_parroquia }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                    <!-- Comunidad final -->
                     <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Comunidad / Sector (Catálogo ONCC)</label>
-                        <select name="id_comunidad" id="select_comunidad" required onchange="actualizarTerritorioDesdeComunidad(this)" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none">
+                        <select name="id_comunidad" id="select_comunidad" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none">
                             <option value="" disabled {% if not actividad_obj %}selected{% endif %}>Seleccione comunidad...</option>
                             {% for com in comunidades %}
-                                <option value="{{ com.id_comunidad }}" 
-                                        data-parroquia="{{ com.parroquia.nombre_parroquia if com.parroquia else '' }}"
-                                        data-municipio="{{ com.parroquia.municipio.nombre_municipio if com.parroquia and com.parroquia.municipio else 'Iribarren' }}"
-                                        data-estado="{{ com.parroquia.municipio.estado.nombre_estado if com.parroquia and com.parroquia.municipio and com.parroquia.municipio.estado else 'Lara' }}"
-                                        {% if actividad_obj and actividad_obj.id_comunidad == com.id_comunidad %}selected{% endif %}>
+                                <option value="{{ com.id_comunidad }}" data-parroquia="{{ com.id_parroquia }}" {% if actividad_obj and actividad_obj.id_comunidad == com.id_comunidad %}selected{% endif %}>
                                     {{ com.nombre_comunidad }}
                                 </option>
                             {% endfor %}
                         </select>
                     </div>
 
+                    <!-- Nivel Estratégico -->
                     <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Nivel Estratégico (Catálogo ONCC)</label>
                         <select name="id_nivel" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none">
@@ -95,21 +134,6 @@
                                 </option>
                             {% endfor %}
                         </select>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-                    <div class="space-y-1">
-                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Estado Geográfico</label>
-                        <input type="text" name="estado_geo" id="input_estado_auto" value="{{ actividad_obj.estado_geo if actividad_obj and actividad_obj.estado_geo else 'Lara' }}" readonly class="w-full border rounded-md p-2 text-sm bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-500 outline-none cursor-not-allowed">
-                    </div>
-                    <div class="space-y-1">
-                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Municipio</label>
-                        <input type="text" name="municipio" id="input_municipio_auto" value="{{ actividad_obj.municipio if actividad_obj and actividad_obj.municipio else '' }}" readonly class="w-full border rounded-md p-2 text-sm bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-500 outline-none cursor-not-allowed" placeholder="Se asigna según la comunidad...">
-                    </div>
-                    <div class="space-y-1">
-                        <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Parroquia</label>
-                        <input type="text" name="parroquia" id="input_parroquia_auto" value="{{ actividad_obj.parroquia if actividad_obj and actividad_obj.parroquia else '' }}" readonly class="w-full border rounded-md p-2 text-sm bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-500 outline-none cursor-not-allowed" placeholder="Se asigna según la comunidad...">
                     </div>
                 </div>
             </div>
@@ -202,6 +226,108 @@
 </div>
 
 <script>
+// Guardar copias originales completas de las opciones para filtros dinámicos
+let allMunicipios = [];
+let allParroquias = [];
+let allComunidades = [];
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Capturar municipios
+    const selMun = document.getElementById('select_municipio');
+    if (selMun) {
+        allMunicipios = Array.from(selMun.options).map(opt => ({
+            value: opt.value,
+            text: opt.text,
+            estado: opt.getAttribute('data-estado')
+        }));
+    }
+
+    // Capturar parroquias
+    const selParr = document.getElementById('select_parroquia');
+    if (selParr) {
+        allParroquias = Array.from(selParr.options).map(opt => ({
+            value: opt.value,
+            text: opt.text,
+            municipio: opt.getAttribute('data-municipio')
+        }));
+    }
+
+    // Capturar comunidades
+    const selCom = document.getElementById('select_comunidad');
+    if (selCom) {
+        allComunidades = Array.from(selCom.options).map(opt => ({
+            value: opt.value,
+            text: opt.text,
+            parroquia: opt.getAttribute('data-parroquia')
+        }));
+    }
+
+    // Si estamos editando y ya hay valores seleccionados, asegurar consistencia inicial
+    const selEstado = document.getElementById('select_estado');
+    if (selEstado && selEstado.value) {
+        filtrarMunicipios(true);
+    }
+});
+
+function filtrarMunicipios(isInitial = false) {
+    const estadoId = document.getElementById('select_estado').value;
+    const selMun = document.getElementById('select_municipio');
+    const currentMunVal = selMun.value;
+    
+    selMun.innerHTML = '<option value="">Seleccione municipio...</option>';
+    
+    allMunicipios.filter(m => m.estado === estadoId).forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m.value;
+        opt.textContent = m.text;
+        if (isInitial && m.value === currentMunVal) opt.selected = true;
+        selMun.appendChild(opt);
+    });
+
+    if (!isInitial) {
+        document.getElementById('select_parroquia').innerHTML = '<option value="">Seleccione parroquia...</option>';
+        document.getElementById('select_comunidad').innerHTML = '<option value="" disabled selected>Seleccione comunidad...</option>';
+    } else {
+        filtrarParroquias(true);
+    }
+}
+
+function filtrarParroquias(isInitial = false) {
+    const municipioId = document.getElementById('select_municipio').value;
+    const selParr = document.getElementById('select_parroquia');
+    const currentParrVal = selParr.value;
+    
+    selParr.innerHTML = '<option value="">Seleccione parroquia...</option>';
+    
+    allParroquias.filter(p => p.municipio === municipioId).forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.value;
+        opt.textContent = p.text;
+        if (isInitial && p.value === currentParrVal) opt.selected = true;
+        selParr.appendChild(opt);
+    });
+
+    if (!isInitial) {
+        document.getElementById('select_comunidad').innerHTML = '<option value="" disabled selected>Seleccione comunidad...</option>';
+    } else {
+        filtrarComunidades(true);
+    }
+}
+
+function filtrarComunidades() {
+    const parroquiaId = document.getElementById('select_parroquia').value;
+    const selCom = document.getElementById('select_comunidad');
+    
+    selCom.innerHTML = '<option value="" disabled selected>Seleccione comunidad...</option>';
+    
+    allComunidades.filter(c => c.parroquia === parroquiaId).forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.value;
+        opt.textContent = c.text;
+        selCom.appendChild(opt);
+    });
+}
+
 function previsualizarFotos(input) {
     const contenedor = document.getElementById('vista_previa_fotos');
     const textoEstado = document.getElementById('texto_fotos_estado');
@@ -226,29 +352,5 @@ function previsualizarFotos(input) {
         textoEstado.textContent = 'Seleccionar Imágenes';
     }
 }
-
-function actualizarTerritorioDesdeComunidad(selectElement) {
-    const opt = selectElement.options[selectElement.selectedIndex];
-    if (!opt) return;
-
-    const parroquia = opt.getAttribute('data-parroquia') || '';
-    const municipio = opt.getAttribute('data-municipio') || '';
-    const estado = opt.getAttribute('data-estado') || 'Lara';
-
-    const inputParroquia = document.getElementById('input_parroquia_auto');
-    const inputMunicipio = document.getElementById('input_municipio_auto');
-    const inputEstado = document.getElementById('input_estado_auto');
-
-    if (inputParroquia) inputParroquia.value = parroquia;
-    if (inputMunicipio) inputMunicipio.value = municipio;
-    if (inputEstado) inputEstado.value = estado;
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    const selComunidad = document.getElementById('select_comunidad');
-    if (selComunidad && selComunidad.value) {
-        actualizarTerritorioDesdeComunidad(selComunidad);
-    }
-});
 </script>
 {% endblock %}
