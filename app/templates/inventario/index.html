@@ -289,12 +289,13 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Nombre del Equipo</label>
-                        <select name="tipo_equipo" required oninvalid="this.setCustomValidity('Seleccione un tipo de equipo')" oninput="this.setCustomValidity('')" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                        <select name="tipo_equipo" id="nuevo-tipo_equipo" required oninvalid="this.setCustomValidity('Seleccione un tipo de equipo')" oninput="this.setCustomValidity('')" onchange="manejarNuevoTipoEquipo(this)" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
                             <option value="">Seleccione...</option>
                             <option>Estación Meteorológica (EMA)</option>
                             <option>Pluviómetro de Campo</option>
                             <option>Aparato Transmisor Data (SSBC)</option>
                             <option>Equipo Tecnológico (GPS/Drone)</option>
+                            <option value="__nuevo_equipo__">＋ Agregar nuevo equipo</option>
                         </select>
                     </div>
                     <div class="space-y-1">
@@ -347,6 +348,31 @@
             <div class="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-700">
                 <button type="button" onclick="document.getElementById('modal-inventario').classList.add('hidden')" class="mr-3 px-4 py-2 border rounded-md text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Cancelar</button>
                 <button type="submit" class="px-4 py-2 bg-green-600 rounded-md text-sm font-medium text-white hover:bg-green-700 transition-colors shadow-sm">Guardar Equipo</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Agregar Nuevo Tipo de Equipo -->
+<div id="modal-nuevo-tipo-equipo" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="rounded-xl shadow-xl w-full max-w-md bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+        <div class="flex justify-between items-center p-6 border-b border-gray-100 dark:border-gray-700">
+            <div>
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white">Agregar nuevo equipo</h2>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Registre el nombre del nuevo tipo de equipo</p>
+            </div>
+            <button type="button" onclick="cerrarModalNuevoTipo()" class="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <form id="form-nuevo-tipo-equipo" class="p-6 space-y-5" onsubmit="agregarTipoEquipo(event)">
+            <div class="space-y-1">
+                <label for="nuevo-tipo-nombre" class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Nombre del equipo</label>
+                <input type="text" id="nuevo-tipo-nombre" name="nuevo_tipo_nombre" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: Sensor de Viento (Anemómetro)" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+            </div>
+            <div class="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-700">
+                <button type="button" onclick="cerrarModalNuevoTipo()" class="mr-3 px-4 py-2 border rounded-md text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Cancelar</button>
+                <button type="submit" class="px-4 py-2 bg-green-600 rounded-md text-sm font-medium text-white hover:bg-green-700 transition-colors shadow-sm">Agregar</button>
             </div>
         </form>
     </div>
@@ -777,11 +803,15 @@ function abrirModalEditar(id) {
     function asegurarOpcion(selectId, valor) {
         const select = document.getElementById(selectId);
         const v = (valor || '').trim();
+        if (!v || v === 'N/D') {
+            select.value = '';
+            return;
+        }
         let existe = false;
         Array.from(select.options).forEach(function(op) {
             if (op.value === v) existe = true;
         });
-        if (v && !existe) {
+        if (!existe) {
             const nuevo = document.createElement('option');
             nuevo.value = v;
             nuevo.textContent = v;
@@ -801,6 +831,56 @@ function abrirModalEditar(id) {
 
     document.getElementById('form-editar-equipo').action = "{{ url_for('inventario.editar', equipo_id=0) }}".replace('/0', '/' + id);
     document.getElementById('modal-editar-inventario').classList.remove('hidden');
+}
+
+let selectTipoActivo = null;
+
+function manejarNuevoTipoEquipo(select) {
+    if (select.value !== '__nuevo_equipo__') return;
+    selectTipoActivo = select;
+    document.getElementById('nuevo-tipo-nombre').value = '';
+    document.getElementById('modal-nuevo-tipo-equipo').classList.remove('hidden');
+    setTimeout(function() {
+        document.getElementById('nuevo-tipo-nombre').focus();
+    }, 50);
+}
+
+function cerrarModalNuevoTipo() {
+    document.getElementById('modal-nuevo-tipo-equipo').classList.add('hidden');
+    if (selectTipoActivo) {
+        selectTipoActivo.value = '';
+    }
+    selectTipoActivo = null;
+}
+
+function agregarTipoEquipo(event) {
+    event.preventDefault();
+    const input = document.getElementById('nuevo-tipo-nombre');
+    const nombre = input.value.trim();
+    if (!nombre) {
+        input.focus();
+        return;
+    }
+    document.querySelectorAll('select[name="tipo_equipo"]').forEach(function(sel) {
+        let existe = false;
+        Array.from(sel.options).forEach(function(op) {
+            if (op.value === nombre) existe = true;
+        });
+        if (!existe) {
+            const nuevo = document.createElement('option');
+            nuevo.value = nombre;
+            nuevo.textContent = nombre;
+            const botonNuevo = Array.from(sel.options).find(op => op.value === '__nuevo_equipo__');
+            if (botonNuevo) {
+                sel.insertBefore(nuevo, botonNuevo);
+            } else {
+                sel.appendChild(nuevo);
+            }
+        }
+        sel.value = nombre;
+    });
+    document.getElementById('modal-nuevo-tipo-equipo').classList.add('hidden');
+    selectTipoActivo = null;
 }
 
 function abrirModalActa(id) {

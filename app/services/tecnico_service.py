@@ -3,6 +3,7 @@ import secrets
 from sqlalchemy.exc import IntegrityError
 
 from app import db
+from app.models.notificacion import Notificacion
 from app.models.role import Role
 from app.models.tecnico import Tecnico
 from app.models.usuario import Usuario
@@ -221,7 +222,8 @@ class TecnicoService:
     def eliminar_tecnico(tecnico_id):
         usuario = Usuario.query.get_or_404(tecnico_id)
         nombre_eliminado = usuario.nombre_usuario
-        Tecnico.query.filter_by(id_usuario=usuario.id_usuario).delete()
+        Notificacion.query.filter_by(id_usuario=usuario.id_usuario).delete(synchronize_session=False)
+        Tecnico.query.filter_by(id_usuario=usuario.id_usuario).delete(synchronize_session=False)
         db.session.delete(usuario)
         db.session.commit()
         mensaje = f'Se eliminó el técnico {nombre_eliminado}.'

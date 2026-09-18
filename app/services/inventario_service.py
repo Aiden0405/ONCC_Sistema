@@ -68,8 +68,6 @@ class InventarioService:
         modelo = ModeloEquipo(
             id_categoria=categoria.id_categoria,
             nombre_modelos_equipo=nombre,
-            modelo='N/D',
-            marca='N/D',
         )
         db.session.add(modelo)
         db.session.flush()
