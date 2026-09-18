@@ -10,7 +10,7 @@
         </div>
         {% if current_user.id_rol|int in (1, 2) or current_user.has_permission('reportes_mapas_riesgo') or current_user.rol == config.SUPER_ROLE_NAME %}<a href="{{ url_for('mapas.reporte_mapas_riesgo') }}" class="inline-flex items-center justify-center px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-100 text-sm font-medium"><i data-lucide="download" class="mr-1 w-4 h-4"></i> Reporte</a>{% endif %}
         <a href="{{ url_for('geomatica.carga_ssbc') }}" class="inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-md shadow-sm hover:bg-green-700 transition-colors text-sm font-medium">
-            <i data-lucide="map" class="w-4 h-4 mr-2"></i> Registrar Nuevo Mapa
+            <i data-lucide="map" class="w-4 h-4 mr-2"></i>Crear Mapa
         </a>
     </div>
     
@@ -55,7 +55,7 @@
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden relative">
         <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
-                <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400">Directorio de Capas</h3>
+                <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400">Directorio de Mapas</h3>
                 <span id="contadorRegistros" class="text-xs text-gray-500 mt-1">0 registro(s)</span>
             </div>
             <div class="relative w-full sm:w-72">
@@ -137,20 +137,55 @@
 
         filtrados.forEach(mapa => {
             const btnCenter = mapa.tipo_archivo === 'Imagen' 
-                ? `<button onclick="verImagenMapa(${mapa.id}, '${escapeHTML(mapa.nombre).replace(/'/g, "\\'")}')" class="text-green-600 hover:text-green-900" title="Ver"><i data-lucide="image" class="w-4 h-4 inline"></i></button>`
-                : `<a href="/geomatica/dibujar/${mapa.id}" class="text-green-600 hover:text-green-900" title="Editar"><i data-lucide="map" class="w-4 h-4 inline"></i></a>`;
-            
+                ? `<button 
+    type="button"
+    data-id="${mapa.id}"
+    data-nombre="${escapeHTML(mapa.nombre || '')}"
+    onclick="prepararVerImagen(this)" 
+    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors shadow-sm cursor-pointer"
+    title="Ver Imagen del Mapa">
+    <i data-lucide="image" class="w-3.5 h-3.5 text-emerald-600"></i>
+    <span>Ver Imagen</span>
+</button>`
+: `<a 
+    href="/geomatica/dibujar/${mapa.id}" 
+    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition-colors shadow-sm cursor-pointer"
+    title="Dibujar o Editar Capas">
+    <i data-lucide="map" class="w-3.5 h-3.5 text-indigo-600"></i>
+    <span>Dibujar</span>
+</a>`;
             tbody.innerHTML += `
                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                     <td class="px-6 py-4 flex flex-col font-medium"><span>${escapeHTML(mapa.nombre)}</span><span class="text-[10px] text-gray-400 truncate w-48">${escapeHTML(mapa.descripcion)}</span></td>
                     <td class="px-6 py-4">${escapeHTML(mapa.comunidad)}</td>
                     <td class="px-6 py-4"><span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">${mapa.tipo_archivo}</span></td>
                     <td class="px-6 py-4 text-xs">${mapa.fecha_creacion ? new Date(mapa.fecha_creacion).toLocaleString() : 'N/A'}</td>
-                    <td class="px-6 py-4 text-right space-x-2">
-                        <button onclick="editarMetadatosMapa(${mapa.id}, '${escapeHTML(mapa.nombre).replace(/'/g, "\\'")}', '${escapeHTML(mapa.descripcion).replace(/'/g, "\\'")}')" class="text-yellow-600 hover:text-yellow-900" title="Editar Info"><i data-lucide="edit" class="w-4 h-4 inline"></i></button>
-                        ${btnCenter}
-                        <button onclick="eliminarMapa(${mapa.id})" class="text-red-600 hover:text-red-900" title="Eliminar"><i data-lucide="trash-2" class="w-4 h-4 inline"></i></button>
-                    </td>
+                <td class="px-6 py-4 text-right space-x-2 whitespace-nowrap">
+                    <!-- Botón Editar con datos en data attributes (Anti-errores de comillas/saltos de línea) -->
+                    <button 
+                        type="button"
+                        data-id="${mapa.id}"
+                        data-nombre="${escapeHTML(mapa.nombre || '')}"
+                        data-descripcion="${escapeHTML(mapa.descripcion || '')}"
+                        onclick="prepararEdicionMapa(this)" 
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-yellow-700 bg-yellow-50 hover:bg-yellow-100 border border-yellow-200 rounded-lg transition-colors shadow-sm"
+                        title="Editar Información">
+                        <i data-lucide="edit" class="w-3.5 h-3.5 text-yellow-600"></i>
+                        <span>Editar</span>
+                    </button>
+
+                    ${btnCenter}
+
+                    <!-- Botón Eliminar con ID asegurado -->
+                    <button 
+                        type="button"
+                        onclick="eliminarMapa('${mapa.id}')" 
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition-colors shadow-sm"
+                        title="Eliminar Mapa">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5 text-red-600"></i>
+                        <span>Eliminar</span>
+                    </button>
+                </td>
                 </tr>
             `;
         });
@@ -199,17 +234,34 @@
     document.addEventListener('DOMContentLoaded', () => { cargarTablaMapas(); cargarEstados(); });
 
     // Funciones de Geografía simplificadas para brevedad y limpieza
-    const llenarSelect = (id, data, textDefault) => {
-        const select = document.getElementById(id);
-        if(!select) return;
-        select.innerHTML = `<option value="">${textDefault}</option>`;
-        data.forEach(item => select.innerHTML += `<option value="${item.id||item.id_estado||item.id_municipio||item.id_parroquia||item.id_comunidad}">${escapeHTML(item.nombre||item.nombre_estado||item.nombre_municipio||item.nombre_parroquia||item.nombre_comunidad)}</option>`);
-        select.disabled = false;
-    };
+const llenarSelect = (id, data, textDefault) => {
+    const select = document.getElementById(id);
+    if(!select) return;
 
+    let options = `<option value="">${textDefault}</option>`;
+    
+    data.forEach(item => {
+        // Busca primero 'id_municipio' si el select es 'municipio', etc.
+        const value = item.id ?? item[`id_${id}`] ?? item.id_comunidad ?? item.id_parroquia ?? item.id_municipio ?? item.id_estado;
+        const text = item.nombre ?? item[`nombre_${id}`] ?? item.nombre_comunidad ?? item.nombre_parroquia ?? item.nombre_municipio ?? item.nombre_estado;
+
+        options += `<option value="${value}">${escapeHTML(text)}</option>`;
+    });
+
+    select.innerHTML = options;
+    select.disabled = false;
+};
     function cargarEstados() { fetch('/api/geografia/estados').then(res => res.json()).then(data => llenarSelect('estado', data, 'Todos los Estados')); }
     function alCambiarEstado(id) { if(id) fetch(`/api/geografia/municipios/${id}`).then(res => res.json()).then(data => llenarSelect('municipio', data, 'Todos los Municipios')); else ['municipio','parroquia','comunidad'].forEach(i => document.getElementById(i).disabled = true); }
     function alCambiarMunicipio(id) { if(id) fetch(`/api/geografia/parroquias/${id}`).then(res => res.json()).then(data => llenarSelect('parroquia', data, 'Todas las Parroquias')); else ['parroquia','comunidad'].forEach(i => document.getElementById(i).disabled = true); }
     function alCambiarParroquia(id) { if(id) fetch(`/api/geografia/comunidades/${id}`).then(res => res.json()).then(data => llenarSelect('comunidad', data, 'Todas las Comunidades')); else document.getElementById('comunidad').disabled = true; }
+    function prepararEdicionMapa(btn) {
+        const id = btn.dataset.id;
+        const nombre = btn.dataset.nombre;
+        const descripcion = btn.dataset.descripcion;
+        
+        // Llama a tu función original pasando los datos limpios
+        editarMetadatosMapa(id, nombre, descripcion);
+    }
 </script>
 {% endblock %}

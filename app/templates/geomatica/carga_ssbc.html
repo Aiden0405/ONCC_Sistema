@@ -46,18 +46,16 @@
                 <label class="block text-xs font-bold uppercase text-gray-700 dark:text-gray-300 tracking-wide">Asignar a Actividad Ejecutada</label>
                 <div class="relative">
                     <select name="id_actividad" required class="w-full p-3 pl-4 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none shadow-sm appearance-none cursor-pointer transition-all">
-                        <option value="" class="text-gray-500 dark:text-gray-400 dark:bg-gray-700">-- Seleccione la actividad planificada --</option>
-                        {% for act in actividades_disponibles %}
-                            <!-- Filtro estricto por tipo de actividad 'Mapa de Riesgo' -->
-                            {% if act.tipo_actividad|lower == 'mapa de riesgo' or act.tipo_actividad|lower == 'mapa_riesgo' %}
-                                <option value="{{ act.id_actividad }}" 
-                                    {% if act.mapa_asignado or act.asignada %}disabled class="text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 italic"{% else %}class="text-gray-800 dark:text-white dark:bg-gray-700 font-medium"{% endif %}>
-                                    ID: {{ act.id_actividad }} | Planificada: {{ act.fecha_actividad }}
-                                    {% if act.mapa_asignado or act.asignada %} - (Ya tiene un mapa asignado) {% endif %}
-                                </option>
-                            {% endif %}
-                        {% endfor %}
-                    </select>
+    <option value="" class="text-gray-500 dark:text-gray-400 dark:bg-gray-700">-- Seleccione la actividad planificada --</option>
+    {% for act in actividades_disponibles %}
+        <!-- Filtra solo 'Mapa de Riesgo' Y que NO tenga un mapa asignado previa o actualmente -->
+        {% if (act.tipo_actividad|lower == 'mapa de riesgo' or act.tipo_actividad|lower == 'mapa_riesgo') and not act.mapa_asignado and not act.asignada %}
+            <option value="{{ act.id_actividad }}" class="text-gray-800 dark:text-white dark:bg-gray-700 font-medium">
+                ID: {{ act.id_actividad }} | Planificada: {{ act.fecha_actividad }}
+            </option>
+        {% endif %}
+    {% endfor %}
+</select>
                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 dark:text-gray-400">
                         <i data-lucide="chevron-down" class="w-4 h-4"></i>
                     </div>

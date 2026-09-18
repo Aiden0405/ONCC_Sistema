@@ -165,7 +165,16 @@ def vista_carga_ssbc():
     verificar_permiso_dinamico('ver_mapas_riesgo')
     """ Vista del formulario de carga con selector de actividades """
     cargas = MapaRiesgo.query.order_by(MapaRiesgo.fecha_creacion.desc()).all()
-    actividades_disponibles = Actividad.query.filter_by(tipo_actividad='MAPA_RIESGO').all()
+    
+    # Consulta optimizada: Trae únicamente las actividades de tipo MAPA_RIESGO
+    # que NO tienen un registro correspondiente en la tabla MapaRiesgo
+    actividades_disponibles = Actividad.query.outerjoin(
+        MapaRiesgo, Actividad.id_actividad == MapaRiesgo.id_actividad
+    ).filter(
+        Actividad.tipo_actividad == 'MAPA_RIESGO',
+        MapaRiesgo.id_actividad == None  # Muestra solo las no asignadas
+    ).all()
+
     estados_flujo = ['Pendiente', 'En Revisión', 'Aprobado', 'Rechazado']
     
     return render_template(
@@ -174,7 +183,6 @@ def vista_carga_ssbc():
         actividades_disponibles=actividades_disponibles,
         estados_flujo=estados_flujo
     )
-
 
 @login_required
 def vista_dibujar_mapa(mapa_id):

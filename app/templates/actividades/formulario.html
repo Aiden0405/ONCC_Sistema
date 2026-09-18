@@ -33,11 +33,12 @@
                     </div>
                     <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Área de Acción</label>
-                        <select name="area" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none">
-                            <option value="MONITOREO" {% if actividad_obj and actividad_obj.tipo_actividad == 'MONITOREO' %}selected{% endif %}>Monitoreo y seguridad</option>
-                            <option value="FORMACION" {% if actividad_obj and actividad_obj.tipo_actividad == 'FORMACION' %}selected{% endif %}>Formación y capacitaciones</option>
-                            <option value="SENSIBILIZACION" {% if actividad_obj and actividad_obj.tipo_actividad == 'SENSIBILIZACION' %}selected{% endif %}>Sensibilización comunitaria</option>
-                        </select>
+                            <select name="area" required class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none">
+                                <option value="MAPA_RIESGO" {% if actividad_obj and actividad_obj.tipo_actividad == 'MAPA_RIESGO' %}selected{% endif %}>Mapa de riesgo</option>
+                                <option value="MONITOREO" {% if actividad_obj and actividad_obj.tipo_actividad == 'MONITOREO' %}selected{% endif %}>Monitoreo y seguridad</option>
+                                <option value="FORMACION" {% if actividad_obj and actividad_obj.tipo_actividad == 'FORMACION' %}selected{% endif %}>Formación y capacitaciones</option>
+                                <option value="SENSIBILIZACION" {% if actividad_obj and actividad_obj.tipo_actividad == 'SENSIBILIZACION' %}selected{% endif %}>Sensibilización comunitaria</option>
+                            </select>
                     </div>
                 </div>
 

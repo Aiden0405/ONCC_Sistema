@@ -160,6 +160,8 @@ def actividades_reporte():
         nombre_act = "Jornada General"
         if act.monitoreo and act.monitoreo.nombre_monitoreo:
             nombre_act = act.monitoreo.nombre_monitoreo
+        elif hasattr(act, 'mapa_riesgo') and act.mapa_riesgo and hasattr(act.mapa_riesgo, 'nombre_mapa'):
+            nombre_act = act.mapa_riesgo.nombre_mapa
         elif hasattr(act, 'formacion_activa_rel') and act.formacion_activa_rel and hasattr(act.formacion_activa_rel, 'tema_real'):
             nombre_act = act.formacion_activa_rel.tema_real
         elif hasattr(act, 'sensibilizacion_activa_rel') and act.sensibilizacion_activa_rel and hasattr(act.sensibilizacion_activa_rel, 'campana_real'):
@@ -249,13 +251,17 @@ def nueva():
         try:
             user_id = getattr(current_user, 'id_usuario', None) or getattr(current_user, 'id', 1)
 
+            # Soportar MAPA_RIESGO en los tipos permitidos
+            tipos_permitidos = ['MONITOREO', 'FORMACION', 'SENSIBILIZACION', 'MAPA_RIESGO']
+            tipo_final = area if area in tipos_permitidos else 'MONITOREO'
+
             nueva_actividad = Actividad(
                 fecha_actividad=fecha_actividad,
-                tipo_actividad=area if area in ['MONITOREO', 'FORMACION', 'SENSIBILIZACION'] else 'MONITOREO',
+                tipo_actividad=tipo_final,
                 id_comunidad=comunidad_id,
                 id_nivel=nivel_id,
                 id_usuario=user_id,
-                descripcion=request.form.get('descripcion', '').strip() or None,
+                descripcion=nombre_actividad if tipo_final == 'MAPA_RIESGO' else (request.form.get('descripcion', '').strip() or None),
                 poblacion=poblacion,
                 acuerdos=request.form.get('acuerdos', '').strip() or None,
             )
@@ -338,7 +344,7 @@ def editar(actividad_id):
                     actividad_obj.fecha_actividad = datetime.strptime(fecha_str, '%Y-%m-%d').date()
 
                 area_nueva = request.form.get('area', 'MONITOREO').strip()
-                if area_nueva in ['MONITOREO', 'FORMACION', 'SENSIBILIZACION']:
+                if area_nueva in ['MONITOREO', 'FORMACION', 'SENSIBILIZACION', 'MAPA_RIESGO']:
                     actividad_obj.tipo_actividad = area_nueva
 
                 actividad_obj.id_comunidad = int(request.form.get('id_comunidad', 1) or 1)
@@ -361,6 +367,8 @@ def editar(actividad_id):
                                 nombre_monitoreo=nombre_actividad, 
                                 tipo_actividad='MONITOREO'
                             ))
+                    elif actividad_obj.tipo_actividad == 'MAPA_RIESGO':
+                        actividad_obj.descripcion = nombre_actividad
                     elif actividad_obj.tipo_actividad == 'FORMACION':
                         if hasattr(actividad_obj, 'formacion_activa_rel') and actividad_obj.formacion_activa_rel:
                             tecnico_previo = getattr(actividad_obj.formacion_activa_rel, 'tecnico_real', '')
@@ -426,6 +434,8 @@ def editar(actividad_id):
     # PRECARGA EN GET
     if actividad_obj.monitoreo:
         actividad_obj.nombre_formulario = actividad_obj.monitoreo.nombre_monitoreo
+    elif hasattr(actividad_obj, 'mapa_riesgo') and actividad_obj.mapa_riesgo and hasattr(actividad_obj.mapa_riesgo, 'nombre_mapa'):
+        actividad_obj.nombre_formulario = actividad_obj.mapa_riesgo.nombre_mapa
     elif hasattr(actividad_obj, 'formacion_activa_rel') and actividad_obj.formacion_activa_rel:
         actividad_obj.nombre_formulario = actividad_obj.formacion_activa_rel.tema_real
     elif hasattr(actividad_obj, 'sensibilizacion_activa_rel') and actividad_obj.sensibilizacion_activa_rel:
