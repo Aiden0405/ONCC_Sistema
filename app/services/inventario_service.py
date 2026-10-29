@@ -73,7 +73,10 @@ class InventarioService:
 
     @staticmethod
     def crear_modelo(nombre, usuario):
-        from app.models.inventario import ModeloEquipo
+        try:
+            nombre = normalize_text(nombre, max_length=100, field='El nombre del tipo de equipo')
+        except ValueError as error:
+            return {'ok': False, 'error': str(error)}
 
         modelo = InventarioService._obtener_o_crear_modelo(nombre)
         try:
@@ -191,6 +194,20 @@ class InventarioService:
 
         Devuelve (valores, error). Solo uno de los dos será distinto de None.
         """
+        campos_texto = {
+            'tipo_equipo': 'El tipo de equipo',
+            'codigo': 'El código del equipo',
+            'ubicacion': 'La ubicación',
+            'responsable': 'El responsable',
+            'estado_operativo': 'La condición',
+            'estado': 'El estado',
+            'ultimo_mantenimiento': 'La fecha de última modificación',
+        }
+        for campo, etiqueta in campos_texto.items():
+            valor = datos.get(campo)
+            if valor is not None and not isinstance(valor, str):
+                return None, f'{etiqueta} debe ser texto.'
+
         tipo = (datos.get('tipo_equipo') or '').strip()
         if tipo in InventarioService.TIPOS_EQUIPO_INVALIDOS:
             return None, 'Debe seleccionar un tipo de equipo.'
@@ -229,10 +246,10 @@ class InventarioService:
 
         try:
             codigo = normalize_text(codigo, max_length=50, field='El código')
-            tipo = normalize_text(tipo, max_length=120, field='El tipo de equipo')
-            ubicacion = normalize_text(ubicacion, max_length=180, field='La ubicación')
-            condicion = normalize_text(condicion, max_length=50, field='La condición')
-            estado = normalize_text(estado, max_length=50, field='El estado')
+            tipo = normalize_text(tipo, max_length=100, field='El tipo de equipo')
+            ubicacion = normalize_text(ubicacion, max_length=100, field='La ubicación')
+            condicion = normalize_text(condicion, max_length=30, field='La condición')
+            estado = normalize_text(estado, max_length=30, field='El estado')
             responsable = normalize_text(responsable, max_length=120, field='El responsable')
         except ValueError as error:
             return None, str(error)
@@ -250,7 +267,10 @@ class InventarioService:
     @staticmethod
     def _parsear_fecha(datos, campo='ultimo_mantenimiento'):
         """Devuelve (fecha, error). Solo uno de los dos será distinto de None."""
-        fecha_str = (datos.get(campo) or '').strip()
+        valor = datos.get(campo)
+        if valor is not None and not isinstance(valor, str):
+            return None, 'La fecha debe ser texto.'
+        fecha_str = (valor or '').strip()
         if not fecha_str:
             return None, None
         try:
@@ -310,14 +330,26 @@ class InventarioService:
     @staticmethod
     def _validar_datos_movimiento(datos):
         """Devuelve (valores, error). Solo uno de los dos es distinto de None."""
-        codigo_equipo = datos.get('equipo', '').strip()
+        campos_texto = {
+            'equipo': 'El equipo',
+            'fecha_hora': 'La fecha',
+            'ubicacion_origen': 'La ubicación de origen',
+            'ubicacion_destino': 'La ubicación de destino',
+            'motivo_responsable': 'El motivo',
+        }
+        for campo, etiqueta in campos_texto.items():
+            valor = datos.get(campo)
+            if valor is not None and not isinstance(valor, str):
+                return None, f'{etiqueta} debe ser texto.'
+
+        codigo_equipo = (datos.get('equipo') or '').strip()
         if not codigo_equipo:
             return None, 'Debe seleccionar un equipo.'
         equipo = InventarioEquipo.query.filter_by(codigo_interno=codigo_equipo).first()
         if not equipo:
             return None, 'El equipo seleccionado no existe en el inventario.'
 
-        fecha_str = datos.get('fecha_hora', '').strip()
+        fecha_str = (datos.get('fecha_hora') or '').strip()
         if not fecha_str:
             return None, 'Debe indicar la fecha y hora.'
         try:
@@ -341,9 +373,9 @@ class InventarioService:
         if not motivo:
             return None, 'Debe indicar el motivo y responsable.'
         try:
-            origen = normalize_text(origen, max_length=180, field='La ubicación de origen')
-            destino = normalize_text(destino, max_length=180, field='La ubicación de destino')
-            motivo = normalize_text(motivo, max_length=500, field='El motivo')
+            origen = normalize_text(origen, max_length=100, field='La ubicación de origen')
+            destino = normalize_text(destino, max_length=100, field='La ubicación de destino')
+            motivo = normalize_text(motivo, max_length=200, field='El motivo')
         except ValueError as error:
             return None, str(error)
 

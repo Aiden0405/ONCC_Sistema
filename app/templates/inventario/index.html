@@ -320,14 +320,14 @@
                     </div>
                     <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">ID Equipo</label>
-                        <input type="text" name="codigo" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: EMA-005" required pattern=".*[A-Za-z].*[1-9].*|.*[1-9].*[A-Za-z].*" title="Debe incluir una letra y un número mayor que cero (ej: EMA-005)" oninvalid="this.setCustomValidity('Ingrese un código válido (ej: EMA-005)')" oninput="this.setCustomValidity('')" />
+                        <input type="text" name="codigo" maxlength="50" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: EMA-005" required pattern=".*[A-Za-z].*[1-9].*|.*[1-9].*[A-Za-z].*" title="Debe incluir una letra y un número mayor que cero (ej: EMA-005)" oninvalid="this.setCustomValidity('Ingrese un código válido (ej: EMA-005)')" oninput="this.setCustomValidity('')" />
                 </div>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación Actual</label>
-                        <input type="text" name="ubicacion" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Lugar o comunidad de instalación" required pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]+" title="Solo letras y espacios" oninvalid="this.setCustomValidity('La ubicación solo puede contener letras y espacios')" oninput="this.setCustomValidity('')" />
+                        <input type="text" name="ubicacion" maxlength="100" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Lugar o comunidad de instalación" required pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]+" title="Solo letras y espacios (máximo 100 caracteres)" oninvalid="this.setCustomValidity('La ubicación solo puede contener letras y espacios')" oninput="this.setCustomValidity('')" />
                     </div>
                     <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Responsable</label>
@@ -405,7 +405,7 @@
         <form id="form-nuevo-tipo-equipo" class="p-6 space-y-5" onsubmit="agregarTipoEquipo(event)">
             <div class="space-y-1">
                 <label for="nuevo-tipo-nombre" class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Nombre del equipo</label>
-                <input type="text" id="nuevo-tipo-nombre" name="nuevo_tipo_nombre" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: Sensor de Viento (Anemómetro)" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                <input type="text" id="nuevo-tipo-nombre" name="nuevo_tipo_nombre" maxlength="100" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: Sensor de Viento (Anemómetro)" required oninvalid="this.setCustomValidity('Complete este campo (máximo 100 caracteres)')" oninput="this.setCustomValidity('')" />
             </div>
             <div class="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-700">
                 <button type="button" onclick="cerrarModalNuevoTipo()" class="mr-3 px-4 py-2 border rounded-md text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Cancelar</button>
@@ -456,14 +456,14 @@
                     </div>
                     <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">ID Equipo</label>
-                    <input type="text" id="edit-codigo" name="codigo" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: EMA-005" required pattern=".*[A-Za-z].*[1-9].*|.*[1-9].*[A-Za-z].*" title="Debe incluir una letra y un número mayor que cero (ej: EMA-005)" oninvalid="this.setCustomValidity('Ingrese un código válido (ej: EMA-005)')" oninput="this.setCustomValidity('')" />
+                    <input type="text" id="edit-codigo" name="codigo" maxlength="50" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: EMA-005" required pattern=".*[A-Za-z].*[1-9].*|.*[1-9].*[A-Za-z].*" title="Debe incluir una letra y un número mayor que cero (ej: EMA-005)" oninvalid="this.setCustomValidity('Ingrese un código válido (ej: EMA-005)')" oninput="this.setCustomValidity('')" />
                 </div>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación Actual</label>
-                        <input type="text" id="edit-ubicacion" name="ubicacion" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Lugar o comunidad de instalación" required pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]+" title="Solo letras y espacios" oninvalid="this.setCustomValidity('La ubicación solo puede contener letras y espacios')" oninput="this.setCustomValidity('')" />
+                        <input type="text" id="edit-ubicacion" name="ubicacion" maxlength="100" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Lugar o comunidad de instalación" required pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]+" title="Solo letras y espacios (máximo 100 caracteres)" oninvalid="this.setCustomValidity('La ubicación solo puede contener letras y espacios')" oninput="this.setCustomValidity('')" />
                     </div>
                     <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Responsable</label>
@@ -669,17 +669,17 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-1">
                     <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación Origen</label>
-                    <input type="text" name="ubicacion_origen" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ubicación actual" required pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]+" title="Solo letras y espacios" oninvalid="this.setCustomValidity('La ubicación de origen solo puede contener letras y espacios')" oninput="this.setCustomValidity('')" />
+                    <input type="text" name="ubicacion_origen" maxlength="100" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ubicación actual" required pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]+" title="Solo letras y espacios (máximo 100 caracteres)" oninvalid="this.setCustomValidity('La ubicación de origen solo puede contener letras y espacios')" oninput="this.setCustomValidity('')" />
                 </div>
                 <div class="space-y-1">
                     <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación Destino</label>
-                    <input type="text" name="ubicacion_destino" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Nueva ubicación" required pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]+" title="Solo letras y espacios" oninvalid="this.setCustomValidity('La ubicación de destino solo puede contener letras y espacios')" oninput="this.setCustomValidity('')" />
+                    <input type="text" name="ubicacion_destino" maxlength="100" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Nueva ubicación" required pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]+" title="Solo letras y espacios (máximo 100 caracteres)" oninvalid="this.setCustomValidity('La ubicación de destino solo puede contener letras y espacios')" oninput="this.setCustomValidity('')" />
                 </div>
             </div>
 
             <div class="space-y-1">
                 <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Motivo / Responsable</label>
-                <input type="text" name="motivo_responsable" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: Despliegue inicial / J. Pérez" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                <input type="text" name="motivo_responsable" maxlength="200" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: Despliegue inicial / J. Pérez" required oninvalid="this.setCustomValidity('Complete este campo (máximo 200 caracteres)')" oninput="this.setCustomValidity('')" />
             </div>
 
             <div class="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-700">
@@ -734,17 +734,17 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-1">
                     <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación Origen</label>
-                    <input type="text" id="edit-mov-origen" name="ubicacion_origen" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]+" title="Solo letras y espacios" oninvalid="this.setCustomValidity('La ubicación de origen solo puede contener letras y espacios')" oninput="this.setCustomValidity('')" />
+                    <input type="text" id="edit-mov-origen" name="ubicacion_origen" maxlength="100" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]+" title="Solo letras y espacios (máximo 100 caracteres)" oninvalid="this.setCustomValidity('La ubicación de origen solo puede contener letras y espacios')" oninput="this.setCustomValidity('')" />
                 </div>
                 <div class="space-y-1">
                     <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación Destino</label>
-                    <input type="text" id="edit-mov-destino" name="ubicacion_destino" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]+" title="Solo letras y espacios" oninvalid="this.setCustomValidity('La ubicación de destino solo puede contener letras y espacios')" oninput="this.setCustomValidity('')" />
+                    <input type="text" id="edit-mov-destino" name="ubicacion_destino" maxlength="100" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]+" title="Solo letras y espacios (máximo 100 caracteres)" oninvalid="this.setCustomValidity('La ubicación de destino solo puede contener letras y espacios')" oninput="this.setCustomValidity('')" />
                 </div>
             </div>
 
             <div class="space-y-1">
                 <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Motivo / Responsable</label>
-                <input type="text" id="edit-mov-motivo" name="motivo_responsable" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                <input type="text" id="edit-mov-motivo" name="motivo_responsable" maxlength="200" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Complete este campo (máximo 200 caracteres)')" oninput="this.setCustomValidity('')" />
             </div>
 
             <div class="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-700">

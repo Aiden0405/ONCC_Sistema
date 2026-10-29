@@ -8,7 +8,11 @@ from app.models.role import Role
 from app.models.tecnico import Tecnico
 from app.models.usuario import Usuario
 from app.services.notificacion import ServicioNotificacion
-from app.utils.validation import validate_person_text
+from app.utils.validation import (
+    validate_document_id,
+    validate_email,
+    validate_person_text,
+)
 
 
 class TecnicoService:
@@ -95,25 +99,63 @@ class TecnicoService:
         return resultado
 
     @staticmethod
-    def crear_tecnico(datos):
-        nombre = datos.get('nombre', '').strip()
-        correo = datos.get('correo', '').strip().lower()
-        cedula = datos.get('cedula', '').strip()
-        especialidad = datos.get('especialidad', '').strip()
-        estatus_val = datos.get('estatus', '1')
-        estatus = estatus_val == '1'
+    def _validar_datos_tecnico(datos):
+        """Devuelve (valores, error). Solo uno de los dos es distinto de None."""
+        for campo, etiqueta in {
+            'nombre': 'El nombre',
+            'correo': 'El correo electrónico',
+            'cedula': 'La cédula',
+            'especialidad': 'La especialidad',
+        }.items():
+            valor = datos.get(campo)
+            if valor is not None and not isinstance(valor, str):
+                return None, f'{etiqueta} debe ser texto.'
+
+        nombre = (datos.get('nombre') or '').strip()
+        correo = (datos.get('correo') or '').strip()
+        cedula = (datos.get('cedula') or '').strip()
+        especialidad = (datos.get('especialidad') or '').strip()
 
         if not nombre or not correo or not cedula or not especialidad:
-            return {'ok': False, 'error': 'Todos los campos son obligatorios.'}
+            return None, 'Todos los campos son obligatorios.'
 
         try:
-            nombre = validate_person_text(nombre, field='El nombre')
-            especialidad = validate_person_text(especialidad, field='La especialidad')
-            cedula = validate_person_text(cedula, field='La cédula', max_length=30)
-            if len(correo) > 50 or '@' not in correo:
-                raise ValueError('El correo no es válido.')
+            nombre = validate_person_text(nombre, field='El nombre', max_length=30)
+            correo = validate_email(correo, field='El correo electrónico', max_length=50)
+            cedula = validate_document_id(cedula, field='La cédula', max_length=15)
+            especialidad = validate_person_text(especialidad, field='La especialidad', max_length=100)
         except ValueError as error:
-            return {'ok': False, 'error': str(error)}
+            return None, str(error)
+
+        estatus_val = datos.get('estatus', '1')
+        if isinstance(estatus_val, bool):
+            estatus = estatus_val
+        elif isinstance(estatus_val, int) and estatus_val in (0, 1):
+            estatus = bool(estatus_val)
+        elif isinstance(estatus_val, str) and estatus_val.strip() in ('0', '1'):
+            estatus = estatus_val.strip() == '1'
+        else:
+            return None, 'El estatus de disponibilidad no es válido.'
+
+        return {
+            'nombre': nombre,
+            'correo': correo,
+            'cedula': cedula,
+            'especialidad': especialidad,
+            'estatus': estatus,
+        }, None
+
+    @staticmethod
+    def crear_tecnico(datos):
+        valores, error = TecnicoService._validar_datos_tecnico(datos)
+        if error:
+            return {'ok': False, 'error': error}
+
+        nombre = valores['nombre']
+        correo = valores['correo']
+        cedula = valores['cedula']
+        especialidad = valores['especialidad']
+        estatus = valores['estatus']
 
         existe_correo = Usuario.query.filter_by(correo=correo).first()
         if existe_correo:
@@ -161,24 +203,15 @@ class TecnicoService:
     def actualizar_tecnico(tecnico_id, datos):
         usuario = Usuario.query.get_or_404(tecnico_id)
 
-        nombre = datos.get('nombre', '').strip()
-        correo = datos.get('correo', '').strip().lower()
-        cedula = datos.get('cedula', '').strip()
-        especialidad = datos.get('especialidad', '').strip()
-        estatus_val = datos.get('estatus', '1')
-        estatus = estatus_val == '1'
+        valores, error = TecnicoService._validar_datos_tecnico(datos)
+        if error:
+            return {'ok': False, 'error': error}
 
-        if not nombre or not correo or not cedula or not especialidad:
-            return {'ok': False, 'error': 'Todos los campos son obligatorios.'}
-
-        try:
-            nombre = validate_person_text(nombre, field='El nombre')
-            especialidad = validate_person_text(especialidad, field='La especialidad')
-            cedula = validate_person_text(cedula, field='La cédula', max_length=30)
-            if len(correo) > 50 or '@' not in correo:
-                raise ValueError('El correo no es válido.')
-        except ValueError as error:
-            return {'ok': False, 'error': str(error)}
+        nombre = valores['nombre']
+        correo = valores['correo']
+        cedula = valores['cedula']
+        especialidad = valores['especialidad']
+        estatus = valores['estatus']
 
         existe_correo = Usuario.query.filter_by(correo=correo).first()
         if existe_correo and existe_correo.id_usuario != usuario.id_usuario:
