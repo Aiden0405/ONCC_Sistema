@@ -151,6 +151,8 @@ def create_app(config_class=Config):
     from app.blueprints.logistica.controllers.inventario import acta_responsabilidad as logistica_acta_responsabilidad
     from app.blueprints.logistica.controllers.inventario import reporte_inventario as logistica_reporte_inventario
     from app.blueprints.logistica.controllers.inventario import reporte_movimientos as logistica_reporte_movimientos
+    from app.blueprints.logistica.controllers.inventario import estadistica_equipos as logistica_estadistica_equipos
+    from app.blueprints.logistica.controllers.inventario import estadistica_movimientos as logistica_estadistica_movimientos
 
     from app.blueprints.logistica.controllers.tecnicos_campo import tecnicos_campo_index as logistica_tecnicos_index
     from app.blueprints.logistica.controllers.tecnicos_campo import tecnicos_nuevo as logistica_tecnicos_nuevo
@@ -263,6 +265,8 @@ def create_app(config_class=Config):
     app.add_url_rule('/inventario/equipos-json', endpoint='inventario.listar_equipos_json', view_func=logistica_listar_equipos_json, methods=['GET'])
     app.add_url_rule('/inventario/reporte', endpoint='inventario.reporte_inventario', view_func=logistica_reporte_inventario, methods=['GET'])
     app.add_url_rule('/inventario/reporte-movimientos', endpoint='inventario.reporte_movimientos', view_func=logistica_reporte_movimientos, methods=['GET'])
+    app.add_url_rule('/inventario/estadistica-equipos', endpoint='inventario.estadistica_equipos', view_func=logistica_estadistica_equipos, methods=['GET'])
+    app.add_url_rule('/inventario/estadistica-movimientos', endpoint='inventario.estadistica_movimientos', view_func=logistica_estadistica_movimientos, methods=['GET'])
     app.add_url_rule('/inventario/<int:equipo_id>/acta', endpoint='inventario.acta_responsabilidad', view_func=logistica_acta_responsabilidad, methods=['GET'])
     
     app.add_url_rule('/tecnicos-campo', endpoint='logistica.tecnicos_campo_index', view_func=logistica_tecnicos_index)

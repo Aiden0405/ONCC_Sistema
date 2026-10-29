@@ -39,7 +39,12 @@
             <div>
                 <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400">Detalles de equipos</h3>
             </div>
-            <span id="contador-registros" class="text-xs text-gray-500 dark:text-gray-400">{{ inventario|length }} registro(s)</span>
+            <div class="flex flex-wrap items-center justify-end gap-3">
+                <span id="contador-registros" class="text-xs text-gray-500 dark:text-gray-400">{{ inventario|length }} registro(s)</span>
+                <button onclick="abrirModalConfirmarReporte(exportarEstadisticaEquipos)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-md text-xs font-medium flex items-center shadow-sm transition-colors">
+                    <i data-lucide="chart-column" class="mr-2 w-4 h-4"></i> Generar estadística
+                </button>
+            </div>
         </div>
 
         <div class="overflow-x-auto scrollbar-hide">
@@ -170,9 +175,12 @@
             <div>
                 <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400">Historial de movimientos</h3>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex flex-wrap items-center justify-end gap-2">
                 <button onclick="abrirModalConfirmarReporte(exportarReporteMovimientos)" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center shadow-sm transition-colors">
                     <i data-lucide="file-text" class="mr-2 w-4 h-4"></i> Generar reporte
+                </button>
+                <button onclick="abrirModalConfirmarReporte(exportarEstadisticaMovimientos)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center shadow-sm transition-colors">
+                    <i data-lucide="chart-column" class="mr-2 w-4 h-4"></i> Generar estadística
                 </button>
                 <button onclick="document.getElementById('modal-movimiento').classList.remove('hidden')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center shadow-sm transition-colors">
                     <i data-lucide="plus" class="mr-2 w-4 h-4"></i> Registrar Movimiento
@@ -312,14 +320,14 @@
                     </div>
                     <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">ID Equipo</label>
-                        <input type="text" name="codigo" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: EMA-005" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                        <input type="text" name="codigo" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: EMA-005" required pattern=".*[A-Za-z].*[1-9].*|.*[1-9].*[A-Za-z].*" title="Debe incluir una letra y un número mayor que cero (ej: EMA-005)" oninvalid="this.setCustomValidity('Ingrese un código válido (ej: EMA-005)')" oninput="this.setCustomValidity('')" />
                 </div>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación Actual</label>
-                        <input type="text" name="ubicacion" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Lugar o comunidad de instalación" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                        <input type="text" name="ubicacion" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Lugar o comunidad de instalación" required pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]+" title="Solo letras y espacios" oninvalid="this.setCustomValidity('La ubicación solo puede contener letras y espacios')" oninput="this.setCustomValidity('')" />
                     </div>
                     <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Responsable</label>
@@ -448,14 +456,14 @@
                     </div>
                     <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">ID Equipo</label>
-                    <input type="text" id="edit-codigo" name="codigo" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: EMA-005" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                    <input type="text" id="edit-codigo" name="codigo" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ej: EMA-005" required pattern=".*[A-Za-z].*[1-9].*|.*[1-9].*[A-Za-z].*" title="Debe incluir una letra y un número mayor que cero (ej: EMA-005)" oninvalid="this.setCustomValidity('Ingrese un código válido (ej: EMA-005)')" oninput="this.setCustomValidity('')" />
                 </div>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación Actual</label>
-                        <input type="text" id="edit-ubicacion" name="ubicacion" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Lugar o comunidad de instalación" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                        <input type="text" id="edit-ubicacion" name="ubicacion" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Lugar o comunidad de instalación" required pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]+" title="Solo letras y espacios" oninvalid="this.setCustomValidity('La ubicación solo puede contener letras y espacios')" oninput="this.setCustomValidity('')" />
                     </div>
                     <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Responsable</label>
@@ -503,7 +511,7 @@
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Últ. Modificación</label>
                     <div class="relative">
                         <i data-lucide="calendar" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
-                        <input type="date" id="edit-ultimo_mantenimiento" name="ultimo_mantenimiento" class="w-full border rounded-md pl-9 p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" />
+                        <input type="date" id="edit-ultimo_mantenimiento" name="ultimo_mantenimiento" class="w-full border rounded-md pl-9 p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Seleccione una fecha')" oninput="this.setCustomValidity('')" />
                     </div>
                 </div>
             </div>
@@ -661,11 +669,11 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-1">
                     <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación Origen</label>
-                    <input type="text" name="ubicacion_origen" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ubicación actual" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                    <input type="text" name="ubicacion_origen" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Ubicación actual" required pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]+" title="Solo letras y espacios" oninvalid="this.setCustomValidity('La ubicación de origen solo puede contener letras y espacios')" oninput="this.setCustomValidity('')" />
                 </div>
                 <div class="space-y-1">
                     <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación Destino</label>
-                    <input type="text" name="ubicacion_destino" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Nueva ubicación" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                    <input type="text" name="ubicacion_destino" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" placeholder="Nueva ubicación" required pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]+" title="Solo letras y espacios" oninvalid="this.setCustomValidity('La ubicación de destino solo puede contener letras y espacios')" oninput="this.setCustomValidity('')" />
                 </div>
             </div>
 
@@ -726,11 +734,11 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-1">
                     <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación Origen</label>
-                    <input type="text" id="edit-mov-origen" name="ubicacion_origen" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                    <input type="text" id="edit-mov-origen" name="ubicacion_origen" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]+" title="Solo letras y espacios" oninvalid="this.setCustomValidity('La ubicación de origen solo puede contener letras y espacios')" oninput="this.setCustomValidity('')" />
                 </div>
                 <div class="space-y-1">
                     <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Ubicación Destino</label>
-                    <input type="text" id="edit-mov-destino" name="ubicacion_destino" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required oninvalid="this.setCustomValidity('Complete este campo')" oninput="this.setCustomValidity('')" />
+                    <input type="text" id="edit-mov-destino" name="ubicacion_destino" class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none" required pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]+" title="Solo letras y espacios" oninvalid="this.setCustomValidity('La ubicación de destino solo puede contener letras y espacios')" oninput="this.setCustomValidity('')" />
                 </div>
             </div>
 
@@ -1162,6 +1170,41 @@ function exportarReporte() {
     });
     const baseUrl = "{{ url_for('inventario.reporte_inventario') }}";
     const url = ids.length > 0 ? baseUrl + '?ids=' + ids.join(',') : baseUrl;
+    window.open(url, '_blank');
+}
+
+function hayFiltrosActivos(selector) {
+    return Array.from(document.querySelectorAll(selector)).some(function(elemento) {
+        if (elemento.tagName === 'SELECT') {
+            return elemento.selectedIndex > 0;
+        }
+        return elemento.value.trim() !== '';
+    });
+}
+
+function exportarEstadisticaEquipos() {
+    const filas = document.querySelectorAll('table:has(.filtro-tabla) tbody tr[data-id]');
+    const ids = [];
+    filas.forEach(function(fila) {
+        if (fila.style.display !== 'none') {
+            ids.push(fila.dataset.id);
+        }
+    });
+    const baseUrl = "{{ url_for('inventario.estadistica_equipos') }}";
+    const url = hayFiltrosActivos('.filtro-tabla') ? baseUrl + '?ids=' + ids.join(',') : baseUrl;
+    window.open(url, '_blank');
+}
+
+function exportarEstadisticaMovimientos() {
+    const filas = document.querySelectorAll('table:has(.filtro-movimientos) tbody tr[data-id]');
+    const ids = [];
+    filas.forEach(function(fila) {
+        if (fila.style.display !== 'none') {
+            ids.push(fila.dataset.id);
+        }
+    });
+    const baseUrl = "{{ url_for('inventario.estadistica_movimientos') }}";
+    const url = hayFiltrosActivos('.filtro-movimientos') ? baseUrl + '?ids=' + ids.join(',') : baseUrl;
     window.open(url, '_blank');
 }
 

@@ -1,7 +1,11 @@
+from collections import Counter
 from datetime import datetime, date
+from xml.sax.saxutils import escape
 
 from flask import current_app, Response
 from reportlab.lib.pagesizes import letter
+from reportlab.graphics.shapes import Drawing, Rect, String
+from reportlab.graphics.charts.piecharts import Pie
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image, HRFlowable
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
@@ -17,6 +21,12 @@ from app.utils.validation import normalize_text
 class InventarioService:
 
     CATEGORIA_DEFAULT = 'General'
+    TIPOS_EQUIPO_INVALIDOS = {
+        '',
+        'Seleccione...',
+        'Seleccione un tipo de equipo...',
+        '__nuevo_equipo__',
+    }
 
     @staticmethod
     def listar_equipos():
@@ -172,6 +182,72 @@ class InventarioService:
         return parroquia.id_parroquia
 
     @staticmethod
+    def _solo_letras_y_espacios(valor):
+        return all(caracter.isalpha() or caracter == ' ' for caracter in valor)
+
+    @staticmethod
+    def _validar_datos_equipo(datos):
+        """Valida que ningún campo obligatorio del equipo llegue vacío.
+
+        Devuelve (valores, error). Solo uno de los dos será distinto de None.
+        """
+        tipo = (datos.get('tipo_equipo') or '').strip()
+        if tipo in InventarioService.TIPOS_EQUIPO_INVALIDOS:
+            return None, 'Debe seleccionar un tipo de equipo.'
+
+        codigo = (datos.get('codigo') or '').strip()
+        if not codigo:
+            return None, 'Debe indicar el código del equipo.'
+        if not any(caracter.isalpha() for caracter in codigo):
+            return None, 'El código del equipo debe contener al menos una letra (ej: EMA-005).'
+        if not any(caracter.isdigit() and caracter != '0' for caracter in codigo):
+            return None, 'El código del equipo debe incluir un número mayor que cero (ej: EMA-005).'
+
+        ubicacion = (datos.get('ubicacion') or '').strip()
+        if not ubicacion:
+            return None, 'Debe indicar la ubicación del equipo.'
+        if not InventarioService._solo_letras_y_espacios(ubicacion):
+            return None, 'La ubicación solo puede contener letras y espacios.'
+
+        responsable = (datos.get('responsable') or '').strip()
+        if not responsable:
+            return None, 'Debe seleccionar un responsable.'
+
+        condicion = (datos.get('estado_operativo') or '').strip()
+        if not condicion:
+            return None, 'Debe seleccionar una condición.'
+
+        estado = (datos.get('estado') or '').strip()
+        if not estado:
+            return None, 'Debe seleccionar un estado.'
+
+        ultimo_mantenimiento, error_fecha = InventarioService._parsear_fecha(datos)
+        if error_fecha:
+            return None, error_fecha
+        if ultimo_mantenimiento is None:
+            return None, 'Debe indicar la fecha de última modificación.'
+
+        try:
+            codigo = normalize_text(codigo, max_length=50, field='El código')
+            tipo = normalize_text(tipo, max_length=120, field='El tipo de equipo')
+            ubicacion = normalize_text(ubicacion, max_length=180, field='La ubicación')
+            condicion = normalize_text(condicion, max_length=50, field='La condición')
+            estado = normalize_text(estado, max_length=50, field='El estado')
+            responsable = normalize_text(responsable, max_length=120, field='El responsable')
+        except ValueError as error:
+            return None, str(error)
+
+        return {
+            'codigo': codigo,
+            'tipo': tipo,
+            'ubicacion': ubicacion,
+            'condicion': condicion,
+            'estado': estado,
+            'responsable': responsable,
+            'ultimo_mantenimiento': ultimo_mantenimiento,
+        }, None
+
+    @staticmethod
     def _parsear_fecha(datos, campo='ultimo_mantenimiento'):
         """Devuelve (fecha, error). Solo uno de los dos será distinto de None."""
         fecha_str = (datos.get(campo) or '').strip()
@@ -187,50 +263,26 @@ class InventarioService:
 
     @staticmethod
     def crear_equipo(datos, usuario):
-        codigo = (datos.get('codigo') or '').strip()
-        if not codigo:
-            return {'ok': False, 'error': 'Debe indicar el codigo del equipo.'}
-        try:
-            codigo = normalize_text(codigo, max_length=50, field='El código')
-        except ValueError as error:
-            return {'ok': False, 'error': str(error)}
+        valores, error = InventarioService._validar_datos_equipo(datos)
+        if error:
+            return {'ok': False, 'error': error}
 
+        codigo = valores['codigo']
         if InventarioEquipo.query.filter_by(codigo_interno=codigo).first():
-            return {'ok': False, 'error': 'Ya existe un equipo con ese codigo.'}
+            return {'ok': False, 'error': 'Ya existe un equipo con ese código.'}
 
-        try:
-            ultimo_mantenimiento, error_fecha = InventarioService._parsear_fecha(datos)
-        except ValueError:
-            error_fecha = 'Formato de fecha inválido.'
-        if error_fecha:
-            return {'ok': False, 'error': error_fecha}
-
-        tipo = (datos.get('tipo_equipo') or '').strip() or 'Equipo Técnico'
-        nombre_ubicacion = (datos.get('ubicacion') or '').strip() or 'Sin Ubicación'
-        condicion = (datos.get('estado_operativo') or 'Operativo').strip() or 'Operativo'
-        estado_flujo = (datos.get('estado') or 'Disponible').strip() or 'Disponible'
-        responsable = (datos.get('responsable') or '').strip() or usuario.nombre
-        try:
-            tipo = normalize_text(tipo, max_length=120, field='El tipo de equipo')
-            nombre_ubicacion = normalize_text(nombre_ubicacion, max_length=180, field='La ubicación')
-            condicion = normalize_text(condicion, max_length=50, field='La condición')
-            estado_flujo = normalize_text(estado_flujo, max_length=50, field='El estado')
-            responsable = normalize_text(responsable, max_length=120, field='El responsable')
-        except ValueError as error:
-            return {'ok': False, 'error': str(error)}
-
-        modelo = InventarioService._obtener_o_crear_modelo(tipo)
-        ubicacion = InventarioService._obtener_o_crear_ubicacion(nombre_ubicacion)
+        modelo = InventarioService._obtener_o_crear_modelo(valores['tipo'])
+        ubicacion = InventarioService._obtener_o_crear_ubicacion(valores['ubicacion'])
 
         equipo = InventarioEquipo(
             id_modelos_equipos=modelo.id_modelos_equipo,
             id_ubicacion_actual=ubicacion.id_ubicacion,
             codigo_interno=codigo,
-            estado=estado_flujo,
-            condicion=condicion,
+            estado=valores['estado'],
+            condicion=valores['condicion'],
             fecha_ingreso=datetime.utcnow().date(),
-            ultimo_mantenimiento=ultimo_mantenimiento,
-            responsable=responsable,
+            ultimo_mantenimiento=valores['ultimo_mantenimiento'],
+            responsable=valores['responsable'],
         )
         db.session.add(equipo)
         db.session.flush()
@@ -278,9 +330,13 @@ class InventarioService:
         origen = (datos.get('ubicacion_origen') or '').strip()
         if not origen:
             return None, 'Debe indicar la ubicación de origen.'
+        if not InventarioService._solo_letras_y_espacios(origen):
+            return None, 'La ubicación de origen solo puede contener letras y espacios.'
         destino = (datos.get('ubicacion_destino') or '').strip()
         if not destino:
             return None, 'Debe indicar la ubicación de destino.'
+        if not InventarioService._solo_letras_y_espacios(destino):
+            return None, 'La ubicación de destino solo puede contener letras y espacios.'
         motivo = (datos.get('motivo_responsable') or '').strip()
         if not motivo:
             return None, 'Debe indicar el motivo y responsable.'
@@ -407,21 +463,18 @@ class InventarioService:
     @staticmethod
     def actualizar_equipo(equipo_id, datos, usuario):
         equipo = InventarioEquipo.query.get_or_404(equipo_id)
-        codigo = datos.get('codigo', '').strip()
 
-        if not codigo:
-            return {'ok': False, 'error': 'Debe indicar el codigo del equipo.'}
+        valores, error = InventarioService._validar_datos_equipo(datos)
+        if error:
+            return {'ok': False, 'error': error}
 
+        codigo = valores['codigo']
         existe = InventarioEquipo.query.filter_by(codigo_interno=codigo).first()
         if existe and existe.id != equipo.id:
-            return {'ok': False, 'error': 'Ya existe otro equipo con ese codigo.'}
+            return {'ok': False, 'error': 'Ya existe otro equipo con ese código.'}
 
-        ultimo_mantenimiento, error_fecha = InventarioService._parsear_fecha(datos)
-        if error_fecha:
-            return {'ok': False, 'error': error_fecha}
-
-        tipo = datos.get('tipo_equipo', '').strip() or equipo.tipo_equipo
-        nombre_ubicacion = datos.get('ubicacion', '').strip() or equipo.ubicacion
+        tipo = valores['tipo']
+        nombre_ubicacion = valores['ubicacion']
 
         if tipo != equipo.tipo_equipo:
             modelo = InventarioService._obtener_o_crear_modelo(tipo)
@@ -431,10 +484,10 @@ class InventarioService:
             equipo.id_ubicacion_actual = ubicacion.id_ubicacion
 
         equipo.codigo_interno = codigo
-        equipo.estado = datos.get('estado', equipo.estado_flujo).strip() or equipo.estado_flujo
-        equipo.condicion = datos.get('estado_operativo', equipo.condicion).strip() or equipo.condicion
-        equipo.ultimo_mantenimiento = ultimo_mantenimiento
-        equipo.responsable = datos.get('responsable', equipo.responsable).strip() or equipo.responsable
+        equipo.estado = valores['estado']
+        equipo.condicion = valores['condicion']
+        equipo.ultimo_mantenimiento = valores['ultimo_mantenimiento']
+        equipo.responsable = valores['responsable']
 
         db.session.add(BitacoraTransaccion(
             modulo='inventario',
@@ -483,6 +536,183 @@ class InventarioService:
         )
 
         return {'ok': True, 'mensaje': 'Equipo eliminado del inventario.'}
+
+    @staticmethod
+    def _filtrar_por_ids(items, ids, atributo_id):
+        if ids is None:
+            return items
+        id_list = {int(valor) for valor in ids.split(',') if valor.strip().isdigit()}
+        return [item for item in items if getattr(item, atributo_id) in id_list]
+
+    @staticmethod
+    def _tabla_frecuencias(titulo, datos, total, estilo_cabecera,
+                           estilo_celda_izq, estilo_celda_centro, ancho,
+                           color_cabecera='#16a34a', color_fila='#f0fdf4'):
+        verde = colors.HexColor(color_cabecera)
+        verde_claro = colors.HexColor(color_fila)
+        gris_borde = colors.HexColor('#d1d5db')
+
+        filas = [[
+            Paragraph(f'<b>{titulo}</b>', estilo_cabecera),
+            Paragraph('<b>CANTIDAD</b>', estilo_cabecera),
+            Paragraph('<b>PORCENTAJE</b>', estilo_cabecera),
+        ]]
+        for etiqueta, cantidad in datos:
+            porcentaje = (cantidad / total * 100) if total else 0
+            filas.append([
+                Paragraph(escape(str(etiqueta)), estilo_celda_izq),
+                Paragraph(str(cantidad), estilo_celda_centro),
+                Paragraph(f'{porcentaje:.1f} %', estilo_celda_centro),
+            ])
+        if len(filas) == 1:
+            filas.append([
+                Paragraph('Sin datos', estilo_celda_izq),
+                Paragraph('0', estilo_celda_centro),
+                Paragraph('0.0 %', estilo_celda_centro),
+            ])
+
+        tabla = Table(filas, colWidths=[ancho - 1.7 * inch, 0.85 * inch, 0.85 * inch], repeatRows=1)
+        tabla.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), verde),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 7),
+            ('ALIGN', (0, 0), (0, -1), 'LEFT'),
+            ('ALIGN', (1, 0), (-1, -1), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('GRID', (0, 0), (-1, -1), 0.5, gris_borde),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, verde_claro]),
+            ('TOPPADDING', (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ]))
+        return tabla
+
+    @staticmethod
+    def _grafico_barras(titulo, datos, ancho=7.0 * inch):
+        datos = [(str(etiqueta), int(valor)) for etiqueta, valor in datos] or [('Sin datos', 0)]
+        alto = max(1.3 * inch, 0.26 * inch * len(datos) + 0.45 * inch)
+        dibujo = Drawing(ancho, alto)
+
+        verde = colors.HexColor('#93EDA3')
+        naranja = colors.HexColor('#f59e0b')
+        rojo = colors.HexColor('#dc2626')
+
+        valores_unicos = sorted({valor for _, valor in datos}, reverse=True)
+        total_unicos = len(valores_unicos)
+        colores_por_valor = {}
+        for posicion, valor in enumerate(valores_unicos):
+            if total_unicos == 1:
+                colores_por_valor[valor] = verde
+            elif total_unicos == 2:
+                colores_por_valor[valor] = verde if posicion == 0 else rojo
+            elif posicion < total_unicos / 3:
+                colores_por_valor[valor] = verde
+            elif posicion >= 2 * total_unicos / 3:
+                colores_por_valor[valor] = rojo
+            else:
+                colores_por_valor[valor] = naranja
+
+        margen_izq = 2.05 * inch
+        margen_der = 0.45 * inch
+        margen_sup = 0.30 * inch
+        margen_inf = 0.06 * inch
+        max_valor = max((valor for _, valor in datos), default=0) or 1
+        ancho_disponible = ancho - margen_izq - margen_der
+        alto_filas = (alto - margen_sup - margen_inf) / len(datos)
+        alto_barra = min(0.15 * inch, alto_filas * 0.55)
+
+        dibujo.add(String(
+            margen_izq, alto - 0.18 * inch, titulo,
+            fontName='Helvetica-Bold', fontSize=9,
+            fillColor=colors.HexColor('#15803d'),
+        ))
+
+        for indice, (etiqueta, valor) in enumerate(datos):
+            y = alto - margen_sup - (indice + 1) * alto_filas + (alto_filas - alto_barra) / 2
+            texto = etiqueta if len(etiqueta) <= 34 else etiqueta[:31] + '...'
+            dibujo.add(String(
+                0, y + 2, texto,
+                fontName='Helvetica', fontSize=7,
+                fillColor=colors.HexColor('#374151'),
+            ))
+            ancho_barra = ancho_disponible * valor / max_valor
+            if ancho_barra > 0:
+                dibujo.add(Rect(
+                    margen_izq, y, ancho_barra, alto_barra,
+                    fillColor=colores_por_valor[valor],
+                    strokeColor=colors.black,
+                    strokeWidth=0.5,
+                ))
+            dibujo.add(String(
+                margen_izq + ancho_barra + 4, y + 2, str(valor),
+                fontName='Helvetica-Bold', fontSize=7,
+                fillColor=colors.HexColor('#111827'),
+            ))
+        return dibujo
+
+    @staticmethod
+    def _grafico_torta(titulo, datos, ancho=7.0 * inch, max_categorias=6):
+        datos = [(str(etiqueta), int(valor)) for etiqueta, valor in datos if int(valor) > 0]
+        if not datos:
+            datos = [('Sin datos', 1)]
+        total = sum(valor for _, valor in datos)
+
+        datos = sorted(datos, key=lambda item: item[1], reverse=True)
+        if len(datos) > max_categorias:
+            principales = datos[:max_categorias - 1]
+            otros = sum(valor for _, valor in datos[max_categorias - 1:])
+            datos = principales + [('Otros', otros)]
+
+        paleta = ['#93EDA3', '#3b82f6', '#f59e0b', '#8b5cf6',
+                  '#ec4899', '#14b8a6', '#f97316', '#9ca3af']
+
+        alto = max(2.4 * inch, 0.24 * inch * len(datos) + 0.65 * inch)
+        diametro = min(1.9 * inch, alto - 0.5 * inch)
+        dibujo = Drawing(ancho, alto)
+
+        dibujo.add(String(
+            0.4 * inch, alto - 0.18 * inch, titulo,
+            fontName='Helvetica-Bold', fontSize=9,
+            fillColor=colors.HexColor('#15803d'),
+        ))
+
+        torta = Pie()
+        torta.x = 0.4 * inch
+        torta.y = (alto - 0.35 * inch - diametro) / 2
+        torta.width = diametro
+        torta.height = diametro
+        torta.data = [valor for _, valor in datos]
+        torta.startAngle = 90
+        torta.direction = 'clockwise'
+        for indice, (etiqueta, _) in enumerate(datos):
+            slice_ = torta.slices[indice]
+            slice_.fillColor = colors.HexColor(
+                '#9ca3af' if etiqueta == 'Otros' else paleta[indice % len(paleta)])
+            slice_.strokeColor = colors.black
+            slice_.strokeWidth = 0.5
+        dibujo.add(torta)
+
+        leyenda_x = torta.x + diametro + 0.5 * inch
+        leyenda_y = alto - 0.55 * inch
+        ancho_texto = ancho - leyenda_x - 0.2 * inch
+        max_caracteres = max(18, int(ancho_texto / 3.6))
+        for indice, (etiqueta, valor) in enumerate(datos):
+            color_slice = colors.HexColor(
+                '#9ca3af' if etiqueta == 'Otros' else paleta[indice % len(paleta)])
+            y = leyenda_y - indice * 0.22 * inch
+            dibujo.add(Rect(
+                leyenda_x, y + 1, 0.12 * inch, 0.12 * inch,
+                fillColor=color_slice, strokeColor=colors.black, strokeWidth=0.5,
+            ))
+            texto = etiqueta if len(etiqueta) <= max_caracteres else etiqueta[:max_caracteres - 3] + '...'
+            porcentaje = (valor / total * 100) if total else 0
+            dibujo.add(String(
+                leyenda_x + 0.2 * inch, y + 2,
+                f'{texto} ({porcentaje:.1f} %)',
+                fontName='Helvetica', fontSize=7,
+                fillColor=colors.HexColor('#374151'),
+            ))
+        return dibujo
 
     @staticmethod
     def generar_reporte_pdf(equipos):
@@ -984,6 +1214,307 @@ class InventarioService:
         elementos.append(Paragraph('<b>DETALLE DE MOVIMIENTOS</b>', estilo_info_label))
         elementos.append(Spacer(1, 4))
         elementos.append(t_det)
+
+        doc.build(elementos)
+        buf.seek(0)
+        return buf
+
+    @staticmethod
+    def generar_estadistica_equipos_pdf(ids=None):
+        import io, os
+
+        buf = io.BytesIO()
+
+        def footer_pagina(canvas, doc):
+            canvas.saveState()
+            margen_x = 0.75 * inch
+            ancho_pag = letter[0]
+            footer_y = 0.4 * inch
+            canvas.setStrokeColor(colors.HexColor('#d1d5db'))
+            canvas.setLineWidth(0.3)
+            canvas.line(margen_x, footer_y + 0.15 * inch, ancho_pag - margen_x, footer_y + 0.15 * inch)
+            canvas.setFont('Helvetica', 7)
+            canvas.setFillColor(colors.HexColor('#9ca3af'))
+            canvas.drawString(margen_x, footer_y - 2, 'Código: REG-INV-042 | Versión 2.1')
+            canvas.drawRightString(ancho_pag - margen_x, footer_y - 2, f'Página {doc.page}')
+            canvas.restoreState()
+
+        doc = SimpleDocTemplate(buf, pagesize=letter,
+                                title='Reporte Estadístico de Equipos',
+                                topMargin=0.7 * inch, bottomMargin=0.65 * inch,
+                                leftMargin=0.75 * inch, rightMargin=0.75 * inch)
+        doc.onFirstPage = footer_pagina
+        doc.onLaterPages = footer_pagina
+        styles = getSampleStyleSheet()
+        ancho = letter[0] - 1.5 * inch
+
+        estilo_titulo = ParagraphStyle('TituloEst', parent=styles['Title'],
+                                       fontSize=17, leading=21, textColor=colors.HexColor('#15803d'),
+                                       spaceAfter=2, alignment=1)
+        estilo_linea_titulo = ParagraphStyle('LineaTit', parent=styles['Normal'],
+                                             fontSize=6, textColor=colors.HexColor('#16a34a'), alignment=1)
+        estilo_info_label = ParagraphStyle('InfoLabel', parent=styles['Normal'],
+                                           fontSize=8, leading=10, textColor=colors.HexColor('#4b5563'))
+        estilo_info_valor = ParagraphStyle('InfoValor', parent=styles['Normal'],
+                                           fontSize=9, leading=11, textColor=colors.HexColor('#111827'))
+        estilo_tabla_titulo = ParagraphStyle('TabTit', parent=styles['Normal'],
+                                             fontSize=7, leading=9, textColor=colors.white, alignment=1)
+        estilo_tabla_celda = ParagraphStyle('TabCel', parent=styles['Normal'],
+                                            fontSize=7, leading=9, alignment=1)
+        estilo_tabla_celda_izq = ParagraphStyle('TabCelIzq', parent=styles['Normal'],
+                                                fontSize=7, leading=9, alignment=0)
+
+        verde_claro = colors.HexColor('#f0fdf4')
+        gris_borde = colors.HexColor('#d1d5db')
+
+        equipos = InventarioService._filtrar_por_ids(InventarioService.listar_equipos(), ids, 'id')
+        total = len(equipos)
+        por_tipo = Counter(e.tipo_equipo or 'Sin dato' for e in equipos).most_common()
+        por_condicion = Counter(e.estado_operativo or 'Sin dato' for e in equipos).most_common()
+        por_estado = Counter(e.estado_flujo or 'Sin dato' for e in equipos).most_common()
+        por_ubicacion = Counter(e.ubicacion or 'Sin dato' for e in equipos).most_common()
+        por_responsable = Counter(e.responsable or 'Sin dato' for e in equipos).most_common()
+
+        elementos = []
+        logo_path = os.path.join(current_app.root_path, 'static', 'img', 'oncc_logo.png')
+        logo_celda = []
+        if os.path.exists(logo_path):
+            img = Image(logo_path, width=1.3 * inch, height=0.5 * inch)
+            logo_celda.append(img)
+        logo_celda.append(Spacer(1, 6))
+        logo_celda.append(Paragraph("<b>ONCC</b> - Región Nororiental",
+                         ParagraphStyle('LogoTxt', parent=styles['Normal'], fontSize=7, textColor=colors.grey)))
+
+        titulo_celda = [
+            Paragraph("REPORTE ESTADÍSTICO DE EQUIPOS", estilo_titulo),
+            Paragraph("──────────────────────────────────────", estilo_linea_titulo),
+        ]
+
+        tbl_enc = Table([[logo_celda, titulo_celda]], colWidths=[2.0 * inch, ancho - 2.0 * inch])
+        tbl_enc.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+            ('ALIGN', (1, 0), (1, 0), 'CENTER'),
+            ('TOPPADDING', (0, 0), (-1, -1), 0),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ]))
+        elementos.append(tbl_enc)
+        elementos.append(Spacer(1, 0.2 * inch))
+
+        fecha_reporte = date.today().strftime('%d de %B, %Y')
+        meses_es = {'January': 'Enero', 'February': 'Febrero', 'March': 'Marzo', 'April': 'Abril',
+                    'May': 'Mayo', 'June': 'Junio', 'July': 'Julio', 'August': 'Agosto',
+                    'September': 'Septiembre', 'October': 'Octubre', 'November': 'Noviembre', 'December': 'Diciembre'}
+        for eng, esp in meses_es.items():
+            fecha_reporte = fecha_reporte.replace(eng, esp)
+
+        def info_fila(label, valor, label2, valor2):
+            return [
+                Paragraph(f'<font size=8 color="#4b5563"><b>{label}</b></font>', estilo_info_label),
+                Paragraph(f'<font size=9 color="#111827">{valor}</font>', estilo_info_valor),
+                Paragraph(f'<font size=8 color="#4b5563"><b>{label2}</b></font>', estilo_info_label),
+                Paragraph(f'<font size=9 color="#111827">{valor2}</font>', estilo_info_valor),
+            ]
+
+        operativos = sum(1 for e in equipos if (e.estado_operativo or '').lower() == 'operativo')
+        en_mantenimiento = sum(1 for e in equipos if 'mantenimiento' in (e.estado_operativo or '').lower())
+        datos_reporte = [
+            info_fila('Total Equipos', str(total), 'Fecha Emisión', fecha_reporte),
+            info_fila('Ubicaciones', str(len(por_ubicacion)), 'Responsables', str(len(por_responsable))),
+            info_fila('Operativos', str(operativos), 'Requieren Mantenimiento', str(en_mantenimiento)),
+        ]
+        t_datos = Table(datos_reporte, colWidths=[1.2 * inch, 2.0 * inch, 1.5 * inch, 1.8 * inch])
+        t_datos.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), verde_claro),
+            ('BOX', (0, 0), (-1, -1), 0.5, gris_borde),
+            ('INNERGRID', (0, 0), (-1, -1), 0.3, gris_borde),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING', (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+            ('LEFTPADDING', (0, 0), (-1, -1), 8),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+        ]))
+        elementos.append(t_datos)
+        elementos.append(Spacer(1, 0.2 * inch))
+
+        def seccion(titulo_tabla, datos, titulo_grafico, max_grafico=10, tipo_grafico='barras'):
+            elementos.append(InventarioService._tabla_frecuencias(
+                titulo_tabla, datos, total, estilo_tabla_titulo,
+                estilo_tabla_celda_izq, estilo_tabla_celda, ancho))
+            elementos.append(Spacer(1, 6))
+            if tipo_grafico == 'torta':
+                grafico = InventarioService._grafico_torta(
+                    titulo_grafico, datos, ancho=ancho)
+            else:
+                grafico = InventarioService._grafico_barras(
+                    titulo_grafico, datos[:max_grafico], ancho=ancho)
+            elementos.append(grafico)
+            elementos.append(Spacer(1, 0.12 * inch))
+
+        seccion('TIPO DE EQUIPO', por_tipo, 'Equipos por tipo', tipo_grafico='torta')
+        seccion('CONDICIÓN', por_condicion, 'Equipos por condición', tipo_grafico='torta')
+        seccion('ESTADO', por_estado, 'Equipos por estado', tipo_grafico='torta')
+        seccion('UBICACIÓN (TOP 10)', por_ubicacion[:10], 'Equipos por ubicación (top 10)')
+        seccion('RESPONSABLE (TOP 10)', por_responsable[:10], 'Equipos por responsable (top 10)')
+
+        doc.build(elementos)
+        buf.seek(0)
+        return buf
+
+    @staticmethod
+    def generar_estadistica_movimientos_pdf(ids=None):
+        import io, os
+
+        buf = io.BytesIO()
+
+        def footer_pagina(canvas, doc):
+            canvas.saveState()
+            margen_x = 0.75 * inch
+            ancho_pag = letter[0]
+            footer_y = 0.4 * inch
+            canvas.setStrokeColor(colors.HexColor('#d1d5db'))
+            canvas.setLineWidth(0.3)
+            canvas.line(margen_x, footer_y + 0.15 * inch, ancho_pag - margen_x, footer_y + 0.15 * inch)
+            canvas.setFont('Helvetica', 7)
+            canvas.setFillColor(colors.HexColor('#9ca3af'))
+            canvas.drawString(margen_x, footer_y - 2, 'Código: REG-INV-042 | Versión 2.1')
+            canvas.drawRightString(ancho_pag - margen_x, footer_y - 2, f'Página {doc.page}')
+            canvas.restoreState()
+
+        doc = SimpleDocTemplate(buf, pagesize=letter,
+                                title='Reporte Estadístico de Movimientos',
+                                topMargin=0.7 * inch, bottomMargin=0.65 * inch,
+                                leftMargin=0.75 * inch, rightMargin=0.75 * inch)
+        doc.onFirstPage = footer_pagina
+        doc.onLaterPages = footer_pagina
+        styles = getSampleStyleSheet()
+        ancho = letter[0] - 1.5 * inch
+
+        estilo_titulo = ParagraphStyle('TituloEst', parent=styles['Title'],
+                                       fontSize=17, leading=21, textColor=colors.HexColor('#15803d'),
+                                       spaceAfter=2, alignment=1)
+        estilo_linea_titulo = ParagraphStyle('LineaTit', parent=styles['Normal'],
+                                             fontSize=6, textColor=colors.HexColor('#16a34a'), alignment=1)
+        estilo_info_label = ParagraphStyle('InfoLabel', parent=styles['Normal'],
+                                           fontSize=8, leading=10, textColor=colors.HexColor('#4b5563'))
+        estilo_info_valor = ParagraphStyle('InfoValor', parent=styles['Normal'],
+                                           fontSize=9, leading=11, textColor=colors.HexColor('#111827'))
+        estilo_tabla_titulo = ParagraphStyle('TabTit', parent=styles['Normal'],
+                                             fontSize=7, leading=9, textColor=colors.white, alignment=1)
+        estilo_tabla_celda = ParagraphStyle('TabCel', parent=styles['Normal'],
+                                            fontSize=7, leading=9, alignment=1)
+        estilo_tabla_celda_izq = ParagraphStyle('TabCelIzq', parent=styles['Normal'],
+                                                fontSize=7, leading=9, alignment=0)
+
+        verde_claro = colors.HexColor('#f0fdf4')
+        gris_borde = colors.HexColor('#d1d5db')
+
+        movimientos = InventarioService._filtrar_por_ids(
+            InventarioService.listar_movimientos(), ids, 'id_movimiento')
+        total = len(movimientos)
+
+        nombres_meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+                         'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+        conteo_meses = Counter((m.fecha_movimiento.year, m.fecha_movimiento.month) for m in movimientos)
+        por_mes = [
+            (f'{nombres_meses[mes - 1]} {anio}', cantidad)
+            for (anio, mes), cantidad in sorted(conteo_meses.items())
+        ]
+        por_destino = Counter(m.ubicacion_destino or 'Sin dato' for m in movimientos).most_common()
+        por_equipo = Counter(m.codigo_equipo or 'Sin dato' for m in movimientos).most_common()
+
+        equipos_involucrados = len({m.codigo_equipo for m in movimientos if m.codigo_equipo})
+        destinos_distintos = len({m.ubicacion_destino for m in movimientos if m.ubicacion_destino})
+        if movimientos:
+            fechas = [m.fecha_movimiento for m in movimientos]
+            rango_fechas = f"{min(fechas).strftime('%d/%m/%Y')} - {max(fechas).strftime('%d/%m/%Y')}"
+        else:
+            rango_fechas = 'Sin datos'
+
+        elementos = []
+        logo_path = os.path.join(current_app.root_path, 'static', 'img', 'oncc_logo.png')
+        logo_celda = []
+        if os.path.exists(logo_path):
+            img = Image(logo_path, width=1.3 * inch, height=0.5 * inch)
+            logo_celda.append(img)
+        logo_celda.append(Spacer(1, 6))
+        logo_celda.append(Paragraph("<b>ONCC</b> - Región Nororiental",
+                         ParagraphStyle('LogoTxt', parent=styles['Normal'], fontSize=7, textColor=colors.grey)))
+
+        titulo_celda = [
+            Paragraph("REPORTE ESTADÍSTICO DE MOVIMIENTOS", estilo_titulo),
+            Paragraph("──────────────────────────────────────", estilo_linea_titulo),
+        ]
+
+        tbl_enc = Table([[logo_celda, titulo_celda]], colWidths=[2.0 * inch, ancho - 2.0 * inch])
+        tbl_enc.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+            ('ALIGN', (1, 0), (1, 0), 'CENTER'),
+            ('TOPPADDING', (0, 0), (-1, -1), 0),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ]))
+        elementos.append(tbl_enc)
+        elementos.append(Spacer(1, 0.2 * inch))
+
+        fecha_reporte = date.today().strftime('%d de %B, %Y')
+        meses_es = {'January': 'Enero', 'February': 'Febrero', 'March': 'Marzo', 'April': 'Abril',
+                    'May': 'Mayo', 'June': 'Junio', 'July': 'Julio', 'August': 'Agosto',
+                    'September': 'Septiembre', 'October': 'Octubre', 'November': 'Noviembre', 'December': 'Diciembre'}
+        for eng, esp in meses_es.items():
+            fecha_reporte = fecha_reporte.replace(eng, esp)
+
+        def info_fila(label, valor, label2, valor2):
+            return [
+                Paragraph(f'<font size=8 color="#4b5563"><b>{label}</b></font>', estilo_info_label),
+                Paragraph(f'<font size=9 color="#111827">{valor}</font>', estilo_info_valor),
+                Paragraph(f'<font size=8 color="#4b5563"><b>{label2}</b></font>', estilo_info_label),
+                Paragraph(f'<font size=9 color="#111827">{valor2}</font>', estilo_info_valor),
+            ]
+
+        datos_reporte = [
+            info_fila('Total Movimientos', str(total), 'Fecha Emisión', fecha_reporte),
+            info_fila('Equipos Involucrados', str(equipos_involucrados), 'Destinos Distintos', str(destinos_distintos)),
+            info_fila('Rango de Fechas', rango_fechas, 'Tipo Reporte', 'Estadística de Movimientos'),
+        ]
+        t_datos = Table(datos_reporte, colWidths=[1.2 * inch, 2.0 * inch, 1.5 * inch, 1.8 * inch])
+        t_datos.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), verde_claro),
+            ('BOX', (0, 0), (-1, -1), 0.5, gris_borde),
+            ('INNERGRID', (0, 0), (-1, -1), 0.3, gris_borde),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING', (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+            ('LEFTPADDING', (0, 0), (-1, -1), 8),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+        ]))
+        elementos.append(t_datos)
+        elementos.append(Spacer(1, 0.2 * inch))
+
+        def seccion(titulo_tabla, datos, titulo_grafico, max_grafico=10,
+                    desde_final=False, tipo_grafico='barras'):
+            elementos.append(InventarioService._tabla_frecuencias(
+                titulo_tabla, datos, total, estilo_tabla_titulo,
+                estilo_tabla_celda_izq, estilo_tabla_celda, ancho))
+            elementos.append(Spacer(1, 6))
+            if tipo_grafico == 'torta':
+                grafico = InventarioService._grafico_torta(
+                    titulo_grafico, datos, ancho=ancho)
+            else:
+                datos_grafico = datos[-max_grafico:] if desde_final else datos[:max_grafico]
+                grafico = InventarioService._grafico_barras(
+                    titulo_grafico, datos_grafico, ancho=ancho)
+            elementos.append(grafico)
+            elementos.append(Spacer(1, 0.12 * inch))
+
+        titulo_mes = ('Movimientos por mes (últimos 12)' if len(por_mes) > 12
+                      else 'Movimientos por mes')
+        seccion('MOVIMIENTOS POR MES', por_mes, titulo_mes,
+                max_grafico=12, desde_final=True)
+        seccion('DESTINOS (TOP 10)', por_destino[:10], 'Movimientos por destino (top 10)',
+                tipo_grafico='torta')
+        seccion('EQUIPOS CON MÁS MOVIMIENTOS (TOP 10)', por_equipo[:10],
+                'Movimientos por equipo (top 10)')
 
         doc.build(elementos)
         buf.seek(0)

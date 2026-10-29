@@ -13,8 +13,14 @@ depends_on = None
 
 
 def upgrade():
-    op.add_column('actividad', sa.Column('id_usuario', sa.Integer(), nullable=True))
+    inspector = sa.inspect(op.get_bind())
+    columns = {column['name'] for column in inspector.get_columns('actividad')}
+    if 'id_usuario' not in columns:
+        op.add_column('actividad', sa.Column('id_usuario', sa.Integer(), nullable=True))
 
 
 def downgrade():
-    op.drop_column('actividad', 'id_usuario')
+    inspector = sa.inspect(op.get_bind())
+    columns = {column['name'] for column in inspector.get_columns('actividad')}
+    if 'id_usuario' in columns:
+        op.drop_column('actividad', 'id_usuario')

@@ -136,6 +136,26 @@ def reporte_movimientos():
                     headers={'Content-Disposition': 'inline; filename=reporte_movimientos.pdf'})
 
 
+@logistica_bp.route('/inventario/estadistica-equipos', methods=['GET'])
+@login_required
+def estadistica_equipos():
+    verificar_permiso_dinamico('ver_reportes_inventario')
+    ids = request.args.get('ids')
+    buf = InventarioService.generar_estadistica_equipos_pdf(ids)
+    return Response(buf, mimetype='application/pdf',
+                    headers={'Content-Disposition': 'inline; filename=estadistica_equipos.pdf'})
+
+
+@logistica_bp.route('/inventario/estadistica-movimientos', methods=['GET'])
+@login_required
+def estadistica_movimientos():
+    verificar_permiso_dinamico('ver_reportes_inventario')
+    ids = request.args.get('ids')
+    buf = InventarioService.generar_estadistica_movimientos_pdf(ids)
+    return Response(buf, mimetype='application/pdf',
+                    headers={'Content-Disposition': 'inline; filename=estadistica_movimientos.pdf'})
+
+
 @logistica_bp.route('/inventario/<int:equipo_id>/acta', methods=['GET'])
 @login_required
 def acta_responsabilidad(equipo_id):
