@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms import FileField, HiddenField, PasswordField, SelectField, StringField, TextAreaField, IntegerField, DateField
 from wtforms.validators import DataRequired, Email, Length, Optional, AnyOf, NumberRange, EqualTo, InputRequired
-from app.utils.validation import password_policy
+from app.utils.validation import password_policy, strong_password_policy
 
 class LoginForm(FlaskForm):
     correo = StringField(
@@ -20,8 +20,8 @@ class ResetRequestForm(FlaskForm):
 
 
 class ResetPasswordForm(FlaskForm):
-    password = PasswordField('Nueva contraseña', validators=[DataRequired(), password_policy])
-    confirm = PasswordField('Confirmar contraseña', validators=[DataRequired(), password_policy, EqualTo('password', message='Las contraseñas no coinciden.')])
+    password = PasswordField('Nueva contraseña', validators=[DataRequired(), strong_password_policy])
+    confirm = PasswordField('Confirmar contraseña', validators=[DataRequired(), strong_password_policy, EqualTo('password', message='Las contraseñas no coinciden.')])
 
 
 class PublicacionForm(FlaskForm):

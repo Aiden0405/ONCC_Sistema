@@ -1,6 +1,5 @@
 # app/blueprints/core/controllers/usuarios.py
 import io
-import re
 from datetime import datetime
 from reportlab.lib.pagesizes import letter, landscape
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
@@ -19,8 +18,8 @@ from app.models.notificacion import Notificacion
 from app.models.password_reset import PasswordReset
 from app.services.auditoria import registrar_accion
 from app.services.notificacion import ServicioNotificacion
-from app.utils.authorization import current_role_id, has_full_access_role, is_superuser, verificar_permiso_dinamico
-from app.utils.validation import parse_positive_int, validate_password, validate_person_text
+from app.utils.authorization import current_role_id, has_permission, is_superuser, is_superuser_role, verificar_permiso_dinamico
+from app.utils.validation import parse_positive_int, validate_email, validate_new_password, validate_person_text
 
 
 @core_bp.route('/admin/usuarios/')
@@ -64,7 +63,7 @@ def usuario_index():
         permisos_por_modulo=permisos_por_modulo,
         permisos_sin_modulo=permisos_sin_modulo,
         excepciones=excepciones,
-        puede_gestionar_excepciones=has_full_access_role(current_user.rol),
+        puede_gestionar_excepciones=has_permission('asignar_permisos_roles'),
     )
 
 
@@ -170,12 +169,9 @@ def usuario_nuevo():
         try:
             nombre = validate_person_text(nombre, field='El nombre')
             
-            # 🌟 VALIDACIÓN ROBUSTA DE CORREO
-            patron_correo = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
-            if not correo or not re.match(patron_correo, correo) or len(correo) > 100:
-                raise ValueError('El correo electrónico no es válido. Debe tener un formato real (ejemplo: usuario@gmail.com).')
+            correo = validate_email(correo)
                 
-            validate_password(password)
+            validate_new_password(password)
             rol_destino = parse_positive_int(id_rol_form, field='El rol')
         except ValueError as error:
             flash(str(error), 'error')
@@ -184,7 +180,7 @@ def usuario_nuevo():
 
         rol_creador = current_role_id()
         
-        if not has_full_access_role(current_user.rol) and rol_destino <= rol_creador:
+        if not is_superuser_role(current_user.rol) and rol_destino <= rol_creador:
             flash('Acceso denegado: No posee el rango jerárquico para asignar este nivel de privilegio.', 'error')
             return redirect(url_for('core.usuario_index'))
 
@@ -233,7 +229,7 @@ def usuario_editar(usuario_id):
     rol_operador = current_role_id()
     rol_objetivo = int(usuario.id_rol)
 
-    if not has_full_access_role(current_user.rol):
+    if not is_superuser_role(current_user.rol):
         if rol_operador == 2 and rol_objetivo == 1:
             flash('No tiene jerarquía para modificar los datos de un Superusuario.', 'error')
             abort(403)
@@ -270,7 +266,7 @@ def usuario_editar(usuario_id):
         nueva_pass = request.form.get('password') or ''
         if nueva_pass:
             try:
-                validate_password(nueva_pass)
+                validate_new_password(nueva_pass)
             except ValueError as error:
                 flash(str(error), 'error')
                 return redirect(url_for('core.usuario_index'))
@@ -305,7 +301,7 @@ def usuario_eliminar(usuario_id):
     rol_operador = current_role_id()
     rol_objetivo = int(usuario.id_rol)
 
-    if not has_full_access_role(current_user.rol):
+    if not is_superuser_role(current_user.rol):
         if rol_operador == 2 and rol_objetivo == 1:
             flash('Acceso denegado: No posee la jerarquía para eliminar a un Superusuario.', 'error')
             return redirect(url_for('core.usuario_index'))
@@ -344,7 +340,7 @@ def usuario_perfil():
         nueva_pass = request.form.get('password') or ''
         if nueva_pass:
             try:
-                validate_password(nueva_pass)
+                validate_new_password(nueva_pass)
             except ValueError as error:
                 flash(str(error), 'error')
                 return redirect(url_for('core.usuario_index'))

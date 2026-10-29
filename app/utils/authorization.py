@@ -110,15 +110,7 @@ def is_superuser_role(role_name):
 
 
 def has_full_access_role(role_name):
-    normalized_name = (role_name or '').strip().lower()
-    configured_name = (current_app.config.get('SUPER_ROLE_NAME') or '').strip().lower()
-    return normalized_name in {
-        configured_name,
-        'superusuario',
-        'super usuario',
-        'administrador',
-        'admin',
-    }
+    return is_superuser_role(role_name)
 
 
 def is_superuser():

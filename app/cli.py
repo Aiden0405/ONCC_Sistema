@@ -3,7 +3,7 @@ import secrets
 from flask import current_app
 from app import db
 from app.models.usuario import Usuario
-from app.models.role import Role, Permission
+from app.models.role import Permiso, Role, Permission
 
 
 def register_cli_commands(app):
@@ -166,26 +166,25 @@ def do_seed():
                           if nombre not in ('aprobar_divulgaciones', 'publicar_divulgaciones', 'despublicar_divulgaciones')]
         for permiso_nombre in admin_permisos:
             permiso = permisos_creados[permiso_nombre]
-            if permiso not in admin_role.permissions:
-                admin_role.permissions.append(permiso)
+            if not Permiso.query.filter_by(id_rol=admin_role.id_rol, id_modulo=permiso.id_modulo).first():
+                db.session.add(Permiso(id_rol=admin_role.id_rol, id_modulo=permiso.id_modulo))
 
         for permiso_nombre, _ in permisos_base:
             permiso = permisos_creados[permiso_nombre]
-            if permiso not in director_role.permissions:
-                director_role.permissions.append(permiso)
+            if not Permiso.query.filter_by(id_rol=director_role.id_rol, id_modulo=permiso.id_modulo).first():
+                db.session.add(Permiso(id_rol=director_role.id_rol, id_modulo=permiso.id_modulo))
 
         # Compatibilidad con permisos legados si ya existen en BD
         legacy_permissions = {
             'manage_users': 'gestionar_usuarios',
             'manage_roles': 'gestionar_usuarios',
         }
-        for legacy_name, canonical_name in legacy_permissions.items():
+        for legacy_name in legacy_permissions:
             legacy_perm = Permission.query.filter_by(nombre=legacy_name).first()
-            canonical_perm = permisos_creados[canonical_name]
-            if legacy_perm and legacy_perm not in admin_role.permissions:
-                admin_role.permissions.append(legacy_perm)
-            if legacy_perm and legacy_perm not in director_role.permissions:
-                director_role.permissions.append(legacy_perm)
+            if legacy_perm and not Permiso.query.filter_by(id_rol=admin_role.id_rol, id_modulo=legacy_perm.id_modulo).first():
+                db.session.add(Permiso(id_rol=admin_role.id_rol, id_modulo=legacy_perm.id_modulo))
+            if legacy_perm and not Permiso.query.filter_by(id_rol=director_role.id_rol, id_modulo=legacy_perm.id_modulo).first():
+                db.session.add(Permiso(id_rol=director_role.id_rol, id_modulo=legacy_perm.id_modulo))
 
         db.session.commit()
 

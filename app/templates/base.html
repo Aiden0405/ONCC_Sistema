@@ -126,40 +126,6 @@
                 <span class="sidebar-text whitespace-nowrap">Monitoreo General</span>
             </a>
 
-            {# BLOQUE CORE #}
-            {% if 'ver_usuarios' in permisos_activos or 'ver_roles' in permisos_activos or 'ver_permisos' in permisos_activos or is_superuser() %}
-            <p
-                class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">
-                Core</p>
-
-            <!-- 🎯 Usuarios -->
-            {% if 'ver_usuarios' in permisos_activos or is_superuser() %}
-            <a href="{{ url_for('usuario.index') }}"
-                class="w-full flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['usuario', 'users']) }}">
-                <i data-lucide="users" class="mr-3 w-5 h-5 flex-shrink-0"></i>
-                <span class="sidebar-text whitespace-nowrap">Usuarios</span>
-            </a>
-            {% endif %}
-
-            <!-- 🎯 Roles -->
-            {% if 'ver_roles' in permisos_activos or is_superuser() %}
-            <a href="{{ url_for('core.rol_index') }}"
-                class="w-full flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['rol']) }}">
-                <i data-lucide="shield-check" class="mr-3 w-5 h-5 flex-shrink-0"></i>
-                <span class="sidebar-text whitespace-nowrap">Roles</span>
-            </a>
-            {% endif %}
-
-            <!-- 🎯 Catálogo de permisos -->
-{% if 'ver_permisos' in permisos_activos or is_superuser() %}
-<a href="{{ url_for('core.permiso_index') }}"
-    class="w-full flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['permiso']) }}">
-    <i data-lucide="key-round" class="mr-3 w-5 h-5 flex-shrink-0"></i>
-    <span class="sidebar-text whitespace-nowrap">Permisos</span>
-</a>
-{% endif %}
-            {% endif %}
-
             {# SECCIÓN COMUNITARIO #}
             {% if 'ver_formaciones' in permisos_activos or 'ver_sensibilizaciones' in permisos_activos or
                 'ver_divulgaciones' in permisos_activos or 'registrar_divulgaciones' in permisos_activos or
@@ -276,6 +242,40 @@
                 <i data-lucide="clipboard-list" class="mr-3 w-5 h-5 flex-shrink-0 text-violet-600 dark:text-violet-400"></i>
                 <span class="sidebar-text whitespace-nowrap">Bitácora del Sistema</span>
             </a>
+            {% endif %}
+
+            {# SECCIÓN ADMINISTRACIÓN DEL SISTEMA #}
+            {% if 'ver_usuarios' in permisos_activos or 'ver_roles' in permisos_activos or 'ver_permisos' in permisos_activos or is_superuser() %}
+            <p
+                class="sidebar-text text-xs font-bold uppercase tracking-wider mb-2 mt-6 px-2 text-gray-400 dark:text-gray-500">
+                Administración del sistema</p>
+
+            <!-- 🎯 Usuarios -->
+            {% if 'ver_usuarios' in permisos_activos or is_superuser() %}
+            <a href="{{ url_for('usuario.index') }}"
+                class="w-full flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['usuario', 'users']) }}">
+                <i data-lucide="users" class="mr-3 w-5 h-5 flex-shrink-0"></i>
+                <span class="sidebar-text whitespace-nowrap">Usuarios</span>
+            </a>
+            {% endif %}
+
+            <!-- 🎯 Roles -->
+            {% if 'ver_roles' in permisos_activos or is_superuser() %}
+            <a href="{{ url_for('core.rol_index') }}"
+                class="w-full flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['rol']) }}">
+                <i data-lucide="shield-check" class="mr-3 w-5 h-5 flex-shrink-0"></i>
+                <span class="sidebar-text whitespace-nowrap">Roles</span>
+            </a>
+            {% endif %}
+
+            <!-- 🎯 Catálogo de permisos -->
+            {% if 'ver_permisos' in permisos_activos or is_superuser() %}
+            <a href="{{ url_for('core.permiso_index') }}"
+                class="w-full flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors {{ clase_activa(['permiso']) }}">
+                <i data-lucide="key-round" class="mr-3 w-5 h-5 flex-shrink-0"></i>
+                <span class="sidebar-text whitespace-nowrap">Permisos</span>
+            </a>
+            {% endif %}
             {% endif %}
 
             <!-- SECCIÓN DE SOPORTE -->

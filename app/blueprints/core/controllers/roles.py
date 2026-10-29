@@ -14,8 +14,9 @@ from app.models.role import Permission, Role, Permiso, UserPermissionOverride
 from app.models.usuario import Usuario
 from app.services.auditoria import registrar_accion
 from app.services.notificacion import ServicioNotificacion
-from app.constants import KNOWN_PERMISSION_SLUGS, RBAC_MODULES
+from app.constants import RBAC_MODULES
 from app.utils.authorization import current_role_id, is_superuser_role, verificar_permiso_dinamico
+from app.utils.validation import normalize_text
 
 
 # =============================================================================
@@ -169,8 +170,13 @@ def rol_nuevo():
         if not nombre:
             flash('Nombre obligatorio.', 'error')
             return render_template('roles/formulario.html')
+        try:
+            nombre = normalize_text(nombre, min_length=3, max_length=80, field='El nombre del rol')
+        except ValueError as error:
+            flash(str(error), 'error')
+            return render_template('roles/formulario.html')
 
-        if Role.query.filter_by(nombre_rol=nombre).first():
+        if Role.query.filter(db.func.lower(Role.nombre_rol) == nombre.lower()).first():
             flash('Rol ya existe.', 'error')
             return render_template('roles/formulario.html')
 
@@ -179,12 +185,26 @@ def rol_nuevo():
         try:
             db.session.add(rol)
             db.session.commit()
+            if nombre.lower() == 'administrador':
+                permisos_admin = Permission.query.filter(
+                    ~Permission.nombre_modulo.in_({
+                        'aprobar_divulgaciones',
+                        'publicar_divulgaciones',
+                        'despublicar_divulgaciones',
+                    })
+                ).all()
+                for permiso in permisos_admin:
+                    db.session.add(Permiso(id_rol=rol.id_rol, id_modulo=permiso.id_modulo))
+                db.session.commit()
             mensaje = f"Se creó el rol institucional '{rol.nombre_rol}'."
             ServicioNotificacion.notificar_por_permiso('gestionar_usuarios', mensaje, emisor_id=current_user.id_usuario)
             ServicioNotificacion.crear_aviso(id_usuario=current_user.id_usuario, mensaje=mensaje, categoria='Seguridad')
 
             registrar_accion('Roles', rol.id_rol, 'Crear', current_user.nombre_usuario, detalle=f'Creado rol {rol.nombre_rol}')
-            flash('Rol registrado. Ahora defina sus accesos.', 'success')
+            if nombre.lower() == 'administrador':
+                flash('Rol Administrador registrado con sus permisos institucionales por defecto.', 'success')
+            else:
+                flash('Rol registrado. Ahora defina sus accesos.', 'success')
             
             return redirect(url_for('core.rol_gestionar_permisos', rol_id=rol.id_rol))
             
@@ -208,7 +228,24 @@ def rol_editar(rol_id):
         
     if request.method == 'POST':
         nombre_anterior = rol.nombre_rol
-        rol.nombre_rol = (request.form.get('nombre') or rol.nombre_rol).strip()
+        try:
+            nuevo_nombre = normalize_text(
+                request.form.get('nombre') or rol.nombre_rol,
+                min_length=3,
+                max_length=80,
+                field='El nombre del rol',
+            )
+            conflicto = Role.query.filter(
+                db.func.lower(Role.nombre_rol) == nuevo_nombre.lower(),
+                Role.id_rol != rol.id_rol,
+            ).first()
+            if conflicto:
+                flash('Ya existe otro rol con ese nombre.', 'error')
+                return render_template('roles/formulario.html', rol=rol)
+            rol.nombre_rol = nuevo_nombre
+        except ValueError as error:
+            flash(str(error), 'error')
+            return render_template('roles/formulario.html', rol=rol)
         
         try:
             db.session.commit()
@@ -478,45 +515,6 @@ def permiso_reporte():
     
     return Response(buffer, mimetype='application/pdf', headers={'Content-Disposition': 'inline; filename=reporte_permisos_catalogo.pdf'})
 
-@core_bp.route('/admin/permisos/nuevo', methods=['GET', 'POST'])
-@login_required
-def permiso_nuevo():
-    verificar_permiso_dinamico('registrar_permisos')
-    
-    if request.method == 'POST':
-        nombre = (request.form.get('nombre') or '').strip().lower().replace(' ', '_')
-        descripcion = (request.form.get('descripcion') or '').strip()
-        
-        if not nombre:
-            flash('El nombre técnico del permiso es obligatorio.', 'error')
-            return redirect(url_for('core.permiso_index'))
-
-        if nombre not in KNOWN_PERMISSION_SLUGS:
-            flash(f'No se puede crear el permiso técnico "{nombre}": no existe en el catálogo.', 'error')
-            return redirect(url_for('core.permiso_index'))
-
-        if Permission.query.filter_by(nombre_modulo=nombre).first():
-            flash(f'El privilegio técnico "{nombre}" ya existe en el sistema.', 'error')
-            return redirect(url_for('core.permiso_index'))
-
-        ultimo_permiso = Permission.query.order_by(Permission.id_modulo.desc()).first()
-        siguiente_id = (ultimo_permiso.id_modulo + 1) if ultimo_permiso else 1
-
-        try:
-            nuevo_p = Permission(id_modulo=siguiente_id, nombre=nombre, descripcion=descripcion)
-            db.session.add(nuevo_p)
-            db.session.commit()
-            flash(f'Permiso técnico "{nombre}" registrado correctamente.', 'success')
-            return redirect(url_for('core.permiso_index'))
-            
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Error de consistencia en BD: {str(e)}', 'error')
-            return redirect(url_for('core.permiso_index'))
-        
-    return render_template('roles/permiso_formulario.html', permiso=None)
-
-
 @core_bp.route('/admin/permisos/<int:permiso_id>/editar', methods=['GET', 'POST'])
 @login_required
 def permiso_editar(permiso_id):
@@ -525,23 +523,8 @@ def permiso_editar(permiso_id):
     permiso = Permission.query.get_or_404(permiso_id)
     
     if request.method == 'POST':
-        nombre_form = (request.form.get('nombre') or '').strip().lower().replace(' ', '_')
         descripcion_form = (request.form.get('descripcion') or '').strip()
         
-        if not nombre_form:
-            flash('El nombre técnico es obligatorio.', 'error')
-            return render_template('roles/permiso_formulario.html', permiso=permiso)
-
-        if nombre_form not in KNOWN_PERMISSION_SLUGS:
-            flash(f'No se puede guardar el permiso técnico "{nombre_form}": no existe en el catálogo.', 'error')
-            return render_template('roles/permiso_formulario.html', permiso=permiso)
-            
-        if nombre_form != permiso.nombre_modulo:
-            if Permission.query.filter_by(nombre_modulo=nombre_form).first():
-                flash(f'El privilegio técnico "{nombre_form}" ya existe.', 'error')
-                return render_template('roles/permiso_formulario.html', permiso=permiso)
-        
-        permiso.nombre = nombre_form
         permiso.descripcion = descripcion_form
         
         try:
@@ -554,21 +537,3 @@ def permiso_editar(permiso_id):
             return render_template('roles/permiso_formulario.html', permiso=permiso)
             
     return render_template('roles/permiso_formulario.html', permiso=permiso)
-
-
-@core_bp.route('/admin/permisos/<int:permiso_id>/eliminar', methods=['POST'])
-@login_required
-def permiso_eliminar(permiso_id):
-    verificar_permiso_dinamico('eliminar_permisos')
-    
-    permiso = Permission.query.get_or_404(permiso_id)
-    
-    try:
-        db.session.delete(permiso)
-        db.session.commit()
-        flash('Permiso removido correctamente del catálogo global.', 'success')
-    except Exception as e:
-        db.session.rollback()
-        flash('No se puede eliminar porque está asignado a roles institucionales activos.', 'error')
-        
-    return redirect(url_for('core.permiso_index'))

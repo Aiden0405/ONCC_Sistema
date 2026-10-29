@@ -54,7 +54,7 @@
 
                     <div class="space-y-1">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Correo Electrónico</label>
-                        <input type="email" name="correo" autocomplete="new-email" maxlength="100"
+                        <input type="email" name="correo" autocomplete="new-email" maxlength="50"
                             value="{{ usuario.correo if usuario else (request.form.get('correo') if request.form else '') }}"
                             pattern="[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+"
                             title="Ingrese un correo electrónico válido (ejemplo: usuario@dominio.com)"
@@ -93,11 +93,11 @@
 
                     <div class="space-y-1 md:col-span-2">
                         <label class="block text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">Contraseña de Autenticación</label>
-                        <input type="password" name="password" autocomplete="new-password" maxlength="64"
+                        <input type="password" name="password" autocomplete="new-password" minlength="12" maxlength="128"
                             class="w-full border rounded-md p-2 text-sm bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none"
                             {% if not usuario and not es_perfil %}required{% endif %} placeholder="••••••••" />
                         <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-1 italic">
-                            {% if usuario or es_perfil %}Dejar este campo vacío si no desea modificar la contraseña actual.{% else %}Defina la contraseña inicial de acceso.{% endif %}
+                            {% if usuario or es_perfil %}Dejar este campo vacío si no desea modificar la contraseña actual.{% else %}Use al menos 12 caracteres, con mayúscula, minúscula, número y símbolo.{% endif %}
                         </p>
                     </div>
                 </div>
