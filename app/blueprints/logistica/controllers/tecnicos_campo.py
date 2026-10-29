@@ -136,3 +136,19 @@ def reporte_tecnicos():
     buf = TecnicoService.generar_reporte_pdf(tecnicos)
     return Response(buf, mimetype='application/pdf',
                     headers={'Content-Disposition': 'inline; filename=reporte_tecnicos.pdf'})
+
+
+@logistica_bp.route('/tecnicos-campo/estadistica', methods=['GET'])
+@login_required
+def estadistica_tecnicos():
+    verificar_permiso_dinamico('ver_reportes_tecnicos')
+    usuarios_tecnicos = TecnicoService.listar_tecnicos()
+    tecnicos = TecnicoService.serializar(usuarios_tecnicos)
+    ids = request.args.get('ids')
+    if ids:
+        id_list = [int(x) for x in ids.split(',') if x.strip().isdigit()]
+        if id_list:
+            tecnicos = [t for t in tecnicos if t['id_usuario'] in id_list]
+    buf = TecnicoService.generar_estadistica_tecnicos_pdf(tecnicos)
+    return Response(buf, mimetype='application/pdf',
+                    headers={'Content-Disposition': 'inline; filename=estadistica_tecnicos.pdf'})

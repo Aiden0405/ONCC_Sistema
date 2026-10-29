@@ -5,21 +5,21 @@
 {% block content %}
 <div class="max-w-6xl mx-auto space-y-6">
 
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
-        <div>
-            <h1 class="text-2xl font-bold dark:text-white text-gray-800">Gestión de Técnicos</h1>
-            <p class="text-sm dark:text-gray-400 text-gray-500">Módulo maestro para el registro de los operarios, ingenieros, geólogos y analistas de campo de la ONCC.</p>
+    <div class="flex flex-wrap items-center justify-between gap-4 mb-2">
+        <div class="min-w-0">
+            <h1 class="text-2xl font-bold dark:text-white text-gray-800">Gestión de Técnicos de Campo</h1>
+            <p class="text-sm dark:text-gray-400 text-gray-500">Registro y disponibilidad del personal técnico de campo.</p>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex shrink-0 items-center gap-2">
+            <a href="{{ url_for('inventario.index') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md text-sm font-medium transition-colors border border-gray-200 dark:border-gray-700 shadow-xs">
+                <i data-lucide="package" class="w-4 h-4 mr-2 text-gray-400"></i> Ver Inventario
+            </a>
             <button onclick="abrirModalConfirmarReporte(exportarReporteTecnicos)" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center shadow-sm transition-colors">
                 <i data-lucide="file-text" class="mr-2 w-4 h-4"></i> Generar reporte
             </button>
             <button onclick="abrirModalCrearTecnico()" class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-medium transition-colors shadow-sm">
                 <i data-lucide="plus" class="w-4 h-4 mr-2"></i> Nuevo Técnico
             </button>
-            <a href="{{ url_for('inventario.index') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md text-sm font-medium transition-colors border border-gray-200 dark:border-gray-700 shadow-xs">
-                <i data-lucide="package" class="w-4 h-4 mr-2 text-gray-400"></i> Ver Inventario
-            </a>
         </div>
     </div>
 
@@ -73,6 +73,12 @@
         <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
             <div>
                 <h3 class="text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-400">Ficha de trabajo: Técnicos</h3>
+            </div>
+            <div class="flex flex-wrap items-center justify-end gap-3">
+                <span id="contador-registros-tecnicos" class="text-xs text-gray-500 dark:text-gray-400">{{ tecnicos|length }} registro(s)</span>
+                <button onclick="abrirModalConfirmarReporte(exportarEstadisticaTecnicos)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-md text-xs font-medium flex items-center shadow-sm transition-colors">
+                    <i data-lucide="chart-column" class="mr-2 w-4 h-4"></i> Generar estadística
+                </button>
             </div>
         </div>
 
@@ -639,6 +645,19 @@ function exportarReporteTecnicos() {
         }
     });
     const baseUrl = "{{ url_for('logistica.reporte_tecnicos') }}";
+    const url = ids.length > 0 ? baseUrl + '?ids=' + ids.join(',') : baseUrl;
+    window.open(url, '_blank');
+}
+
+function exportarEstadisticaTecnicos() {
+    const filas = document.querySelectorAll('#tabla-tecnicos tbody tr[data-id]');
+    const ids = [];
+    filas.forEach(function(fila) {
+        if (fila.style.display !== 'none') {
+            ids.push(fila.dataset.id);
+        }
+    });
+    const baseUrl = "{{ url_for('logistica.estadistica_tecnicos') }}";
     const url = ids.length > 0 ? baseUrl + '?ids=' + ids.join(',') : baseUrl;
     window.open(url, '_blank');
 }

@@ -380,3 +380,152 @@ class TecnicoService:
         doc.build(elementos)
         buf.seek(0)
         return buf
+
+    @staticmethod
+    def generar_estadistica_tecnicos_pdf(tecnicos):
+        import io, os
+        from collections import Counter
+        from datetime import date
+        from flask import current_app
+        from reportlab.lib.pagesizes import letter
+        from reportlab.lib.units import inch
+        from reportlab.lib import colors
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
+        from app.services.inventario_service import InventarioService
+
+        buf = io.BytesIO()
+
+        def footer_pagina(canvas, doc):
+            canvas.saveState()
+            margen_x = 0.75 * inch
+            ancho_pag = letter[0]
+            footer_y = 0.4 * inch
+            canvas.setStrokeColor(colors.HexColor('#d1d5db'))
+            canvas.setLineWidth(0.3)
+            canvas.line(margen_x, footer_y + 0.15 * inch, ancho_pag - margen_x, footer_y + 0.15 * inch)
+            canvas.setFont('Helvetica', 7)
+            canvas.setFillColor(colors.HexColor('#9ca3af'))
+            canvas.drawString(margen_x, footer_y - 2, 'Código: REG-TEC-001 | Versión 1.0')
+            canvas.drawRightString(ancho_pag - margen_x, footer_y - 2, f'Página {doc.page}')
+            canvas.restoreState()
+
+        doc = SimpleDocTemplate(buf, pagesize=letter,
+                                title='Reporte Estadístico de Técnicos de Campo',
+                                topMargin=0.7 * inch, bottomMargin=0.65 * inch,
+                                leftMargin=0.75 * inch, rightMargin=0.75 * inch)
+        doc.onFirstPage = footer_pagina
+        doc.onLaterPages = footer_pagina
+        styles = getSampleStyleSheet()
+        ancho = letter[0] - 1.5 * inch
+
+        estilo_titulo = ParagraphStyle('TituloEstTec', parent=styles['Title'],
+                                       fontSize=17, leading=21, textColor=colors.HexColor('#15803d'),
+                                       spaceAfter=2, alignment=1)
+        estilo_linea_titulo = ParagraphStyle('LineaTitTec', parent=styles['Normal'],
+                                            fontSize=6, textColor=colors.HexColor('#16a34a'), alignment=1)
+        estilo_info_label = ParagraphStyle('InfoLabelTec', parent=styles['Normal'],
+                                           fontSize=8, leading=10, textColor=colors.HexColor('#4b5563'))
+        estilo_info_valor = ParagraphStyle('InfoValorTec', parent=styles['Normal'],
+                                           fontSize=9, leading=11, textColor=colors.HexColor('#111827'))
+        estilo_tabla_titulo = ParagraphStyle('TabTitTec', parent=styles['Normal'],
+                                             fontSize=7, leading=9, textColor=colors.white, alignment=1)
+        estilo_tabla_celda = ParagraphStyle('TabCelTec', parent=styles['Normal'],
+                                            fontSize=7, leading=9, alignment=1)
+        estilo_tabla_celda_izq = ParagraphStyle('TabCelIzqTec', parent=styles['Normal'],
+                                                fontSize=7, leading=9, alignment=0)
+
+        verde_claro = colors.HexColor('#f0fdf4')
+        gris_borde = colors.HexColor('#d1d5db')
+
+        total = len(tecnicos)
+        disponibles = sum(1 for t in tecnicos if t.get('estatus'))
+        no_disponibles = total - disponibles
+        por_especialidad = Counter(
+            (t.get('especialidad') or 'Sin dato') for t in tecnicos).most_common()
+        por_estatus = Counter(
+            'Disponible' if t.get('estatus') else 'No Disponible'
+            for t in tecnicos).most_common()
+
+        elementos = []
+        logo_path = os.path.join(current_app.root_path, 'static', 'img', 'oncc_logo.png')
+        logo_celda = []
+        if os.path.exists(logo_path):
+            img = Image(logo_path, width=1.3 * inch, height=0.5 * inch)
+            logo_celda.append(img)
+        logo_celda.append(Spacer(1, 6))
+        logo_celda.append(Paragraph("<b>ONCC</b> - Región Nororiental",
+                         ParagraphStyle('LogoTxtTec', parent=styles['Normal'], fontSize=7, textColor=colors.grey)))
+
+        titulo_celda = [
+            Paragraph("REPORTE ESTADÍSTICO DE TÉCNICOS DE CAMPO", estilo_titulo),
+            Paragraph("──────────────────────────────────────", estilo_linea_titulo),
+        ]
+
+        tbl_enc = Table([[logo_celda, titulo_celda]], colWidths=[2.0 * inch, ancho - 2.0 * inch])
+        tbl_enc.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+            ('ALIGN', (1, 0), (1, 0), 'CENTER'),
+            ('TOPPADDING', (0, 0), (-1, -1), 0),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ]))
+        elementos.append(tbl_enc)
+        elementos.append(Spacer(1, 0.2 * inch))
+
+        fecha_reporte = date.today().strftime('%d de %B, %Y')
+        meses_es = {'January': 'Enero', 'February': 'Febrero', 'March': 'Marzo', 'April': 'Abril',
+                    'May': 'Mayo', 'June': 'Junio', 'July': 'Julio', 'August': 'Agosto',
+                    'September': 'Septiembre', 'October': 'Octubre', 'November': 'Noviembre', 'December': 'Diciembre'}
+        for eng, esp in meses_es.items():
+            fecha_reporte = fecha_reporte.replace(eng, esp)
+
+        def info_fila(label, valor, label2, valor2):
+            return [
+                Paragraph(f'<font size=8 color="#4b5563"><b>{label}</b></font>', estilo_info_label),
+                Paragraph(f'<font size=9 color="#111827">{valor}</font>', estilo_info_valor),
+                Paragraph(f'<font size=8 color="#4b5563"><b>{label2}</b></font>', estilo_info_label),
+                Paragraph(f'<font size=9 color="#111827">{valor2}</font>', estilo_info_valor),
+            ]
+
+        datos_reporte = [
+            info_fila('Total Técnicos', str(total), 'Fecha Emisión', fecha_reporte),
+            info_fila('Disponibles', str(disponibles), 'No Disponibles', str(no_disponibles)),
+            info_fila('Especialidades', str(len(por_especialidad)), 'Tipo Reporte', 'Estadística de Técnicos'),
+        ]
+        t_datos = Table(datos_reporte, colWidths=[1.2 * inch, 2.0 * inch, 1.5 * inch, 1.8 * inch])
+        t_datos.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), verde_claro),
+            ('BOX', (0, 0), (-1, -1), 0.5, gris_borde),
+            ('INNERGRID', (0, 0), (-1, -1), 0.3, gris_borde),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING', (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+            ('LEFTPADDING', (0, 0), (-1, -1), 8),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+        ]))
+        elementos.append(t_datos)
+        elementos.append(Spacer(1, 0.2 * inch))
+
+        def seccion(titulo_tabla, datos, titulo_grafico, tipo_grafico='barras', max_grafico=10):
+            elementos.append(InventarioService._tabla_frecuencias(
+                titulo_tabla, datos, total, estilo_tabla_titulo,
+                estilo_tabla_celda_izq, estilo_tabla_celda, ancho))
+            elementos.append(Spacer(1, 6))
+            if tipo_grafico == 'torta':
+                grafico = InventarioService._grafico_torta(
+                    titulo_grafico, datos, ancho=ancho)
+            else:
+                grafico = InventarioService._grafico_barras(
+                    titulo_grafico, datos[:max_grafico], ancho=ancho)
+            elementos.append(grafico)
+            elementos.append(Spacer(1, 0.12 * inch))
+
+        seccion('ESPECIALIDAD (TOP 10)', por_especialidad[:10],
+                'Técnicos por especialidad (top 10)')
+        seccion('ESTATUS DE DISPONIBILIDAD', por_estatus,
+                'Técnicos por estatus', tipo_grafico='torta')
+
+        doc.build(elementos)
+        buf.seek(0)
+        return buf
